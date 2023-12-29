@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: global-indexer
+  labels:
+    app: global-indexer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: global-indexer
+  template:
+    metadata:
+      name: global-indexer
+      labels:
+        app: global-indexer
+    spec:
+      containers:
+        - name: global-indexer
+          image: rss3/global-indexer
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
