@@ -15,26 +15,22 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 
 	data := []*Node{
 		{
-			NodeAddress:     "0x0",
-			NodeName:        "rss3-node",
-			NodeDescription: "rss3",
-			NodeEndpoint:    "https://node.rss3.dev/",
-			NodeTax:         "1",
-			NodeClaimedTax:  "1",
-			IsPublicWelfare: false,
-			StreamURI:       "https://node.rss3.dev/kafka",
-			OperatorWebsite: "https://rss3.io/",
+			Address:      "0x0",
+			Name:         "rss3-node",
+			Description:  "rss3",
+			Endpoint:     "https://node.rss3.dev/",
+			TaxFraction:  20,
+			IsPublicGood: false,
+			StreamURI:    "https://node.rss3.dev/kafka",
 		},
 		{
-			NodeAddress:     "0x1",
-			NodeName:        "google-node",
-			NodeDescription: "google",
-			NodeEndpoint:    "https://node.google.com/",
-			NodeTax:         "1",
-			NodeClaimedTax:  "1",
-			IsPublicWelfare: true,
-			StreamURI:       "https://node.google.com/kafka",
-			OperatorWebsite: "https://google.com/",
+			Address:      "0x1",
+			Name:         "google-node",
+			Description:  "google",
+			Endpoint:     "https://node.google.com/",
+			TaxFraction:  10,
+			IsPublicGood: true,
+			StreamURI:    "https://node.google.com/kafka",
 		},
 	}
 
@@ -42,7 +38,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 		var filteredData []*Node
 		for _, nodeAddress := range request.NodeAddress {
 			for _, node := range data {
-				if node.NodeAddress == nodeAddress {
+				if node.Address == nodeAddress {
 					filteredData = append(filteredData, node)
 				}
 			}
@@ -61,7 +57,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 type NodeRequest struct {
 	Page        uint     `query:"page"`
 	Offset      uint     `query:"offset"`
-	NodeAddress []string `query:"node_address"`
+	NodeAddress []string `query:"address"`
 }
 
 type NodeResponse struct {
@@ -72,13 +68,11 @@ type NodeResponse struct {
 }
 
 type Node struct {
-	NodeAddress     string `json:"node_address"`
-	NodeName        string `json:"node_name"`
-	NodeDescription string `json:"node_description"`
-	NodeEndpoint    string `json:"node_endpoint"`
-	NodeTax         string `json:"node_tax"`
-	NodeClaimedTax  string `json:"node_claimed_tax"`
-	IsPublicWelfare bool   `json:"is_public_welfare"`
-	StreamURI       string `json:"stream_uri"`
-	OperatorWebsite string `json:"operator_website"`
+	Address      string `json:"address"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Endpoint     string `json:"endpoint"`
+	TaxFraction  uint64 `json:"taxFraction"`
+	IsPublicGood bool   `json:"isPublicGood"`
+	StreamURI    string `json:"streamURI"`
 }
