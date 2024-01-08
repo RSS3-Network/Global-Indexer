@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/naturalselectionlabs/global-indexer/internal/hub"
 )
 

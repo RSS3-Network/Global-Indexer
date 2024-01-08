@@ -2,8 +2,9 @@ package hub
 
 import (
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -36,6 +37,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 
 	if request.NodeAddress != nil {
 		var filteredData []*Node
+
 		for _, nodeAddress := range request.NodeAddress {
 			for _, node := range data {
 				if node.Address == nodeAddress {
@@ -43,6 +45,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 				}
 			}
 		}
+
 		data = filteredData
 	}
 

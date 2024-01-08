@@ -2,10 +2,11 @@ package hub
 
 import (
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"math/big"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v4"
 )
 
 func (h *Hub) GetStakingHandler(c echo.Context) error {
@@ -64,7 +65,7 @@ func (h *Hub) GetStakingHandler(c echo.Context) error {
 		},
 	}
 
-	var filteredData []*Staking
+	filteredData := make([]*Staking, 0)
 
 	for _, staking := range data {
 		if request.UserAddress != "" && request.UserAddress != staking.UserAddress {

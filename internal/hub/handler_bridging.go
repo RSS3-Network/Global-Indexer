@@ -2,9 +2,10 @@ package hub
 
 import (
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v4"
 )
 
 func (h *Hub) GetBridgingHandler(c echo.Context) error {
@@ -69,7 +70,7 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 		},
 	}
 
-	var filteredData []*Bridging
+	filteredData := make([]*Bridging, 0)
 
 	for _, bridging := range data {
 		if request.Address != "" && request.Address != bridging.Receiver && request.Address != bridging.Sender {
