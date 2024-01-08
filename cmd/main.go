@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/naturalselectionlabs/global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/global-indexer/internal/node/hub"
 )
 
 func main() {

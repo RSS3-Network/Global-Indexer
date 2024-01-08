@@ -35,6 +35,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 
 	// register router
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
+	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
 	instance.httpServer.GET("/staking", instance.hub.GetStakingHandler)
 	instance.httpServer.GET("/bridging", instance.hub.GetBridgingHandler)
 
