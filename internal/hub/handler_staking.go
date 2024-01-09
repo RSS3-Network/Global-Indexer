@@ -89,7 +89,7 @@ func (h *Hub) GetStakingHandler(c echo.Context) error {
 		},
 	}
 
-	var filteredData []*Staking
+	filteredData := make([]*Staking, 0)
 
 	for _, staking := range data {
 		if request.UserAddress != "" && request.UserAddress != staking.UserAddress {

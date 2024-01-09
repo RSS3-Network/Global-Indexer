@@ -1,10 +1,16 @@
 package hub
 
-import "context"
+import (
+	"context"
+	"github.com/naturalselectionlabs/global-indexer/internal/database"
+)
 
 type Hub struct {
+	databaseClient database.Client
 }
 
-func NewHub(_ context.Context) *Hub {
-	return &Hub{}
+func NewHub(_ context.Context, databaseClient database.Client) *Hub {
+	return &Hub{
+		databaseClient: databaseClient,
+	}
 }

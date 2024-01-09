@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"net"
 )
 
@@ -23,10 +24,10 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context) (*Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client) (*Server, error) {
 	instance := Server{
 		httpServer: echo.New(),
-		hub:        NewHub(ctx),
+		hub:        NewHub(ctx, databaseClient),
 	}
 
 	instance.httpServer.HideBanner = true
@@ -35,6 +36,8 @@ func NewServer(ctx context.Context) (*Server, error) {
 
 	// register router
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
+	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
+	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
 	instance.httpServer.GET("/staking", instance.hub.GetStakingHandler)
 	instance.httpServer.GET("/bridging", instance.hub.GetBridgingHandler)
 
