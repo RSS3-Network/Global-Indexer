@@ -5,6 +5,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-node/config"
+	"github.com/samber/lo"
 	"net/http"
 )
 
@@ -29,9 +31,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, BatchNodeResponse{
 		Data:   data,
-		Page:   0,
-		Offset: 20,
-		Total:  uint(len(data)),
+		Cursor: data[len(data)-1].Address.String(),
 	})
 }
 
@@ -59,6 +59,28 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	})
 }
 
+func (h *Hub) RegisterNodeHandler(c echo.Context) error {
+	var request RegisterNodeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := h.registerNode(c.Request().Context(), &request); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("register node failed: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, fmt.Sprintf("node registered: %v", request.Address))
+}
+
+type RegisterNodeRequest struct {
+	Address      common.Address `json:"address"`
+	Endpoint     string         `json:"endpoint"`
+	IsPublicGood bool           `json:"isPublicGood"`
+	Stream       *config.Stream `json:"stream"`
+	Config       *config.Node   `json:"config"`
+}
+
 type NodeRequest struct {
 	Address common.Address `path:"id"`
 }
@@ -68,26 +90,13 @@ type NodeResponse struct {
 }
 
 type BatchNodeRequest struct {
-	Page        uint             `query:"page"`
-	Offset      uint             `query:"offset"`
-	NodeAddress []common.Address `query:"node_address"`
+	Cursor      string           `query:"cursor"`
+	NodeAddress []common.Address `query:"nodeAddress"`
 }
 
 type BatchNodeResponse struct {
 	Data   []*schema.Node `json:"data"`
-	Page   uint           `json:"page"`
-	Offset uint           `json:"offset"`
-	Total  uint           `json:"total"`
-}
-
-type Node struct {
-	Address      common.Address `json:"address"`
-	Name         string         `json:"name"`
-	Description  string         `json:"description"`
-	Endpoint     string         `json:"endpoint"`
-	TaxFraction  uint64         `json:"taxFraction"`
-	IsPublicGood bool           `json:"isPublicGood"`
-	StreamURI    string         `json:"streamURI"`
+	Cursor string         `json:"cursor"`
 }
 
 var data = []*schema.Node{
@@ -95,10 +104,15 @@ var data = []*schema.Node{
 		Address:      common.HexToAddress("0x0"),
 		Name:         "rss3-node",
 		Description:  "rss3",
-		Endpoint:     "https://node.rss3.dev/",
+		Endpoint:     "https://node.rss3.dev",
 		TaxFraction:  10,
 		IsPublicGood: false,
-		StreamURI:    "https://node.rss3.dev/kafka",
+		Stream: &config.Stream{
+			Enable: lo.ToPtr(true),
+			Driver: "kafka",
+			Topic:  "rss3.node.feeds",
+			URI:    "https://node.rss3.dev:9092",
+		},
 	},
 	{
 		Address:      common.HexToAddress("0x1"),
@@ -107,6 +121,11 @@ var data = []*schema.Node{
 		Endpoint:     "https://node.google.com/",
 		TaxFraction:  10,
 		IsPublicGood: true,
-		StreamURI:    "https://node.google.com/kafka",
+		Stream: &config.Stream{
+			Enable: lo.ToPtr(true),
+			Driver: "kafka",
+			Topic:  "rss3.node.feeds",
+			URI:    "https://node.google.com:9092",
+		},
 	},
 }

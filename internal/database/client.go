@@ -13,8 +13,9 @@ type Client interface {
 	Session
 	Transaction
 
-	// FindNodes returns a list of nodes
+	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
 	FindNodes(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Node, error)
+	SaveNode(ctx context.Context, node *schema.Node) error
 }
 
 type Session interface {

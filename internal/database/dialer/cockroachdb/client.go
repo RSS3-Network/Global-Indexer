@@ -1,4 +1,4 @@
-package cockroach
+package cockroachdb
 
 import (
 	"context"
@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"moul.io/zapgorm2"
 )
 
 var _ database.Client = (*client)(nil)
@@ -76,22 +79,61 @@ func (c *client) Commit() error {
 	return c.database.Commit().Error
 }
 
-func (c *client) FindNode(ctx context.Context) (*schema.Node, error) {
-	var node schema.Node
+func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error) {
+	var node table.Node
 
-	if err := c.database.First(&node).Error; err != nil {
+	if err := c.database.WithContext(ctx).First(&node, "address = ?", nodeAddress).Error; err != nil {
 		return nil, err
 	}
 
-	return &node, nil
+	return node.Export()
 }
 
 func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Node, error) {
-	var nodes []*schema.Node
+	var nodes table.Nodes
 
-	if err := c.database.Find(&nodes, "address IN ?", nodeAddresses).Error; err != nil {
+	if err := c.database.WithContext(ctx).Find(&nodes, "address IN ?", nodeAddresses).Error; err != nil {
 		return nil, err
 	}
 
-	return nodes, nil
+	return nodes.Export()
+}
+
+func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {
+	var nodes table.Node
+
+	if err := nodes.Import(data); err != nil {
+		return err
+	}
+
+	// Save node.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).Save(&nodes).Error
+}
+
+// Dial dials a database.
+func Dial(_ context.Context, dataSourceName string) (database.Client, error) {
+	logger := zapgorm2.New(zap.L())
+	logger.SetAsDefault()
+
+	config := gorm.Config{
+		Logger: logger,
+	}
+
+	databaseClient, err := gorm.Open(postgres.Open(dataSourceName), &config)
+	if err != nil {
+		return nil, fmt.Errorf("dial database: %w", err)
+	}
+
+	return &client{
+		database: databaseClient,
+	}, nil
 }
