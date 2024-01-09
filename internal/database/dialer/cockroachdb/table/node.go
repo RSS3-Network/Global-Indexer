@@ -1,0 +1,71 @@
+package table
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/global-indexer/schema"
+)
+
+type Node struct {
+	Address      common.Address  `gorm:"column:address;primaryKey"`
+	Endpoint     string          `gorm:"column:endpoint"`
+	IsPublicGood bool            `gorm:"column:is_public_good"`
+	Stream       json.RawMessage `gorm:"column:stream"`
+	Config       json.RawMessage `gorm:"column:config;type:jsonb"`
+}
+
+func (*Node) TableName() string {
+	return "node_info"
+}
+
+func (n *Node) Import(node *schema.Node) (err error) {
+	n.Address = node.Address
+	n.Endpoint = node.Endpoint
+	n.IsPublicGood = node.IsPublicGood
+
+	if n.Stream, err = json.Marshal(node.Stream); err != nil {
+		return fmt.Errorf("failed to marshal node stream: %w", err)
+	}
+
+	if n.Config, err = json.Marshal(node.Config); err != nil {
+		return fmt.Errorf("failed to marshal node config: %w", err)
+	}
+
+	return nil
+}
+
+func (n *Node) Export() (*schema.Node, error) {
+	node := schema.Node{
+		Address:      n.Address,
+		Endpoint:     n.Endpoint,
+		IsPublicGood: n.IsPublicGood,
+	}
+
+	if err := json.Unmarshal(n.Stream, &node.Stream); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal node stream: %w", err)
+	}
+
+	if err := json.Unmarshal(n.Config, &node.Config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal node config: %w", err)
+	}
+
+	return &node, nil
+}
+
+type Nodes []*Node
+
+func (n Nodes) Export() ([]*schema.Node, error) {
+	var nodes []*schema.Node
+
+	for _, node := range n {
+		exportedNode, err := node.Export()
+		if err != nil {
+			return nil, err
+		}
+
+		nodes = append(nodes, exportedNode)
+	}
+
+	return nodes, nil
+}

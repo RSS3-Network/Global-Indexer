@@ -1,0 +1,6 @@
+environment: development
+
+database:
+  driver: cockroachdb
+  partition: true
+  uri: postgres://root@localhost:26257/defaultdb
