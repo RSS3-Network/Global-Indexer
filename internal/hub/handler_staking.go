@@ -150,8 +150,8 @@ type StakingEvent struct {
 
 type Staked struct {
 	Value        string   `json:"value"`
-	StartTokenID *big.Int `json:"start_token_id"`
-	EndTokenID   *big.Int `json:"end_token_id"`
+	StartTokenID *big.Int `json:"startTokenID"`
+	EndTokenID   *big.Int `json:"endTokenID"`
 }
 
 type RequestUnstake struct {
