@@ -19,4 +19,11 @@ spec:
         - name: global-indexer
           image: rss3/global-indexer
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /root/gi/deploy
+              name: config
       restartPolicy: Always
+      volumes:
+        - name: config
+          secret:
+            secretName: global-indexer
