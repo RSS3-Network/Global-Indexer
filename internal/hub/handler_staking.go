@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,48 +17,73 @@ func (h *Hub) GetStakingHandler(c echo.Context) error {
 
 	data := []*Staking{
 		{
-			UserAddress: "0xA",
-			NodeAddress: "0x1",
+			UserAddress: "0xaA3f6537De9Ded08ACdC8a75773C70921B14bc34",
+			NodeAddress: "0x43cb41B12907C37757a8CdCA80deD9eD7356f3Aa",
 			Block: &Block{
-				Number:    1,
-				Hash:      "0x01",
-				Timestamp: uint64(time.Now().Unix()),
+				Number:    18884279,
+				Hash:      "0x2a43aaef44872d575f17ab0482e72b8da0083017d4d7ede5790399b10838e68d",
+				Timestamp: 1703768603,
 			},
 			Transaction: &Transaction{
-				Hash:   "0x02",
+				Hash:   "0x427cc05cd02ef3e031cb89387bafd39fd91a440c81eceac9b14d40fdba4fd9cc",
 				Index:  70,
 				Nonce:  147973,
 				Status: "success",
 			},
-			Action: "stake",
+			Action: "staked",
 			Event: &StakingEvent{
-				Stake: &Stake{
+				Staked: &Staked{
 					Value:        "1000000000000000000",
-					StartTokenID: big.NewInt(1),
-					EndTokenID:   big.NewInt(4),
+					StartTokenID: big.NewInt(0),
+					EndTokenID:   big.NewInt(1),
 				},
 			},
 		},
 		{
-			UserAddress: "0xB",
-			NodeAddress: "0x2",
+			UserAddress: "0xaA3f6537De9Ded08ACdC8a75773C70921B14bc34",
+			NodeAddress: "0x43cb41B12907C37757a8CdCA80deD9eD7356f3Aa",
 			Block: &Block{
-				Number:    2,
-				Hash:      "0x03",
-				Timestamp: uint64(time.Now().Unix()),
+				Number:    18884279,
+				Hash:      "0xd86e83801b9930975ede7d4d7103800ad8b27e2840ba71f575d27844feaa34a2",
+				Timestamp: 1703768603,
 			},
 			Transaction: &Transaction{
-				Hash:   "0x04",
-				Index:  80,
-				Nonce:  147977,
-				Status: "failure",
+				Hash:   "0xcc9df4abdf04d41b9caece18c044a19df93dfab78398bc130e3fe20dc50cc724",
+				Index:  70,
+				Nonce:  147973,
+				Status: "success",
 			},
-			Action: "stake",
+			Action: "requestUnstake",
 			Event: &StakingEvent{
-				Stake: &Stake{
-					Value:        "1000000000000000000",
-					StartTokenID: big.NewInt(2),
-					EndTokenID:   big.NewInt(5),
+				RequestUnstake: &RequestUnstake{
+					ID: 0,
+					ChipsIDs: []uint64{
+						0, 1,
+					},
+				},
+			},
+		},
+		{
+			UserAddress: "0xaA3f6537De9Ded08ACdC8a75773C70921B14bc34",
+			NodeAddress: "0x43cb41B12907C37757a8CdCA80deD9eD7356f3Aa",
+			Block: &Block{
+				Number:    18884279,
+				Hash:      "0xd86e83801b9930975ede7d4d7103800ad8b27e2840ba71f575d27844feaa34a2",
+				Timestamp: 1703768603,
+			},
+			Transaction: &Transaction{
+				Hash:   "0xcc9df4abdf04d41b9caece18c044a19df93dfab78398bc130e3fe20dc50cc724",
+				Index:  70,
+				Nonce:  147973,
+				Status: "success",
+			},
+			Action: "unstakeClaimed",
+			Event: &StakingEvent{
+				UnstakeClaimed: &UnstakeClaimed{
+					RequestID:   0,
+					NodeAddress: "0x43cb41B12907C37757a8CdCA80deD9eD7356f3Aa",
+					User:        "0xaA3f6537De9Ded08ACdC8a75773C70921B14bc34",
+					Amount:      "1000000000000000000",
 				},
 			},
 		},
@@ -87,8 +111,8 @@ func (h *Hub) GetStakingHandler(c echo.Context) error {
 
 type StakingRequest struct {
 	Cursor      string `query:"cursor"`
-	UserAddress string `query:"user_address"`
-	NodeAddress string `query:"node_address"`
+	UserAddress string `query:"userAddress"`
+	NodeAddress string `query:"nodeAddress"`
 }
 
 type StakingResponse struct {
@@ -97,8 +121,8 @@ type StakingResponse struct {
 }
 
 type Staking struct {
-	UserAddress string        `json:"user_address"`
-	NodeAddress string        `json:"node_address"`
+	UserAddress string        `json:"userAddress"`
+	NodeAddress string        `json:"nodeAddress"`
 	Block       *Block        `json:"block"`
 	Transaction *Transaction  `json:"transaction"`
 	Action      string        `json:"action"`
@@ -119,11 +143,25 @@ type Transaction struct {
 }
 
 type StakingEvent struct {
-	Stake *Stake `json:"stake,omitempty"`
+	Staked         *Staked         `json:"staked,omitempty"`
+	RequestUnstake *RequestUnstake `json:"requestUnstake,omitempty"`
+	UnstakeClaimed *UnstakeClaimed `json:"unstakeClaimed,omitempty"`
 }
 
-type Stake struct {
+type Staked struct {
 	Value        string   `json:"value"`
 	StartTokenID *big.Int `json:"start_token_id"`
 	EndTokenID   *big.Int `json:"end_token_id"`
+}
+
+type RequestUnstake struct {
+	ID       uint64   `json:"id"`
+	ChipsIDs []uint64 `json:"chipsIDs"`
+}
+
+type UnstakeClaimed struct {
+	RequestID   int    `json:"requestID"`
+	NodeAddress string `json:"nodeAddress"`
+	User        string `json:"user"`
+	Amount      string `json:"amount"`
 }
