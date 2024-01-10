@@ -29,8 +29,8 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 	return node, nil
 }
 
-func (h *Hub) getNodes(ctx context.Context, addresses []common.Address, cursor *string) ([]*schema.Node, error) {
-	nodes, err := h.databaseClient.FindNodes(ctx, addresses, cursor)
+func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schema.Node, error) {
+	nodes, err := h.databaseClient.FindNodes(ctx, request.NodeAddress, request.Cursor, request.Limit)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes: %w", err)
 	}

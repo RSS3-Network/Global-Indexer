@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/naturalselectionlabs/rss3-node/config"
-	"github.com/samber/lo"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -27,12 +26,15 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	node, err := h.getNodes(c.Request().Context(), request.NodeAddress, request.Cursor)
+	node, err := h.getNodes(c.Request().Context(), &request)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
-	cursor := lo.Ternary(len(node) == request.Limit, node[len(node)-1].Address.String(), "")
+	var cursor string
+	if len(node) > 0 && len(node) == request.Limit {
+		cursor = node[len(node)-1].Address.String()
+	}
 
 	return c.JSON(http.StatusOK, BatchNodeResponse{
 		Data:   node,
