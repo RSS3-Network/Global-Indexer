@@ -31,16 +31,18 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 				Status: "success",
 			},
 			Action: "initialize_deposit",
-			Event: InitializeDeposit{
-				Token: Token{
-					Address: Address{
-						Layer1: "0x568F64582A377ea52d0067c4E430B9aE22A60473",
-						Layer2: "0x4200000000000000000000000000000000000042",
+			Event: BridgingEvent{
+				InitializeDeposit: &InitializeDeposit{
+					Token: Token{
+						Address: Address{
+							Layer1: "0x568F64582A377ea52d0067c4E430B9aE22A60473",
+							Layer2: "0x4200000000000000000000000000000000000042",
+						},
+						Value:   "1000000000000000000", // 10 ^ 18
+						Decimal: 18,
 					},
-					Value:   "1000000000000000000", // 10 ^ 18
-					Decimal: 18,
+					Data: "",
 				},
-				Data: "",
 			},
 		},
 		// finalize_deposit // https://scan.testnet.rss3.dev/tx/0x3e452b5f060bee5b9a858c1d43672cd47b58ed022ae9e6a96abd11514e70a48b
@@ -59,16 +61,18 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 				Status: "success",
 			},
 			Action: "finalize_deposit",
-			Event: FinalizeDeposit{
-				Token: Token{
-					Address: Address{
-						Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
-						Layer2: "0x4200000000000000000000000000000000000010",
+			Event: BridgingEvent{
+				FinalizeDeposit: &FinalizeDeposit{
+					Token: Token{
+						Address: Address{
+							Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
+							Layer2: "0x4200000000000000000000000000000000000010",
+						},
+						Value:   "1000000000000000000", // 10 ^ 18
+						Decimal: 18,
 					},
-					Value:   "1000000000000000000", // 10 ^ 18
-					Decimal: 18,
+					Data: "",
 				},
-				Data: "",
 			},
 		},
 		// initialize_withdrawn // https://scan.testnet.rss3.dev/tx/0x788fd349c19c7ad3ae46234f5f35998e1f68b9dd9eb7a7a6b535286f8307ac1c
@@ -87,17 +91,19 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 				Status: "success",
 			},
 			Action: "initialize_withdrawn",
-			Event: InitializeWithdrawn{
-				WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
-				Token: Token{
-					Address: Address{
-						Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
-						Layer2: "0x4200000000000000000000000000000000000010",
+			Event: BridgingEvent{
+				InitializeWithdrawn: &InitializeWithdrawn{
+					WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
+					Token: Token{
+						Address: Address{
+							Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
+							Layer2: "0x4200000000000000000000000000000000000010",
+						},
+						Value:   "1000000000000000000000", // 1000 * 10 ^ 18
+						Decimal: 18,
 					},
-					Value:   "1000000000000000000000", // 1000 * 10 ^ 18
-					Decimal: 18,
+					Data: "",
 				},
-				Data: "",
 			},
 		},
 		// prove_withdrawn // https://sepolia.etherscan.io/tx/0x0decd9659b3acd99e0c199a86eb7115f2fad0f800cb0cbbc76ae503d8523e85c
@@ -116,17 +122,19 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 				Status: "success",
 			},
 			Action: "prove_withdrawn",
-			Event: ProveWithdrawn{
-				WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
-				Token: Token{
-					Address: Address{
-						Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
-						Layer2: "0x4200000000000000000000000000000000000010",
+			Event: BridgingEvent{
+				ProveWithdrawn: &ProveWithdrawn{
+					WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
+					Token: Token{
+						Address: Address{
+							Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
+							Layer2: "0x4200000000000000000000000000000000000010",
+						},
+						Value:   "1000000000000000000000", // 1000 * 10 ^ 18
+						Decimal: 18,
 					},
-					Value:   "1000000000000000000000", // 1000 * 10 ^ 18
-					Decimal: 18,
+					Data: "",
 				},
-				Data: "",
 			},
 		},
 		// finalize_withdrawn // https://sepolia.etherscan.io/tx/0x956bf19b609576725caf61d3056b482735b88a59afea772f666c4829f75017da
@@ -145,17 +153,19 @@ func (h *Hub) GetBridgingHandler(c echo.Context) error {
 				Status: "success",
 			},
 			Action: "finalize_withdrawn",
-			Event: FinalizeWithdrawn{
-				WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
-				Token: Token{
-					Address: Address{
-						Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
-						Layer2: "0x4200000000000000000000000000000000000010",
+			Event: BridgingEvent{
+				FinalizeWithdrawn: &FinalizeWithdrawn{
+					WithdrawnHash: "41F4BA0D5F3A303E2EE9E585E31F31F353C610C6BB3A291DB8CA84078F7335C1",
+					Token: Token{
+						Address: Address{
+							Layer1: "0xc575bd904d16a433624db98d01d5abd5c92d0f38",
+							Layer2: "0x4200000000000000000000000000000000000010",
+						},
+						Value:   "1000000000000000000000", // 1000 * 10 ^ 18
+						Decimal: 18,
 					},
-					Value:   "1000000000000000000000", // 1000 * 10 ^ 18
-					Decimal: 18,
+					Data: "",
 				},
-				Data: "",
 			},
 		},
 	}
@@ -187,12 +197,20 @@ type BridgingResponse struct {
 }
 
 type Bridging struct {
-	Sender      string      `json:"sender"`
-	Receiver    string      `json:"receiver"`
-	Block       Block       `json:"block"`
-	Transaction Transaction `json:"transaction"`
-	Action      string      `json:"action"`
-	Event       any         `json:"event"`
+	Sender      string        `json:"sender"`
+	Receiver    string        `json:"receiver"`
+	Block       Block         `json:"block"`
+	Transaction Transaction   `json:"transaction"`
+	Action      string        `json:"action"`
+	Event       BridgingEvent `json:"event"`
+}
+
+type BridgingEvent struct {
+	InitializeDeposit   *InitializeDeposit   `json:"initializeDeposit,omitempty"`
+	FinalizeDeposit     *FinalizeDeposit     `json:"finalizeDeposit,omitempty"`
+	InitializeWithdrawn *InitializeWithdrawn `json:"InitializeWithdrawn,omitempty"`
+	ProveWithdrawn      *ProveWithdrawn      `json:"ProveWithdrawn,omitempty"`
+	FinalizeWithdrawn   *FinalizeWithdrawn   `json:"FinalizeWithdrawn,omitempty"`
 }
 
 type InitializeDeposit struct {
