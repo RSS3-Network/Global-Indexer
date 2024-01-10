@@ -2,11 +2,12 @@ package config
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 const (
@@ -18,6 +19,11 @@ const (
 type File struct {
 	Environment string           `yaml:"environment" validate:"required" default:"development"`
 	Database    *database.Config `yaml:"database"`
+	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
+}
+
+type RSS3ChainConfig struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
 }
 
 func Setup(configFilePath string) (*File, error) {

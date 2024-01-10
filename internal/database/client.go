@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/pressly/goose/v3"
@@ -14,7 +15,7 @@ type Client interface {
 	Transaction
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
-	FindNodes(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Node, error)
+	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 }
 

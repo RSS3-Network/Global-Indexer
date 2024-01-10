@@ -12,6 +12,6 @@ type Node struct {
 	Endpoint     string         `json:"-"`
 	TaxFraction  uint64         `json:"taxFraction"`
 	IsPublicGood bool           `json:"isPublicGood"`
-	Stream       *config.Stream `json:"stream"`
+	Stream       *config.Stream `json:"-"`
 	Config       *config.Node   `json:"-"`
 }

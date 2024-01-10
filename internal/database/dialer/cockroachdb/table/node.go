@@ -3,6 +3,8 @@ package table
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 )
@@ -13,6 +15,8 @@ type Node struct {
 	IsPublicGood bool            `gorm:"column:is_public_good"`
 	Stream       json.RawMessage `gorm:"column:stream"`
 	Config       json.RawMessage `gorm:"column:config;type:jsonb"`
+	CreatedAt    time.Time       `gorm:"column:created_at"`
+	UpdatedAt    time.Time       `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {
@@ -56,7 +60,7 @@ func (n *Node) Export() (*schema.Node, error) {
 type Nodes []*Node
 
 func (n Nodes) Export() ([]*schema.Node, error) {
-	var nodes []*schema.Node
+	nodes := make([]*schema.Node, 0)
 
 	for _, node := range n {
 		exportedNode, err := node.Export()
