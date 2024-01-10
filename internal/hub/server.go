@@ -2,10 +2,13 @@ package hub
 
 import (
 	"context"
+	"fmt"
+	"net"
+
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
-	"net"
 )
 
 const (
@@ -24,20 +27,28 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client) (*Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new hub: %w", err)
+	}
+
 	instance := Server{
 		httpServer: echo.New(),
-		hub:        NewHub(ctx, databaseClient),
+		hub:        hub,
 	}
 
 	instance.httpServer.HideBanner = true
 	instance.httpServer.HidePort = true
+	instance.httpServer.Validator = defaultValidator
 	instance.httpServer.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
 	// register router
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
 	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
 	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
+	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeatHandler)
+
 	instance.httpServer.GET("/staking", instance.hub.GetStakingHandler)
 	instance.httpServer.GET("/bridging", instance.hub.GetBridgingHandler)
 

@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/pressly/goose/v3"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -89,11 +91,27 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	return node.Export()
 }
 
-func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Node, error) {
+func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string) ([]*schema.Node, error) {
+	databaseStatement := c.database.WithContext(ctx)
+
+	if cursor != nil {
+		var nodeCursor *table.Node
+
+		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(cursor))).Error; err != nil {
+			return nil, fmt.Errorf("get node cursor: %w", err)
+		}
+
+		databaseStatement = databaseStatement.Where("address < ? and created_at <= ?", nodeCursor.Address, nodeCursor.CreatedAt)
+	}
+
+	if len(nodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	}
+
 	var nodes table.Nodes
 
-	if err := c.database.WithContext(ctx).Find(&nodes, "address IN ?", nodeAddresses).Error; err != nil {
-		return nil, err
+	if err := databaseStatement.Find(&nodes).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
 	}
 
 	return nodes.Export()

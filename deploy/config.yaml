@@ -4,3 +4,6 @@ database:
   driver: cockroachdb
   partition: true
   uri: postgres://root@localhost:26257/defaultdb
+
+rss3_chain:
+  endpoint: https://rpc.testnet.rss3.dev

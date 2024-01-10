@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/global-indexer/internal/config"
 	"github.com/naturalselectionlabs/global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
@@ -11,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
-	"os"
 )
 
 var flags *pflag.FlagSet
@@ -37,7 +39,13 @@ var command = cobra.Command{
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient)
+		// Dial rss3 ethereum client.
+		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.Endpoint)
+		if err != nil {
+			return fmt.Errorf("dial rss3 ethereum client: %w", err)
+		}
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}
