@@ -40,7 +40,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 		return nil, fmt.Errorf("get nodes: %w", err)
 	}
 
-	nodeInfo, err := h.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
+	nodeInfo, err := h.stakingContract.GetNodes(&bind.CallOpts{}, request.NodeAddress)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes from chain: %w", err)
 	}
