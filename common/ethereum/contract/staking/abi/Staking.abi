@@ -1085,19 +1085,9 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "epoch",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "startTimestamp",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "endTimestamp",
-                "type": "uint256"
+                "internalType": "uint256[3]",
+                "name": "epochInfo",
+                "type": "uint256[3]"
             },
             {
                 "internalType": "address[]",
@@ -1206,12 +1196,12 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "operatingPool",
+                        "name": "operatingPoolTokens",
                         "type": "uint256"
                     },
                     {
                         "internalType": "uint256",
-                        "name": "stakingPool",
+                        "name": "stakingPoolTokens",
                         "type": "uint256"
                     },
                     {
@@ -1221,7 +1211,7 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "slashedAmount",
+                        "name": "slashedTokens",
                         "type": "uint256"
                     }
                 ],
@@ -1249,14 +1239,9 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "offset",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "limit",
-                "type": "uint256"
+                "internalType": "address[]",
+                "name": "nodeAddrs",
+                "type": "address[]"
             }
         ],
         "name": "getNodes",
@@ -1290,12 +1275,12 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "operatingPool",
+                        "name": "operatingPoolTokens",
                         "type": "uint256"
                     },
                     {
                         "internalType": "uint256",
-                        "name": "stakingPool",
+                        "name": "stakingPoolTokens",
                         "type": "uint256"
                     },
                     {
@@ -1305,7 +1290,78 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "slashedAmount",
+                        "name": "slashedTokens",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct DataTypes.Node[]",
+                "name": "nodes",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "offset",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "limit",
+                "type": "uint256"
+            }
+        ],
+        "name": "getNodesWithPagination",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "taxFraction",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "publicGood",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "description",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "operatingPoolTokens",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "stakingPoolTokens",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "totalShares",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "slashedTokens",
                         "type": "uint256"
                     }
                 ],
@@ -1400,12 +1456,12 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "totalOperatingPool",
+                "name": "totalOperatingPoolTokens",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "totalStakingPool",
+                "name": "totalStakingPoolTokens",
                 "type": "uint256"
             },
             {
@@ -1450,12 +1506,12 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "operatingPool",
+                        "name": "operatingPoolTokens",
                         "type": "uint256"
                     },
                     {
                         "internalType": "uint256",
-                        "name": "stakingPool",
+                        "name": "stakingPoolTokens",
                         "type": "uint256"
                     },
                     {
@@ -1465,7 +1521,7 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "slashedAmount",
+                        "name": "slashedTokens",
                         "type": "uint256"
                     }
                 ],

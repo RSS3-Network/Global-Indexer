@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/samber/lo"
 )
@@ -25,6 +26,10 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
 	node.TaxFraction = nodeInfo.TaxFraction
+	node.OperatingPoolTokens = nodeInfo.OperatingPoolTokens
+	node.StakingPoolTokens = nodeInfo.StakingPoolTokens
+	node.TotalShares = nodeInfo.TotalShares
+	node.SlashedTokens = nodeInfo.SlashedTokens
 
 	return node, nil
 }
@@ -35,16 +40,26 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 		return nil, fmt.Errorf("get nodes: %w", err)
 	}
 
-	lo.ForEach(nodes, func(node *schema.Node, _ int) {
-		nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, node.Address)
-		if err != nil {
-			return
-		}
+	nodeInfo, err := h.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
+	if err != nil {
+		return nil, fmt.Errorf("get nodes from chain: %w", err)
+	}
 
-		node.Name = nodeInfo.Name
-		node.Description = nodeInfo.Description
-		node.TaxFraction = nodeInfo.TaxFraction
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node staking.DataTypesNode) (common.Address, staking.DataTypesNode) {
+		return node.Account, node
 	})
+
+	for _, node := range nodes {
+		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
+			node.Name = nodeInfo.Name
+			node.Description = nodeInfo.Description
+			node.TaxFraction = nodeInfo.TaxFraction
+			node.OperatingPoolTokens = nodeInfo.OperatingPoolTokens
+			node.StakingPoolTokens = nodeInfo.StakingPoolTokens
+			node.TotalShares = nodeInfo.TotalShares
+			node.SlashedTokens = nodeInfo.SlashedTokens
+		}
+	}
 
 	return nodes, nil
 }
