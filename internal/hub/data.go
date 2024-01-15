@@ -6,9 +6,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 )
 
