@@ -100,8 +100,8 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 type RegisterNodeRequest struct {
 	Address  common.Address `json:"address" validate:"required"`
 	Endpoint string         `json:"endpoint" validate:"required"`
-	Stream   *config.Stream `json:"stream"`
-	Config   *config.Node   `json:"config"`
+	Stream   *config.Stream `json:"stream,omitempty"`
+	Config   *config.Node   `json:"config,omitempty"`
 }
 
 type NodeHeartbeatRequest struct {
