@@ -9,7 +9,6 @@ import (
 	"github.com/naturalselectionlabs/global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 const (

@@ -2,12 +2,6 @@ package hub
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -15,11 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
 	"github.com/naturalselectionlabs/global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/global-indexer/provider/node"
 	"github.com/naturalselectionlabs/global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/samber/lo"
 )
 

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/naturalselectionlabs/global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/global-indexer/internal/config"
 	"github.com/naturalselectionlabs/global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
@@ -45,7 +46,6 @@ var command = cobra.Command{
 			return fmt.Errorf("dial rss3 ethereum client: %w", err)
 		}
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
 		redisClient, err := cache.Dial(config.Redis)
 		if err != nil {
 			return fmt.Errorf("dial redis: %w", err)
@@ -53,7 +53,7 @@ var command = cobra.Command{
 
 		cache.ReplaceGlobal(redisClient)
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, node.NewPathBuilder())
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}
