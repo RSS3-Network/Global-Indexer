@@ -7,7 +7,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/naturalselectionlabs/rss3-node/config"
 )
 

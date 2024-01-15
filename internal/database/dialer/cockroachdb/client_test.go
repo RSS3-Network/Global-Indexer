@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
-	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/naturalselectionlabs/rss3-node/config"
 	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 	"github.com/orlangure/gnomock"

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 )
