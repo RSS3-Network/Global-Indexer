@@ -2,11 +2,13 @@ package config
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
+	"github.com/naturalselectionlabs/global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 const (
@@ -18,6 +20,7 @@ const (
 type File struct {
 	Environment string           `yaml:"environment" validate:"required" default:"development"`
 	Database    *database.Config `yaml:"database"`
+	Redis       *cache.Config    `yaml:"redis"`
 }
 
 func Setup(configFilePath string) (*File, error) {

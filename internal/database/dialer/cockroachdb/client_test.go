@@ -3,6 +3,8 @@ package cockroachdb_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
@@ -13,7 +15,6 @@ import (
 	"github.com/orlangure/gnomock/preset/cockroachdb"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestClient(t *testing.T) {

@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"github.com/naturalselectionlabs/global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/global-indexer/internal/config"
 	"github.com/naturalselectionlabs/global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/global-indexer/provider/node"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
-	"os"
 )
 
 var flags *pflag.FlagSet
@@ -37,7 +40,14 @@ var command = cobra.Command{
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient)
+		redisClient, err := cache.Dial(config.Redis)
+		if err != nil {
+			return fmt.Errorf("dial redis: %w", err)
+		}
+
+		cache.ReplaceGlobal(redisClient)
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, node.NewPathBuilder())
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}

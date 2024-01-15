@@ -4,3 +4,9 @@ database:
   driver: cockroachdb
   partition: true
   uri: postgres://root@localhost:26257/defaultdb
+
+redis:
+  endpoints:
+    - 127.0.0.1:6379
+  username: ''
+  password: 'password'

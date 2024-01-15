@@ -2,12 +2,13 @@ package hub
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/naturalselectionlabs/rss3-node/config"
 	"github.com/samber/lo"
-	"net/http"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -19,6 +20,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 
 	if request.NodeAddress != nil {
 		var filteredData []*schema.Node
+
 		for _, nodeAddress := range request.NodeAddress {
 			for _, node := range data {
 				if node.Address == nodeAddress {
@@ -26,6 +28,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 				}
 			}
 		}
+
 		data = filteredData
 	}
 
@@ -43,6 +46,7 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	}
 
 	var node *schema.Node
+
 	for _, n := range data {
 		if n.Address == request.Address {
 			node = n

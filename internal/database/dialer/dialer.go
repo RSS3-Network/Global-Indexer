@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 	"fmt"
+
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb"
 )

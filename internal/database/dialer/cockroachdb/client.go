@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb/table"
@@ -117,6 +118,28 @@ func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {
 	}
 
 	return c.database.WithContext(ctx).Clauses(onConflict).Save(&nodes).Error
+}
+
+func (c *client) FindNodeStat(_ context.Context) (*schema.Stat, error) {
+	return nil, nil
+}
+
+func (c *client) FindNodeStats(ctx context.Context) ([]*schema.Stat, error) {
+	var stats table.Stats
+
+	if err := c.database.WithContext(ctx).Find(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	return stats.Export()
+}
+
+func (c *client) SaveNodeStat(_ context.Context, _ *schema.Stat) error {
+	return nil
+}
+
+func (c *client) SaveNodeStats(_ context.Context, _ []*schema.Stat) error {
+	return nil
 }
 
 // Dial dials a database.
