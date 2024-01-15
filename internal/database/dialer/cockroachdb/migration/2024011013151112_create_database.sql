@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS "node_info"
     CONSTRAINT "pk_indexes" PRIMARY KEY ("address")
 );
 
-CREATE INDEX IF NOT EXISTS "idx_indexes_is_public" ON "node_info" ("is_public_good", "created_at" DESC);
-CREATE INDEX IF NOT EXISTS "idx_indexes_created_at" ON "node_info" ("address", "created_at" DESC);
-
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_endpoint_unique" ON "node_info" ("endpoint");
+CREATE INDEX IF NOT EXISTS "idx_is_public" ON "node_info" ("is_public_good", "created_at" DESC);
+CREATE INDEX IF NOT EXISTS "idx_created_at" ON "node_info" ("address", "created_at" DESC);
 
 CREATE TABLE IF NOT EXISTS "node_stat"
 (
@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS "node_stat"
 CREATE INDEX IF NOT EXISTS "idx_indexes_points" ON "node_stat" ("points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_full_node" ON "node_stat" ("is_full_node", "points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_rss_node" ON "node_stat" ("is_rss_node", "points" DESC);
+
 -- +goose StatementEnd
 
 -- +goose Down

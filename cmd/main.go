@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/naturalselectionlabs/global-indexer/internal/cache"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/global-indexer/internal/config"
 	"github.com/naturalselectionlabs/global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/global-indexer/internal/hub"
-	"github.com/naturalselectionlabs/global-indexer/provider/node"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -40,6 +39,13 @@ var command = cobra.Command{
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
+		// Dial rss3 ethereum client.
+		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.Endpoint)
+		if err != nil {
+			return fmt.Errorf("dial rss3 ethereum client: %w", err)
+		}
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
 		redisClient, err := cache.Dial(config.Redis)
 		if err != nil {
 			return fmt.Errorf("dial redis: %w", err)

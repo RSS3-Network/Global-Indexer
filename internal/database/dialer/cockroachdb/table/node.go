@@ -15,6 +15,8 @@ type Node struct {
 	IsPublicGood bool            `gorm:"column:is_public_good"`
 	Stream       json.RawMessage `gorm:"column:stream"`
 	Config       json.RawMessage `gorm:"column:config;type:jsonb"`
+	CreatedAt    time.Time       `gorm:"column:created_at"`
+	UpdatedAt    time.Time       `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {

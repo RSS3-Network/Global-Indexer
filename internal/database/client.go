@@ -15,7 +15,7 @@ type Client interface {
 	Transaction
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
-	FindNodes(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Node, error)
+	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 
 	FindNodeStat(ctx context.Context) (*schema.Stat, error)

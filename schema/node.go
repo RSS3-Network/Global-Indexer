@@ -8,14 +8,18 @@ import (
 )
 
 type Node struct {
-	Address      common.Address `json:"address"`
-	Name         string         `json:"name"`
-	Description  string         `json:"description"`
-	Endpoint     string         `json:"-"`
-	TaxFraction  uint64         `json:"taxFraction"`
-	IsPublicGood bool           `json:"isPublicGood"`
-	Stream       *config.Stream `json:"stream"`
-	Config       *config.Node   `json:"-"`
+	Address             common.Address `json:"address"`
+	Name                string         `json:"name"`
+	Description         string         `json:"description"`
+	TaxFraction         uint64         `json:"taxFraction"`
+	IsPublicGood        bool           `json:"isPublicGood"`
+	OperatingPoolTokens string         `json:"operatingPoolTokens"`
+	StakingPoolTokens   string         `json:"stakingPoolTokens"`
+	TotalShares         string         `json:"totalShares"`
+	SlashedTokens       string         `json:"slashedTokens"`
+	Endpoint            string         `json:"-"`
+	Stream              *config.Stream `json:"-"`
+	Config              *config.Node   `json:"-"`
 }
 
 type Stat struct {
