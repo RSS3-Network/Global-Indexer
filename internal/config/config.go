@@ -6,8 +6,8 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
-	"github.com/naturalselectionlabs/global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
 )
 

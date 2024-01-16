@@ -7,7 +7,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/global-indexer/provider/node"
+	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-node/common/http/response"
 	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 )
