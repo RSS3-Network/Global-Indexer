@@ -13,7 +13,7 @@ type Node struct {
 	Description         string         `json:"description"`
 	TaxFraction         uint64         `json:"taxFraction"`
 	IsPublicGood        bool           `json:"isPublicGood"`
-	OperatingPoolTokens string         `json:"operatingPoolTokens"`
+	OperationPoolTokens string         `json:"operationPoolTokens"`
 	StakingPoolTokens   string         `json:"stakingPoolTokens"`
 	TotalShares         string         `json:"totalShares"`
 	SlashedTokens       string         `json:"slashedTokens"`
