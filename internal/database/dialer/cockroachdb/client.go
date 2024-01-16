@@ -159,6 +159,20 @@ func (c *client) SaveNodeStats(_ context.Context, _ []*schema.Stat) error {
 	return nil
 }
 
+func (c *client) FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error) {
+	var indexers table.Indexers
+
+	if err := c.database.WithContext(ctx).Find(&indexers).Error; err != nil {
+		return nil, err
+	}
+
+	return indexers.Export()
+}
+
+func (c *client) SaveNodeIndexers(_ context.Context, _ []*schema.Indexer) error {
+	return nil
+}
+
 // Dial dials a database.
 func Dial(_ context.Context, dataSourceName string) (database.Client, error) {
 	logger := zapgorm2.New(zap.L())

@@ -43,10 +43,20 @@ CREATE INDEX IF NOT EXISTS "idx_indexes_points" ON "node_stat" ("points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_full_node" ON "node_stat" ("is_full_node", "points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_rss_node" ON "node_stat" ("is_rss_node", "points" DESC);
 
+CREATE TABLE IF NOT EXISTS "node_indexer"
+(
+    "address" bytea NOT NULL,
+    "network" text  NOT NULL,
+    "worker"  text  NOT NULL,
+
+    CONSTRAINT "pk_indexes" PRIMARY KEY ("address","network","worker")
+);
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS "node_info";
 DROP TABLE IF EXISTS "node_stat";
+DROP TABLE IF EXISTS "node_indexer";
 -- +goose StatementEnd

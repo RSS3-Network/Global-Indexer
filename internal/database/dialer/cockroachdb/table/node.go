@@ -149,3 +149,48 @@ func (s Stats) Export() ([]*schema.Stat, error) {
 
 	return stats, nil
 }
+
+type Indexer struct {
+	Address common.Address `gorm:"column:address;primaryKey"`
+	Network string         `gorm:"column:network;primaryKey"`
+	Worker  string         `gorm:"column:worker;primaryKey"`
+}
+
+func (*Indexer) TableName() string {
+	return "node_indexer"
+}
+
+func (i *Indexer) Import(indexer *schema.Indexer) (err error) {
+	i.Address = indexer.Address
+	i.Network = indexer.Network
+	i.Worker = indexer.Worker
+
+	return nil
+}
+
+func (i *Indexer) Export() (*schema.Indexer, error) {
+	indexer := schema.Indexer{
+		Address: i.Address,
+		Network: i.Network,
+		Worker:  i.Worker,
+	}
+
+	return &indexer, nil
+}
+
+type Indexers []*Indexer
+
+func (i Indexers) Export() ([]*schema.Indexer, error) {
+	indexers := make([]*schema.Indexer, 0)
+
+	for _, indexer := range i {
+		exportedIndexer, err := indexer.Export()
+		if err != nil {
+			return nil, err
+		}
+
+		indexers = append(indexers, exportedIndexer)
+	}
+
+	return indexers, nil
+}

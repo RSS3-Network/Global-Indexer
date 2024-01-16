@@ -22,6 +22,9 @@ type Client interface {
 	FindNodeStats(ctx context.Context) ([]*schema.Stat, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
+
+	FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error)
+	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
 }
 
 type Session interface {

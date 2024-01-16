@@ -38,3 +38,9 @@ type Stat struct {
 	Indexer              int            `json:"indexer"`
 	ResetAt              time.Time      `json:"resetAt"`
 }
+
+type Indexer struct {
+	Address common.Address `json:"address"`
+	Network string         `json:"network"`
+	Worker  string         `json:"worker"`
+}

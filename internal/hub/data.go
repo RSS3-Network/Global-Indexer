@@ -102,6 +102,24 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 
 	// Save node to database.
 	return h.databaseClient.SaveNode(ctx, node)
+
+	// TODO: save stats to database
+
+	//stat := &schema.Stat{
+	//	Address:              request.Address,
+	//	Endpoint:             request.Endpoint,
+	//	IsPublicGood:         nodeInfo.PublicGood,
+	//	ResetAt:              time.Now(),
+	//	IsFullNode:           true,
+	//	IsRssNode:            true,
+	//	DecentralizedNetwork: 0,
+	//	FederatedNetwork:     0,
+	//	Indexer:              0,
+	//}
+	//
+	//h.databaseClient.SaveNodeStat(ctx, stat)
+
+	//return nil
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
