@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"math"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -151,8 +152,24 @@ func (c *client) FindNodeStats(ctx context.Context) ([]*schema.Stat, error) {
 	return stats.Export()
 }
 
-func (c *client) SaveNodeStat(_ context.Context, _ *schema.Stat) error {
-	return nil
+func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
+	var stats table.Stat
+
+	if err := stats.Import(stat); err != nil {
+		return err
+	}
+
+	// Save node stat.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).Save(&stats).Error
 }
 
 func (c *client) SaveNodeStats(_ context.Context, _ []*schema.Stat) error {
@@ -169,8 +186,24 @@ func (c *client) FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error
 	return indexers.Export()
 }
 
-func (c *client) SaveNodeIndexers(_ context.Context, _ []*schema.Indexer) error {
-	return nil
+func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error {
+	var tIndexers table.Indexers
+
+	if err := tIndexers.Import(indexers); err != nil {
+		return err
+	}
+
+	// Save node indexers.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tIndexers, math.MaxUint8).Error
 }
 
 // Dial dials a database.

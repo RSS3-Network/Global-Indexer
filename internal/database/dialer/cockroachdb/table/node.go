@@ -194,3 +194,19 @@ func (i Indexers) Export() ([]*schema.Indexer, error) {
 
 	return indexers, nil
 }
+
+func (i Indexers) Import(indexers []*schema.Indexer) (err error) {
+	i = make([]*Indexer, 0, len(indexers))
+
+	for _, indexer := range indexers {
+		var tIndexer Indexer
+
+		if err = tIndexer.Import(indexer); err != nil {
+			return err
+		}
+
+		i = append(i, &tIndexer)
+	}
+
+	return nil
+}

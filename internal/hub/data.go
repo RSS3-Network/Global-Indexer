@@ -14,9 +14,13 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-node/config"
+	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 var (
@@ -100,26 +104,60 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 
 	node.IsPublicGood = nodeInfo.PublicGood
 
-	// Save node to database.
-	return h.databaseClient.SaveNode(ctx, node)
+	stat := &schema.Stat{
+		Address:      request.Address,
+		Endpoint:     request.Endpoint,
+		IsPublicGood: nodeInfo.PublicGood,
+		ResetAt:      time.Now(),
+		// todo: check if node is full node
+		IsFullNode: true,
+		IsRssNode:  len(request.Config.RSS) > 0,
+		DecentralizedNetwork: len(lo.UniqBy(request.Config.Decentralized, func(module *config.Module) filter.Network {
+			return module.Network
+		})),
+		FederatedNetwork: len(request.Config.Federated),
+		Indexer:          len(request.Config.Decentralized),
+	}
 
-	// TODO: save stats to database
+	indexers := make([]*schema.Indexer, 0, len(request.Config.Decentralized))
 
-	//stat := &schema.Stat{
-	//	Address:              request.Address,
-	//	Endpoint:             request.Endpoint,
-	//	IsPublicGood:         nodeInfo.PublicGood,
-	//	ResetAt:              time.Now(),
-	//	IsFullNode:           true,
-	//	IsRssNode:            true,
-	//	DecentralizedNetwork: 0,
-	//	FederatedNetwork:     0,
-	//	Indexer:              0,
-	//}
-	//
-	//h.databaseClient.SaveNodeStat(ctx, stat)
+	for _, indexer := range request.Config.Decentralized {
+		indexers = append(indexers, &schema.Indexer{
+			Address: request.Address,
+			Network: indexer.Network.String(),
+			Worker:  indexer.Worker.String(),
+		})
+	}
 
-	//return nil
+	// Save node info to the database.
+	if err := h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+		// Save node to database.
+		if err := h.databaseClient.SaveNode(ctx, node); err != nil {
+			return fmt.Errorf("save node: %s, %w", node.Address.String(), err)
+		}
+
+		zap.L().Info("save node", zap.Any("node", node.Address.String()))
+
+		// Save node stat to database
+		if err := h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+			return fmt.Errorf("save node stat: %s, %w", node.Address.String(), err)
+		}
+
+		zap.L().Info("save node stat", zap.Any("node", node.Address.String()))
+
+		// Save node indexers to database
+		if err := h.databaseClient.SaveNodeIndexers(ctx, indexers); err != nil {
+			return fmt.Errorf("save node indexers: %s, %w", node.Address.String(), err)
+		}
+
+		zap.L().Info("save node indexer", zap.Any("node", node.Address.String()))
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
