@@ -63,6 +63,20 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	})
 }
 
+func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
+	var request NodeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, fmt.Sprintf(message, request.Address))
+}
+
 func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 	var request RegisterNodeRequest
 
@@ -98,14 +112,17 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 }
 
 type RegisterNodeRequest struct {
-	Address  common.Address `json:"address" validate:"required"`
-	Endpoint string         `json:"endpoint" validate:"required"`
-	Stream   *config.Stream `json:"stream,omitempty"`
-	Config   *config.Node   `json:"config,omitempty"`
+	Address   common.Address `json:"address" validate:"required"`
+	Signature string         `json:"signature" validate:"required"`
+	Endpoint  string         `json:"endpoint" validate:"required"`
+	Stream    *config.Stream `json:"stream,omitempty"`
+	Config    *config.Node   `json:"config,omitempty"`
 }
 
 type NodeHeartbeatRequest struct {
 	Address   common.Address `json:"address" validate:"required"`
+	Signature string         `json:"signature" validate:"required"`
+	Endpoint  string         `json:"endpoint" validate:"required"`
 	Timestamp int64          `json:"timestamp" validate:"required"`
 }
 
