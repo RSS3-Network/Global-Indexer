@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 	"io"
 	"math"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
@@ -21,6 +23,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-node/config"
 	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -28,6 +31,8 @@ var (
 	rssNodeCacheKey  = "nodes:rss"
 	fullNodeCacheKey = "nodes:full"
 )
+
+var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
 
 func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := h.databaseClient.FindNode(ctx, address)
@@ -86,6 +91,11 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 }
 
 func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) error {
+	// Check signature.
+	if err := h.checkSignature(ctx, request.Address, request.Signature); err != nil {
+		return err
+	}
+
 	node := &schema.Node{
 		Address:  request.Address,
 		Endpoint: request.Endpoint,
@@ -100,7 +110,11 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 	}
 
 	if nodeInfo.Account == ethereum.AddressGenesis {
-		return fmt.Errorf("node: %s has not been registered on the chain", request.Address.String())
+		return fmt.Errorf("node: %s has not been registered on the chain", strings.ToLower(request.Address.String()))
+	}
+
+	if strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
 	node.IsPublicGood = nodeInfo.PublicGood
@@ -579,4 +593,21 @@ func (h *Hub) calcPoints(stat *schema.Stat) {
 
 	// epoch failure requests
 	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
+}
+
+func (h *Hub) checkSignature(_ context.Context, address common.Address, signature string) error {
+	message := fmt.Sprintf(message, strings.ToLower(address.Hex()))
+
+	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash([]byte(message)).Bytes(), []byte(signature))
+	if err != nil {
+		return fmt.Errorf("failed to parse signature: %w", err)
+	}
+
+	result := crypto.PubkeyToAddress(*pubKey)
+
+	if address != result {
+		return fmt.Errorf("invalid signature")
+	}
+
+	return nil
 }
