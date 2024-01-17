@@ -3,6 +3,7 @@ package hub
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
@@ -74,7 +75,7 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data: fmt.Sprintf(message, request.Address),
+		Data: fmt.Sprintf(message, strings.ToLower(request.Address.String())),
 	})
 }
 
