@@ -9,7 +9,7 @@ type Node struct {
 	Address             common.Address `json:"address"`
 	Name                string         `json:"name"`
 	Description         string         `json:"description"`
-	TaxFraction         uint64         `json:"taxFraction"`
+	TaxRateBasisPoints  uint64         `json:"taxRateBasisPoints"`
 	IsPublicGood        bool           `json:"isPublicGood"`
 	OperationPoolTokens string         `json:"operationPoolTokens"`
 	StakingPoolTokens   string         `json:"stakingPoolTokens"`
