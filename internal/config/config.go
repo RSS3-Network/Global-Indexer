@@ -23,7 +23,8 @@ type File struct {
 }
 
 type RSS3ChainConfig struct {
-	Endpoint string `yaml:"endpoint" validate:"required"`
+	EndpointL1 string `yaml:"endpoint_l1" validate:"required"`
+	EndpointL2 string `yaml:"endpoint_l2" validate:"required"`
 }
 
 func Setup(configFilePath string) (*File, error) {

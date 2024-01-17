@@ -14,9 +14,18 @@ type Client interface {
 	Session
 	Transaction
 
+	FindCheckpoint(ctx context.Context, chainID uint64) (*schema.Checkpoint, error)
+	SaveCheckpoint(ctx context.Context, checkpoint *schema.Checkpoint) error
+
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
 	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
+
+	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
+	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
+
+	FindStakeStaker(ctx context.Context, user, node common.Address) (*schema.StakeStaker, error)
+	SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeStaker) error
 }
 
 type Session interface {
