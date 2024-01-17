@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 )
 
 const (

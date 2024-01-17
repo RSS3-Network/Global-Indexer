@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/naturalselectionlabs/global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
 )
 
 type Client struct {
