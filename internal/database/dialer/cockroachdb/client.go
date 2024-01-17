@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"math"
 
@@ -86,7 +87,11 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	var node table.Node
 
 	if err := c.database.WithContext(ctx).First(&node, "address = ?", nodeAddress).Error; err != nil {
-		return nil, err
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		return nil, nil
 	}
 
 	return node.Export()

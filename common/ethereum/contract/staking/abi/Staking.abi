@@ -28,12 +28,12 @@
             },
             {
                 "internalType": "uint256",
-                "name": "nodeSlashFraction",
+                "name": "nodeSlashRateBasisPoints",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "userSlashFraction",
+                "name": "userSlashRateBasisPoints",
                 "type": "uint256"
             },
             {
@@ -320,7 +320,7 @@
     },
     {
         "inputs": [],
-        "name": "TaxFractionTooLarge",
+        "name": "TaxRateBasisPointsTooLarge",
         "type": "error"
     },
     {
@@ -379,7 +379,7 @@
             {
                 "indexed": false,
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             },
             {
@@ -442,11 +442,11 @@
             {
                 "indexed": true,
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             }
         ],
-        "name": "NodeTaxFractionSet",
+        "name": "NodeTaxRateBasisPointsSet",
         "type": "event"
     },
     {
@@ -505,11 +505,11 @@
             {
                 "indexed": true,
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             }
         ],
-        "name": "PublicPoolTaxFractionSet",
+        "name": "PublicPoolTaxRateBasisPointsSet",
         "type": "event"
     },
     {
@@ -548,7 +548,7 @@
             {
                 "indexed": false,
                 "internalType": "uint256[]",
-                "name": "requestBonuses",
+                "name": "operationRewards",
                 "type": "uint256[]"
             },
             {
@@ -833,7 +833,7 @@
     },
     {
         "inputs": [],
-        "name": "NODE_SLASH_FRACTION",
+        "name": "NODE_SLASH_RATE_BASIS_POINTS",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -937,7 +937,7 @@
     },
     {
         "inputs": [],
-        "name": "USER_SLASH_FRACTION",
+        "name": "USER_SLASH_RATE_BASIS_POINTS",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -1006,7 +1006,7 @@
             },
             {
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             },
             {
@@ -1034,7 +1034,7 @@
             },
             {
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             },
             {
@@ -1111,7 +1111,7 @@
             },
             {
                 "internalType": "uint256[]",
-                "name": "requestBonuses",
+                "name": "operationRewards",
                 "type": "uint256[]"
             },
             {
@@ -1186,7 +1186,7 @@
                     },
                     {
                         "internalType": "uint64",
-                        "name": "taxFraction",
+                        "name": "taxRateBasisPoints",
                         "type": "uint64"
                     },
                     {
@@ -1265,7 +1265,7 @@
                     },
                     {
                         "internalType": "uint64",
-                        "name": "taxFraction",
+                        "name": "taxRateBasisPoints",
                         "type": "uint64"
                     },
                     {
@@ -1336,7 +1336,7 @@
                     },
                     {
                         "internalType": "uint64",
-                        "name": "taxFraction",
+                        "name": "taxRateBasisPoints",
                         "type": "uint64"
                     },
                     {
@@ -1496,7 +1496,7 @@
                     },
                     {
                         "internalType": "uint64",
-                        "name": "taxFraction",
+                        "name": "taxRateBasisPoints",
                         "type": "uint64"
                     },
                     {
@@ -1816,11 +1816,11 @@
             },
             {
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             }
         ],
-        "name": "setTaxFraction4Node",
+        "name": "setTaxRateBasisPoints4Node",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1829,11 +1829,11 @@
         "inputs": [
             {
                 "internalType": "uint64",
-                "name": "taxFraction",
+                "name": "taxRateBasisPoints",
                 "type": "uint64"
             }
         ],
-        "name": "setTaxFraction4PublicPool",
+        "name": "setTaxRateBasisPoints4PublicPool",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

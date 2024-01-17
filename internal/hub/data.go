@@ -13,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
@@ -40,6 +41,10 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 		return nil, fmt.Errorf("get node %s: %w", address, err)
 	}
 
+	if node == nil {
+		return nil, nil
+	}
+
 	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
 		return nil, fmt.Errorf("get node from chain: %w", err)
@@ -47,7 +52,7 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
-	node.TaxFraction = nodeInfo.TaxFraction
+	node.TaxRateBasisPoints = nodeInfo.TaxRateBasisPoints
 	node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 	node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 	node.TotalShares = nodeInfo.TotalShares.String()
@@ -79,7 +84,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
 			node.Name = nodeInfo.Name
 			node.Description = nodeInfo.Description
-			node.TaxFraction = nodeInfo.TaxFraction
+			node.TaxRateBasisPoints = nodeInfo.TaxRateBasisPoints
 			node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			node.TotalShares = nodeInfo.TotalShares.String()
@@ -92,7 +97,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 
 func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) error {
 	// Check signature.
-	if err := h.checkSignature(ctx, request.Address, request.Signature); err != nil {
+	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
 		return err
 	}
 
@@ -595,10 +600,16 @@ func (h *Hub) calcPoints(stat *schema.Stat) {
 	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
 }
 
-func (h *Hub) checkSignature(_ context.Context, address common.Address, signature string) error {
+func (h *Hub) checkSignature(_ context.Context, address common.Address, signature []byte) error {
 	message := fmt.Sprintf(message, strings.ToLower(address.Hex()))
+	data := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
+	hash := crypto.Keccak256Hash([]byte(data)).Bytes()
 
-	pubKey, err := crypto.SigToPub(crypto.Keccak256Hash([]byte(message)).Bytes(), []byte(signature))
+	if signature[crypto.RecoveryIDOffset] == 27 || signature[crypto.RecoveryIDOffset] == 28 {
+		signature[crypto.RecoveryIDOffset] -= 27
+	}
+
+	pubKey, err := crypto.SigToPub(hash, signature)
 	if err != nil {
 		return fmt.Errorf("failed to parse signature: %w", err)
 	}
