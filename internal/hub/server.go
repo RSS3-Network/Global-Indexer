@@ -13,7 +13,7 @@ import (
 
 const (
 	DefaultHost = "0.0.0.0"
-	DefaultPort = "80"
+	DefaultPort = "8081"
 )
 
 type Server struct {
