@@ -150,6 +150,22 @@ func (s Stats) Export() ([]*schema.Stat, error) {
 	return stats, nil
 }
 
+func (s Stats) Import(stats []*schema.Stat) (err error) {
+	s = make([]*Stat, 0, len(stats))
+
+	for _, stat := range stats {
+		var tStat Stat
+
+		if err = tStat.Import(stat); err != nil {
+			return err
+		}
+
+		s = append(s, &tStat)
+	}
+
+	return nil
+}
+
 type Indexer struct {
 	Address common.Address `gorm:"column:address;primaryKey"`
 	Network string         `gorm:"column:network;primaryKey"`

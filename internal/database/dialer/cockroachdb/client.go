@@ -142,10 +142,16 @@ func (c *client) FindNodeStat(_ context.Context) (*schema.Stat, error) {
 	return nil, nil
 }
 
-func (c *client) FindNodeStats(ctx context.Context) ([]*schema.Stat, error) {
+func (c *client) FindNodeStats(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Stat, error) {
+	databaseStatement := c.database.WithContext(ctx)
+
+	if len(nodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	}
+
 	var stats table.Stats
 
-	if err := c.database.WithContext(ctx).Find(&stats).Error; err != nil {
+	if err := databaseStatement.Find(&stats).Error; err != nil {
 		return nil, err
 	}
 
@@ -192,8 +198,24 @@ func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
 	return c.database.WithContext(ctx).Clauses(onConflict).Save(&stats).Error
 }
 
-func (c *client) SaveNodeStats(_ context.Context, _ []*schema.Stat) error {
-	return nil
+func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error {
+	var tStats table.Stats
+
+	if err := tStats.Import(stats); err != nil {
+		return err
+	}
+
+	// Save node indexers.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
 func (c *client) FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error) {

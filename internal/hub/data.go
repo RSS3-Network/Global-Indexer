@@ -201,7 +201,7 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 	}
 
 	// batch request
-	node, err := h.batchRequest(ctx, nodeMap, processRSSHubResults)
+	node, err := h.batchRequest(ctx, nodeMap, h.processRSSHubResults)
 
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 	}
 
 	// TODO batch request
-	node, err := h.batchRequest(ctx, nodeMap, processActivityResults)
+	node, err := h.batchRequest(ctx, nodeMap, h.processActivityResults)
 
 	if err != nil {
 		return nil, err
@@ -253,7 +253,7 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 	}
 
 	// TODO batch request
-	node, err := h.batchRequest(ctx, nodeMap, processActivitiesResults)
+	node, err := h.batchRequest(ctx, nodeMap, h.processActivitiesResults)
 
 	if err != nil {
 		return nil, err
@@ -305,66 +305,6 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 	return nodesCache, nil
 }
 
-func processRSSHubResults(results []node.DataResponse) {
-	fmt.Printf("rss finish, %d\n", len(results))
-
-	for _, node := range results {
-		fmt.Println(node.Address.String())
-	}
-
-	// TODO
-	time.Sleep(time.Second * 1)
-	fmt.Println("step1: data verify")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step2: data statistic")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step3: 2nd request、verify")
-}
-
-func processActivityResults(results []node.DataResponse) {
-	fmt.Printf("feed id finish, %d\n", len(results))
-
-	for _, node := range results {
-		fmt.Println(node.Address.String())
-	}
-
-	// TODO
-	time.Sleep(time.Second * 1)
-	fmt.Println("step1: data verify")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step2: data statistic")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step3: 2nd request、verify")
-}
-
-func processActivitiesResults(results []node.DataResponse) {
-	fmt.Printf("feeds finish, %d\n", len(results))
-
-	for _, node := range results {
-		fmt.Println(node.Address.String())
-	}
-
-	// TODO
-	time.Sleep(time.Second * 1)
-	fmt.Println("step1: data verify")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step2: data statistic")
-
-	time.Sleep(time.Second * 1)
-	// TODO
-	fmt.Println("step3: 2nd request、verify")
-}
-
 func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string, processResults func([]node.DataResponse)) (node.DataResponse, error) {
 	var (
 		waitGroup   sync.WaitGroup
@@ -381,9 +321,7 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 
 			data, err := h.fetch(context.Background(), endpoint)
 			if err != nil {
-				fmt.Printf("fetch error: %s, %v\n", address.String(), err)
-
-				return
+				zap.L().Error("fetch request error", zap.Any("node", address.String()))
 			}
 
 			mu.Lock()
@@ -410,6 +348,98 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	case <-time.After(time.Second * 3):
 		return node.DataResponse{}, fmt.Errorf("timeout waiting for results")
 	}
+}
+
+func (h *Hub) processRSSHubResults(results []node.DataResponse) {
+	zap.L().Info("begin rss request verify", zap.Any("results", len(results)))
+
+	ctx := context.Background()
+
+	h.processData(ctx, results)
+}
+
+func (h *Hub) processActivityResults(results []node.DataResponse) {
+	zap.L().Info("begin feed id request verify", zap.Any("results", len(results)))
+
+	ctx := context.Background()
+
+	h.processData(ctx, results)
+}
+
+func (h *Hub) processActivitiesResults(results []node.DataResponse) {
+	fmt.Printf("feeds finish, %d\n", len(results))
+
+	for _, node := range results {
+		fmt.Println(node.Address.String())
+	}
+
+	// TODO
+	time.Sleep(time.Second * 1)
+	fmt.Println("step1: data verify")
+
+	time.Sleep(time.Second * 1)
+	// TODO
+	fmt.Println("step2: data statistic")
+
+	time.Sleep(time.Second * 1)
+	// TODO
+	fmt.Println("step3: 2nd request、verify")
+}
+
+func (h *Hub) processData(ctx context.Context, results []node.DataResponse) error {
+	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Map(results, func(result node.DataResponse, _ int) common.Address {
+		return result.Address
+	}))
+
+	if err != nil {
+		// TODO error handling
+		return err
+	}
+
+	verify01 := h.verifyData(results[0].Data, results[1].Data)
+	verify02 := h.verifyData(results[0].Data, results[2].Data)
+	verify12 := h.verifyData(results[1].Data, results[2].Data)
+
+	if verify01 && verify02 {
+		results[0].Request = 2
+		results[1].Request = 1
+		results[2].Request = 1
+	}
+
+	if !verify01 && verify12 {
+		results[0].InvalidRequest = 1
+		results[1].Request = 1
+		results[2].Request = 1
+	}
+
+	if verify01 && !verify12 {
+		results[0].Request = 2
+		results[1].Request = 1
+		results[2].InvalidRequest = 1
+	}
+
+	if verify02 && !verify12 {
+		results[0].Request = 2
+		results[1].InvalidRequest = 1
+		results[2].Request = 1
+	}
+
+	for _, result := range results {
+		for _, stat := range stats {
+			if result.Address == stat.Address {
+				stat.TotalRequest += int64(result.Request)
+				stat.EpochRequest += int64(result.Request)
+				stat.EpochInvalidRequest += int64(result.InvalidRequest)
+			}
+		}
+	}
+
+	if err = h.databaseClient.SaveNodeStats(ctx, stats); err != nil {
+		// TODO error handling
+		return err
+	}
+
+	return nil
 }
 
 func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
@@ -445,11 +475,6 @@ func (h *Hub) verifyData(src, des []byte) bool {
 	return string(srcHash[:]) == string(destHash[:])
 }
 
-func (h *Hub) updateNodeStats() error {
-
-	return nil
-}
-
 // cron task
 func (h *Hub) sortNodesTask() error {
 	var (
@@ -460,7 +485,7 @@ func (h *Hub) sortNodesTask() error {
 
 	ctx := context.Background()
 
-	stats, err = h.databaseClient.FindNodeStats(ctx)
+	stats, err = h.databaseClient.FindNodeStats(ctx, []common.Address{})
 
 	if err != nil {
 		return err
@@ -468,9 +493,11 @@ func (h *Hub) sortNodesTask() error {
 
 	// TODO: parallel
 	for _, stat := range stats {
-		if err = h.calcPoints(stat); err != nil {
+		if err = h.updateNodeEpochStats(stat); err != nil {
 			return err
 		}
+
+		h.calcPoints(stat)
 
 		if err = h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
 			return err
@@ -513,16 +540,24 @@ func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat
 	return nil
 }
 
-// calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
-func (h *Hub) calcPoints(stat *schema.Stat) error {
+func (h *Hub) updateNodeEpochStats(stat *schema.Stat) error {
 	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("get node info: %s,%w", stat.Address.String(), err)
 	}
 
+	stat.Staking = float64(nodeInfo.StakingPoolTokens.Uint64())
+	stat.EpochRequest = 0
+	stat.EpochInvalidRequest = 0
+
+	return nil
+}
+
+// calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
+func (h *Hub) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
-	stat.Points = math.Min(math.Log2(float64(nodeInfo.StakingPoolTokens.Uint64()/100000)+1), 0.2)
+	stat.Points = math.Min(math.Log2(stat.Staking/100000)+1, 0.2)
 
 	// public good
 	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
@@ -544,6 +579,4 @@ func (h *Hub) calcPoints(stat *schema.Stat) error {
 
 	// epoch failure requests
 	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
-
-	return nil
 }

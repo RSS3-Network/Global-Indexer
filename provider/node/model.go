@@ -24,8 +24,10 @@ type AccountActivitiesRequest struct {
 }
 
 type DataResponse struct {
-	Address common.Address
-	Data    []byte
+	Address        common.Address
+	Data           []byte
+	Request        int
+	InvalidRequest int
 }
 
 type Cache struct {
