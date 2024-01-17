@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/labstack/echo/v4 v4.11.4
-	github.com/naturalselectionlabs/rss3-node v0.0.0-20240108094705-95832810ba63
+	github.com/naturalselectionlabs/rss3-node v0.2.0
 	github.com/orlangure/gnomock v0.30.0
 	github.com/pressly/goose/v3 v3.17.0
 	github.com/redis/rueidis v1.0.26

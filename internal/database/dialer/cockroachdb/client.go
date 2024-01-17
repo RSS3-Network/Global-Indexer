@@ -152,6 +152,26 @@ func (c *client) FindNodeStats(ctx context.Context) ([]*schema.Stat, error) {
 	return stats.Export()
 }
 
+func (c *client) FindNodeStatsByType(ctx context.Context, fullNode, rssNode *bool, limit int) ([]*schema.Stat, error) {
+	databaseStatement := c.database.WithContext(ctx)
+
+	if fullNode != nil {
+		databaseStatement = databaseStatement.Where("is_full_node = ?", *fullNode)
+	}
+
+	if rssNode != nil {
+		databaseStatement = databaseStatement.Where("is_rss3_node = ?", *rssNode)
+	}
+
+	var stats table.Stats
+
+	if err := databaseStatement.Limit(limit).Order("points DESC").Find(&stats).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
+	}
+
+	return stats.Export()
+}
+
 func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
 	var stats table.Stat
 

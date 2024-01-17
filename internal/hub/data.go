@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -109,9 +110,8 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 		Endpoint:     request.Endpoint,
 		IsPublicGood: nodeInfo.PublicGood,
 		ResetAt:      time.Now(),
-		// todo: check if node is full node
-		IsFullNode: true,
-		IsRssNode:  len(request.Config.RSS) > 0,
+		IsFullNode:   h.isFullNode(request.Config.Decentralized),
+		IsRssNode:    len(request.Config.RSS) > 0,
 		DecentralizedNetwork: len(lo.UniqBy(request.Config.Decentralized, func(module *config.Module) filter.Network {
 			return module.Network
 		})),
@@ -160,6 +160,32 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 	return nil
 }
 
+// Check if node is full node
+func (h *Hub) isFullNode(indexers []*config.Module) bool {
+	// TODO: A more comprehensive check should also include the network and parameters.
+	if len(indexers) < len(filter.NameStrings())-1 {
+		return false
+	}
+
+	workerMap := make(map[string]struct{}, 0)
+
+	for _, indexer := range indexers {
+		workerMap[indexer.Worker.String()] = struct{}{}
+	}
+
+	for _, worker := range filter.NameStrings() {
+		if worker == filter.Unknown.String() {
+			continue
+		}
+
+		if _, exists := workerMap[worker]; !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
 	nodes, err := h.filterNodes(ctx, rssNodeCacheKey)
 
@@ -167,14 +193,14 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 		return nil, err
 	}
 
-	// TODO generate path
+	// generate path
 	nodeMap, err := h.pathBuilder.GetRSSHubPath(path, query, nodes)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO batch request
+	// batch request
 	node, err := h.batchRequest(ctx, nodeMap, processRSSHubResults)
 
 	if err != nil {
@@ -244,7 +270,7 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 		nodes      []*schema.Stat
 	)
 
-	// TODO: get nodes from cache
+	// Get nodes from cache.
 	exists, err := cache.Get(ctx, key, &nodesCache)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
@@ -254,16 +280,16 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 		return nodesCache, nil
 	}
 
-	// TODO: get nodes from database
+	// Get nodes from database.
 	switch key {
 	case rssNodeCacheKey:
-		nodes, err = h.databaseClient.FindNodeStats(ctx)
+		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
 
 		if err != nil {
 			return nil, err
 		}
 	case fullNodeCacheKey:
-		nodes, err = h.databaseClient.FindNodeStats(ctx)
+		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
 
 		if err != nil {
 			return nil, err
@@ -272,12 +298,8 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
 
-	nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) node.Cache {
-		return node.Cache{Address: n.Address, Endpoint: n.Endpoint}
-	})
-
-	if err := cache.Set(ctx, key, nodesCache); err != nil {
-		return nil, fmt.Errorf("set nodes to cache: %s, %w", key, err)
+	if err = h.setNodeCache(ctx, key, nodes); err != nil {
+		return nil, err
 	}
 
 	return nodesCache, nil
@@ -423,13 +445,105 @@ func (h *Hub) verifyData(src, des []byte) bool {
 	return string(srcHash[:]) == string(destHash[:])
 }
 
-func (h *Hub) updateStats() error {
+func (h *Hub) updateNodeStats() error {
+
 	return nil
 }
 
 // cron task
-func (h *Hub) sortNodesTask() {
-	// TODO nodes sort based on rules
+func (h *Hub) sortNodesTask() error {
+	var (
+		stats []*schema.Stat
 
-	// TODO save to cache
+		err error
+	)
+
+	ctx := context.Background()
+
+	stats, err = h.databaseClient.FindNodeStats(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: parallel
+	for _, stat := range stats {
+		if err = h.calcPoints(stat); err != nil {
+			return err
+		}
+
+		if err = h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+			return err
+		}
+	}
+
+	// Update node cache.
+	rssNodes, err := h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
+
+	if err != nil {
+		return err
+	}
+
+	if err = h.setNodeCache(ctx, rssNodeCacheKey, rssNodes); err != nil {
+		return err
+	}
+
+	fullNodes, err := h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
+
+	if err != nil {
+		return err
+	}
+
+	if err = h.setNodeCache(ctx, fullNodeCacheKey, fullNodes); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) node.Cache {
+		return node.Cache{Address: n.Address, Endpoint: n.Endpoint}
+	})
+
+	if err := cache.Set(ctx, key, nodesCache); err != nil {
+		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
+	}
+
+	return nil
+}
+
+// calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
+func (h *Hub) calcPoints(stat *schema.Stat) error {
+	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
+
+	if err != nil {
+		return err
+	}
+
+	// staking pool tokens
+	stat.Points = math.Min(math.Log2(float64(nodeInfo.StakingPoolTokens.Uint64()/100000)+1), 0.2)
+
+	// public good
+	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
+
+	// running time
+	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/18)/120, 0.3)
+
+	// total requests
+	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/100000+1)/math.Log(100), 0.3)
+
+	// epoch requests
+	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/1000000+1)/math.Log(5000), 1)
+
+	// network count
+	stat.Points += 0.1*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + 0.3*float64(lo.Ternary(stat.IsRssNode, 1, 0))
+
+	// indexer count
+	stat.Points += math.Min(float64(stat.Indexer)*0.05, 0.2)
+
+	// epoch failure requests
+	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
+
+	return nil
 }

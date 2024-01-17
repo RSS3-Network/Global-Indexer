@@ -20,6 +20,7 @@ type Client interface {
 
 	FindNodeStat(ctx context.Context) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context) ([]*schema.Stat, error)
+	FindNodeStatsByType(ctx context.Context, fullNode, rssNode *bool, limit int) ([]*schema.Stat, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
 
