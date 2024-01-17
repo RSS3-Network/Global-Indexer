@@ -8,9 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
@@ -96,7 +96,7 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 		return fmt.Errorf("node: %s has not been registered on the chain", strings.ToLower(request.Address.String()))
 	}
 
-	if strings.Compare(nodeInfo.OperatingPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+	if strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
