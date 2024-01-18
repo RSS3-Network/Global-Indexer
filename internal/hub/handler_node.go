@@ -3,11 +3,11 @@ package hub
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/global-indexer/schema"
 	"github.com/naturalselectionlabs/rss3-node/config"
 )
 
@@ -36,7 +36,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 		cursor = node[len(node)-1].Address.String()
 	}
 
-	return c.JSON(http.StatusOK, BatchNodeResponse{
+	return c.JSON(http.StatusOK, Response{
 		Data:   node,
 		Cursor: cursor,
 	})
@@ -58,8 +58,24 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
-	return c.JSON(http.StatusOK, NodeResponse{
+	return c.JSON(http.StatusOK, Response{
 		Data: node,
+	})
+}
+
+func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
+	var request NodeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data: fmt.Sprintf(message, strings.ToLower(request.Address.String())),
 	})
 }
 
@@ -78,7 +94,9 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("register node failed: %v", err))
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("node registered: %v", request.Address))
+	return c.JSON(http.StatusOK, Response{
+		Data: fmt.Sprintf("node registered: %v", request.Address),
+	})
 }
 
 func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
@@ -94,27 +112,28 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 
 	// TODO: resolve node heartbeat logic
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("node heartbeat: %v", request.Address))
+	return c.JSON(http.StatusOK, Response{
+		Data: fmt.Sprintf("node heartbeat: %v", request.Address),
+	})
 }
 
 type RegisterNodeRequest struct {
-	Address  common.Address `json:"address" validate:"required"`
-	Endpoint string         `json:"endpoint" validate:"required"`
-	Stream   *config.Stream `json:"stream"`
-	Config   *config.Node   `json:"config"`
+	Address   common.Address `json:"address" validate:"required"`
+	Signature string         `json:"signature" validate:"required"`
+	Endpoint  string         `json:"endpoint" validate:"required"`
+	Stream    *config.Stream `json:"stream,omitempty"`
+	Config    *config.Node   `json:"config,omitempty"`
 }
 
 type NodeHeartbeatRequest struct {
 	Address   common.Address `json:"address" validate:"required"`
+	Signature string         `json:"signature" validate:"required"`
+	Endpoint  string         `json:"endpoint" validate:"required"`
 	Timestamp int64          `json:"timestamp" validate:"required"`
 }
 
 type NodeRequest struct {
 	Address common.Address `param:"id" validate:"required"`
-}
-
-type NodeResponse struct {
-	Data *schema.Node `json:"data"`
 }
 
 type BatchNodeRequest struct {
@@ -123,7 +142,7 @@ type BatchNodeRequest struct {
 	NodeAddress []common.Address `query:"nodeAddress"`
 }
 
-type BatchNodeResponse struct {
-	Data   []*schema.Node `json:"data"`
-	Cursor string         `json:"cursor,omitempty"`
+type Response struct {
+	Data   any    `json:"data"`
+	Cursor string `json:"cursor,omitempty"`
 }

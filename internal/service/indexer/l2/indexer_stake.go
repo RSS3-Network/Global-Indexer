@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/naturalselectionlabs/global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/shopspring/decimal"
 )
 

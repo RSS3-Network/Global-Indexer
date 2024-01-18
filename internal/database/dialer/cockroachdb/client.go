@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
-	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb/table"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
@@ -85,7 +86,11 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	var node table.Node
 
 	if err := c.database.WithContext(ctx).First(&node, "address = ?", nodeAddress).Error; err != nil {
-		return nil, err
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		return nil, nil
 	}
 
 	return node.Export()

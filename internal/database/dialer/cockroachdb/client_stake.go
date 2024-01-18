@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/global-indexer/internal/database/dialer/cockroachdb/table"
-	"github.com/naturalselectionlabs/global-indexer/schema"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 )
 
 type Hub struct {

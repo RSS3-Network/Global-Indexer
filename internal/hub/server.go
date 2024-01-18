@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/naturalselectionlabs/global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 )
 
 const (
@@ -46,6 +46,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	// register router
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
 	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
+	instance.httpServer.GET("/nodes/:id/challenge", instance.hub.GetNodeChallengeHandler)
 	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
 	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeatHandler)
 
