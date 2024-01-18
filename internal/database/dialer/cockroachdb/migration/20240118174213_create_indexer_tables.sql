@@ -23,7 +23,6 @@ CREATE TABLE "bridge"."transactions"
     "token_address_l1" text,
     "token_address_l2" text,
     "token_value"      decimal NOT NULL,
-    "token_decimal"    integer NOT NULL,
     "data"             text,
 
     CONSTRAINT "pk_transactions" PRIMARY KEY ("id", "type")

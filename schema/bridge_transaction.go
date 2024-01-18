@@ -34,6 +34,5 @@ type BridgeTransaction struct {
 	TokenAddressL1 *common.Address       `json:"tokenAddressL1"`
 	TokenAddressL2 *common.Address       `json:"tokenAddressL2"`
 	TokenValue     *big.Int              `json:"tokenValue"`
-	TokenDecimal   uint                  `json:"tokenDecimal"`
 	Data           string                `json:"data"`
 }

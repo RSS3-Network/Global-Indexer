@@ -67,7 +67,6 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 		TokenAddressL1: lo.ToPtr(erc20DepositInitiatedEvent.L1Token),
 		TokenAddressL2: lo.ToPtr(erc20DepositInitiatedEvent.L2Token),
 		TokenValue:     erc20DepositInitiatedEvent.Amount,
-		TokenDecimal:   18, // TODO Need remove it.
 		Data:           "",
 	}
 

@@ -93,7 +93,6 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 		TokenAddressL1: lo.ToPtr(withdrawalInitiatedEvent.L1Token),
 		TokenAddressL2: lo.ToPtr(withdrawalInitiatedEvent.L2Token),
 		TokenValue:     withdrawalInitiatedEvent.Amount,
-		TokenDecimal:   18, // TODO Need remove it.
 	}
 
 	if err := databaseTransaction.SaveBridgeTransaction(ctx, &bridgeTransaction); err != nil {

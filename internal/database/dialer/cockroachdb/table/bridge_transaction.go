@@ -21,7 +21,6 @@ type BridgeTransaction struct {
 	TokenAddressL1 *string         `gorm:"column:token_address_l1"`
 	TokenAddressL2 *string         `gorm:"column:token_address_l2"`
 	TokenValue     decimal.Decimal `gorm:"column:token_value"`
-	TokenDecimal   uint            `gorm:"column:token_decimal"`
 }
 
 func (b *BridgeTransaction) TableName() string {
@@ -36,7 +35,6 @@ func (b *BridgeTransaction) Import(bridgeTransaction schema.BridgeTransaction) e
 	b.TokenAddressL1 = lo.ToPtr(bridgeTransaction.TokenAddressL1.String())
 	b.TokenAddressL2 = lo.ToPtr(bridgeTransaction.TokenAddressL2.String())
 	b.TokenValue = decimal.NewFromBigInt(bridgeTransaction.TokenValue, 0)
-	b.TokenDecimal = bridgeTransaction.TokenDecimal
 
 	return nil
 }
@@ -61,8 +59,7 @@ func (b *BridgeTransaction) Export() (*schema.BridgeTransaction, error) {
 
 			return lo.ToPtr(common.HexToAddress(*tokenAddress))
 		}(b.TokenAddressL2),
-		TokenValue:   b.TokenValue.BigInt(),
-		TokenDecimal: b.TokenDecimal,
+		TokenValue: b.TokenValue.BigInt(),
 	}
 
 	return &bridgeTransaction, nil
