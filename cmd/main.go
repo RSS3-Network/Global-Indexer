@@ -10,6 +10,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -40,7 +41,7 @@ var command = cobra.Command{
 		}
 
 		// Dial rss3 ethereum client.
-		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.Endpoint)
+		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.EndpointL2)
 		if err != nil {
 			return fmt.Errorf("dial rss3 ethereum client: %w", err)
 		}
@@ -51,6 +52,34 @@ var command = cobra.Command{
 		}
 
 		return hub.Run(cmd.Context())
+	},
+}
+
+var indexCommand = &cobra.Command{
+	Use: "index",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		flags = cmd.PersistentFlags()
+
+		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
+		if err != nil {
+			return fmt.Errorf("setup config file: %w", err)
+		}
+
+		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
+		if err != nil {
+			return err
+		}
+
+		if err := databaseClient.Migrate(cmd.Context()); err != nil {
+			return fmt.Errorf("migrate database: %w", err)
+		}
+
+		instance, err := indexer.New(databaseClient, *config.RSS3Chain)
+		if err != nil {
+			return err
+		}
+
+		return instance.Run(cmd.Context())
 	},
 }
 
@@ -65,7 +94,9 @@ func initializeLogger() {
 func init() {
 	initializeLogger()
 
+	command.AddCommand(indexCommand)
 	command.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+	indexCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 }
 
 func main() {

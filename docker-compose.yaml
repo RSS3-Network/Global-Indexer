@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  cockroach:
+    container_name: cockroach
+    image: cockroachdb/cockroach:v23.1.8
+    networks:
+      - default
+    ports:
+      - "8080:8080"
+      - "26257:26257"
+    command:
+      - start-single-node
+      - --cluster-name=rss3-global-indexer
+      - --insecure
