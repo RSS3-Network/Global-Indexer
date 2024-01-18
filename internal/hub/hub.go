@@ -7,13 +7,13 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/global-indexer/common/ethereum/contract/staking"
+	"github.com/naturalselectionlabs/global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/global-indexer/internal/database"
 )
 
 type Hub struct {
 	databaseClient  database.Client
-	stakingContract *staking.Staking
+	stakingContract *l2.Staking
 }
 
 var _ echo.Validator = (*Validator)(nil)
@@ -31,7 +31,7 @@ func (v *Validator) Validate(i interface{}) error {
 }
 
 func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *ethclient.Client) (*Hub, error) {
-	stakingContract, err := staking.NewStaking(staking.AddressStaking, ethereumClient)
+	stakingContract, err := l2.NewStaking(l2.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
