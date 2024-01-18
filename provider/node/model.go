@@ -1,6 +1,8 @@
 package node
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type ActivityRequest struct {
 	ID          string `param:"id" description:"Retrieve details for the specified activity ID" examples:"[\"0x5ffa607a127d63fb36827075493d1de06f58fc44710b9ffb887b2effe02d2b8b\"]"`
@@ -31,6 +33,26 @@ type DataResponse struct {
 }
 
 type Cache struct {
-	Address  common.Address `json:"address"`
-	Endpoint string         `json:"endpoint"`
+	Address  string `json:"address"`
+	Endpoint string `json:"endpoint"`
+}
+
+type ActivitiesResponse struct {
+	Data []*Feed     `json:"data"`
+	Meta *MetaCursor `json:"meta,omitempty"`
+}
+
+type MetaCursor struct {
+	Cursor string `json:"cursor"`
+}
+
+type Feed struct {
+	ID       string `json:"id"`
+	Owner    string `json:"owner,omitempty"`
+	Network  string `json:"network"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Tag      string `json:"tag"`
+	Type     string `json:"type"`
+	Platform string `json:"platform,omitempty"`
 }

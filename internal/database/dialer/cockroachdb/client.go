@@ -171,7 +171,7 @@ func (c *client) FindNodeStatsByType(ctx context.Context, fullNode, rssNode *boo
 	}
 
 	if rssNode != nil {
-		databaseStatement = databaseStatement.Where("is_rss3_node = ?", *rssNode)
+		databaseStatement = databaseStatement.Where("is_rss_node = ?", *rssNode)
 	}
 
 	var stats table.Stats

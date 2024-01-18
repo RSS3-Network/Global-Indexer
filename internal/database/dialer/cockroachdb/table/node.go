@@ -97,6 +97,7 @@ func (*Stat) TableName() string {
 
 func (s *Stat) Import(stat *schema.Stat) (err error) {
 	s.Address = stat.Address
+	s.Endpoint = stat.Endpoint
 	s.Points = stat.Points
 	s.IsPublicGood = stat.IsPublicGood
 	s.IsFullNode = stat.IsFullNode
@@ -116,6 +117,7 @@ func (s *Stat) Import(stat *schema.Stat) (err error) {
 func (s *Stat) Export() (*schema.Stat, error) {
 	stat := schema.Stat{
 		Address:              s.Address,
+		Endpoint:             s.Endpoint,
 		Points:               s.Points,
 		IsPublicGood:         s.IsPublicGood,
 		IsFullNode:           s.IsFullNode,
@@ -133,12 +135,12 @@ func (s *Stat) Export() (*schema.Stat, error) {
 	return &stat, nil
 }
 
-type Stats []*Stat
+type Stats []Stat
 
-func (s Stats) Export() ([]*schema.Stat, error) {
+func (s *Stats) Export() ([]*schema.Stat, error) {
 	stats := make([]*schema.Stat, 0)
 
-	for _, stat := range s {
+	for _, stat := range *s {
 		exportedStat, err := stat.Export()
 		if err != nil {
 			return nil, err
@@ -150,8 +152,8 @@ func (s Stats) Export() ([]*schema.Stat, error) {
 	return stats, nil
 }
 
-func (s Stats) Import(stats []*schema.Stat) (err error) {
-	s = make([]*Stat, 0, len(stats))
+func (s *Stats) Import(stats []*schema.Stat) (err error) {
+	*s = make([]Stat, 0, len(stats))
 
 	for _, stat := range stats {
 		var tStat Stat
@@ -160,7 +162,7 @@ func (s Stats) Import(stats []*schema.Stat) (err error) {
 			return err
 		}
 
-		s = append(s, &tStat)
+		*s = append(*s, tStat)
 	}
 
 	return nil
@@ -194,12 +196,12 @@ func (i *Indexer) Export() (*schema.Indexer, error) {
 	return &indexer, nil
 }
 
-type Indexers []*Indexer
+type Indexers []Indexer
 
-func (i Indexers) Export() ([]*schema.Indexer, error) {
+func (i *Indexers) Export() ([]*schema.Indexer, error) {
 	indexers := make([]*schema.Indexer, 0)
 
-	for _, indexer := range i {
+	for _, indexer := range *i {
 		exportedIndexer, err := indexer.Export()
 		if err != nil {
 			return nil, err
@@ -211,8 +213,8 @@ func (i Indexers) Export() ([]*schema.Indexer, error) {
 	return indexers, nil
 }
 
-func (i Indexers) Import(indexers []*schema.Indexer) (err error) {
-	i = make([]*Indexer, 0, len(indexers))
+func (i *Indexers) Import(indexers []*schema.Indexer) (err error) {
+	*i = make([]Indexer, 0, len(indexers))
 
 	for _, indexer := range indexers {
 		var tIndexer Indexer
@@ -221,7 +223,7 @@ func (i Indexers) Import(indexers []*schema.Indexer) (err error) {
 			return err
 		}
 
-		i = append(i, &tIndexer)
+		*i = append(*i, tIndexer)
 	}
 
 	return nil

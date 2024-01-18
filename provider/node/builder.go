@@ -63,15 +63,15 @@ func (c *builder) buildPath(path string, query any, nodes []Cache) (map[common.A
 	for _, node := range nodes {
 		fullURL, err := url.JoinPath(node.Endpoint, path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to join path for node %s: %w", node.Address.String(), err)
+			return nil, fmt.Errorf("failed to join path for node %s: %w", node.Address, err)
 		}
 
 		decodedURL, err := url.QueryUnescape(fullURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unescape url for node %s: %w", node.Address.String(), err)
+			return nil, fmt.Errorf("failed to unescape url for node %s: %w", node.Address, err)
 		}
 
-		urls[node.Address] = decodedURL
+		urls[common.HexToAddress(node.Address)] = decodedURL
 	}
 
 	return urls, nil
