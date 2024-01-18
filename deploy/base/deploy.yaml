@@ -16,6 +16,14 @@ spec:
         app: global-indexer
     spec:
       containers:
+        - name: global-indexer-api
+          image: rss3/global-indexer
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /opt/gi
+              name: config
+          args:
+            - --config=/opt/gi/config.yaml
         - name: global-indexer
           image: rss3/global-indexer
           imagePullPolicy: IfNotPresent
@@ -23,6 +31,7 @@ spec:
             - mountPath: /opt/gi
               name: config
           args:
+            - index
             - --config=/opt/gi/config.yaml
       restartPolicy: Always
       volumes:

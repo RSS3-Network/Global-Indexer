@@ -2,8 +2,6 @@ package hub
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -17,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum/contract/staking"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -77,7 +76,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 		return nil, fmt.Errorf("get nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node staking.DataTypesNode) (common.Address, staking.DataTypesNode) {
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
 		return node.Account, node
 	})
 
