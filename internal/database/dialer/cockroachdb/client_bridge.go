@@ -6,11 +6,26 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
+
+func (c *client) FindBridgeTransaction(ctx context.Context, id common.Hash) (*schema.BridgeTransaction, error) {
+	var row table.BridgeTransaction
+
+	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, fmt.Errorf("find bridge transaction: %w", err)
+	}
+
+	return row.Export()
+}
 
 func (c *client) FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTransaction, error) {
 	var rows []table.BridgeTransaction
@@ -52,6 +67,20 @@ func (c *client) FindBridgeTransactionsByAddress(ctx context.Context, address co
 	}
 
 	return results, nil
+}
+
+func (c *client) FindBridgeEventsByID(ctx context.Context, id common.Hash) (*schema.BridgeEvent, error) {
+	var row table.BridgeEvent
+
+	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, fmt.Errorf("fin bridge event: %w", err)
+	}
+
+	return row.Export()
 }
 
 func (c *client) FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.BridgeEvent, error) {
