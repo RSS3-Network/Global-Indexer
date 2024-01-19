@@ -36,6 +36,8 @@ type Client interface {
 
 	FindStakeStaker(ctx context.Context, user, node common.Address) (*schema.StakeStaker, error)
 	SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeStaker) error
+	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
+	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 }
 
 type Session interface {

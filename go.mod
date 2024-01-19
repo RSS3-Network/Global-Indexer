@@ -10,6 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.10
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/labstack/echo/v4 v4.11.4
+	github.com/lib/pq v1.10.9
 	github.com/naturalselectionlabs/rss3-node v0.0.0-20240108094705-95832810ba63
 	github.com/orlangure/gnomock v0.30.0
 	github.com/pressly/goose/v3 v3.17.0
@@ -77,7 +78,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect

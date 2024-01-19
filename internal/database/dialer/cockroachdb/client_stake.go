@@ -3,6 +3,7 @@ package cockroachdb
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
@@ -48,4 +49,22 @@ func (c *client) SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeS
 	}
 
 	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
+}
+
+func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error {
+	var value table.StakeTransaction
+	if err := value.Import(*stakeTransaction); err != nil {
+		return fmt.Errorf("import stake transaction: %w", err)
+	}
+
+	return c.database.WithContext(ctx).Create(&value).Error
+}
+
+func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error {
+	var value table.StakeEvent
+	if err := value.Import(*stakeEvent); err != nil {
+		return fmt.Errorf("import stake event: %w", err)
+	}
+
+	return c.database.WithContext(ctx).Create(&value).Error
 }
