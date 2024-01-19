@@ -50,6 +50,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
 	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeatHandler)
 
+	instance.httpServer.GET("/bridge/transactions", instance.hub.GetBridgeTransactions)
 	instance.httpServer.GET("/staking", instance.hub.GetStakingHandler)
 	instance.httpServer.GET("/bridging", instance.hub.GetBridgingHandler)
 
