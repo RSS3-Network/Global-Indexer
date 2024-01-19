@@ -31,7 +31,7 @@ func (c *client) FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTr
 	var rows []table.BridgeTransaction
 
 	if err := c.database.WithContext(ctx).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("fin bridge transactions: %w", err)
+		return nil, fmt.Errorf("find bridge transactions: %w", err)
 	}
 
 	results := make([]*schema.BridgeTransaction, 0, len(rows))
@@ -52,7 +52,7 @@ func (c *client) FindBridgeTransactionsByAddress(ctx context.Context, address co
 	var rows []table.BridgeTransaction
 
 	if err := c.database.WithContext(ctx).Distinct("*").Where("sender = ? OR receiver = ?", address.String(), address.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("fin bridge transactions: %w", err)
+		return nil, fmt.Errorf("find bridge transactions: %w", err)
 	}
 
 	results := make([]*schema.BridgeTransaction, 0, len(rows))
@@ -77,7 +77,7 @@ func (c *client) FindBridgeEventsByID(ctx context.Context, id common.Hash) (*sch
 			return nil, database.ErrorRowNotFound
 		}
 
-		return nil, fmt.Errorf("fin bridge event: %w", err)
+		return nil, fmt.Errorf("find bridge event: %w", err)
 	}
 
 	return row.Export()
@@ -91,7 +91,7 @@ func (c *client) FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) (
 	})
 
 	if err := c.database.WithContext(ctx).Where("id IN ?", transactionIDs).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("fin bridge event: %w", err)
+		return nil, fmt.Errorf("find bridge event: %w", err)
 	}
 
 	results := make([]*schema.BridgeEvent, 0, len(rows))

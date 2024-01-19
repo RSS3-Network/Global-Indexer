@@ -36,6 +36,12 @@ type Client interface {
 
 	FindStakeStaker(ctx context.Context, user, node common.Address) (*schema.StakeStaker, error)
 	SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeStaker) error
+	FindStakeTransaction(ctx context.Context, id common.Hash) (*schema.StakeTransaction, error)
+	FindStakeTransactions(ctx context.Context) ([]*schema.StakeTransaction, error)
+	FindStakeTransactionsByUser(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
+	FindStakeTransactionsByNode(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
+	FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*schema.StakeEvent, error)
+	FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 }
