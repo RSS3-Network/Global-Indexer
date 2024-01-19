@@ -29,7 +29,7 @@ var (
 
 	EventHashStakingDeposited         = crypto.Keccak256Hash([]byte("Deposited(address,uint256)"))
 	EventHashStakingStaked            = crypto.Keccak256Hash([]byte("Staked(address,address,uint256,uint256,uint256)"))
-	EventHashStakingUnstakeRequested  = crypto.Keccak256Hash([]byte("UnstakeRequested(address,address,uint256,uint256[])"))
+	EventHashStakingUnstakeRequested  = crypto.Keccak256Hash([]byte("UnstakeRequested(address,address,uint256,uint256,uint256[])"))
 	EventHashStakingUnstakeClaimed    = crypto.Keccak256Hash([]byte("UnstakeClaimed(uint256,address,address,uint256)"))
 	EventHashStakingWithdrawRequested = crypto.Keccak256Hash([]byte("WithdrawRequested(address,uint256,uint256)"))
 	EventHashStakingWithdrawalClaimed = crypto.Keccak256Hash([]byte("WithdrawalClaimed(uint256 indexed requestId)"))

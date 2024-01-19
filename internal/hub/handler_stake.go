@@ -15,12 +15,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type GetBridgeTransactionsRequest struct {
-	Address *string `query:"address"`
+type GetStakeTransactionsRequest struct {
+	User *string `query:"user"`
+	Node *string `query:"node"`
 }
 
-func (h *Hub) GetBridgeTransactions(c echo.Context) error {
-	var request GetBridgeTransactionsRequest
+func (h *Hub) GetStakeTransactions(c echo.Context) error {
+	var request GetStakeTransactionsRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
 	}
@@ -38,12 +39,15 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	var transactions []*schema.BridgeTransaction
+	var transactions []*schema.StakeTransaction
 
-	if request.Address != nil {
-		transactions, err = databaseTransaction.FindBridgeTransactionsByAddress(c.Request().Context(), common.HexToAddress(*request.Address))
-	} else {
-		transactions, err = databaseTransaction.FindBridgeTransactions(c.Request().Context())
+	switch {
+	case request.User != nil:
+		transactions, err = databaseTransaction.FindStakeTransactionsByUser(c.Request().Context(), common.HexToAddress(*request.User))
+	case request.Node != nil:
+		transactions, err = databaseTransaction.FindStakeTransactionsByNode(c.Request().Context(), common.HexToAddress(*request.Node))
+	default:
+		transactions, err = databaseTransaction.FindStakeTransactions(c.Request().Context())
 	}
 
 	if err != nil {
@@ -51,22 +55,22 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		zap.L().Error("find bridge transactions", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find stake transactions", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	ids := lo.Map(transactions, func(transaction *schema.BridgeTransaction, _ int) common.Hash {
+	ids := lo.Map(transactions, func(transaction *schema.StakeTransaction, _ int) common.Hash {
 		return transaction.ID
 	})
 
-	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), ids)
+	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), ids)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		zap.L().Error("find bridge events", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find stake events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
@@ -75,14 +79,14 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 		return fmt.Errorf("commit database transaction")
 	}
 
-	transactionModels := make([]*model.BridgeTransaction, 0, len(transactions))
+	transactionModels := make([]*model.StakeTransaction, 0, len(transactions))
 
 	for _, transaction := range transactions {
-		events := lo.Filter(events, func(event *schema.BridgeEvent, _ int) bool {
+		events := lo.Filter(events, func(event *schema.StakeEvent, _ int) bool {
 			return event.ID == transaction.ID
 		})
 
-		transactionModels = append(transactionModels, model.NewBridgeTransaction(transaction, events))
+		transactionModels = append(transactionModels, model.NewStakeTransaction(transaction, events))
 	}
 
 	var response Response
@@ -92,12 +96,12 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-type GetBridgeTransactionRequest struct {
+type GetStakeTransactionRequest struct {
 	ID *string `param:"id"`
 }
 
-func (h *Hub) GetBridgeTransaction(c echo.Context) error {
-	var request GetBridgeTransactionRequest
+func (h *Hub) GetStakeTransaction(c echo.Context) error {
+	var request GetStakeTransactionRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
 	}
@@ -115,24 +119,24 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	transaction, err := databaseTransaction.FindBridgeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
+	transaction, err := databaseTransaction.FindStakeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		zap.L().Error("find bridge transaction", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find stake transaction", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
+	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		zap.L().Error("find bridge events", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find stake events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
@@ -141,12 +145,12 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 		return fmt.Errorf("commit database transaction")
 	}
 
-	events = lo.Filter(events, func(event *schema.BridgeEvent, _ int) bool {
+	events = lo.Filter(events, func(event *schema.StakeEvent, _ int) bool {
 		return event.ID == transaction.ID
 	})
 
 	var response Response
-	response.Data = model.NewBridgeTransaction(transaction, events)
+	response.Data = model.NewStakeTransaction(transaction, events)
 
 	return c.JSON(http.StatusOK, response)
 }
