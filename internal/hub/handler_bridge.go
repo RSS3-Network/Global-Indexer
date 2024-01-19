@@ -2,11 +2,13 @@ package hub
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
@@ -34,20 +36,24 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	defer lo.Try(databaseTransaction.Rollback)
+
 	var transactions []*schema.BridgeTransaction
 
 	if request.Address != nil {
-		if transactions, err = databaseTransaction.FindBridgeTransactionsByAddress(c.Request().Context(), common.HexToAddress(*request.Address)); err != nil {
-			zap.L().Error("find bridge transactions", zap.Error(err), zap.Any("request", request))
-
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		transactions, err = databaseTransaction.FindBridgeTransactionsByAddress(c.Request().Context(), common.HexToAddress(*request.Address))
 	} else {
-		if transactions, err = databaseTransaction.FindBridgeTransactions(c.Request().Context()); err != nil {
-			zap.L().Error("find bridge transactions", zap.Error(err), zap.Any("request", request))
+		transactions, err = databaseTransaction.FindBridgeTransactions(c.Request().Context())
+	}
 
-			return c.NoContent(http.StatusInternalServerError)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
 		}
+
+		zap.L().Error("find bridge transactions", zap.Error(err), zap.Any("request", request))
+
+		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	ids := lo.Map(transactions, func(transaction *schema.BridgeTransaction, _ int) common.Hash {
@@ -56,6 +62,10 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 
 	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), ids)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find bridge events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
@@ -103,8 +113,14 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	defer lo.Try(databaseTransaction.Rollback)
+
 	transaction, err := databaseTransaction.FindBridgeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find bridge transaction", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
@@ -112,6 +128,10 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 
 	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find bridge events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)

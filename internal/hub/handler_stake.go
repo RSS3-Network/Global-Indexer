@@ -2,11 +2,13 @@ package hub
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
@@ -35,27 +37,27 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	defer lo.Try(databaseTransaction.Rollback)
+
 	var transactions []*schema.StakeTransaction
 
 	switch {
 	case request.User != nil:
-		if transactions, err = databaseTransaction.FindStakeTransactionsByUser(c.Request().Context(), common.HexToAddress(*request.User)); err != nil {
-			zap.L().Error("find stake transactions", zap.Error(err), zap.Any("request", request))
-
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		transactions, err = databaseTransaction.FindStakeTransactionsByUser(c.Request().Context(), common.HexToAddress(*request.User))
 	case request.Node != nil:
-		if transactions, err = databaseTransaction.FindStakeTransactionsByNode(c.Request().Context(), common.HexToAddress(*request.Node)); err != nil {
-			zap.L().Error("find stake transactions", zap.Error(err), zap.Any("request", request))
-
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		transactions, err = databaseTransaction.FindStakeTransactionsByNode(c.Request().Context(), common.HexToAddress(*request.Node))
 	default:
-		if transactions, err = databaseTransaction.FindStakeTransactions(c.Request().Context()); err != nil {
-			zap.L().Error("find stake transactions", zap.Error(err), zap.Any("request", request))
+		transactions, err = databaseTransaction.FindStakeTransactions(c.Request().Context())
+	}
 
-			return c.NoContent(http.StatusInternalServerError)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
 		}
+
+		zap.L().Error("find stake transactions", zap.Error(err), zap.Any("request", request))
+
+		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	ids := lo.Map(transactions, func(transaction *schema.StakeTransaction, _ int) common.Hash {
@@ -64,6 +66,10 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 
 	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), ids)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find stake events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
@@ -111,8 +117,14 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	defer lo.Try(databaseTransaction.Rollback)
+
 	transaction, err := databaseTransaction.FindStakeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find stake transaction", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
@@ -120,6 +132,10 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 
 	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		zap.L().Error("find stake events", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
