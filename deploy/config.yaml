@@ -13,4 +13,4 @@ redis:
 
 rss3_chain:
   endpoint_l1: https://rpc.ankr.com/eth_sepolia
-  endpoint_l2: https://rpc.testnet.rss3.dev
+  endpoint_l2: https://rpc.testnet.rss3.io
