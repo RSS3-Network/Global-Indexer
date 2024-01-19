@@ -223,11 +223,29 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
-func (c *client) FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error) {
+func (c *client) DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error {
+	return c.database.WithContext(ctx).Delete(&table.Indexer{}, nodeAddress).Error
+}
+
+func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error) {
 	var indexers table.Indexers
 
-	if err := c.database.WithContext(ctx).Find(&indexers).Error; err != nil {
-		return nil, err
+	databaseStatement := c.database.WithContext(ctx)
+
+	if len(nodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	}
+
+	if len(networks) > 0 {
+		databaseStatement = databaseStatement.Where("network IN ?", networks)
+	}
+
+	if len(workers) > 0 {
+		databaseStatement = databaseStatement.Where("worker IN ?", workers)
+	}
+
+	if err := databaseStatement.Find(&indexers).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
 	}
 
 	return indexers.Export()

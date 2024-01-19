@@ -27,8 +27,9 @@ type Client interface {
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
 
-	FindNodeIndexers(ctx context.Context) ([]*schema.Indexer, error)
+	FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error)
 	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
+	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
 
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error

@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 )
 
 type ActivityRequest struct {
@@ -28,8 +29,14 @@ type AccountActivitiesRequest struct {
 type DataResponse struct {
 	Address        common.Address
 	Data           []byte
+	Err            bool
 	Request        int
 	InvalidRequest int
+}
+
+type ErrResponse struct {
+	Error     string `json:"error"`
+	ErrorCode string `json:"error_code"`
 }
 
 type Cache struct {
@@ -55,4 +62,17 @@ type Feed struct {
 	Tag      string `json:"tag"`
 	Type     string `json:"type"`
 	Platform string `json:"platform,omitempty"`
+}
+
+var FullNodeMap = map[string][]string{
+	filter.Fallback.String():   {filter.NetworkEthereum.String()},
+	filter.Mirror.String():     {filter.NetworkArweave.String()},
+	filter.Farcaster.String():  {filter.NetworkFarcaster.String()},
+	filter.RSS3.String():       {filter.NetworkEthereum.String()},
+	filter.Paragraph.String():  {filter.NetworkArweave.String()},
+	filter.OpenSea.String():    {filter.NetworkEthereum.String()},
+	filter.Uniswap.String():    {filter.NetworkEthereum.String()},
+	filter.Optimism.String():   {filter.NetworkEthereum.String()},
+	filter.Aavegotchi.String(): {filter.NetworkPolygon.String()},
+	filter.Lens.String():       {filter.NetworkPolygon.String()},
 }

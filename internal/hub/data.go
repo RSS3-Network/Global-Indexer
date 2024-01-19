@@ -30,8 +30,9 @@ import (
 )
 
 var (
-	rssNodeCacheKey  = "nodes:rss"
-	fullNodeCacheKey = "nodes:full"
+	rssNodeCacheKey    = "nodes:rss"
+	fullNodeCacheKey   = "nodes:full"
+	workerNodeCacheKey = "nodes:worker:"
 )
 
 var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
@@ -125,12 +126,14 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 
 	node.IsPublicGood = nodeInfo.PublicGood
 
+	fullNode := h.isFullNode(request.Config.Decentralized)
+
 	stat := &schema.Stat{
 		Address:      request.Address,
 		Endpoint:     request.Endpoint,
 		IsPublicGood: nodeInfo.PublicGood,
 		ResetAt:      time.Now(),
-		IsFullNode:   h.isFullNode(request.Config.Decentralized),
+		IsFullNode:   fullNode,
 		IsRssNode:    len(request.Config.RSS) > 0,
 		DecentralizedNetwork: len(lo.UniqBy(request.Config.Decentralized, func(module *config.Module) filter.Network {
 			return module.Network
@@ -141,33 +144,43 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 
 	indexers := make([]*schema.Indexer, 0, len(request.Config.Decentralized))
 
-	for _, indexer := range request.Config.Decentralized {
-		indexers = append(indexers, &schema.Indexer{
-			Address: request.Address,
-			Network: indexer.Network.String(),
-			Worker:  indexer.Worker.String(),
-		})
+	if !fullNode {
+		for _, indexer := range request.Config.Decentralized {
+			indexers = append(indexers, &schema.Indexer{
+				Address: request.Address,
+				Network: indexer.Network.String(),
+				Worker:  indexer.Worker.String(),
+			})
+		}
 	}
 
 	// Save node info to the database.
-	if err := h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	if err = h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
 		// Save node to database.
-		if err := h.databaseClient.SaveNode(ctx, node); err != nil {
+		if err = h.databaseClient.SaveNode(ctx, node); err != nil {
 			return fmt.Errorf("save node: %s, %w", node.Address.String(), err)
 		}
 
 		zap.L().Info("save node", zap.Any("node", node.Address.String()))
 
 		// Save node stat to database
-		if err := h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+		if err = h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
 			return fmt.Errorf("save node stat: %s, %w", node.Address.String(), err)
 		}
 
 		zap.L().Info("save node stat", zap.Any("node", node.Address.String()))
 
-		// Save node indexers to database
-		if err := h.databaseClient.SaveNodeIndexers(ctx, indexers); err != nil {
-			return fmt.Errorf("save node indexers: %s, %w", node.Address.String(), err)
+		// If the node is a full node,
+		// then delete the record from the table.
+		// Otherwise, add the indexers to the table.
+		if fullNode {
+			if err = h.databaseClient.DeleteNodeIndexers(ctx, node.Address); err != nil {
+				return fmt.Errorf("delete node indexers: %s, %w", node.Address.String(), err)
+			}
+		} else {
+			if err = h.databaseClient.SaveNodeIndexers(ctx, indexers); err != nil {
+				return fmt.Errorf("save node indexers: %s, %w", node.Address.String(), err)
+			}
 		}
 
 		zap.L().Info("save node indexer", zap.Any("node", node.Address.String()))
@@ -182,24 +195,30 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 
 // Check if node is full node
 func (h *Hub) isFullNode(indexers []*config.Module) bool {
-	// TODO: A more comprehensive check should also include the network and parameters.
-	if len(indexers) < len(filter.NameStrings())-1 {
+	if len(indexers) < len(node.FullNodeMap) {
 		return false
 	}
 
-	workerMap := make(map[string]struct{}, 0)
+	workerMap := make(map[string]map[string]struct{})
 
 	for _, indexer := range indexers {
-		workerMap[indexer.Worker.String()] = struct{}{}
-	}
-
-	for _, worker := range filter.NameStrings() {
-		if worker == filter.Unknown.String() {
-			continue
+		if _, exists := workerMap[indexer.Worker.String()]; !exists {
+			workerMap[indexer.Worker.String()] = make(map[string]struct{})
 		}
 
-		if _, exists := workerMap[worker]; !exists {
+		workerMap[indexer.Worker.String()][indexer.Network.String()] = struct{}{}
+	}
+
+	for worker, requiredNetworks := range node.FullNodeMap {
+		networks, exists := workerMap[worker]
+		if !exists || len(networks) != len(requiredNetworks) {
 			return false
+		}
+
+		for _, network := range requiredNetworks {
+			if _, exists := networks[network]; !exists {
+				return false
+			}
 		}
 	}
 
@@ -207,7 +226,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, rssNodeCacheKey)
+	nodes, err := h.filterNodes(ctx, rssNodeCacheKey, "")
 
 	if err != nil {
 		return nil, err
@@ -231,7 +250,7 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 }
 
 func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityRequest) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
+	nodes, err := h.filterNodes(ctx, fullNodeCacheKey, "")
 
 	if err != nil {
 		return nil, err
@@ -255,7 +274,15 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 }
 
 func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActivitiesRequest) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
+	var (
+		nodes []node.Cache
+
+		err error
+	)
+
+	// TODO: check request params
+
+	nodes, err = h.filterNodes(ctx, fullNodeCacheKey, "")
 
 	if err != nil {
 		return nil, err
@@ -278,13 +305,17 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 	return nodeRes.Data, nil
 }
 
-func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error) {
+func (h *Hub) filterNodes(ctx context.Context, key, worker string) ([]node.Cache, error) {
 	var (
 		nodesCache []node.Cache
 		nodes      []*schema.Stat
 	)
 
 	// Get nodes from cache.
+	if worker != "" {
+		key = fmt.Sprintf("%s:%s", key, worker)
+	}
+
 	exists, err := cache.Get(ctx, key, &nodesCache)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
@@ -304,6 +335,13 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 		}
 	case fullNodeCacheKey:
 		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
+
+		if err != nil {
+			return nil, err
+		}
+	case fmt.Sprintf("%s:%s", workerNodeCacheKey, worker):
+		// TODO:
+		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, nil, 3)
 
 		if err != nil {
 			return nil, err
@@ -342,6 +380,10 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 			results = append(results, node.DataResponse{Address: address, Data: data})
 			mu.Unlock()
 
+			if !h.validateData(data) {
+				return
+			}
+
 			select {
 			case firstResult <- node.DataResponse{Address: address, Data: data}:
 			default:
@@ -362,6 +404,27 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	case <-time.After(time.Second * 3):
 		return node.DataResponse{}, fmt.Errorf("timeout waiting for results")
 	}
+}
+
+func (h *Hub) validateData(data []byte) bool {
+	var (
+		activityRes node.ActivitiesResponse
+		errRes      node.ErrResponse
+	)
+
+	if err := json.Unmarshal(data, &errRes); err != nil {
+		return false
+	}
+
+	if errRes.ErrorCode != "" {
+		return false
+	}
+
+	if err := json.Unmarshal(data, &activityRes); err != nil {
+		return false
+	}
+
+	return true
 }
 
 func (h *Hub) processRSSHubResults(results []node.DataResponse) {
@@ -473,9 +536,9 @@ func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
 		_ = res.Body.Close()
 	}()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
-	}
+	//if res.StatusCode != http.StatusOK {
+	//	return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	//}
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {

@@ -55,7 +55,6 @@ func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
 	}
 
 	// TODO: implement cursor
-
 	activities, err := h.routerActivitiesData(c.Request().Context(), request)
 
 	if err != nil {
