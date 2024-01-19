@@ -3,11 +3,16 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
+)
+
+var (
+	ErrorRowNotFound = errors.New("row not found")
 )
 
 type Client interface {
@@ -21,8 +26,10 @@ type Client interface {
 	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 
+	FindBridgeTransaction(ctx context.Context, id common.Hash) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTransaction, error)
 	FindBridgeTransactionsByAddress(ctx context.Context, address common.Address) ([]*schema.BridgeTransaction, error)
+	FindBridgeEventsByID(ctx context.Context, id common.Hash) (*schema.BridgeEvent, error)
 	FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.BridgeEvent, error)
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
