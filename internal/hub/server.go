@@ -55,11 +55,9 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 
 	instance.httpServer.GET("/stake/transactions", instance.hub.GetStakeTransactions)
 	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
-	// instance.httpServer.GET("/stake/nodes/:address/stakers", nil)
-	// instance.httpServer.GET("/stake/stakers/:address/nodes", nil)
 
-	instance.httpServer.GET("/staking", instance.hub.GetStakingHandler)
-	instance.httpServer.GET("/bridging", instance.hub.GetBridgingHandler)
+	instance.httpServer.GET("/nodes/:node/chips", instance.hub.GetStakeNodeChips)
+	instance.httpServer.GET("/wallets/:wallet/chips", instance.hub.GetStakeWalletChips)
 
 	return &instance, nil
 }
