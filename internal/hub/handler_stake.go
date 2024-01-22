@@ -154,3 +154,51 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
+
+type GetStakeNodeStakersRequest struct {
+	Node common.Address `param:"node"`
+}
+
+func (h *Hub) GetStakeNodeStakers(c echo.Context) error {
+	var request GetStakeNodeStakersRequest
+	if err := c.Bind(&request); err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	chips, err := h.databaseClient.FindStakeChipsByNode(c.Request().Context(), request.Node)
+	if err != nil {
+		zap.L().Error("find node stakers", zap.Error(err), zap.Any("request", request))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	response := Response{
+		Data: model.NewStakeStakers(chips),
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+type GetStakeStakerNodesRequest struct {
+	Staker common.Address `param:"staker"`
+}
+
+func (h *Hub) GetStakeStakerNodes(c echo.Context) error {
+	var request GetStakeStakerNodesRequest
+	if err := c.Bind(&request); err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	chips, err := h.databaseClient.FindStakeChipsByOwner(c.Request().Context(), request.Staker)
+	if err != nil {
+		zap.L().Error("find node stakers", zap.Error(err), zap.Any("request", request))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	response := Response{
+		Data: model.NewStakeNodes(chips),
+	}
+
+	return c.JSON(http.StatusOK, response)
+}

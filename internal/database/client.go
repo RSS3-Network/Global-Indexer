@@ -41,6 +41,8 @@ type Client interface {
 	FindStakeTransactionsByNode(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
 	FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*schema.StakeEvent, error)
 	FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error)
+	FindStakeChipsByOwner(ctx context.Context, owner common.Address) ([]*schema.StakeChip, error)
+	FindStakeChipsByNode(ctx context.Context, node common.Address) ([]*schema.StakeChip, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error

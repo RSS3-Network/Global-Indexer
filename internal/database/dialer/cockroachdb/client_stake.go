@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -134,6 +135,52 @@ func (c *client) FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([
 		result, err := row.Export()
 		if err != nil {
 			return nil, fmt.Errorf("export stake event: %w", err)
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+func (c *client) FindStakeChipsByOwner(ctx context.Context, owner common.Address) ([]*schema.StakeChip, error) {
+	if owner == ethereum.AddressGenesis {
+		return make([]*schema.StakeChip, 0), nil
+	}
+
+	var rows []table.StakeChip
+
+	if err := c.database.WithContext(ctx).Where(`"owner" = ?`, owner.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("find stake chip: %w", err)
+	}
+
+	results := make([]*schema.StakeChip, 0, len(rows))
+
+	for _, row := range rows {
+		result, err := row.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export stake chip: %w", err)
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+func (c *client) FindStakeChipsByNode(ctx context.Context, node common.Address) ([]*schema.StakeChip, error) {
+	var rows []table.StakeChip
+
+	if err := c.database.WithContext(ctx).Where(`"node" = ? AND "owner" != ?`, node.String(), ethereum.AddressGenesis.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("find stake chip: %w", err)
+	}
+
+	results := make([]*schema.StakeChip, 0, len(rows))
+
+	for _, row := range rows {
+		result, err := row.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export stake chip: %w", err)
 		}
 
 		results = append(results, result)
