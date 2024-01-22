@@ -156,8 +156,8 @@ func (c *client) FindNodeStats(ctx context.Context, nodeAddresses []common.Addre
 
 	var stats table.Stats
 
-	if err := databaseStatement.Find(&stats).Error; err != nil {
-		return nil, err
+	if err := databaseStatement.Limit(3).Order("points DESC").Find(&stats).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
 	}
 
 	return stats.Export()

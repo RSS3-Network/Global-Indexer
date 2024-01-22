@@ -64,15 +64,44 @@ type Feed struct {
 	Platform string `json:"platform,omitempty"`
 }
 
-var FullNodeMap = map[string][]string{
-	filter.Fallback.String():   {filter.NetworkEthereum.String()},
-	filter.Mirror.String():     {filter.NetworkArweave.String()},
-	filter.Farcaster.String():  {filter.NetworkFarcaster.String()},
-	filter.RSS3.String():       {filter.NetworkEthereum.String()},
-	filter.Paragraph.String():  {filter.NetworkArweave.String()},
-	filter.OpenSea.String():    {filter.NetworkEthereum.String()},
-	filter.Uniswap.String():    {filter.NetworkEthereum.String()},
-	filter.Optimism.String():   {filter.NetworkEthereum.String()},
-	filter.Aavegotchi.String(): {filter.NetworkPolygon.String()},
-	filter.Lens.String():       {filter.NetworkPolygon.String()},
+// WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
+// https://github.com/NaturalSelectionLabs/RSS3-Node/blob/develop/deploy/config.development.yaml
+var WorkerToNetworksMap = map[filter.Name][]string{
+	filter.Fallback:   {filter.NetworkEthereum.String()},
+	filter.Mirror:     {filter.NetworkArweave.String()},
+	filter.Farcaster:  {filter.NetworkFarcaster.String()},
+	filter.RSS3:       {filter.NetworkEthereum.String()},
+	filter.Paragraph:  {filter.NetworkArweave.String()},
+	filter.OpenSea:    {filter.NetworkEthereum.String()},
+	filter.Uniswap:    {filter.NetworkEthereum.String()},
+	filter.Optimism:   {filter.NetworkEthereum.String()},
+	filter.Aavegotchi: {filter.NetworkPolygon.String()},
+	filter.Lens:       {filter.NetworkPolygon.String()},
+}
+
+var NetworkToWorkersMap = map[filter.Network][]string{
+	filter.NetworkEthereum:  {filter.Fallback.String(), filter.RSS3.String(), filter.OpenSea.String(), filter.Uniswap.String(), filter.Optimism.String()},
+	filter.NetworkArweave:   {filter.Mirror.String(), filter.Paragraph.String()},
+	filter.NetworkFarcaster: {filter.Farcaster.String()},
+	filter.NetworkPolygon:   {filter.Aavegotchi.String(), filter.Lens.String()},
+}
+
+var PlatformToWorkerMap = map[filter.Platform]string{
+	filter.PlatformRSS3:       filter.RSS3.String(),
+	filter.PlatformMirror:     filter.Mirror.String(),
+	filter.PlatformFarcaster:  filter.Farcaster.String(),
+	filter.PlatformParagraph:  filter.Paragraph.String(),
+	filter.PlatformOpenSea:    filter.OpenSea.String(),
+	filter.PlatformUniswap:    filter.Uniswap.String(),
+	filter.PlatformOptimism:   filter.Optimism.String(),
+	filter.PlatformAavegotchi: filter.Aavegotchi.String(),
+	filter.PlatformLens:       filter.Lens.String(),
+}
+
+var TagToWorkersMap = map[filter.Tag][]string{
+	filter.TagTransaction: {filter.Optimism.String()},
+	filter.TagCollectible: {filter.OpenSea.String()},
+	filter.TagExchange:    {filter.RSS3.String(), filter.Uniswap.String()},
+	filter.TagSocial:      {filter.Farcaster.String(), filter.Mirror.String(), filter.Lens.String(), filter.Paragraph.String()},
+	filter.TagMetaverse:   {filter.Aavegotchi.String()},
 }
