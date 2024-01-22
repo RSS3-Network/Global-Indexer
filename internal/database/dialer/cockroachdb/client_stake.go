@@ -11,47 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
-
-func (c *client) FindStakeStaker(ctx context.Context, user, node common.Address) (*schema.StakeStaker, error) {
-	var value table.StakeStaker
-
-	if err := c.database.
-		WithContext(ctx).
-		Where(`"user" = ? AND "node" = ?`, user.String(), node.String()).
-		First(&value).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
-		}
-
-		value = table.StakeStaker{
-			User: user.String(),
-			Node: node.String(),
-		}
-	}
-
-	return value.Export()
-}
-
-func (c *client) SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeStaker) error {
-	var value table.StakeStaker
-	if err := value.Import(*stakeStaker); err != nil {
-		return err
-	}
-
-	clauses := []clause.Expression{
-		clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "user"},
-				{Name: "node"},
-			},
-			UpdateAll: true,
-		},
-	}
-
-	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
-}
 
 func (c *client) FindStakeTransaction(ctx context.Context, id common.Hash) (*schema.StakeTransaction, error) {
 	var row table.StakeTransaction
