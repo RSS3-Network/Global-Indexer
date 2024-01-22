@@ -175,6 +175,20 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
+	stakeChips := make([]*schema.StakeChip, len(stakeTransaction.Chips))
+
+	for index, chipID := range stakeTransaction.Chips {
+		stakeChips[index] = &schema.StakeChip{
+			ID:    chipID,
+			Owner: event.User,
+			Node:  event.NodeAddr,
+		}
+	}
+
+	if err := databaseTransaction.SaveStakeChips(ctx, stakeChips...); err != nil {
+		return fmt.Errorf("save stake chips: %w", err)
+	}
+
 	return nil
 }
 

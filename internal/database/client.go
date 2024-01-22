@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -42,6 +43,8 @@ type Client interface {
 	FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
+	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
+	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 }
 
 type Session interface {

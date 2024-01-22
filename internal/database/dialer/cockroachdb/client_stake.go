@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -156,4 +158,28 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 	}
 
 	return c.database.WithContext(ctx).Create(&value).Error
+}
+
+func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error {
+	values := make([]*table.StakeChip, 0, len(stakeChips))
+
+	for _, stakeChip := range stakeChips {
+		var value table.StakeChip
+
+		if err := value.Import(*stakeChip); err != nil {
+			return fmt.Errorf("import stake chip: %w", err)
+		}
+
+		values = append(values, &value)
+	}
+
+	return c.database.WithContext(ctx).Create(&values).Error
+}
+
+func (c *client) UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChipIDs ...*big.Int) error {
+	ids := lo.Map(stakeChipIDs, func(stakeChipID *big.Int, _ int) decimal.Decimal {
+		return decimal.NewFromBigInt(stakeChipID, 0)
+	})
+
+	return c.database.WithContext(ctx).Model((*table.StakeChip)(nil)).Where(`"id" IN ?`, ids).UpdateColumn("owner", owner.String()).Error
 }
