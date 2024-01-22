@@ -155,12 +155,12 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-type GetStakeNodeStakersRequest struct {
+type GetStakeNodeChipsRequest struct {
 	Node common.Address `param:"node"`
 }
 
-func (h *Hub) GetStakeNodeStakers(c echo.Context) error {
-	var request GetStakeNodeStakersRequest
+func (h *Hub) GetStakeNodeChips(c echo.Context) error {
+	var request GetStakeNodeChipsRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
 	}
@@ -179,17 +179,17 @@ func (h *Hub) GetStakeNodeStakers(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-type GetStakeStakerNodesRequest struct {
-	Staker common.Address `param:"staker"`
+type GetStakeWalletChipsRequest struct {
+	Wallet common.Address `param:"wallet"`
 }
 
-func (h *Hub) GetStakeStakerNodes(c echo.Context) error {
-	var request GetStakeStakerNodesRequest
+func (h *Hub) GetStakeWalletChips(c echo.Context) error {
+	var request GetStakeWalletChipsRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	chips, err := h.databaseClient.FindStakeChipsByOwner(c.Request().Context(), request.Staker)
+	chips, err := h.databaseClient.FindStakeChipsByOwner(c.Request().Context(), request.Wallet)
 	if err != nil {
 		zap.L().Error("find node stakers", zap.Error(err), zap.Any("request", request))
 
