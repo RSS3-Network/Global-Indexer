@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -44,16 +45,18 @@ type Client interface {
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
 
-	FindStakeStaker(ctx context.Context, user, node common.Address) (*schema.StakeStaker, error)
-	SaveStakeStaker(ctx context.Context, stakeStaker *schema.StakeStaker) error
 	FindStakeTransaction(ctx context.Context, id common.Hash) (*schema.StakeTransaction, error)
 	FindStakeTransactions(ctx context.Context) ([]*schema.StakeTransaction, error)
 	FindStakeTransactionsByUser(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
 	FindStakeTransactionsByNode(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
 	FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*schema.StakeEvent, error)
 	FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error)
+	FindStakeChipsByOwner(ctx context.Context, owner common.Address) ([]*schema.StakeChip, error)
+	FindStakeChipsByNode(ctx context.Context, node common.Address) ([]*schema.StakeChip, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
+	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
+	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 }
 
 type Session interface {

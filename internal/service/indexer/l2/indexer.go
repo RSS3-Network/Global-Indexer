@@ -134,6 +134,10 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 				if err := s.indexStakingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
 					return fmt.Errorf("index staking log: %w", err)
 				}
+			case l2.AddressChipsProxy:
+				if err := s.indexChipsLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
+					return fmt.Errorf("index staking log: %w", err)
+				}
 			}
 		}
 	}

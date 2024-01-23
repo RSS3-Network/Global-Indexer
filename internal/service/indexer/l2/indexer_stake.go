@@ -11,12 +11,9 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/shopspring/decimal"
 )
 
 func (s *server) indexStakingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
-	fmt.Println(log)
-
 	switch eventHash := log.Topics[0]; eventHash {
 	case l2.EventHashStakingDeposited:
 		return s.indexStakingDepositedLog(ctx, header, transaction, receipt, log, databaseTransaction)
@@ -178,14 +175,21 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
-	stakeStaker, err := databaseTransaction.FindStakeStaker(ctx, event.User, event.NodeAddr)
-	if err != nil {
-		return fmt.Errorf("find stake staker: %w", err)
+	stakeChips := make([]*schema.StakeChip, len(stakeTransaction.Chips))
+
+	for index, chipID := range stakeTransaction.Chips {
+		stakeChips[index] = &schema.StakeChip{
+			ID:    chipID,
+			Owner: event.User,
+			Node:  event.NodeAddr,
+		}
 	}
 
-	stakeStaker.Value = stakeStaker.Value.Add(decimal.NewFromBigInt(event.Amount, 0))
+	if err := databaseTransaction.SaveStakeChips(ctx, stakeChips...); err != nil {
+		return fmt.Errorf("save stake chips: %w", err)
+	}
 
-	return databaseTransaction.SaveStakeStaker(ctx, stakeStaker)
+	return nil
 }
 
 func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
@@ -246,12 +250,5 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
-	stakeStaker, err := databaseTransaction.FindStakeStaker(ctx, event.User, event.NodeAddr)
-	if err != nil {
-		return fmt.Errorf("find stake staker: %w", err)
-	}
-
-	stakeStaker.Value = stakeStaker.Value.Sub(decimal.NewFromBigInt(event.UnstakeAmount, 0))
-
-	return databaseTransaction.SaveStakeStaker(ctx, stakeStaker)
+	return nil
 }
