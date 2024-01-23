@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sort"
+	"sync"
 	"time"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
@@ -15,6 +17,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -30,6 +33,7 @@ type server struct {
 	contractL1StandardBridge       *bindings.L1StandardBridge
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
+	blockThreads                   uint64
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -70,22 +74,75 @@ func (s *server) run(ctx context.Context) (err error) {
 			continue
 		}
 
-		blockNumberCurrent := s.checkpoint.BlockNumber + 1
+		// Get blocks from RPC.
+		blockResultPool := pool.NewWithResults[*types.Block]().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
 
-		// Get current block (header and transactions).
-		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
-		if err != nil {
-			return fmt.Errorf("get block: %w", err)
+		for offset := uint64(1); offset <= s.blockThreads; offset++ {
+			blockNumber := s.checkpoint.BlockNumber + offset
+
+			if blockNumber > s.blockNumberLatest {
+				continue
+			}
+
+			blockResultPool.Go(func(ctx context.Context) (*types.Block, error) {
+				// Get current block (header and transactions).
+				block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+				if err != nil {
+					return nil, fmt.Errorf("get block: %w", err)
+				}
+
+				return block, nil
+			})
 		}
 
-		// Get all receipts of the current block.
-		receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumberCurrent)))
+		blocks, err := blockResultPool.Wait()
 		if err != nil {
-			return fmt.Errorf("get receipts: %w", err)
+			return fmt.Errorf("wait block result pool: %w", err)
 		}
 
-		if err := s.index(ctx, block, receipts); err != nil {
-			return fmt.Errorf("index block #%d: %w", blockNumberCurrent, err)
+		// Get receipts from RPC.
+		var (
+			receiptsMap       = make(map[uint64][]*types.Receipt)
+			receiptsMapLocker sync.Mutex
+		)
+
+		receiptsPool := pool.New().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
+
+		for _, block := range blocks {
+			block := block
+
+			receiptsPool.Go(func(ctx context.Context) error {
+				receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(block.NumberU64())))
+				if err != nil {
+					return fmt.Errorf("get block receipts: %w", err)
+				}
+
+				receiptsMapLocker.Lock()
+				defer receiptsMapLocker.Unlock()
+				receiptsMap[block.NumberU64()] = receipts
+
+				return nil
+			})
+		}
+
+		if err := receiptsPool.Wait(); err != nil {
+			return fmt.Errorf("wait receipts pool: %w", err)
+		}
+
+		sort.SliceStable(blocks, func(i, j int) bool {
+			return blocks[i].Number().Cmp(blocks[j].Number()) < 0
+		})
+
+		for _, block := range blocks {
+			if err := s.index(ctx, block, receiptsMap[block.NumberU64()]); err != nil {
+				return fmt.Errorf("index block #%d: %w", block.NumberU64(), err)
+			}
 		}
 	}
 }
@@ -151,6 +208,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, config Confi
 	var (
 		instance = server{
 			databaseClient: databaseClient,
+			blockThreads:   config.BlockThreads,
 		}
 		err error
 	)
