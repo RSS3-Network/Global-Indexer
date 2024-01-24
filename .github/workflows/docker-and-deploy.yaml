@@ -1,11 +1,12 @@
 name: Build and Deploy
+
 on:
-  workflow_run:
-    workflows:
-      - Lint
-      - Test
-    types:
-      - completed
+  push:
+    branches:
+      - "develop"
+    tags:
+      - "*"
+
 jobs:
   build:
     uses: NaturalSelectionLabs/Daedalus/.github/workflows/docker-tpl.yaml@main
@@ -13,17 +14,6 @@ jobs:
       images: rss3/global-indexer
       context: .
       dockerfile: ./Dockerfile
-    secrets: inherit
-  deploy-v3-dev:
-    uses: NaturalSelectionLabs/Daedalus/.github/workflows/deploy-v3-tpl.yaml@main
-    needs:
-      - build
-    with:
-      images: rss3/global-indexer
-      tag: sha-${{ github.sha }}
-      cluster: dev
-      namespace: network
-      releaseName: global-indexer
-      revision: main
-      dir: deploy/dev
-    secrets: inherit
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
