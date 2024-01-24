@@ -1,12 +1,13 @@
 name: Build and Deploy
-
 on:
   push:
     branches:
-      - "develop"
-    tags:
-      - "*"
-
+      - main
+    paths-ignore:
+      - "deploy/**"
+  pull_request:
+    paths-ignore:
+      - "deploy/**"
 jobs:
   build:
     uses: NaturalSelectionLabs/Daedalus/.github/workflows/docker-tpl.yaml@main
