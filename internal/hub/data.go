@@ -97,7 +97,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 	return nodes, nil
 }
 
-func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) error {
+func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error {
 	// Check signature.
 	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
 		return err
@@ -125,6 +125,8 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 	}
 
 	node.IsPublicGood = nodeInfo.PublicGood
+	node.LastHeartbeatTimestamp = time.Now().Unix()
+	node.Status = schema.StatusOnline
 
 	fullNode := h.isFullNode(request.Config.Decentralized)
 
@@ -191,6 +193,31 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 	}
 
 	return nil
+}
+
+func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) error {
+	// Check signature.
+	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
+		return fmt.Errorf("check signature: %w", err)
+	}
+
+	// Check node from database.
+	node, err := h.databaseClient.FindNode(ctx, request.Address)
+	if err != nil {
+		return fmt.Errorf("get node %s from database: %w", request.Address, err)
+	}
+
+	if node == nil {
+		return fmt.Errorf("node %s not found", request.Address)
+	}
+
+	node.LastHeartbeatTimestamp = request.Timestamp
+	node.Status = schema.StatusOnline
+
+	// Save node to database.
+	return h.databaseClient.SaveNode(ctx, node)
+
+
 }
 
 // Check if node is full node

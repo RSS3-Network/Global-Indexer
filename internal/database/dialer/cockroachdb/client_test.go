@@ -9,10 +9,10 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/naturalselectionlabs/rss3-node/config"
-	"github.com/naturalselectionlabs/rss3-node/schema/filter"
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/cockroachdb"
+	"github.com/rss3-network/serving-node/config"
+	"github.com/rss3-network/serving-node/schema/filter"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
