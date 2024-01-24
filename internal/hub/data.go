@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -30,9 +31,8 @@ import (
 )
 
 var (
-	rssNodeCacheKey    = "nodes:rss"
-	fullNodeCacheKey   = "nodes:full"
-	workerNodeCacheKey = "nodes:worker:"
+	rssNodeCacheKey  = "nodes:rss"
+	fullNodeCacheKey = "nodes:full"
 )
 
 var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
@@ -173,17 +173,17 @@ func (h *Hub) registerNode(ctx context.Context, request *RegisterNodeRequest) er
 		// If the node is a full node,
 		// then delete the record from the table.
 		// Otherwise, add the indexers to the table.
-		if fullNode {
-			if err = h.databaseClient.DeleteNodeIndexers(ctx, node.Address); err != nil {
-				return fmt.Errorf("delete node indexers: %s, %w", node.Address.String(), err)
-			}
-		} else {
+		if err = h.databaseClient.DeleteNodeIndexers(ctx, node.Address); err != nil {
+			return fmt.Errorf("delete node indexers: %s, %w", node.Address.String(), err)
+		}
+
+		if !fullNode {
 			if err = h.databaseClient.SaveNodeIndexers(ctx, indexers); err != nil {
 				return fmt.Errorf("save node indexers: %s, %w", node.Address.String(), err)
 			}
-		}
 
-		zap.L().Info("save node indexer", zap.Any("node", node.Address.String()))
+			zap.L().Info("save node indexer", zap.Any("node", node.Address.String()))
+		}
 
 		return nil
 	}); err != nil {
@@ -199,7 +199,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 		return false
 	}
 
-	workerMap := make(map[filter.Name]map[string]struct{})
+	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
 
 	for _, indexer := range indexers {
 		wid, err := filter.NameString(indexer.Worker.String())
@@ -208,15 +208,15 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 			return false
 		}
 
-		if _, exists := workerMap[wid]; !exists {
-			workerMap[wid] = make(map[string]struct{})
+		if _, exists := workerToNetworksMap[wid]; !exists {
+			workerToNetworksMap[wid] = make(map[string]struct{})
 		}
 
-		workerMap[wid][indexer.Network.String()] = struct{}{}
+		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
 	}
 
 	for wid, requiredNetworks := range node.WorkerToNetworksMap {
-		networks, exists := workerMap[wid]
+		networks, exists := workerToNetworksMap[wid]
 		if !exists || len(networks) != len(requiredNetworks) {
 			return false
 		}
@@ -232,7 +232,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, rssNodeCacheKey, "")
+	nodes, err := h.filterNodes(ctx, rssNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 }
 
 func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityRequest) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, fullNodeCacheKey, "")
+	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -280,26 +280,21 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 }
 
 func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActivitiesRequest) ([]byte, error) {
-	var (
-		nodes []node.Cache
+	var nodes []node.Cache
 
-		err error
-	)
-
-	nodes, err = h.filterNodes(ctx, fullNodeCacheKey, "")
+	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: check request params
 	nodeAddresses, err := h.matchLightNodes(ctx, request)
 
 	if err != nil {
 		return nil, err
 	}
 
-	//Combine light nodes and full nodes
+	// Combine light nodes and full nodes
 	if len(nodeAddresses) > 0 {
 		nodeStats, err := h.databaseClient.FindNodeStats(ctx, nodeAddresses)
 
@@ -307,11 +302,9 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 			return nil, err
 		}
 
-		if len(nodeStats) > 0 {
-			for i, n := range nodeStats {
-				nodes[i].Address = n.Address.String()
-				nodes[i].Endpoint = n.Endpoint
-			}
+		for i, n := range nodeStats {
+			nodes[i].Address = n.Address.String()
+			nodes[i].Endpoint = n.Endpoint
 		}
 	}
 
@@ -335,7 +328,6 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 func (h *Hub) matchLightNodes(ctx context.Context, request node.AccountActivitiesRequest) ([]common.Address, error) {
 	tagWorkers := make(map[string]struct{})
 	platformWorkers := make(map[string]struct{})
-	nodes := make([]common.Address, 0)
 
 	// check network
 	for i, network := range request.Network {
@@ -383,404 +375,219 @@ func (h *Hub) matchLightNodes(ctx context.Context, request node.AccountActivitie
 		platformWorkers[platformWorker] = struct{}{}
 	}
 
-	switch {
-	case len(tagWorkers) == 0 && len(platformWorkers) == 0 && len(request.Network) > 0:
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, request.Network, nil)
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeNetworkToWorkerMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeNetworkToWorkerMap[indexer.Address]; !exists {
-				nodeNetworkToWorkerMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeNetworkToWorkerMap[indexer.Address][indexer.Network] = append(nodeNetworkToWorkerMap[indexer.Address][indexer.Network], indexer.Worker)
-		}
-
-		for address, networkToWorkersMap := range nodeNetworkToWorkerMap {
-			if len(networkToWorkersMap) != len(request.Network) {
-				// number of networks not match
-				continue
-			}
-
-			flag := true
-
-			// check every network workers
-			for network, workers := range networkToWorkersMap {
-				nid, _ := filter.NetworkString(network)
-
-				requiredWorkers := node.NetworkToWorkersMap[nid]
-
-				// number of workers not match
-				if len(requiredWorkers) != len(workers) {
-					flag = false
-
-					break
-				}
-
-				workerMap := make(map[string]struct{}, len(workers))
-
-				for _, worker := range workers {
-					workerMap[worker] = struct{}{}
-				}
-
-				// check every worker
-				for _, worker := range requiredWorkers {
-					if _, exists := workerMap[worker]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) == 0 && len(platformWorkers) > 0 && len(request.Network) == 0:
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, nil, lo.Keys(platformWorkers))
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
-				nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
-			if len(nodeWorkerToNetworksMap) != len(platformWorkers) {
-				// number of workers not match
-				continue
-			}
-
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				requiredNetworks := node.WorkerToNetworksMap[wid]
-
-				// number of networks not match
-				if len(requiredNetworks) != len(networks) {
-					flag = false
-
-					break
-				}
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) > 0 && len(platformWorkers) == 0 && len(request.Network) == 0:
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, nil, lo.Keys(tagWorkers))
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworkMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworkMap[indexer.Address]; !exists {
-				nodeWorkerToNetworkMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworkMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworkMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworkMap {
-			if len(nodeWorkerToNetworkMap) != len(tagWorkers) {
-				// worker not match
-				continue
-			}
-
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				requiredNetworks := node.WorkerToNetworksMap[wid]
-
-				// number of networks not match
-				if len(requiredNetworks) != len(networks) {
-					flag = false
-
-					break
-				}
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) == 0 && len(platformWorkers) > 0 && len(request.Network) > 0:
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, request.Network, lo.Keys(platformWorkers))
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
-				nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				workerRequiredNetworks := node.WorkerToNetworksMap[wid]
-
-				requiredNetworks := findCommonElements(workerRequiredNetworks, request.Network)
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) > 0 && len(platformWorkers) == 0 && len(request.Network) > 0:
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, request.Network, lo.Keys(tagWorkers))
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
-				nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				workerRequiredNetworks := node.WorkerToNetworksMap[wid]
-
-				requiredNetworks := findCommonElements(workerRequiredNetworks, request.Network)
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) > 0 && len(platformWorkers) > 0 && len(request.Network) == 0:
-		workers := findCommonElements(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
-
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, nil, workers)
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
-				nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
-			if len(nodeWorkerToNetworksMap) != len(workers) {
-				// number of workers not match
-				continue
-			}
-
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				requiredNetworks := node.WorkerToNetworksMap[wid]
-
-				// number of networks not match
-				if len(requiredNetworks) != len(networks) {
-					flag = false
-
-					break
-				}
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	case len(tagWorkers) > 0 && len(platformWorkers) > 0 && len(request.Network) > 0:
-		workers := findCommonElements(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
-
-		indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, request.Network, workers)
-
-		if err != nil {
-			return nil, err
-		}
-
-		nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
-
-		for _, indexer := range indexers {
-			if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
-				nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
-			}
-
-			nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
-		}
-
-		for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
-			flag := true
-
-			// check every worker networks
-			for worker, networks := range workerToNetworksMap {
-				wid, _ := filter.NameString(worker)
-
-				workerRequiredNetworks := node.WorkerToNetworksMap[wid]
-
-				requiredNetworks := findCommonElements(workerRequiredNetworks, request.Network)
-
-				networkMap := make(map[string]struct{}, len(networks))
-
-				for _, network := range networks {
-					networkMap[network] = struct{}{}
-				}
-
-				// check every network
-				for _, network := range requiredNetworks {
-					if _, exists := networkMap[network]; !exists {
-						flag = false
-
-						break
-					}
-				}
-			}
-
-			if flag {
-				nodes = append(nodes, address)
-			}
-		}
-
-		return nodes, nil
-	default:
-		return nil, nil
+	var (
+		nodes        []common.Address
+		err          error
+		workers      []string
+		needsWorker  = len(tagWorkers) > 0 || len(platformWorkers) > 0
+		needsNetwork = len(request.Network) > 0
+	)
+
+	if len(tagWorkers) > 0 && len(platformWorkers) > 0 {
+		workers = findCommonElements(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
+	} else if len(tagWorkers) > 0 {
+		workers = lo.Keys(tagWorkers)
+	} else if len(platformWorkers) > 0 {
+		workers = lo.Keys(platformWorkers)
 	}
+
+	switch {
+	case !needsWorker && needsNetwork:
+		nodes, err = h.matchNetwork(ctx, request.Network)
+	case needsWorker && !needsNetwork:
+		nodes, err = h.matchWorker(ctx, workers)
+	case needsWorker && needsNetwork:
+		nodes, err = h.matchWorkerAndNetwork(ctx, workers, request.Network)
+	default:
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}
+
+func (h *Hub) matchNetwork(ctx context.Context, requestNetworks []string) ([]common.Address, error) {
+	nodes := make([]common.Address, 0)
+
+	indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, requestNetworks, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeNetworkToWorkerMap := make(map[common.Address]map[string][]string)
+
+	for _, indexer := range indexers {
+		if _, exists := nodeNetworkToWorkerMap[indexer.Address]; !exists {
+			nodeNetworkToWorkerMap[indexer.Address] = make(map[string][]string)
+		}
+
+		nodeNetworkToWorkerMap[indexer.Address][indexer.Network] = append(nodeNetworkToWorkerMap[indexer.Address][indexer.Network], indexer.Worker)
+	}
+
+	for address, networkToWorkersMap := range nodeNetworkToWorkerMap {
+		if len(networkToWorkersMap) != len(requestNetworks) {
+			// number of networks not match
+			continue
+		}
+
+		flag := true
+
+		// check every network workers
+		for network, workers := range networkToWorkersMap {
+			nid, _ := filter.NetworkString(network)
+
+			requiredWorkers := node.NetworkToWorkersMap[nid]
+
+			// number of workers not match
+			if len(requiredWorkers) != len(workers) {
+				flag = false
+
+				break
+			}
+
+			workerMap := make(map[string]struct{}, len(workers))
+
+			for _, worker := range workers {
+				workerMap[worker] = struct{}{}
+			}
+
+			// check every worker
+			for _, worker := range requiredWorkers {
+				if _, exists := workerMap[worker]; !exists {
+					flag = false
+
+					break
+				}
+			}
+		}
+
+		if flag {
+			nodes = append(nodes, address)
+		}
+	}
+
+	return nodes, nil
+}
+
+func (h *Hub) matchWorker(ctx context.Context, workers []string) ([]common.Address, error) {
+	nodes := make([]common.Address, 0)
+
+	indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, nil, workers)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
+
+	for _, indexer := range indexers {
+		if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
+			nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
+		}
+
+		nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
+	}
+
+	for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
+		if len(nodeWorkerToNetworksMap) != len(workers) {
+			// number of workers not match
+			continue
+		}
+
+		flag := true
+
+		// check every worker networks
+		for worker, networks := range workerToNetworksMap {
+			wid, _ := filter.NameString(worker)
+
+			requiredNetworks := node.WorkerToNetworksMap[wid]
+
+			// number of networks not match
+			if len(requiredNetworks) != len(networks) {
+				flag = false
+
+				break
+			}
+
+			networkMap := make(map[string]struct{}, len(networks))
+
+			for _, network := range networks {
+				networkMap[network] = struct{}{}
+			}
+
+			// check every network
+			for _, network := range requiredNetworks {
+				if _, exists := networkMap[network]; !exists {
+					flag = false
+
+					break
+				}
+			}
+		}
+
+		if flag {
+			nodes = append(nodes, address)
+		}
+	}
+
+	return nodes, nil
+}
+
+func (h *Hub) matchWorkerAndNetwork(ctx context.Context, workers, requestNetworks []string) ([]common.Address, error) {
+	nodes := make([]common.Address, 0)
+
+	indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, requestNetworks, workers)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeWorkerToNetworksMap := make(map[common.Address]map[string][]string)
+
+	for _, indexer := range indexers {
+		if _, exists := nodeWorkerToNetworksMap[indexer.Address]; !exists {
+			nodeWorkerToNetworksMap[indexer.Address] = make(map[string][]string)
+		}
+
+		nodeWorkerToNetworksMap[indexer.Address][indexer.Worker] = append(nodeWorkerToNetworksMap[indexer.Address][indexer.Worker], indexer.Network)
+	}
+
+	for address, workerToNetworksMap := range nodeWorkerToNetworksMap {
+		flag := true
+
+		// check every worker networks
+		for worker, networks := range workerToNetworksMap {
+			wid, _ := filter.NameString(worker)
+
+			workerRequiredNetworks := node.WorkerToNetworksMap[wid]
+
+			requiredNetworks := findCommonElements(workerRequiredNetworks, requestNetworks)
+
+			networkMap := make(map[string]struct{}, len(networks))
+
+			for _, network := range networks {
+				networkMap[network] = struct{}{}
+			}
+
+			// check every network
+			for _, network := range requiredNetworks {
+				if _, exists := networkMap[network]; !exists {
+					flag = false
+
+					break
+				}
+			}
+		}
+
+		if flag {
+			nodes = append(nodes, address)
+		}
+	}
+
+	return nodes, nil
 }
 
 func findCommonElements(slice1, slice2 []string) []string {
@@ -802,17 +609,13 @@ func findCommonElements(slice1, slice2 []string) []string {
 	return commonElements
 }
 
-func (h *Hub) filterNodes(ctx context.Context, key, worker string) ([]node.Cache, error) {
+func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error) {
 	var (
 		nodesCache []node.Cache
 		nodes      []*schema.Stat
 	)
 
 	// Get nodes from cache.
-	if worker != "" {
-		key = fmt.Sprintf("%s:%s", key, worker)
-	}
-
 	exists, err := cache.Get(ctx, key, &nodesCache)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
@@ -832,13 +635,6 @@ func (h *Hub) filterNodes(ctx context.Context, key, worker string) ([]node.Cache
 		}
 	case fullNodeCacheKey:
 		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
-
-		if err != nil {
-			return nil, err
-		}
-	case fmt.Sprintf("%s:%s", workerNodeCacheKey, worker):
-		// TODO:
-		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, nil, 3)
 
 		if err != nil {
 			return nil, err
@@ -871,15 +667,29 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 			data, err := h.fetch(context.Background(), endpoint)
 			if err != nil {
 				zap.L().Error("fetch request error", zap.Any("node", address.String()))
+
+				mu.Lock()
+				results = append(results, node.DataResponse{Address: address, Err: err})
+				mu.Unlock()
+
+				return
+			}
+
+			if !h.validateData(data) {
+				mu.Lock()
+				results = append(results, node.DataResponse{Address: address, Err: fmt.Errorf("invalid data")})
+
+				if len(results) == len(nodeMap) {
+					firstResult <- node.DataResponse{Address: address, Data: data}
+				}
+				mu.Unlock()
+
+				return
 			}
 
 			mu.Lock()
-			results = append(results, node.DataResponse{Address: address, Data: data})
+			results = append(results, node.DataResponse{Address: address, Data: data, First: true})
 			mu.Unlock()
-
-			if !h.validateData(data) {
-				return
-			}
 
 			select {
 			case firstResult <- node.DataResponse{Address: address, Data: data}:
@@ -891,7 +701,6 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	go func() {
 		waitGroup.Wait()
 		close(firstResult)
-
 		processResults(results)
 	}()
 
@@ -953,69 +762,126 @@ func (h *Hub) processActivitiesResults(results []node.DataResponse) {
 		zap.L().Info("complete feed request verify", zap.Any("results", len(results)))
 	}
 
+	if !results[0].First {
+		return
+	}
+
 	// TODO 2nd request、verify
-	var activityRes node.ActivitiesResponse
+	var activities node.ActivitiesResponse
 
 	data := results[0].Data
 
-	if err := json.Unmarshal(data, &activityRes); err != nil {
+	if err := json.Unmarshal(data, &activities); err != nil {
 		// TODO: Handle error
 		fmt.Printf("fail to unmarshal: %w", err)
 	}
+
+	fmt.Println()
 }
 
 func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error {
+	if len(results) < 3 {
+		return fmt.Errorf("insufficient data: expected 3 results, got %d", len(results))
+	}
+
+	statsMap, err := h.getNodeStatsMap(ctx, results)
+	if err != nil {
+		return fmt.Errorf("find node stats: %w", err)
+	}
+
+	h.sortResultsByFirst(results)
+
+	if !results[0].First {
+		for i := range results {
+			results[i].InvalidRequest = 1
+		}
+	} else {
+		h.updateRequestsBasedOnDataDiffs(results)
+	}
+
+	h.updateStatsWithResults(statsMap, results)
+
+	if err = h.databaseClient.SaveNodeStats(ctx, statsMapToSlice(statsMap)); err != nil {
+		return fmt.Errorf("save node stats: %w", err)
+	}
+
+	return nil
+}
+
+func (h *Hub) getNodeStatsMap(ctx context.Context, results []node.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Map(results, func(result node.DataResponse, _ int) common.Address {
 		return result.Address
 	}))
 
 	if err != nil {
-		return fmt.Errorf("find node stats: %w", err)
+		return nil, err
 	}
 
-	diff01 := h.diffData(results[0].Data, results[1].Data)
-	diff02 := h.diffData(results[0].Data, results[2].Data)
-	diff12 := h.diffData(results[1].Data, results[2].Data)
+	statsMap := make(map[common.Address]*schema.Stat)
+
+	for _, stat := range stats {
+		statsMap[stat.Address] = stat
+	}
+
+	return statsMap, nil
+}
+
+func (h *Hub) sortResultsByFirst(results []node.DataResponse) {
+	sort.SliceStable(results, func(i, j int) bool {
+		return results[i].First && !results[j].First
+	})
+}
+
+func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, results []node.DataResponse) {
+	for _, result := range results {
+		if stat, exists := statsMap[result.Address]; exists {
+			stat.TotalRequest += int64(result.Request)
+			stat.EpochRequest += int64(result.Request)
+			stat.EpochInvalidRequest += int64(result.InvalidRequest)
+		}
+	}
+}
+
+func (h *Hub) updateRequestsBasedOnDataDiffs(results []node.DataResponse) {
+	diff01 := diffData(results[0].Data, results[1].Data)
+	diff02 := diffData(results[0].Data, results[2].Data)
+	diff12 := diffData(results[1].Data, results[2].Data)
 
 	if diff01 && diff02 {
 		results[0].Request = 2
 		results[1].Request = 1
 		results[2].Request = 1
-	}
-
-	if !diff01 && diff12 {
+	} else if !diff01 && diff12 {
 		results[0].InvalidRequest = 1
 		results[1].Request = 1
 		results[2].Request = 1
-	}
-
-	if diff01 && !diff12 {
+	} else if !diff01 && diff02 {
+		results[0].Request = 2
+		results[1].InvalidRequest = 1
+		results[2].Request = 1
+	} else if diff01 && !diff02 {
 		results[0].Request = 2
 		results[1].Request = 1
 		results[2].InvalidRequest = 1
 	}
+}
 
-	if diff02 && !diff12 {
-		results[0].Request = 2
-		results[1].InvalidRequest = 1
-		results[2].Request = 1
+func statsMapToSlice(statsMap map[common.Address]*schema.Stat) []*schema.Stat {
+	statsSlice := make([]*schema.Stat, 0, len(statsMap))
+	for _, stat := range statsMap {
+		statsSlice = append(statsSlice, stat)
+	}
+	return statsSlice
+}
+
+func diffData(src, des []byte) bool {
+	if src == nil || des == nil {
+		return false
 	}
 
-	for _, result := range results {
-		for _, stat := range stats {
-			if result.Address == stat.Address {
-				stat.TotalRequest += int64(result.Request)
-				stat.EpochRequest += int64(result.Request)
-				stat.EpochInvalidRequest += int64(result.InvalidRequest)
-			}
-		}
-	}
+	srcHash, destHash := sha256.Sum256(src), sha256.Sum256(des)
 
-	if err = h.databaseClient.SaveNodeStats(ctx, stats); err != nil {
-		return fmt.Errorf("save node stats: %w", err)
-	}
-
-	return nil
+	return string(srcHash[:]) == string(destHash[:])
 }
 
 func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
@@ -1043,12 +909,6 @@ func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func (h *Hub) diffData(src, des []byte) bool {
-	srcHash, destHash := sha256.Sum256(src), sha256.Sum256(des)
-
-	return string(srcHash[:]) == string(destHash[:])
 }
 
 // cron task
