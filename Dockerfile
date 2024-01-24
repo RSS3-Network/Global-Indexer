@@ -8,7 +8,6 @@ ARG GH_TOKEN
 
 COPY go.mod go.sum ./
 
-ENV GOPRIVATE="github.com/naturalselectionlabs/rss3-node"
 ENV GH_USER=$GH_USER
 ENV GH_TOKEN=$GH_TOKEN
 RUN git config --global url."https://${GH_USER}:${GH_TOKEN}@github.com".insteadOf "https://github.com"

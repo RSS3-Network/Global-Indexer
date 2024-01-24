@@ -10,13 +10,15 @@ import (
 )
 
 type Node struct {
-	Address      common.Address  `gorm:"column:address;primaryKey"`
-	Endpoint     string          `gorm:"column:endpoint"`
-	IsPublicGood bool            `gorm:"column:is_public_good"`
-	Stream       json.RawMessage `gorm:"column:stream"`
-	Config       json.RawMessage `gorm:"column:config;type:jsonb"`
-	CreatedAt    time.Time       `gorm:"column:created_at"`
-	UpdatedAt    time.Time       `gorm:"column:updated_at"`
+	Address                common.Address  `gorm:"column:address;primaryKey"`
+	Endpoint               string          `gorm:"column:endpoint"`
+	IsPublicGood           bool            `gorm:"column:is_public_good"`
+	Stream                 json.RawMessage `gorm:"column:stream"`
+	Config                 json.RawMessage `gorm:"column:config;type:jsonb"`
+	Status                 schema.Status   `gorm:"column:status"`
+	LastHeartbeatTimestamp time.Time       `gorm:"column:last_heartbeat_timestamp"`
+	CreatedAt              time.Time       `gorm:"column:created_at"`
+	UpdatedAt              time.Time       `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {
@@ -27,6 +29,8 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Address = node.Address
 	n.Endpoint = node.Endpoint
 	n.IsPublicGood = node.IsPublicGood
+	n.Status = node.Status
+	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
 
 	if n.Stream, err = json.Marshal(node.Stream); err != nil {
 		return fmt.Errorf("failed to marshal node stream: %w", err)
@@ -41,9 +45,11 @@ func (n *Node) Import(node *schema.Node) (err error) {
 
 func (n *Node) Export() (*schema.Node, error) {
 	node := schema.Node{
-		Address:      n.Address,
-		Endpoint:     n.Endpoint,
-		IsPublicGood: n.IsPublicGood,
+		Address:                n.Address,
+		Endpoint:               n.Endpoint,
+		IsPublicGood:           n.IsPublicGood,
+		Status:                 n.Status,
+		LastHeartbeatTimestamp: n.LastHeartbeatTimestamp.Unix(),
 	}
 
 	if err := json.Unmarshal(n.Stream, &node.Stream); err != nil {
