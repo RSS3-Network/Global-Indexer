@@ -23,8 +23,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/naturalselectionlabs/rss3-node/config"
-	"github.com/naturalselectionlabs/rss3-node/schema/filter"
+	"github.com/rss3-network/serving-node/config"
+	"github.com/rss3-network/serving-node/schema/filter"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -216,8 +216,6 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) erro
 
 	// Save node to database.
 	return h.databaseClient.SaveNode(ctx, node)
-
-
 }
 
 // Check if node is full node
@@ -898,6 +896,7 @@ func statsMapToSlice(statsMap map[common.Address]*schema.Stat) []*schema.Stat {
 	for _, stat := range statsMap {
 		statsSlice = append(statsSlice, stat)
 	}
+
 	return statsSlice
 }
 

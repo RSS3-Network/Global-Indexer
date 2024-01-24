@@ -8,8 +8,8 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
-	"github.com/naturalselectionlabs/rss3-node/common/http/response"
-	"github.com/naturalselectionlabs/rss3-node/schema/filter"
+	"github.com/rss3-network/serving-node/common/http/response"
+	"github.com/rss3-network/serving-node/schema/filter"
 )
 
 func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
