@@ -1,11 +1,13 @@
 name: Build and Deploy
 on:
-  workflow_run:
-    workflows:
-      - Lint
-      - Test
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "deploy/**"
+  pull_request:
+    paths-ignore:
+      - "deploy/**"
 jobs:
   build:
     uses: NaturalSelectionLabs/Daedalus/.github/workflows/docker-tpl.yaml@main
