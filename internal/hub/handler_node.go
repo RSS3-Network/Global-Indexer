@@ -8,7 +8,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-node/config"
+	"github.com/rss3-network/serving-node/config"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -90,7 +90,7 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	if err := h.registerNode(c.Request().Context(), &request); err != nil {
+	if err := h.register(c.Request().Context(), &request); err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("register node failed: %v", err))
 	}
 
@@ -110,7 +110,9 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	// TODO: resolve node heartbeat logic
+	if err := h.heartbeat(c.Request().Context(), &request); err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("heartbeat failed: %v", err))
+	}
 
 	return c.JSON(http.StatusOK, Response{
 		Data: fmt.Sprintf("node heartbeat: %v", request.Address),
