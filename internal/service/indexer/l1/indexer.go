@@ -2,6 +2,7 @@ package l1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -100,6 +102,12 @@ func (s *server) run(ctx context.Context) (err error) {
 
 		blocks, err := blockResultPool.Wait()
 		if err != nil {
+			if errors.Is(err, ethereum.NotFound) {
+				zap.L().Error("blocks not found", zap.Error(err))
+
+				continue
+			}
+
 			return fmt.Errorf("wait block result pool: %w", err)
 		}
 
@@ -132,6 +140,12 @@ func (s *server) run(ctx context.Context) (err error) {
 		}
 
 		if err := receiptsPool.Wait(); err != nil {
+			if errors.Is(err, ethereum.NotFound) {
+				zap.L().Error("receipts not found", zap.Error(err))
+
+				continue
+			}
+
 			return fmt.Errorf("wait receipts pool: %w", err)
 		}
 
