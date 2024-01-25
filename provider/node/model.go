@@ -49,6 +49,10 @@ type Cache struct {
 	Endpoint string `json:"endpoint"`
 }
 
+type ActivityResponse struct {
+	Data *Feed `json:"data"`
+}
+
 type ActivitiesResponse struct {
 	Data []*Feed     `json:"data"`
 	Meta *MetaCursor `json:"meta,omitempty"`

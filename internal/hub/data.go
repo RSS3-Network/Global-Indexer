@@ -700,7 +700,9 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 				return
 			}
 
-			if !h.validateData(data) {
+			flag, _ := h.validateActivities(data)
+
+			if !flag {
 				mu.Lock()
 				results = append(results, node.DataResponse{Address: address, Err: fmt.Errorf("invalid data")})
 
@@ -737,25 +739,46 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	}
 }
 
-func (h *Hub) validateData(data []byte) bool {
+func (h *Hub) validateActivities(data []byte) (bool, *node.ActivitiesResponse) {
 	var (
-		activityRes node.ActivitiesResponse
-		errRes      node.ErrResponse
+		res    node.ActivitiesResponse
+		errRes node.ErrResponse
 	)
 
 	if err := json.Unmarshal(data, &errRes); err != nil {
-		return false
+		return false, nil
 	}
 
 	if errRes.ErrorCode != "" {
-		return false
+		return false, nil
 	}
 
-	if err := json.Unmarshal(data, &activityRes); err != nil {
-		return false
+	if err := json.Unmarshal(data, &res); err != nil {
+		return false, nil
 	}
 
-	return true
+	return true, &res
+}
+
+func (h *Hub) validateActivity(data []byte) (bool, *node.ActivityResponse) {
+	var (
+		res    node.ActivityResponse
+		errRes node.ErrResponse
+	)
+
+	if err := json.Unmarshal(data, &errRes); err != nil {
+		return false, nil
+	}
+
+	if errRes.ErrorCode != "" {
+		return false, nil
+	}
+
+	if err := json.Unmarshal(data, &res); err != nil {
+		return false, nil
+	}
+
+	return true, &res
 }
 
 func (h *Hub) processRSSHubResults(results []node.DataResponse) {
@@ -783,25 +806,128 @@ func (h *Hub) processActivitiesResults(results []node.DataResponse) {
 
 	if err := h.verifyData(ctx, results); err != nil {
 		zap.L().Error("fail feed request verify", zap.Any("results", len(results)))
-	} else {
-		zap.L().Info("complete feed request verify", zap.Any("results", len(results)))
+
+		return
 	}
+
+	zap.L().Info("complete feed request verify", zap.Any("results", len(results)))
 
 	if !results[0].First {
 		return
 	}
 
-	// TODO 2nd request、verify
 	var activities node.ActivitiesResponse
 
 	data := results[0].Data
 
 	if err := json.Unmarshal(data, &activities); err != nil {
-		// TODO: Handle error
-		fmt.Printf("fail to unmarshal: %w", err)
+		zap.L().Error("fail to unmarshall activities")
+
+		return
 	}
 
-	fmt.Println()
+	// data is empty, no need to 2nd verify
+	if activities.Data == nil {
+		return
+	}
+
+	h.process2ndVerify(activities.Data)
+}
+
+func (h *Hub) process2ndVerify(feeds []*node.Feed) {
+	ctx := context.Background()
+	platformMap := make(map[string]struct{})
+	statMap := make(map[string]struct{})
+
+	for _, feed := range feeds {
+		if len(feed.Platform) == 0 {
+			continue
+		}
+
+		h.verifyPlatform(ctx, feed, platformMap, statMap)
+
+		if _, exists := platformMap[feed.Platform]; !exists {
+			if len(platformMap) == 3 {
+				break
+			}
+		}
+	}
+}
+
+func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, statMap map[string]struct{}) {
+	pid, err := filter.PlatformString(feed.Platform)
+	if err != nil {
+		return
+	}
+
+	worker := node.PlatformToWorkerMap[pid]
+
+	indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, []string{feed.Network}, []string{worker})
+
+	if err != nil {
+		return
+	}
+
+	nodeAddresses := lo.Map(indexers, func(indexer *schema.Indexer, _ int) common.Address {
+		return indexer.Address
+	})
+
+	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Uniq(nodeAddresses))
+
+	if err != nil || len(stats) == 0 {
+		return
+	}
+
+	h.verifyStat(ctx, feed, stats, statMap)
+
+	platformMap[feed.Platform] = struct{}{}
+}
+
+func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.Stat, statMap map[string]struct{}) {
+	for _, stat := range stats {
+		if stat.EpochInvalidRequest >= 4 {
+			continue
+		}
+
+		if _, exists := statMap[stat.Address.String()]; !exists {
+			statMap[stat.Address.String()] = struct{}{}
+
+			request := node.ActivityRequest{
+				ID: feed.ID,
+			}
+
+			nodeMap, err := h.pathBuilder.GetActivityByIDPath(
+				request,
+				[]node.Cache{
+					{Address: stat.Address.String(), Endpoint: stat.Endpoint},
+				})
+
+			if err != nil {
+				continue
+			}
+
+			data, err := h.fetch(ctx, nodeMap[stat.Address])
+
+			flag, res := h.validateActivity(data)
+
+			if err != nil || !flag {
+				stat.EpochInvalidRequest++
+			} else {
+				srcFeed, _ := json.Marshal(feed)
+				desFeed, _ := json.Marshal(res.Data)
+
+				if !diffData(srcFeed, desFeed) {
+					stat.EpochInvalidRequest++
+				} else {
+					stat.EpochRequest++
+				}
+			}
+
+			_ = h.databaseClient.SaveNodeStat(ctx, stat)
+
+			break
+		}
+	}
 }
 
 func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error {
