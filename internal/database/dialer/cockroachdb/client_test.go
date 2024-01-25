@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/cockroachdb"
-	"github.com/rss3-network/serving-node/config"
+	nodeConfig "github.com/rss3-network/serving-node/config"
 	"github.com/rss3-network/serving-node/schema/filter"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -30,20 +31,20 @@ func TestClient(t *testing.T) {
 			driver: database.DriverCockroachDB,
 			nodeCreated: &schema.Node{
 				Address: common.HexToAddress("0xc98D64DA73a6616c42117b582e832812e7B8D57F"),
-				Stream: &config.Stream{
+				Stream: &nodeConfig.Stream{
 					Enable: lo.ToPtr(true),
 					Driver: "kafka",
 					Topic:  "node.feeds",
 					URI:    "localhost:9092",
 				},
-				Config: &config.Node{
-					RSS: []*config.Module{
+				Config: &nodeConfig.Node{
+					RSS: []*nodeConfig.Module{
 						{
 							Network:  filter.NetworkRSS,
 							Endpoint: "https://node.rss3.dev",
 						},
 					},
-					Decentralized: []*config.Module{
+					Decentralized: []*nodeConfig.Module{
 						{
 							Network:  filter.NetworkEthereum,
 							Endpoint: "https://rpc.ankr.com/eth",
@@ -76,7 +77,7 @@ func TestClient(t *testing.T) {
 			})
 
 			// Dial the database.
-			client, err := dialer.Dial(context.Background(), &database.Config{
+			client, err := dialer.Dial(context.Background(), &config.Database{
 				Driver: testcase.driver,
 				URI:    dataSourceName,
 			})
@@ -113,7 +114,7 @@ func TestClient(t *testing.T) {
 }
 
 func createContainer(ctx context.Context, driver database.Driver) (container *gnomock.Container, dataSourceName string, err error) {
-	conf := database.Config{
+	conf := config.Database{
 		Driver: driver,
 	}
 

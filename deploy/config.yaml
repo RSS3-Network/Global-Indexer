@@ -5,6 +5,9 @@ database:
   partition: true
   uri: postgres://root@localhost:26257/defaultdb
 
+redis:
+  uri: redis://localhost:6379/0
+
 rss3_chain:
   endpoint_l1: https://rpc.ankr.com/eth_sepolia
   endpoint_l2: https://rpc.testnet.rss3.io
