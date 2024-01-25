@@ -672,6 +672,13 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 		return nil, err
 	}
 
+	for _, n := range nodes {
+		nodesCache = append(nodesCache, node.Cache{
+			Address:  n.Address.String(),
+			Endpoint: n.Endpoint,
+		})
+	}
+
 	return nodesCache, nil
 }
 
@@ -913,10 +920,7 @@ func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.S
 			if err != nil || !flag {
 				stat.EpochInvalidRequest++
 			} else {
-				srcFeed, _ := json.Marshal(feed)
-				desFeed, _ := json.Marshal(res.Data)
-
-				if !diffData(srcFeed, desFeed) {
+				if !h.compareFeeds(feed, res.Data) {
 					stat.EpochInvalidRequest++
 				} else {
 					stat.EpochRequest++
@@ -928,6 +932,42 @@ func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.S
 			break
 		}
 	}
+}
+
+func (h *Hub) compareFeeds(src, des *node.Feed) bool {
+	var flag bool
+
+	if src.ID != des.ID ||
+		src.Network != des.Network ||
+		src.Index != des.Index ||
+		src.From != des.From ||
+		src.To != des.To ||
+		src.Tag != des.Tag ||
+		src.Type != des.Type ||
+		src.Platform != des.Platform ||
+		len(src.Actions) != len(des.Actions) {
+		return false
+	}
+
+	if len(src.Actions) > 0 {
+		srcAction := src.Actions[0]
+
+		for _, action := range des.Actions {
+			if srcAction.From == action.From &&
+				srcAction.To == action.To &&
+				srcAction.Tag == action.Tag &&
+				srcAction.Type == action.Type {
+				desMetadata, _ := json.Marshal(action.Metadata)
+				srcMetadata, _ := json.Marshal(srcAction.Metadata)
+
+				if compareData(srcMetadata, desMetadata) {
+					flag = true
+				}
+			}
+		}
+	}
+
+	return flag
 }
 
 func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error {
@@ -994,9 +1034,9 @@ func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, r
 }
 
 func (h *Hub) updateRequestsBasedOnDataDiffs(results []node.DataResponse) {
-	diff01 := diffData(results[0].Data, results[1].Data)
-	diff02 := diffData(results[0].Data, results[2].Data)
-	diff12 := diffData(results[1].Data, results[2].Data)
+	diff01 := compareData(results[0].Data, results[1].Data)
+	diff02 := compareData(results[0].Data, results[2].Data)
+	diff12 := compareData(results[1].Data, results[2].Data)
 
 	if diff01 && diff02 {
 		results[0].Request = 2
@@ -1026,7 +1066,7 @@ func statsMapToSlice(statsMap map[common.Address]*schema.Stat) []*schema.Stat {
 	return statsSlice
 }
 
-func diffData(src, des []byte) bool {
+func compareData(src, des []byte) bool {
 	if src == nil || des == nil {
 		return false
 	}
