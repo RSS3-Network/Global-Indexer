@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -42,7 +43,7 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("get checkpoint: %w", err)
 	}
 
-	return s.run(ctx)
+	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30))
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -80,9 +81,7 @@ func (s *server) run(ctx context.Context) (err error) {
 		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
 		if err != nil {
 			if errors.Is(err, ethereum.NotFound) {
-				zap.L().Error("block not found", zap.Error(err))
-
-				continue
+				return fmt.Errorf("get block: %w", err)
 			}
 
 			return fmt.Errorf("get block: %w", err)
@@ -92,9 +91,7 @@ func (s *server) run(ctx context.Context) (err error) {
 		receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumberCurrent)))
 		if err != nil {
 			if errors.Is(err, ethereum.NotFound) {
-				zap.L().Error("receipts not found", zap.Error(err))
-
-				continue
+				return fmt.Errorf("get receipts: %w", err)
 			}
 
 			return fmt.Errorf("get receipts: %w", err)
