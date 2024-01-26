@@ -8,14 +8,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 var _ service.Server = (*server)(nil)
+
+var Name = "detector"
 
 type server struct {
 	cronJob        *cronjob.CronJob
@@ -23,9 +25,7 @@ type server struct {
 }
 
 func (s *server) Run(ctx context.Context) error {
-	key := fmt.Sprintf(cronjob.KeyPrefix, "detector")
-
-	err := s.cronJob.AddFunc(ctx, key, "*/5 * * * * *", func() {
+	err := s.cronJob.AddFunc(ctx, "*/5 * * * * *", func() {
 		if err := s.updateNodeActivity(ctx); err != nil {
 			zap.L().Error("detect node activity error", zap.Error(err))
 			return
@@ -42,11 +42,7 @@ func (s *server) Run(ctx context.Context) error {
 	signal.Notify(stopchan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	<-stopchan
 
-	if _, err := s.cronJob.ReleaseLock(ctx, key); err != nil {
-		zap.L().Error("release lock error", zap.Error(err))
-
-		return fmt.Errorf("release lock: %w", err)
-	}
+	s.cronJob.Stop()
 
 	return nil
 }
@@ -66,7 +62,7 @@ func (s *server) updateNodeActivity(ctx context.Context) error {
 func New(databaseClient database.Client, redis *redis.Client) (service.Server, error) {
 	instance := server{
 		databaseClient: databaseClient,
-		cronJob:        cronjob.New(redis),
+		cronJob:        cronjob.New(redis, Name),
 	}
 
 	return &instance, nil

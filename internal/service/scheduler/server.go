@@ -3,10 +3,10 @@ package scheduler
 import (
 	"fmt"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
+	"github.com/redis/go-redis/v9"
 )
 
 func New(server string, databaseClient database.Client, redis *redis.Client) (service.Server, error) {

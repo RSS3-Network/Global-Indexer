@@ -2,40 +2,33 @@ package cronjob
 
 import (
 	"context"
-	"sync"
-	"time"
+	"fmt"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/robfig/cron/v3"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 type CronJob struct {
-	crontab     *cron.Cron
-	redisClient *redis.Client
-	lock        sync.RWMutex
+	crontab *cron.Cron
+	mutex   *redsync.Mutex
 }
 
 var KeyPrefix = "scheduler:%s"
 
-func (c *CronJob) AddFunc(ctx context.Context, key, spec string, cmd func()) error {
+func (c *CronJob) AddFunc(_ context.Context, spec string, cmd func()) error {
 	_, err := c.crontab.AddFunc(spec, func() {
-		acquireLock, err := c.AcquireLock(ctx, key, nil)
-		if err != nil {
-			zap.L().Error("acquire lock error", zap.String("key", key), zap.Error(err))
-			return
-		}
-
-		if !acquireLock {
-			zap.L().Info("lock is not acquired", zap.String("key", key))
+		if err := c.mutex.Lock(); err != nil {
+			zap.L().Error("lock error", zap.String("key", c.mutex.Name()), zap.Error(err))
 
 			return
 		}
 
 		defer func() {
-			if _, err = c.ReleaseLock(ctx, key); err != nil {
-				zap.L().Error("release lock error", zap.String("key", key), zap.Error(err))
+			if _, err := c.mutex.Unlock(); err != nil {
+				zap.L().Error("release lock error", zap.String("key", c.mutex.Name()), zap.Error(err))
 			}
 		}()
 
@@ -51,36 +44,18 @@ func (c *CronJob) Start() {
 
 func (c *CronJob) Stop() {
 	c.crontab.Stop()
-}
 
-func (c *CronJob) AcquireLock(ctx context.Context, key string, expiration *time.Duration) (bool, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	// Try to acquire the lock
-	result, err := c.redisClient.SetNX(ctx, key, "locked", lo.Ternary(expiration == nil, 0, lo.FromPtr(expiration))).Result()
-	if err != nil {
-		return false, err
+	if _, err := c.mutex.Unlock(); err != nil {
+		zap.L().Error("release lock error", zap.String("key", c.mutex.Name()), zap.Error(err))
 	}
-
-	return result, nil
 }
 
-func (c *CronJob) ReleaseLock(ctx context.Context, key string) (bool, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+func New(redisClient *redis.Client, name string) *CronJob {
+	pool := goredis.NewPool(redisClient)
+	rs := redsync.New(pool)
 
-	// Release the lock
-	if err := c.redisClient.Del(ctx, key).Err(); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func New(redisClient *redis.Client) *CronJob {
 	return &CronJob{
-		crontab:     cron.New(cron.WithSeconds()),
-		redisClient: redisClient,
+		crontab: cron.New(cron.WithSeconds()),
+		mutex:   rs.NewMutex(fmt.Sprintf(KeyPrefix, name)),
 	}
 }
