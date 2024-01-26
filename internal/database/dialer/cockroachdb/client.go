@@ -147,7 +147,7 @@ func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp i
 	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
 		for {
 			result := c.database.WithContext(ctx).Model(&table.Node{}).
-				Where("last_heartbeat_timestamp < ?", time.Unix(lastHeartbeatTimestamp, 0)).
+				Where("last_heartbeat_timestamp < ? and status = ?", time.Unix(lastHeartbeatTimestamp, 0), schema.StatusOnline).
 				Update("status", schema.StatusOffline).Limit(1000)
 			if result.Error != nil {
 				return result.Error

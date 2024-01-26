@@ -17,7 +17,7 @@ type CronJob struct {
 	lock        sync.RWMutex
 }
 
-var KeyPrefix = "cronJob:%s"
+var KeyPrefix = "scheduler:%s"
 
 func (c *CronJob) AddFunc(ctx context.Context, key, spec string, cmd func()) error {
 	_, err := c.crontab.AddFunc(spec, func() {

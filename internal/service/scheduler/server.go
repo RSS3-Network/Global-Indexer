@@ -15,5 +15,5 @@ func New(server string, databaseClient database.Client, redis *redis.Client) (se
 		return detector.New(databaseClient, redis)
 	}
 
-	return nil, fmt.Errorf("unknown cronJob server: %s", server)
+	return nil, fmt.Errorf("unknown scheduler server: %s", server)
 }
