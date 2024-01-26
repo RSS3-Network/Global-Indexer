@@ -2,14 +2,12 @@ package l2
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -80,20 +78,12 @@ func (s *server) run(ctx context.Context) (err error) {
 		// Get current block (header and transactions).
 		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
 		if err != nil {
-			if errors.Is(err, ethereum.NotFound) {
-				return fmt.Errorf("get block: %w", err)
-			}
-
 			return fmt.Errorf("get block: %w", err)
 		}
 
 		// Get all receipts of the current block.
 		receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumberCurrent)))
 		if err != nil {
-			if errors.Is(err, ethereum.NotFound) {
-				return fmt.Errorf("get receipts: %w", err)
-			}
-
 			return fmt.Errorf("get receipts: %w", err)
 		}
 
