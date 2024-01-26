@@ -7,6 +7,7 @@ replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth 
 replace github.com/kataras/iris/v12 => github.com/kataras/iris/v12 v12.2.10
 
 require (
+	github.com/avast/retry-go/v4 v4.5.1
 	github.com/creasty/defaults v1.7.0
 	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.10
