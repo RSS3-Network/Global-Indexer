@@ -6,6 +6,9 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/shedlock"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
@@ -47,12 +50,19 @@ var command = cobra.Command{
 			return fmt.Errorf("dial rss3 ethereum client: %w", err)
 		}
 
-		redisClient, err := cache.Dial(config.Redis)
+		// Dial redis.
+		redisClient, err := cache.New(config.Redis)
 		if err != nil {
 			return fmt.Errorf("dial redis: %w", err)
 		}
 
 		cache.ReplaceGlobal(redisClient)
+
+		pool := goredis.NewPool(cache.Global())
+
+		rs := redsync.New(pool)
+
+		shedlock.ReplaceGlobalRs(rs)
 
 		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
 		if err != nil {

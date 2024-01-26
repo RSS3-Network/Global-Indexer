@@ -6,10 +6,10 @@ database:
   uri: postgres://root@localhost:26257/defaultdb
 
 redis:
-  endpoints:
-    - 127.0.0.1:6379
+  endpoint: 127.0.0.1:6379
   username: ''
   password: 'password'
+  db: 0
 
 rss3_chain:
   endpoint_l1: https://rpc.ankr.com/eth_sepolia

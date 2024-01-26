@@ -9,6 +9,11 @@ import (
 	"github.com/rss3-network/serving-node/schema/metadata"
 )
 
+var (
+	RssNodeCacheKey  = "nodes:rss"
+	FullNodeCacheKey = "nodes:full"
+)
+
 type ActivityRequest struct {
 	ID          string `param:"id" description:"Retrieve details for the specified activity ID" examples:"[\"0x5ffa607a127d63fb36827075493d1de06f58fc44710b9ffb887b2effe02d2b8b\"]"`
 	ActionLimit int    `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" examples:"[10]" default:"10" min:"1" max:"20"`

@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
 	"strings"
@@ -23,16 +23,12 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/serving-node/config"
 	"github.com/rss3-network/serving-node/schema/filter"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
-)
-
-var (
-	rssNodeCacheKey  = "nodes:rss"
-	fullNodeCacheKey = "nodes:full"
 )
 
 var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
@@ -257,7 +253,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, rssNodeCacheKey)
+	nodes, err := h.filterNodes(ctx, node.RssNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -281,7 +277,7 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 }
 
 func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityRequest) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
+	nodes, err := h.filterNodes(ctx, node.FullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -307,7 +303,7 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActivitiesRequest) ([]byte, error) {
 	var nodes []node.Cache
 
-	nodes, err := h.filterNodes(ctx, fullNodeCacheKey)
+	nodes, err := h.filterNodes(ctx, node.FullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -641,45 +637,46 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 	)
 
 	// Get nodes from cache.
-	exists, err := cache.Get(ctx, key, &nodesCache)
-	if err != nil {
-		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
-	}
+	err := cache.Get(ctx, key, &nodesCache)
 
-	if exists {
+	if err == nil {
 		return nodesCache, nil
 	}
 
-	// Get nodes from database.
-	switch key {
-	case rssNodeCacheKey:
-		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
+	if errors.Is(err, redis.Nil) {
+		// Get nodes from database.
+		switch key {
+		case node.RssNodeCacheKey:
+			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
 
-		if err != nil {
+			if err != nil {
+				return nil, err
+			}
+		case node.FullNodeCacheKey:
+			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
+
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unknown cache key: %s", key)
+		}
+
+		if err = h.setNodeCache(ctx, key, nodes); err != nil {
 			return nil, err
 		}
-	case fullNodeCacheKey:
-		nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
 
-		if err != nil {
-			return nil, err
+		for _, n := range nodes {
+			nodesCache = append(nodesCache, node.Cache{
+				Address:  n.Address.String(),
+				Endpoint: n.Endpoint,
+			})
 		}
-	default:
-		return nil, fmt.Errorf("unknown cache key: %s", key)
+
+		return nodesCache, nil
 	}
 
-	if err = h.setNodeCache(ctx, key, nodes); err != nil {
-		return nil, err
-	}
-
-	for _, n := range nodes {
-		nodesCache = append(nodesCache, node.Cache{
-			Address:  n.Address.String(),
-			Endpoint: n.Endpoint,
-		})
-	}
-
-	return nodesCache, nil
+	return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
 }
 
 func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string, processResults func([]node.DataResponse)) (node.DataResponse, error) {
@@ -1103,59 +1100,6 @@ func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
 	return data, nil
 }
 
-// cron task
-func (h *Hub) sortNodesTask() error {
-	var (
-		stats []*schema.Stat
-
-		err error
-	)
-
-	ctx := context.Background()
-
-	stats, err = h.databaseClient.FindNodeStats(ctx, []common.Address{})
-
-	if err != nil {
-		return err
-	}
-
-	// TODO: parallel
-	for _, stat := range stats {
-		if err = h.updateNodeEpochStats(stat); err != nil {
-			return err
-		}
-
-		h.calcPoints(stat)
-
-		if err = h.databaseClient.SaveNodeStat(ctx, stat); err != nil {
-			return err
-		}
-	}
-
-	// Update node cache.
-	rssNodes, err := h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
-
-	if err != nil {
-		return err
-	}
-
-	if err = h.setNodeCache(ctx, rssNodeCacheKey, rssNodes); err != nil {
-		return err
-	}
-
-	fullNodes, err := h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
-
-	if err != nil {
-		return err
-	}
-
-	if err = h.setNodeCache(ctx, fullNodeCacheKey, fullNodes); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
 	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) node.Cache {
 		return node.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
@@ -1166,47 +1110,6 @@ func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat
 	}
 
 	return nil
-}
-
-func (h *Hub) updateNodeEpochStats(stat *schema.Stat) error {
-	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
-
-	if err != nil {
-		return fmt.Errorf("get node info: %s,%w", stat.Address.String(), err)
-	}
-
-	stat.Staking = float64(nodeInfo.StakingPoolTokens.Uint64())
-	stat.EpochRequest = 0
-	stat.EpochInvalidRequest = 0
-
-	return nil
-}
-
-// calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
-func (h *Hub) calcPoints(stat *schema.Stat) {
-	// staking pool tokens
-	stat.Points = math.Min(math.Log2(stat.Staking/100000)+1, 0.2)
-
-	// public good
-	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
-
-	// running time
-	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/18)/120, 0.3)
-
-	// total requests
-	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/100000+1)/math.Log(100), 0.3)
-
-	// epoch requests
-	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/1000000+1)/math.Log(5000), 1)
-
-	// network count
-	stat.Points += 0.1*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + 0.3*float64(lo.Ternary(stat.IsRssNode, 1, 0))
-
-	// indexer count
-	stat.Points += math.Min(float64(stat.Indexer)*0.05, 0.2)
-
-	// epoch failure requests
-	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
 }
 
 func (h *Hub) checkSignature(_ context.Context, address common.Address, signature []byte) error {

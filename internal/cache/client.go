@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/redis/rueidis"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
 	globalLocker      sync.RWMutex
-	globalRedisClient rueidis.Client
+	globalRedisClient *redis.Client
 )
 
-func Global() rueidis.Client {
+func Global() *redis.Client {
 	globalLocker.RLock()
 
 	defer globalLocker.RUnlock()
@@ -21,7 +21,7 @@ func Global() rueidis.Client {
 	return globalRedisClient
 }
 
-func ReplaceGlobal(db rueidis.Client) {
+func ReplaceGlobal(db *redis.Client) {
 	globalLocker.Lock()
 
 	defer globalLocker.Unlock()
@@ -29,33 +29,29 @@ func ReplaceGlobal(db rueidis.Client) {
 	globalRedisClient = db
 }
 
-func Dial(config *Config) (rueidis.Client, error) {
-	clientOption := rueidis.ClientOption{
-		InitAddress:  config.Endpoints,
-		Username:     config.Username,
-		Password:     config.Password,
-		DisableCache: true,
+func New(config *Config) (*redis.Client, error) {
+	clientOption := &redis.Options{
+		Addr:     config.Endpoints,
+		Username: config.Username,
+		Password: config.Password,
+		DB:       config.DB,
 	}
 
-	return rueidis.NewClient(clientOption)
+	return redis.NewClient(clientOption), nil
 }
 
-func Get(ctx context.Context, key string, dest interface{}) (bool, error) {
-	data, err := globalRedisClient.Do(ctx, globalRedisClient.B().Get().Key(key).Build()).AsBytes()
-
-	if rueidis.IsRedisNil(err) {
-		return false, nil
-	}
+func Get(ctx context.Context, key string, dest interface{}) error {
+	data, err := globalRedisClient.Get(ctx, key).Bytes()
 
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if err = json.Unmarshal(data, dest); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func Set(ctx context.Context, key string, value interface{}) error {
@@ -64,5 +60,5 @@ func Set(ctx context.Context, key string, value interface{}) error {
 		return err
 	}
 
-	return globalRedisClient.Do(ctx, globalRedisClient.B().Set().Key(key).Value(rueidis.BinaryString(data)).Build()).Error()
+	return globalRedisClient.Set(ctx, key, data, 0).Err()
 }

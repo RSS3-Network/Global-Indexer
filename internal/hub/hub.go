@@ -8,8 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/shedlock"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/job"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 )
 
@@ -18,6 +20,7 @@ type Hub struct {
 	stakingContract *l2.Staking
 	pathBuilder     node.Builder
 	httpClient      *http.Client
+	employer        *shedlock.Employer
 }
 
 var _ echo.Validator = (*Validator)(nil)
@@ -40,10 +43,31 @@ func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *e
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	employer := shedlock.New()
+
+	if err = addCronJobs(databaseClient, stakingContract, employer); err != nil {
+		return nil, fmt.Errorf("add cron jobs: %w", err)
+	}
+
 	return &Hub{
 		databaseClient:  databaseClient,
 		stakingContract: stakingContract,
 		pathBuilder:     node.NewPathBuilder(),
 		httpClient:      http.DefaultClient,
+		employer:        employer,
 	}, nil
+}
+
+func addCronJobs(databaseClient database.Client, stakingContract *l2.Staking, employer *shedlock.Employer) error {
+	jobs := []job.Job{
+		job.NewSortNodesJob(databaseClient, stakingContract),
+	}
+
+	for _, cronjob := range jobs {
+		if err := employer.AddJob(cronjob.Name(), cronjob.Spec(), cronjob.Timeout(), job.NewCronJob(employer, cronjob)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
