@@ -63,9 +63,9 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.GET("/nodes/:node/chips", instance.hub.GetStakeNodeChips)
 	instance.httpServer.GET("/wallets/:wallet/chips", instance.hub.GetStakeWalletChips)
 
-	instance.httpServer.GET(PathGetRSSHub, instance.hub.GetRSSHubHandler)
-	instance.httpServer.GET(PathGetDecentralizedTx, instance.hub.GetActivityHandler)
-	instance.httpServer.GET(PathGetDecentralizedActivities, instance.hub.GetAccountActivitiesHandler)
+	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHubHandler)
+	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivityHandler)
+	instance.httpServer.GET("/decentralized/:account", instance.hub.GetAccountActivitiesHandler)
 
 	return &instance, nil
 }

@@ -54,9 +54,7 @@ func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
 		return response.InternalError(c, err)
 	}
 
-	// TODO: implement cursor
 	activities, err := h.routerActivitiesData(c.Request().Context(), request)
-
 	if err != nil {
 		return response.InternalError(c, err)
 	}

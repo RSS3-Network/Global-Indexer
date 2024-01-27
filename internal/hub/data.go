@@ -31,7 +31,15 @@ import (
 	"go.uber.org/zap"
 )
 
-var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
+var (
+	message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
+
+	messageNodeDataFailed = "request node data failed"
+
+	defaultNodeCount   = 3
+	defaultSlashCount  = 4
+	defaultVerifyCount = 3
+)
 
 func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := h.databaseClient.FindNode(ctx, address)
@@ -124,7 +132,11 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
 
-	fullNode := h.isFullNode(request.Config.Decentralized)
+	fullNode, err := h.isFullNode(request.Config.Decentralized)
+
+	if err != nil {
+		return fmt.Errorf("check full node error: %w", err)
+	}
 
 	stat := &schema.Stat{
 		Address:      request.Address,
@@ -214,10 +226,9 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) erro
 	return h.databaseClient.SaveNode(ctx, node)
 }
 
-// Check if node is full node
-func (h *Hub) isFullNode(indexers []*config.Module) bool {
+func (h *Hub) isFullNode(indexers []*config.Module) (bool, error) {
 	if len(indexers) < len(node.WorkerToNetworksMap) {
-		return false
+		return false, nil
 	}
 
 	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
@@ -226,7 +237,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 		wid, err := filter.NameString(indexer.Worker.String())
 
 		if err != nil {
-			return false
+			return false, err
 		}
 
 		if _, exists := workerToNetworksMap[wid]; !exists {
@@ -239,21 +250,21 @@ func (h *Hub) isFullNode(indexers []*config.Module) bool {
 	for wid, requiredNetworks := range node.WorkerToNetworksMap {
 		networks, exists := workerToNetworksMap[wid]
 		if !exists || len(networks) != len(requiredNetworks) {
-			return false
+			return false, nil
 		}
 
 		for _, network := range requiredNetworks {
-			if _, exists := networks[network]; !exists {
-				return false
+			if _, exists = networks[network]; !exists {
+				return false, nil
 			}
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, node.RssNodeCacheKey)
+	nodes, err := h.retrieveNodes(ctx, node.RssNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -277,7 +288,7 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 }
 
 func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityRequest) ([]byte, error) {
-	nodes, err := h.filterNodes(ctx, node.FullNodeCacheKey)
+	nodes, err := h.retrieveNodes(ctx, node.FullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -301,13 +312,7 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 }
 
 func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActivitiesRequest) ([]byte, error) {
-	var nodes []node.Cache
-
-	nodes, err := h.filterNodes(ctx, node.FullNodeCacheKey)
-
-	if err != nil {
-		return nil, err
-	}
+	nodes := make([]node.Cache, 0, defaultNodeCount)
 
 	nodeAddresses, err := h.matchLightNodes(ctx, request)
 
@@ -315,7 +320,6 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 		return nil, err
 	}
 
-	// Combine light nodes and full nodes
 	if len(nodeAddresses) > 0 {
 		nodeStats, err := h.databaseClient.FindNodeStats(ctx, nodeAddresses)
 
@@ -323,9 +327,27 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 			return nil, err
 		}
 
-		for i, n := range nodeStats {
-			nodes[i].Address = n.Address.String()
-			nodes[i].Endpoint = n.Endpoint
+		num := lo.Ternary(len(nodeStats) > defaultNodeCount, defaultNodeCount, len(nodeStats))
+
+		for i := 0; i < num; i++ {
+			nodes = append(nodes, node.Cache{
+				Address:  nodeStats[i].Address.String(),
+				Endpoint: nodeStats[i].Endpoint,
+			})
+		}
+	}
+
+	if len(nodes) < defaultNodeCount {
+		fullNodes, err := h.retrieveNodes(ctx, node.FullNodeCacheKey)
+		if err != nil {
+			return nil, err
+		}
+
+		nodesNeeded := defaultNodeCount - len(nodes)
+		nodesToAdd := lo.Ternary(nodesNeeded > len(fullNodes), len(fullNodes), nodesNeeded)
+
+		for i := 0; i < nodesToAdd; i++ {
+			nodes = append(nodes, fullNodes[i])
 		}
 	}
 
@@ -630,30 +652,30 @@ func findCommonElements(slice1, slice2 []string) []string {
 	return commonElements
 }
 
-func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error) {
+func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, error) {
 	var (
 		nodesCache []node.Cache
 		nodes      []*schema.Stat
 	)
 
-	// Get nodes from cache.
 	err := cache.Get(ctx, key, &nodesCache)
 
 	if err == nil {
 		return nodesCache, nil
 	}
 
+	zap.L().Info("not found nodes from cache", zap.String("key", key))
+
 	if errors.Is(err, redis.Nil) {
-		// Get nodes from database.
 		switch key {
 		case node.RssNodeCacheKey:
-			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
+			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), defaultNodeCount)
 
 			if err != nil {
 				return nil, err
 			}
 		case node.FullNodeCacheKey:
-			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
+			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, defaultNodeCount)
 
 			if err != nil {
 				return nil, err
@@ -666,12 +688,14 @@ func (h *Hub) filterNodes(ctx context.Context, key string) ([]node.Cache, error)
 			return nil, err
 		}
 
-		for _, n := range nodes {
-			nodesCache = append(nodesCache, node.Cache{
+		zap.L().Info("set nodes to cache", zap.String("key", key))
+
+		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) node.Cache {
+			return node.Cache{
 				Address:  n.Address.String(),
 				Endpoint: n.Endpoint,
-			})
-		}
+			}
+		})
 
 		return nodesCache, nil
 	}
@@ -695,18 +719,26 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 
 			data, err := h.fetch(context.Background(), endpoint)
 			if err != nil {
-				zap.L().Error("fetch request error", zap.Any("node", address.String()))
+				zap.L().Error("fetch request error", zap.Any("node", address.String()), zap.Error(err))
 
 				mu.Lock()
 				results = append(results, node.DataResponse{Address: address, Err: err})
+
+				if len(results) == len(nodeMap) {
+					firstResult <- node.DataResponse{Address: address, Data: []byte(messageNodeDataFailed)}
+				}
+
 				mu.Unlock()
 
 				return
 			}
 
-			flag, _ := h.validateActivities(data)
+			flagActivities, _ := h.validateActivities(data)
+			flagActivity, _ := h.validateActivity(data)
 
-			if !flag {
+			if !flagActivities && !flagActivity {
+				zap.L().Error("response parse error", zap.Any("node", address.String()))
+
 				mu.Lock()
 				results = append(results, node.DataResponse{Address: address, Err: fmt.Errorf("invalid data")})
 
@@ -739,7 +771,7 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	case result := <-firstResult:
 		return result, nil
 	case <-time.After(time.Second * 3):
-		return node.DataResponse{}, fmt.Errorf("timeout waiting for results")
+		return node.DataResponse{Data: []byte(messageNodeDataFailed)}, fmt.Errorf("timeout waiting for results")
 	}
 }
 
@@ -786,20 +818,16 @@ func (h *Hub) validateActivity(data []byte) (bool, *node.ActivityResponse) {
 }
 
 func (h *Hub) processRSSHubResults(results []node.DataResponse) {
-	ctx := context.Background()
-
-	if err := h.verifyData(ctx, results); err != nil {
-		zap.L().Error("fail rss request verify", zap.Any("results", len(results)))
+	if err := h.verifyData(context.Background(), results); err != nil {
+		zap.L().Error("fail to verify rss hub request", zap.Any("results", len(results)))
 	} else {
-		zap.L().Info("complete rss request verify", zap.Any("results", len(results)))
+		zap.L().Info("complete rss hub request verify", zap.Any("results", len(results)))
 	}
 }
 
 func (h *Hub) processActivityResults(results []node.DataResponse) {
-	ctx := context.Background()
-
-	if err := h.verifyData(ctx, results); err != nil {
-		zap.L().Error("fail feed id request verify", zap.Any("results", len(results)))
+	if err := h.verifyData(context.Background(), results); err != nil {
+		zap.L().Error("fail to verify  feed id request ", zap.Any("results", len(results)))
 	} else {
 		zap.L().Info("complete feed id request verify", zap.Any("results", len(results)))
 	}
@@ -835,10 +863,14 @@ func (h *Hub) processActivitiesResults(results []node.DataResponse) {
 		return
 	}
 
-	h.process2ndVerify(activities.Data)
+	workingNodes := lo.Map(results, func(result node.DataResponse, _ int) common.Address {
+		return result.Address
+	})
+
+	h.process2ndVerify(activities.Data, workingNodes)
 }
 
-func (h *Hub) process2ndVerify(feeds []*node.Feed) {
+func (h *Hub) process2ndVerify(feeds []*node.Feed, workingNodes []common.Address) {
 	ctx := context.Background()
 	platformMap := make(map[string]struct{})
 	statMap := make(map[string]struct{})
@@ -848,17 +880,17 @@ func (h *Hub) process2ndVerify(feeds []*node.Feed) {
 			continue
 		}
 
-		h.verifyPlatform(ctx, feed, platformMap, statMap)
+		h.verifyPlatform(ctx, feed, platformMap, statMap, workingNodes)
 
 		if _, exists := platformMap[feed.Platform]; !exists {
-			if len(platformMap) == 3 {
+			if len(platformMap) == defaultVerifyCount {
 				break
 			}
 		}
 	}
 }
 
-func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, statMap map[string]struct{}) {
+func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, statMap map[string]struct{}, workingNodes []common.Address) {
 	pid, err := filter.PlatformString(feed.Platform)
 	if err != nil {
 		return
@@ -876,6 +908,14 @@ func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, 
 		return indexer.Address
 	})
 
+	nodeAddresses = lo.Filter(nodeAddresses, func(item common.Address, _ int) bool {
+		return !lo.Contains(workingNodes, item)
+	})
+
+	if len(nodeAddresses) == 0 {
+		return
+	}
+
 	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Uniq(nodeAddresses))
 
 	if err != nil || len(stats) == 0 {
@@ -889,7 +929,7 @@ func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, 
 
 func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.Stat, statMap map[string]struct{}) {
 	for _, stat := range stats {
-		if stat.EpochInvalidRequest >= 4 {
+		if stat.EpochInvalidRequest >= int64(defaultSlashCount) {
 			continue
 		}
 
@@ -920,6 +960,7 @@ func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.S
 				if !h.compareFeeds(feed, res.Data) {
 					stat.EpochInvalidRequest++
 				} else {
+					stat.TotalRequest++
 					stat.EpochRequest++
 				}
 			}
@@ -968,23 +1009,31 @@ func (h *Hub) compareFeeds(src, des *node.Feed) bool {
 }
 
 func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error {
-	if len(results) < 3 {
-		return fmt.Errorf("insufficient data: expected 3 results, got %d", len(results))
-	}
-
 	statsMap, err := h.getNodeStatsMap(ctx, results)
 	if err != nil {
 		return fmt.Errorf("find node stats: %w", err)
 	}
 
-	h.sortResultsByFirst(results)
+	h.sortResults(results)
 
-	if !results[0].First {
+	if len(statsMap) < defaultNodeCount {
 		for i := range results {
-			results[i].InvalidRequest = 1
+			if _, exists := statsMap[results[i].Address]; exists {
+				if results[i].Err != nil {
+					results[i].InvalidRequest = 1
+				} else {
+					results[i].Request = 1
+				}
+			}
 		}
 	} else {
-		h.updateRequestsBasedOnDataDiffs(results)
+		if !results[0].First {
+			for i := range results {
+				results[i].InvalidRequest = 1
+			}
+		} else {
+			h.updateRequestsBasedOnDataCompare(results)
+		}
 	}
 
 	h.updateStatsWithResults(statsMap, results)
@@ -1014,7 +1063,7 @@ func (h *Hub) getNodeStatsMap(ctx context.Context, results []node.DataResponse) 
 	return statsMap, nil
 }
 
-func (h *Hub) sortResultsByFirst(results []node.DataResponse) {
+func (h *Hub) sortResults(results []node.DataResponse) {
 	sort.SliceStable(results, func(i, j int) bool {
 		return results[i].First && !results[j].First
 	})
@@ -1030,7 +1079,7 @@ func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, r
 	}
 }
 
-func (h *Hub) updateRequestsBasedOnDataDiffs(results []node.DataResponse) {
+func (h *Hub) updateRequestsBasedOnDataCompare(results []node.DataResponse) {
 	diff01 := compareData(results[0].Data, results[1].Data)
 	diff02 := compareData(results[0].Data, results[2].Data)
 	diff12 := compareData(results[1].Data, results[2].Data)
@@ -1051,6 +1100,16 @@ func (h *Hub) updateRequestsBasedOnDataDiffs(results []node.DataResponse) {
 		results[0].Request = 2
 		results[1].Request = 1
 		results[2].InvalidRequest = 1
+	} else if !diff01 && !diff02 && !diff12 {
+		for i := range results {
+			if results[i].Data == nil && results[i].Err != nil {
+				results[i].InvalidRequest = 1
+			}
+
+			if results[i].Data != nil && results[i].Err == nil {
+				results[i].Request = 1
+			}
+		}
 	}
 }
 

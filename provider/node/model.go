@@ -38,8 +38,8 @@ type AccountActivitiesRequest struct {
 type DataResponse struct {
 	Address        common.Address
 	Data           []byte
-	Err            error
 	First          bool
+	Err            error
 	Request        int
 	InvalidRequest int
 }

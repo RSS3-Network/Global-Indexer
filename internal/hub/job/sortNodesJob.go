@@ -28,7 +28,7 @@ func (job *SortNodesJob) Name() string {
 }
 
 func (job *SortNodesJob) Spec() string {
-	return "* */5 * * * *" // 5 minutes
+	return "0 0 0 * * *"
 }
 
 func (job *SortNodesJob) Timeout() time.Duration {
@@ -61,7 +61,6 @@ func (job *SortNodesJob) sortNodesTask() error {
 		return err
 	}
 
-	// TODO: parallel
 	for _, stat := range stats {
 		if err = job.updateNodeEpochStats(stat); err != nil {
 			return err
