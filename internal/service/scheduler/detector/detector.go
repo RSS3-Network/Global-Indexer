@@ -36,13 +36,12 @@ func (s *server) Run(ctx context.Context) error {
 	}
 
 	s.cronJob.Start()
+	defer s.cronJob.Stop()
 
 	stopchan := make(chan os.Signal, 1)
 
 	signal.Notify(stopchan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	<-stopchan
-
-	s.cronJob.Stop()
 
 	return nil
 }
@@ -62,7 +61,7 @@ func (s *server) updateNodeActivity(ctx context.Context) error {
 func New(databaseClient database.Client, redis *redis.Client) (service.Server, error) {
 	instance := server{
 		databaseClient: databaseClient,
-		cronJob:        cronjob.New(redis, Name),
+		cronJob:        cronjob.New(redis, Name, 10*time.Second),
 	}
 
 	return &instance, nil
