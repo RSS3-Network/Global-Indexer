@@ -2,6 +2,7 @@ package l2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -45,7 +46,11 @@ func (s *server) Run(ctx context.Context) (err error) {
 		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
 	})
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry)
+	retryIf := retry.RetryIf(func(err error) bool {
+		return !errors.Is(err, context.Canceled)
+	})
+
+	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -82,7 +87,7 @@ func (s *server) run(ctx context.Context) (err error) {
 		// Get current block (header and transactions).
 		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
 		if err != nil {
-			return fmt.Errorf("get block %d: %w", block.NumberU64(), err)
+			return fmt.Errorf("get block %d: %w", blockNumberCurrent, err)
 		}
 
 		// Get all receipts of the current block.
@@ -92,7 +97,7 @@ func (s *server) run(ctx context.Context) (err error) {
 		}
 
 		if err := s.index(ctx, block, receipts); err != nil {
-			return fmt.Errorf("index block #%d: %w", blockNumberCurrent, err)
+			return fmt.Errorf("index block %d: %w", blockNumberCurrent, err)
 		}
 	}
 }

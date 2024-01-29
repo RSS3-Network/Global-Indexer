@@ -2,6 +2,7 @@ package l1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -47,7 +48,11 @@ func (s *server) Run(ctx context.Context) (err error) {
 		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
 	})
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry)
+	retryIf := retry.RetryIf(func(err error) bool {
+		return !errors.Is(err, context.Canceled)
+	})
+
+	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -146,7 +151,7 @@ func (s *server) run(ctx context.Context) (err error) {
 
 		for _, block := range blocks {
 			if err := s.index(ctx, block, receiptsMap[block.NumberU64()]); err != nil {
-				return fmt.Errorf("index block #%d: %w", block.NumberU64(), err)
+				return fmt.Errorf("index block %d: %w", block.NumberU64(), err)
 			}
 		}
 	}
