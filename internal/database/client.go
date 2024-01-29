@@ -26,6 +26,7 @@ type Client interface {
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
 	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
+	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
 
 	FindBridgeTransaction(ctx context.Context, id common.Hash) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTransaction, error)

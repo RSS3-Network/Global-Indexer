@@ -18,8 +18,18 @@ const (
 
 type File struct {
 	Environment string           `yaml:"environment" validate:"required" default:"development"`
-	Database    *database.Config `yaml:"database"`
+	Database    *Database        `yaml:"database"`
+	Redis       *Redis           `yaml:"redis"`
 	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
+}
+
+type Database struct {
+	Driver database.Driver `mapstructure:"driver" validate:"required" default:"cockroachdb"`
+	URI    string          `mapstructure:"uri" validate:"required" default:"postgres://root@localhost:26257/defaultdb"`
+}
+
+type Redis struct {
+	URI string `mapstructure:"uri" validate:"required" default:"redis://localhost:6379/0"`
 }
 
 type RSS3ChainConfig struct {
