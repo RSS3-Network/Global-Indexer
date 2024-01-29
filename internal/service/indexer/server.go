@@ -16,10 +16,10 @@ type Server struct {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	errorGroup := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+	errorPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	// Run L1 indexer.
-	errorGroup.Go(func(ctx context.Context) error {
+	errorPool.Go(func(ctx context.Context) error {
 		l1Config := l1.Config{
 			Endpoint:     s.config.EndpointL1,
 			BlockThreads: s.config.BlockThreadsL1,
@@ -34,7 +34,7 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 
 	// Run L2 indexer.
-	errorGroup.Go(func(ctx context.Context) error {
+	errorPool.Go(func(ctx context.Context) error {
 		l2Config := l2.Config{
 			Endpoint: s.config.EndpointL2,
 		}
@@ -47,7 +47,15 @@ func (s *Server) Run(ctx context.Context) error {
 		return serverL2.Run(ctx)
 	})
 
-	return errorGroup.Wait()
+	errorChan := make(chan error)
+	go func() { errorChan <- errorPool.Wait() }()
+
+	select {
+	case err := <-errorChan:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func New(databaseClient database.Client, config config.RSS3ChainConfig) (*Server, error) {

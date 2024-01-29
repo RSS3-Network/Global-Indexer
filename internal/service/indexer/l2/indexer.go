@@ -2,6 +2,7 @@ package l2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -41,7 +42,15 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("get checkpoint: %w", err)
 	}
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30))
+	onRetry := retry.OnRetry(func(n uint, err error) {
+		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+	})
+
+	retryIf := retry.RetryIf(func(err error) bool {
+		return !errors.Is(err, context.Canceled)
+	})
+
+	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -78,17 +87,17 @@ func (s *server) run(ctx context.Context) (err error) {
 		// Get current block (header and transactions).
 		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
 		if err != nil {
-			return fmt.Errorf("get block: %w", err)
+			return fmt.Errorf("get block %d: %w", blockNumberCurrent, err)
 		}
 
 		// Get all receipts of the current block.
 		receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumberCurrent)))
 		if err != nil {
-			return fmt.Errorf("get receipts: %w", err)
+			return fmt.Errorf("get receipts for block %d: %w", block.NumberU64(), err)
 		}
 
 		if err := s.index(ctx, block, receipts); err != nil {
-			return fmt.Errorf("index block #%d: %w", blockNumberCurrent, err)
+			return fmt.Errorf("index block %d: %w", blockNumberCurrent, err)
 		}
 	}
 }

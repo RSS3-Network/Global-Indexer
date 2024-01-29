@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redsync/redsync/v4"
@@ -15,6 +16,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -101,6 +104,41 @@ var indexCommand = &cobra.Command{
 	},
 }
 
+var schedulerCommand = &cobra.Command{
+	Use: "scheduler",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		flags = cmd.PersistentFlags()
+
+		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
+		if err != nil {
+			return fmt.Errorf("setup config file: %w", err)
+		}
+
+		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
+		if err != nil {
+			return err
+		}
+
+		if err := databaseClient.Migrate(cmd.Context()); err != nil {
+			return fmt.Errorf("migrate database: %w", err)
+		}
+
+		options, err := redis.ParseURL(config.Redis.URI)
+		if err != nil {
+			return fmt.Errorf("parse redis uri: %w", err)
+		}
+
+		redisClient := redis.NewClient(options)
+
+		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient)
+		if err != nil {
+			return err
+		}
+
+		return instance.Run(cmd.Context())
+	},
+}
+
 func initializeLogger() {
 	if os.Getenv(config.Environment) == config.EnvironmentDevelopment {
 		zap.ReplaceGlobals(zap.Must(zap.NewDevelopment()))
@@ -113,12 +151,20 @@ func init() {
 	initializeLogger()
 
 	command.AddCommand(indexCommand)
+	command.AddCommand(schedulerCommand)
 	command.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+
 	indexCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+
+	schedulerCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+	schedulerCommand.PersistentFlags().String(flag.KeyServer, "detector", "server name")
 }
 
 func main() {
-	if err := command.ExecuteContext(context.Background()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	if err := command.ExecuteContext(ctx); err != nil {
 		zap.L().Fatal("execute command", zap.Error(err))
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -141,6 +142,23 @@ func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {
 	}
 
 	return c.database.WithContext(ctx).Clauses(onConflict).Save(&nodes).Error
+}
+
+func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error {
+	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+		for {
+			result := c.database.WithContext(ctx).Model(&table.Node{}).
+				Where("last_heartbeat_timestamp < ? and status = ?", time.Unix(lastHeartbeatTimestamp, 0), schema.StatusOnline).
+				Update("status", schema.StatusOffline).Limit(1000)
+			if result.Error != nil {
+				return result.Error
+			}
+
+			if result.RowsAffected == 0 {
+				return nil
+			}
+		}
+	})
 }
 
 func (c *client) FindNodeStat(_ context.Context) (*schema.Stat, error) {

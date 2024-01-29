@@ -2,6 +2,7 @@ package l1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -43,7 +44,15 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("get checkpoint: %w", err)
 	}
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30))
+	onRetry := retry.OnRetry(func(n uint, err error) {
+		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+	})
+
+	retryIf := retry.RetryIf(func(err error) bool {
+		return !errors.Is(err, context.Canceled)
+	})
+
+	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -92,7 +101,7 @@ func (s *server) run(ctx context.Context) (err error) {
 				// Get current block (header and transactions).
 				block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 				if err != nil {
-					return nil, fmt.Errorf("get block: %w", err)
+					return nil, fmt.Errorf("get block %d: %w", blockNumber, err)
 				}
 
 				return block, nil
@@ -121,7 +130,7 @@ func (s *server) run(ctx context.Context) (err error) {
 			receiptsPool.Go(func(ctx context.Context) error {
 				receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(block.NumberU64())))
 				if err != nil {
-					return fmt.Errorf("get block receipts: %w", err)
+					return fmt.Errorf("get receipts for block %d: %w", block.NumberU64(), err)
 				}
 
 				receiptsMapLocker.Lock()
@@ -142,7 +151,7 @@ func (s *server) run(ctx context.Context) (err error) {
 
 		for _, block := range blocks {
 			if err := s.index(ctx, block, receiptsMap[block.NumberU64()]); err != nil {
-				return fmt.Errorf("index block #%d: %w", block.NumberU64(), err)
+				return fmt.Errorf("index block %d: %w", block.NumberU64(), err)
 			}
 		}
 	}
