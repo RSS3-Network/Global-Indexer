@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
@@ -142,7 +143,10 @@ func init() {
 }
 
 func main() {
-	if err := command.ExecuteContext(context.Background()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
+	if err := command.ExecuteContext(ctx); err != nil {
 		zap.L().Fatal("execute command", zap.Error(err))
 	}
 }
