@@ -21,7 +21,8 @@ func (s *Server) Run(ctx context.Context) error {
 	// Run L1 indexer.
 	errorPool.Go(func(ctx context.Context) error {
 		l1Config := l1.Config{
-			Endpoint: s.config.EndpointL1,
+			Endpoint:     s.config.EndpointL1,
+			BlockThreads: s.config.BlockThreadsL1,
 		}
 
 		serverL1, err := l1.NewServer(ctx, s.databaseClient, l1Config)
