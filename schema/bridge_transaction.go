@@ -2,6 +2,7 @@ package schema
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -27,14 +28,17 @@ type BridgeTransactionTransformer interface {
 }
 
 type BridgeTransaction struct {
-	ID             common.Hash           `json:"id"`
-	Type           BridgeTransactionType `json:"type"`
-	Sender         common.Address        `json:"sender"`
-	Receiver       common.Address        `json:"receiver"`
-	TokenAddressL1 *common.Address       `json:"tokenAddressL1"`
-	TokenAddressL2 *common.Address       `json:"tokenAddressL2"`
-	TokenValue     *big.Int              `json:"tokenValue"`
-	Data           string                `json:"data"`
+	ID               common.Hash           `json:"id"`
+	Type             BridgeTransactionType `json:"type"`
+	Sender           common.Address        `json:"sender"`
+	Receiver         common.Address        `json:"receiver"`
+	TokenAddressL1   *common.Address       `json:"tokenAddressL1"`
+	TokenAddressL2   *common.Address       `json:"tokenAddressL2"`
+	TokenValue       *big.Int              `json:"tokenValue"`
+	Data             string                `json:"data"`
+	BlockTimestamp   time.Time             `json:"blockTimestamp"`
+	BlockNumber      uint64                `json:"blockNumber"`
+	TransactionIndex uint                  `json:"transactionIndex"`
 }
 
 type BridgeTransactionQuery struct {
