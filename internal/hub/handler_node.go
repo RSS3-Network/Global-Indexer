@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -8,7 +9,6 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/rss3-network/serving-node/config"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -120,11 +120,11 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 }
 
 type RegisterNodeRequest struct {
-	Address   common.Address `json:"address" validate:"required"`
-	Signature string         `json:"signature" validate:"required"`
-	Endpoint  string         `json:"endpoint" validate:"required"`
-	Stream    *config.Stream `json:"stream,omitempty"`
-	Config    *config.Node   `json:"config,omitempty"`
+	Address   common.Address  `json:"address" validate:"required"`
+	Signature string          `json:"signature" validate:"required"`
+	Endpoint  string          `json:"endpoint" validate:"required"`
+	Stream    json.RawMessage `json:"stream,omitempty"`
+	Config    json.RawMessage `json:"config,omitempty"`
 }
 
 type NodeHeartbeatRequest struct {

@@ -2,6 +2,7 @@ package cockroachdb_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/cockroachdb"
-	nodeConfig "github.com/rss3-network/serving-node/config"
-	"github.com/rss3-network/serving-node/schema/filter"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
@@ -31,26 +30,45 @@ func TestClient(t *testing.T) {
 			driver: database.DriverCockroachDB,
 			nodeCreated: &schema.Node{
 				Address: common.HexToAddress("0xc98D64DA73a6616c42117b582e832812e7B8D57F"),
-				Stream: &nodeConfig.Stream{
-					Enable: lo.ToPtr(true),
-					Driver: "kafka",
-					Topic:  "node.feeds",
-					URI:    "localhost:9092",
-				},
-				Config: &nodeConfig.Node{
-					RSS: []*nodeConfig.Module{
-						{
-							Network:  filter.NetworkRSS,
-							Endpoint: "https://node.rss3.dev",
-						},
-					},
-					Decentralized: []*nodeConfig.Module{
-						{
-							Network:  filter.NetworkEthereum,
-							Endpoint: "https://rpc.ankr.com/eth",
-						},
-					},
-				},
+				Stream: json.RawMessage(`
+				{
+				   "Driver":"kafka",
+				   "Enable":false,
+				   "Topic":"rss3.node.feeds",
+				   "URI":"localhost:9092"
+				}`),
+				Config: json.RawMessage(`
+				{
+				   "Decentralized":[
+					  {
+						 "Endpoint":"https://rpc.ankr.com/eth",
+						 "IPFSGateways":null,
+						 "Network":"ethereum",
+						 "Parameters":{
+							"block_number_start":null,
+							"block_number_target":null
+						 },
+						 "Worker":"fallback"
+					  }
+				   ],
+				   "Federated":null,
+				   "RSS":[
+					  {
+						 "Endpoint":"https://rsshub.app/",
+						 "IPFSGateways":null,
+						 "Network":"rss",
+						 "Parameters":{
+							"authentication":{
+							   "access_code":null,
+							   "access_key":null,
+							   "password":null,
+							   "username":null
+							}
+						 },
+						 "Worker":"unknown"
+					  }
+				   ]
+				}`),
 			},
 		},
 	}
@@ -102,13 +120,13 @@ func TestClient(t *testing.T) {
 			require.Equal(t, 1, len(nodesFound))
 
 			// Update node.
-			testcase.nodeCreated.Stream.URI = "localhost:9093"
+			testcase.nodeCreated.Stream = json.RawMessage(`{}`)
 			require.NoError(t, client.SaveNode(context.Background(), testcase.nodeCreated))
 
 			// Find node.
 			nodeFound, err = client.FindNode(context.Background(), testcase.nodeCreated.Address)
 			require.NoError(t, err)
-			require.Equal(t, testcase.nodeCreated.Stream.URI, nodeFound.Stream.URI)
+			require.Equal(t, testcase.nodeCreated.Stream, nodeFound.Stream)
 		})
 	}
 }

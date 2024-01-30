@@ -2,7 +2,6 @@ package table
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -31,36 +30,22 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.IsPublicGood = node.IsPublicGood
 	n.Status = node.Status
 	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
-
-	if n.Stream, err = json.Marshal(node.Stream); err != nil {
-		return fmt.Errorf("failed to marshal node stream: %w", err)
-	}
-
-	if n.Config, err = json.Marshal(node.Config); err != nil {
-		return fmt.Errorf("failed to marshal node config: %w", err)
-	}
+	n.Stream = node.Stream
+	n.Config = node.Config
 
 	return nil
 }
 
 func (n *Node) Export() (*schema.Node, error) {
-	node := schema.Node{
+	return &schema.Node{
 		Address:                n.Address,
 		Endpoint:               n.Endpoint,
 		IsPublicGood:           n.IsPublicGood,
 		Status:                 n.Status,
 		LastHeartbeatTimestamp: n.LastHeartbeatTimestamp.Unix(),
-	}
-
-	if err := json.Unmarshal(n.Stream, &node.Stream); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal node stream: %w", err)
-	}
-
-	if err := json.Unmarshal(n.Config, &node.Config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal node config: %w", err)
-	}
-
-	return &node, nil
+		Stream:                 n.Stream,
+		Config:                 n.Config,
+	}, nil
 }
 
 type Nodes []*Node

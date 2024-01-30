@@ -39,7 +39,6 @@ func (c *CronJob) AddFunc(ctx context.Context, spec string, cmd func()) error {
 
 		c.Renewal(ctx)
 		cmd()
-		time.Sleep(20 * time.Second)
 	})
 
 	return err
