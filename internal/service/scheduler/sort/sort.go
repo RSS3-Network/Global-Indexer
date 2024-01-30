@@ -1,52 +1,62 @@
-package job
+package sort
 
 import (
 	"context"
 	"fmt"
 	"math"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
-var _ Job = (*SortNodesJob)(nil)
+var _ service.Server = (*server)(nil)
 
-type SortNodesJob struct {
-	databaseClient  database.Client
+var Name = "sort"
+
+type server struct {
+	cronJob         *cronjob.CronJob
 	stakingContract *l2.Staking
+	databaseClient  database.Client
 }
 
-func (job *SortNodesJob) Name() string {
-	return "sort_node_job"
-}
-
-func (job *SortNodesJob) Spec() string {
-	return "0 0 0 * * *"
-}
-
-func (job *SortNodesJob) Timeout() time.Duration {
-	return 10 * time.Minute
-}
-
-func (job *SortNodesJob) Run() error {
-	return job.sortNodesTask()
-}
-
-func NewSortNodesJob(databaseClient database.Client, stakingContract *l2.Staking) Job {
-	return &SortNodesJob{
-		databaseClient:  databaseClient,
-		stakingContract: stakingContract,
+func (s *server) Run(ctx context.Context) error {
+	err := s.cronJob.AddFunc(ctx, "*/5 * * * * *", func() {
+		if err := s.sortNodes(ctx); err != nil {
+			zap.L().Error("sort nodes error", zap.Error(err))
+			return
+		}
+	})
+	if err != nil {
+		return fmt.Errorf("add detector cron job: %w", err)
 	}
+
+	s.cronJob.Start()
+	defer s.cronJob.Stop()
+
+	stopchan := make(chan os.Signal, 1)
+
+	signal.Notify(stopchan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	<-stopchan
+
+	return nil
 }
 
-func (job *SortNodesJob) sortNodesTask() error {
+func (s *server) sortNodes(_ context.Context) error {
 	var (
 		stats []*schema.Stat
 
@@ -55,26 +65,26 @@ func (job *SortNodesJob) sortNodesTask() error {
 
 	ctx := context.Background()
 
-	stats, err = job.databaseClient.FindNodeStats(ctx, []common.Address{})
+	stats, err = s.databaseClient.FindNodeStats(ctx, []common.Address{})
 
 	if err != nil {
 		return err
 	}
 
 	for _, stat := range stats {
-		if err = job.updateNodeEpochStats(stat); err != nil {
+		if err = s.updateNodeEpochStats(stat); err != nil {
 			return err
 		}
 
 		calcPoints(stat)
 
-		if err = job.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+		if err = s.databaseClient.SaveNodeStat(ctx, stat); err != nil {
 			return err
 		}
 	}
 
 	// Update node cache.
-	rssNodes, err := job.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
+	rssNodes, err := s.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
 
 	if err != nil {
 		return err
@@ -84,7 +94,7 @@ func (job *SortNodesJob) sortNodesTask() error {
 		return err
 	}
 
-	fullNodes, err := job.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
+	fullNodes, err := s.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
 
 	if err != nil {
 		return err
@@ -97,8 +107,8 @@ func (job *SortNodesJob) sortNodesTask() error {
 	return nil
 }
 
-func (job *SortNodesJob) updateNodeEpochStats(stat *schema.Stat) error {
-	nodeInfo, err := job.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
+func (s *server) updateNodeEpochStats(stat *schema.Stat) error {
+	nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
 
 	if err != nil {
 		return fmt.Errorf("get node info: %s,%w", stat.Address.String(), err)
@@ -148,4 +158,19 @@ func calcPoints(stat *schema.Stat) {
 
 	// epoch failure requests
 	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
+}
+
+func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
+	stakingContract, err := l2.NewStaking(l2.AddressStakingProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new staking contract: %w", err)
+	}
+
+	instance := server{
+		databaseClient:  databaseClient,
+		stakingContract: stakingContract,
+		cronJob:         cronjob.New(redis, Name, 10*time.Second),
+	}
+
+	return &instance, nil
 }

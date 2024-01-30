@@ -24,10 +24,6 @@ type Server struct {
 func (s *Server) Run(_ context.Context) error {
 	address := net.JoinHostPort(DefaultHost, DefaultPort)
 
-	s.hub.employer.Start()
-
-	defer s.hub.employer.Stop()
-
 	return s.httpServer.Start(address)
 }
 

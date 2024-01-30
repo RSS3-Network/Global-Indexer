@@ -3,8 +3,10 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -29,15 +31,13 @@ func ReplaceGlobal(db *redis.Client) {
 	globalRedisClient = db
 }
 
-func New(config *Config) (*redis.Client, error) {
-	clientOption := &redis.Options{
-		Addr:     config.Endpoints,
-		Username: config.Username,
-		Password: config.Password,
-		DB:       config.DB,
+func New(config *config.Redis) (*redis.Client, error) {
+	options, err := redis.ParseURL(config.URI)
+	if err != nil {
+		return nil, fmt.Errorf("parse redis uri: %w", err)
 	}
 
-	return redis.NewClient(clientOption), nil
+	return redis.NewClient(options), nil
 }
 
 func Get(ctx context.Context, key string, dest interface{}) error {

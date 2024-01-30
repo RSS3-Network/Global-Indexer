@@ -6,7 +6,6 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +21,6 @@ type File struct {
 	Database    *Database        `yaml:"database"`
 	Redis       *Redis           `yaml:"redis"`
 	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
-	Redis       *cache.Config    `yaml:"redis"`
 }
 
 type Database struct {
