@@ -133,23 +133,117 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
 // https://github.com/NaturalSelectionLabs/RSS3-Node/blob/develop/deploy/config.development.yaml
 var WorkerToNetworksMap = map[filter.Name][]string{
-	filter.Fallback:   {filter.NetworkEthereum.String()},
-	filter.Mirror:     {filter.NetworkArweave.String()},
-	filter.Farcaster:  {filter.NetworkFarcaster.String()},
-	filter.RSS3:       {filter.NetworkEthereum.String()},
-	filter.Paragraph:  {filter.NetworkArweave.String()},
-	filter.OpenSea:    {filter.NetworkEthereum.String()},
-	filter.Uniswap:    {filter.NetworkEthereum.String()},
-	filter.Optimism:   {filter.NetworkEthereum.String()},
-	filter.Aavegotchi: {filter.NetworkPolygon.String()},
-	filter.Lens:       {filter.NetworkPolygon.String()},
+	filter.Fallback: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Mirror: {
+		filter.NetworkArweave.String(),
+	},
+	filter.Farcaster: {
+		filter.NetworkFarcaster.String(),
+	},
+	filter.RSS3: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Paragraph: {
+		filter.NetworkArweave.String(),
+	},
+	filter.OpenSea: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Uniswap: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Optimism: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Aavegotchi: {
+		filter.NetworkPolygon.String(),
+	},
+	filter.Lens: {
+		filter.NetworkPolygon.String(),
+	},
+	filter.Looksrare: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Matters: {
+		filter.NetworkPolygon.String(),
+	},
+	filter.Momoka: {
+		filter.NetworkArweave.String(),
+	},
+	filter.Highlight: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Aave: {
+		filter.NetworkPolygon.String(),
+		filter.NetworkEthereum.String(),
+		filter.NetworkAvalanche.String(),
+		filter.NetworkBase.String(),
+		filter.NetworkOptimism.String(),
+		filter.NetworkArbitrum.String(),
+		filter.NetworkFantom.String(),
+	},
+	filter.IQWiki: {
+		filter.NetworkPolygon.String(),
+	},
+	filter.Lido: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Crossbell: {
+		filter.NetworkCrossbell.String(),
+	},
+	filter.ENS: {
+		filter.NetworkEthereum.String(),
+	},
 }
 
 var NetworkToWorkersMap = map[filter.Network][]string{
-	filter.NetworkEthereum:  {filter.Fallback.String(), filter.RSS3.String(), filter.OpenSea.String(), filter.Uniswap.String(), filter.Optimism.String()},
-	filter.NetworkArweave:   {filter.Mirror.String(), filter.Paragraph.String()},
-	filter.NetworkFarcaster: {filter.Farcaster.String()},
-	filter.NetworkPolygon:   {filter.Aavegotchi.String(), filter.Lens.String()},
+	filter.NetworkEthereum: {
+		filter.Fallback.String(),
+		filter.RSS3.String(),
+		filter.OpenSea.String(),
+		filter.Uniswap.String(),
+		filter.Optimism.String(),
+		filter.Looksrare.String(),
+		filter.Highlight.String(),
+		filter.Aave.String(),
+		filter.Lido.String(),
+		filter.ENS.String(),
+	},
+	filter.NetworkArweave: {
+		filter.Mirror.String(),
+		filter.Paragraph.String(),
+		filter.Momoka.String(),
+	},
+	filter.NetworkFarcaster: {
+		filter.Farcaster.String(),
+	},
+	filter.NetworkPolygon: {
+		filter.Aavegotchi.String(),
+		filter.Lens.String(),
+		filter.Matters.String(),
+		filter.Aave.String(),
+		filter.IQWiki.String(),
+	},
+	filter.NetworkCrossbell: {
+		filter.Crossbell.String(),
+	},
+	filter.NetworkAvalanche: {
+		filter.Aave.String(),
+	},
+	filter.NetworkBase: {
+		filter.Aave.String(),
+	},
+	filter.NetworkOptimism: {
+		filter.Aave.String(),
+	},
+	filter.NetworkArbitrum: {
+		filter.Aave.String(),
+	},
+	filter.NetworkFantom: {
+		filter.Aave.String(),
+	},
 }
 
 var PlatformToWorkerMap = map[filter.Platform]string{
@@ -162,12 +256,46 @@ var PlatformToWorkerMap = map[filter.Platform]string{
 	filter.PlatformOptimism:   filter.Optimism.String(),
 	filter.PlatformAavegotchi: filter.Aavegotchi.String(),
 	filter.PlatformLens:       filter.Lens.String(),
+	filter.PlatformLooksRare:  filter.Looksrare.String(),
+	filter.PlatformMatters:    filter.Matters.String(),
+	filter.PlatformMomoka:     filter.Momoka.String(),
+	filter.PlatformHighlight:  filter.Highlight.String(),
+	filter.PlatformAAVE:       filter.Aave.String(),
+	filter.PlatformIQWiki:     filter.IQWiki.String(),
+	filter.PlatformLido:       filter.Lido.String(),
+	filter.PlatformCrossbell:  filter.Crossbell.String(),
+	filter.PlatformENS:        filter.ENS.String(),
 }
 
 var TagToWorkersMap = map[filter.Tag][]string{
-	filter.TagTransaction: {filter.Optimism.String()},
-	filter.TagCollectible: {filter.OpenSea.String()},
-	filter.TagExchange:    {filter.RSS3.String(), filter.Uniswap.String()},
-	filter.TagSocial:      {filter.Farcaster.String(), filter.Mirror.String(), filter.Lens.String(), filter.Paragraph.String()},
-	filter.TagMetaverse:   {filter.Aavegotchi.String()},
+	filter.TagTransaction: {
+		filter.Optimism.String(),
+	},
+	filter.TagCollectible: {
+		filter.OpenSea.String(),
+		filter.ENS.String(),
+		filter.Highlight.String(),
+		filter.Lido.String(),
+		filter.Looksrare.String(),
+	},
+	filter.TagExchange: {
+		filter.RSS3.String(),
+		filter.Uniswap.String(),
+		filter.Aave.String(),
+		filter.Lido.String(),
+	},
+	filter.TagSocial: {
+		filter.Farcaster.String(),
+		filter.Mirror.String(),
+		filter.Lens.String(),
+		filter.Paragraph.String(),
+		filter.Crossbell.String(),
+		filter.ENS.String(),
+		filter.IQWiki.String(),
+		filter.Matters.String(),
+		filter.Momoka.String(),
+	},
+	filter.TagMetaverse: {
+		filter.Aavegotchi.String(),
+	},
 }
