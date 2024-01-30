@@ -15,8 +15,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
@@ -35,7 +35,7 @@ type server struct {
 }
 
 func (s *server) Spec() string {
-	return "*/10 * * * * *"
+	return "*/10 * * * *"
 }
 
 func (s *server) Run(ctx context.Context) error {
@@ -128,7 +128,7 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 		return err
 	}
 
-	if err = s.setNodeCache(ctx, node.RssNodeCacheKey, rssNodes); err != nil {
+	if err = s.setNodeCache(ctx, model.RssNodeCacheKey, rssNodes); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 		return err
 	}
 
-	if err = s.setNodeCache(ctx, node.FullNodeCacheKey, fullNodes); err != nil {
+	if err = s.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes); err != nil {
 		return err
 	}
 
@@ -166,8 +166,8 @@ func (s *server) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
 }
 
 func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) node.Cache {
-		return node.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.Cache {
+		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	if err := cache.Set(ctx, key, nodesCache); err != nil {

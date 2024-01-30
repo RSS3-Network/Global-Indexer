@@ -10,13 +10,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 )
 
 type Hub struct {
 	databaseClient  database.Client
 	stakingContract *l2.Staking
-	pathBuilder     node.Builder
 	httpClient      *http.Client
 }
 
@@ -43,7 +41,6 @@ func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *e
 	return &Hub{
 		databaseClient:  databaseClient,
 		stakingContract: stakingContract,
-		pathBuilder:     node.NewPathBuilder(),
 		httpClient:      http.DefaultClient,
 	}, nil
 }

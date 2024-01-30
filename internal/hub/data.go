@@ -21,7 +21,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/node/config"
@@ -31,15 +31,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
-
-	messageNodeDataFailed = "request node data failed"
-
-	defaultNodeCount   = 3
-	defaultSlashCount  = 4
-	defaultVerifyCount = 3
-)
+var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
 
 func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := h.databaseClient.FindNode(ctx, address)
@@ -233,7 +225,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) erro
 }
 
 func (h *Hub) isFullNode(indexers []*config.Module) (bool, error) {
-	if len(indexers) < len(node.WorkerToNetworksMap) {
+	if len(indexers) < len(model.WorkerToNetworksMap) {
 		return false, nil
 	}
 
@@ -253,7 +245,7 @@ func (h *Hub) isFullNode(indexers []*config.Module) (bool, error) {
 		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
 	}
 
-	for wid, requiredNetworks := range node.WorkerToNetworksMap {
+	for wid, requiredNetworks := range model.WorkerToNetworksMap {
 		networks, exists := workerToNetworksMap[wid]
 		if !exists || len(networks) != len(requiredNetworks) {
 			return false, nil
@@ -270,13 +262,13 @@ func (h *Hub) isFullNode(indexers []*config.Module) (bool, error) {
 }
 
 func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := h.retrieveNodes(ctx, node.RssNodeCacheKey)
+	nodes, err := h.retrieveNodes(ctx, model.RssNodeCacheKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	nodeMap, err := h.pathBuilder.GetRSSHubPath(path, query, nodes)
+	nodeMap, err := model.GetRSSHubPath(path, query, nodes)
 
 	if err != nil {
 		return nil, err
@@ -293,14 +285,14 @@ func (h *Hub) routerRSSHubData(ctx context.Context, path, query string) ([]byte,
 	return nodeRes.Data, nil
 }
 
-func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityRequest) ([]byte, error) {
-	nodes, err := h.retrieveNodes(ctx, node.FullNodeCacheKey)
+func (h *Hub) routerActivityData(ctx context.Context, request model.ActivityRequest) ([]byte, error) {
+	nodes, err := h.retrieveNodes(ctx, model.FullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	nodeMap, err := h.pathBuilder.GetActivityByIDPath(request, nodes)
+	nodeMap, err := model.GetActivityByIDPath(request, nodes)
 
 	if err != nil {
 		return nil, err
@@ -317,8 +309,8 @@ func (h *Hub) routerActivityData(ctx context.Context, request node.ActivityReque
 	return nodeRes.Data, nil
 }
 
-func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActivitiesRequest) ([]byte, error) {
-	nodes := make([]node.Cache, 0, defaultNodeCount)
+func (h *Hub) routerActivitiesData(ctx context.Context, request model.AccountActivitiesRequest) ([]byte, error) {
+	nodes := make([]model.Cache, 0, model.DefaultNodeCount)
 
 	nodeAddresses, err := h.matchLightNodes(ctx, request)
 
@@ -329,7 +321,7 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 	if len(nodeAddresses) > 0 {
 		nodeStats, err := h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 			AddressList: nodeAddresses,
-			Limit:       lo.ToPtr(defaultNodeCount),
+			Limit:       lo.ToPtr(model.DefaultNodeCount),
 			PointsOrder: lo.ToPtr("DESC"),
 		})
 
@@ -337,23 +329,23 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 			return nil, err
 		}
 
-		num := lo.Ternary(len(nodeStats) > defaultNodeCount, defaultNodeCount, len(nodeStats))
+		num := lo.Ternary(len(nodeStats) > model.DefaultNodeCount, model.DefaultNodeCount, len(nodeStats))
 
 		for i := 0; i < num; i++ {
-			nodes = append(nodes, node.Cache{
+			nodes = append(nodes, model.Cache{
 				Address:  nodeStats[i].Address.String(),
 				Endpoint: nodeStats[i].Endpoint,
 			})
 		}
 	}
 
-	if len(nodes) < defaultNodeCount {
-		fullNodes, err := h.retrieveNodes(ctx, node.FullNodeCacheKey)
+	if len(nodes) < model.DefaultNodeCount {
+		fullNodes, err := h.retrieveNodes(ctx, model.FullNodeCacheKey)
 		if err != nil {
 			return nil, err
 		}
 
-		nodesNeeded := defaultNodeCount - len(nodes)
+		nodesNeeded := model.DefaultNodeCount - len(nodes)
 		nodesToAdd := lo.Ternary(nodesNeeded > len(fullNodes), len(fullNodes), nodesNeeded)
 
 		for i := 0; i < nodesToAdd; i++ {
@@ -361,7 +353,7 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 		}
 	}
 
-	nodeMap, err := h.pathBuilder.GetAccountActivitiesPath(request, nodes)
+	nodeMap, err := model.GetAccountActivitiesPath(request, nodes)
 
 	if err != nil {
 		return nil, err
@@ -378,7 +370,7 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 	return nodeRes.Data, nil
 }
 
-func (h *Hub) matchLightNodes(ctx context.Context, request node.AccountActivitiesRequest) ([]common.Address, error) {
+func (h *Hub) matchLightNodes(ctx context.Context, request model.AccountActivitiesRequest) ([]common.Address, error) {
 	tagWorkers := make(map[string]struct{})
 	platformWorkers := make(map[string]struct{})
 
@@ -400,7 +392,7 @@ func (h *Hub) matchLightNodes(ctx context.Context, request node.AccountActivitie
 			return nil, err
 		}
 
-		tagWorker, exists := node.TagToWorkersMap[tid]
+		tagWorker, exists := model.TagToWorkersMap[tid]
 
 		if !exists {
 			return nil, err
@@ -419,7 +411,7 @@ func (h *Hub) matchLightNodes(ctx context.Context, request node.AccountActivitie
 			return nil, err
 		}
 
-		platformWorker, exists := node.PlatformToWorkerMap[pid]
+		platformWorker, exists := model.PlatformToWorkerMap[pid]
 
 		if !exists {
 			return nil, err
@@ -492,7 +484,7 @@ func (h *Hub) matchNetwork(ctx context.Context, requestNetworks []string) ([]com
 		for network, workers := range networkToWorkersMap {
 			nid, _ := filter.NetworkString(network)
 
-			requiredWorkers := node.NetworkToWorkersMap[nid]
+			requiredWorkers := model.NetworkToWorkersMap[nid]
 
 			// number of workers not match
 			if len(requiredWorkers) != len(workers) {
@@ -556,7 +548,7 @@ func (h *Hub) matchWorker(ctx context.Context, workers []string) ([]common.Addre
 		for worker, networks := range workerToNetworksMap {
 			wid, _ := filter.NameString(worker)
 
-			requiredNetworks := node.WorkerToNetworksMap[wid]
+			requiredNetworks := model.WorkerToNetworksMap[wid]
 
 			// number of networks not match
 			if len(requiredNetworks) != len(networks) {
@@ -615,7 +607,7 @@ func (h *Hub) matchWorkerAndNetwork(ctx context.Context, workers, requestNetwork
 		for worker, networks := range workerToNetworksMap {
 			wid, _ := filter.NameString(worker)
 
-			workerRequiredNetworks := node.WorkerToNetworksMap[wid]
+			workerRequiredNetworks := model.WorkerToNetworksMap[wid]
 
 			requiredNetworks := findCommonElements(workerRequiredNetworks, requestNetworks)
 
@@ -662,9 +654,9 @@ func findCommonElements(slice1, slice2 []string) []string {
 	return commonElements
 }
 
-func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, error) {
+func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]model.Cache, error) {
 	var (
-		nodesCache []node.Cache
+		nodesCache []model.Cache
 		nodes      []*schema.Stat
 	)
 
@@ -678,20 +670,20 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, erro
 
 	if errors.Is(err, redis.Nil) {
 		switch key {
-		case node.RssNodeCacheKey:
+		case model.RssNodeCacheKey:
 			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 				IsRssNode:   lo.ToPtr(true),
-				Limit:       lo.ToPtr(defaultNodeCount),
+				Limit:       lo.ToPtr(model.DefaultNodeCount),
 				PointsOrder: lo.ToPtr("DESC"),
 			})
 
 			if err != nil {
 				return nil, err
 			}
-		case node.FullNodeCacheKey:
+		case model.FullNodeCacheKey:
 			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 				IsFullNode:  lo.ToPtr(true),
-				Limit:       lo.ToPtr(defaultNodeCount),
+				Limit:       lo.ToPtr(model.DefaultNodeCount),
 				PointsOrder: lo.ToPtr("DESC"),
 			})
 
@@ -708,8 +700,8 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, erro
 
 		zap.L().Info("set nodes to cache", zap.String("key", key))
 
-		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) node.Cache {
-			return node.Cache{
+		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) model.Cache {
+			return model.Cache{
 				Address:  n.Address.String(),
 				Endpoint: n.Endpoint,
 			}
@@ -721,11 +713,11 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, erro
 	return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
 }
 
-func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string, processResults func([]node.DataResponse)) (node.DataResponse, error) {
+func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string, processResults func([]model.DataResponse)) (model.DataResponse, error) {
 	var (
 		waitGroup   sync.WaitGroup
-		firstResult = make(chan node.DataResponse, 1)
-		results     []node.DataResponse
+		firstResult = make(chan model.DataResponse, 1)
+		results     []model.DataResponse
 		mu          sync.Mutex
 	)
 
@@ -740,10 +732,10 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 				zap.L().Error("fetch request error", zap.Any("node", address.String()), zap.Error(err))
 
 				mu.Lock()
-				results = append(results, node.DataResponse{Address: address, Err: err})
+				results = append(results, model.DataResponse{Address: address, Err: err})
 
 				if len(results) == len(nodeMap) {
-					firstResult <- node.DataResponse{Address: address, Data: []byte(messageNodeDataFailed)}
+					firstResult <- model.DataResponse{Address: address, Data: []byte(model.MessageNodeDataFailed)}
 				}
 
 				mu.Unlock()
@@ -758,10 +750,10 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 				zap.L().Error("response parse error", zap.Any("node", address.String()))
 
 				mu.Lock()
-				results = append(results, node.DataResponse{Address: address, Err: fmt.Errorf("invalid data")})
+				results = append(results, model.DataResponse{Address: address, Err: fmt.Errorf("invalid data")})
 
 				if len(results) == len(nodeMap) {
-					firstResult <- node.DataResponse{Address: address, Data: data}
+					firstResult <- model.DataResponse{Address: address, Data: data}
 				}
 				mu.Unlock()
 
@@ -769,11 +761,11 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 			}
 
 			mu.Lock()
-			results = append(results, node.DataResponse{Address: address, Data: data, First: true})
+			results = append(results, model.DataResponse{Address: address, Data: data, First: true})
 			mu.Unlock()
 
 			select {
-			case firstResult <- node.DataResponse{Address: address, Data: data}:
+			case firstResult <- model.DataResponse{Address: address, Data: data}:
 			default:
 			}
 		}(address, endpoint)
@@ -789,14 +781,14 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 	case result := <-firstResult:
 		return result, nil
 	case <-time.After(time.Second * 3):
-		return node.DataResponse{Data: []byte(messageNodeDataFailed)}, fmt.Errorf("timeout waiting for results")
+		return model.DataResponse{Data: []byte(model.MessageNodeDataFailed)}, fmt.Errorf("timeout waiting for results")
 	}
 }
 
-func (h *Hub) validateActivities(data []byte) (bool, *node.ActivitiesResponse) {
+func (h *Hub) validateActivities(data []byte) (bool, *model.ActivitiesResponse) {
 	var (
-		res    node.ActivitiesResponse
-		errRes node.ErrResponse
+		res    model.ActivitiesResponse
+		errRes model.ErrResponse
 	)
 
 	if err := json.Unmarshal(data, &errRes); err != nil {
@@ -814,10 +806,10 @@ func (h *Hub) validateActivities(data []byte) (bool, *node.ActivitiesResponse) {
 	return true, &res
 }
 
-func (h *Hub) validateActivity(data []byte) (bool, *node.ActivityResponse) {
+func (h *Hub) validateActivity(data []byte) (bool, *model.ActivityResponse) {
 	var (
-		res    node.ActivityResponse
-		errRes node.ErrResponse
+		res    model.ActivityResponse
+		errRes model.ErrResponse
 	)
 
 	if err := json.Unmarshal(data, &errRes); err != nil {
@@ -835,7 +827,7 @@ func (h *Hub) validateActivity(data []byte) (bool, *node.ActivityResponse) {
 	return true, &res
 }
 
-func (h *Hub) processRSSHubResults(results []node.DataResponse) {
+func (h *Hub) processRSSHubResults(results []model.DataResponse) {
 	if err := h.verifyData(context.Background(), results); err != nil {
 		zap.L().Error("fail to verify rss hub request", zap.Any("results", len(results)))
 	} else {
@@ -843,7 +835,7 @@ func (h *Hub) processRSSHubResults(results []node.DataResponse) {
 	}
 }
 
-func (h *Hub) processActivityResults(results []node.DataResponse) {
+func (h *Hub) processActivityResults(results []model.DataResponse) {
 	if err := h.verifyData(context.Background(), results); err != nil {
 		zap.L().Error("fail to verify  feed id request ", zap.Any("results", len(results)))
 	} else {
@@ -851,7 +843,7 @@ func (h *Hub) processActivityResults(results []node.DataResponse) {
 	}
 }
 
-func (h *Hub) processActivitiesResults(results []node.DataResponse) {
+func (h *Hub) processActivitiesResults(results []model.DataResponse) {
 	ctx := context.Background()
 
 	if err := h.verifyData(ctx, results); err != nil {
@@ -866,7 +858,7 @@ func (h *Hub) processActivitiesResults(results []node.DataResponse) {
 		return
 	}
 
-	var activities node.ActivitiesResponse
+	var activities model.ActivitiesResponse
 
 	data := results[0].Data
 
@@ -881,14 +873,14 @@ func (h *Hub) processActivitiesResults(results []node.DataResponse) {
 		return
 	}
 
-	workingNodes := lo.Map(results, func(result node.DataResponse, _ int) common.Address {
+	workingNodes := lo.Map(results, func(result model.DataResponse, _ int) common.Address {
 		return result.Address
 	})
 
 	h.process2ndVerify(activities.Data, workingNodes)
 }
 
-func (h *Hub) process2ndVerify(feeds []*node.Feed, workingNodes []common.Address) {
+func (h *Hub) process2ndVerify(feeds []*model.Feed, workingNodes []common.Address) {
 	ctx := context.Background()
 	platformMap := make(map[string]struct{})
 	statMap := make(map[string]struct{})
@@ -901,20 +893,20 @@ func (h *Hub) process2ndVerify(feeds []*node.Feed, workingNodes []common.Address
 		h.verifyPlatform(ctx, feed, platformMap, statMap, workingNodes)
 
 		if _, exists := platformMap[feed.Platform]; !exists {
-			if len(platformMap) == defaultVerifyCount {
+			if len(platformMap) == model.DefaultVerifyCount {
 				break
 			}
 		}
 	}
 }
 
-func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, statMap map[string]struct{}, workingNodes []common.Address) {
+func (h *Hub) verifyPlatform(ctx context.Context, feed *model.Feed, platformMap, statMap map[string]struct{}, workingNodes []common.Address) {
 	pid, err := filter.PlatformString(feed.Platform)
 	if err != nil {
 		return
 	}
 
-	worker := node.PlatformToWorkerMap[pid]
+	worker := model.PlatformToWorkerMap[pid]
 
 	indexers, err := h.databaseClient.FindNodeIndexers(ctx, nil, []string{feed.Network}, []string{worker})
 
@@ -948,22 +940,22 @@ func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, 
 	platformMap[feed.Platform] = struct{}{}
 }
 
-func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.Stat, statMap map[string]struct{}) {
+func (h *Hub) verifyStat(ctx context.Context, feed *model.Feed, stats []*schema.Stat, statMap map[string]struct{}) {
 	for _, stat := range stats {
-		if stat.EpochInvalidRequest >= int64(defaultSlashCount) {
+		if stat.EpochInvalidRequest >= int64(model.DefaultSlashCount) {
 			continue
 		}
 
 		if _, exists := statMap[stat.Address.String()]; !exists {
 			statMap[stat.Address.String()] = struct{}{}
 
-			request := node.ActivityRequest{
+			request := model.ActivityRequest{
 				ID: feed.ID,
 			}
 
-			nodeMap, err := h.pathBuilder.GetActivityByIDPath(
+			nodeMap, err := model.GetActivityByIDPath(
 				request,
-				[]node.Cache{
+				[]model.Cache{
 					{Address: stat.Address.String(), Endpoint: stat.Endpoint},
 				})
 
@@ -993,7 +985,7 @@ func (h *Hub) verifyStat(ctx context.Context, feed *node.Feed, stats []*schema.S
 	}
 }
 
-func (h *Hub) compareFeeds(src, des *node.Feed) bool {
+func (h *Hub) compareFeeds(src, des *model.Feed) bool {
 	var flag bool
 
 	if src.ID != des.ID ||
@@ -1029,7 +1021,7 @@ func (h *Hub) compareFeeds(src, des *node.Feed) bool {
 	return flag
 }
 
-func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error {
+func (h *Hub) verifyData(ctx context.Context, results []model.DataResponse) error {
 	statsMap, err := h.getNodeStatsMap(ctx, results)
 	if err != nil {
 		return fmt.Errorf("find node stats: %w", err)
@@ -1037,7 +1029,7 @@ func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error
 
 	h.sortResults(results)
 
-	if len(statsMap) < defaultNodeCount {
+	if len(statsMap) < model.DefaultNodeCount {
 		for i := range results {
 			if _, exists := statsMap[results[i].Address]; exists {
 				if results[i].Err != nil {
@@ -1066,9 +1058,9 @@ func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error
 	return nil
 }
 
-func (h *Hub) getNodeStatsMap(ctx context.Context, results []node.DataResponse) (map[common.Address]*schema.Stat, error) {
+func (h *Hub) getNodeStatsMap(ctx context.Context, results []model.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: lo.Map(results, func(result node.DataResponse, _ int) common.Address {
+		AddressList: lo.Map(results, func(result model.DataResponse, _ int) common.Address {
 			return result.Address
 		}),
 		PointsOrder: lo.ToPtr("DESC"),
@@ -1087,13 +1079,13 @@ func (h *Hub) getNodeStatsMap(ctx context.Context, results []node.DataResponse) 
 	return statsMap, nil
 }
 
-func (h *Hub) sortResults(results []node.DataResponse) {
+func (h *Hub) sortResults(results []model.DataResponse) {
 	sort.SliceStable(results, func(i, j int) bool {
 		return results[i].First && !results[j].First
 	})
 }
 
-func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, results []node.DataResponse) {
+func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, results []model.DataResponse) {
 	for _, result := range results {
 		if stat, exists := statsMap[result.Address]; exists {
 			stat.TotalRequest += int64(result.Request)
@@ -1103,7 +1095,7 @@ func (h *Hub) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, r
 	}
 }
 
-func (h *Hub) updateRequestsBasedOnDataCompare(results []node.DataResponse) {
+func (h *Hub) updateRequestsBasedOnDataCompare(results []model.DataResponse) {
 	diff01 := compareData(results[0].Data, results[1].Data)
 	diff02 := compareData(results[0].Data, results[2].Data)
 	diff12 := compareData(results[1].Data, results[2].Data)
@@ -1184,8 +1176,8 @@ func (h *Hub) fetch(ctx context.Context, decodedURI string) ([]byte, error) {
 }
 
 func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) node.Cache {
-		return node.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.Cache {
+		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	if err := cache.Set(ctx, key, nodesCache); err != nil {

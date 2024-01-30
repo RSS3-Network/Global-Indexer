@@ -7,13 +7,13 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/rss3-network/node/common/http/response"
 	"github.com/rss3-network/protocol-go/schema/filter"
 )
 
 func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
-	request := node.ActivityRequest{}
+	request := model.ActivityRequest{}
 
 	if err = c.Bind(&request); err != nil {
 		return response.BadRequestError(c, err)
@@ -36,7 +36,7 @@ func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
 }
 
 func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
-	request := node.AccountActivitiesRequest{}
+	request := model.AccountActivitiesRequest{}
 
 	if err = c.Bind(&request); err != nil {
 		return response.BadRequestError(c, err)

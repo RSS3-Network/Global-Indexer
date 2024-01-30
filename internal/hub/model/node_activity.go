@@ -1,10 +1,12 @@
-package node
+package model
 
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-playground/form/v4"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/rss3-network/protocol-go/schema/metadata"
 )
@@ -12,24 +14,30 @@ import (
 var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
+
+	MessageNodeDataFailed = "request node data failed"
+
+	DefaultNodeCount   = 3
+	DefaultSlashCount  = 4
+	DefaultVerifyCount = 3
 )
 
 type ActivityRequest struct {
-	ID          string `param:"id" description:"Retrieve details for the specified activity ID" examples:"[\"0x5ffa607a127d63fb36827075493d1de06f58fc44710b9ffb887b2effe02d2b8b\"]"`
-	ActionLimit int    `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" examples:"[10]" default:"10" min:"1" max:"20"`
+	ID          string `param:"id" description:"Retrieve details for the specified activity ID"`
+	ActionLimit int    `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" default:"10" min:"1" max:"20"`
 	ActionPage  int    `query:"action_page" form:"action_page" description:"Specify the pagination for actions" default:"1" min:"1"`
 }
 
 type AccountActivitiesRequest struct {
-	Account        string   `param:"account" description:"Retrieve activities from the specified account" examples:"[\"vitalik.eth\",\"stani.lens\",\"diygod.csb\"]"`
-	Limit          *int     `query:"limit" form:"limit" description:"Specify the number of activities to retrieve" examples:"[20]" default:"100" min:"1" max:"100"`
-	ActionLimit    *int     `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" examples:"[10]" default:"10" min:"1" max:"20"`
+	Account        string   `param:"account" description:"Retrieve activities from the specified account"`
+	Limit          *int     `query:"limit" form:"limit" description:"Specify the number of activities to retrieve" default:"100" min:"1" max:"100"`
+	ActionLimit    *int     `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" default:"10" min:"1" max:"20"`
 	Cursor         *string  `query:"cursor" form:"cursor" description:"Specify the cursor used for pagination"`
-	SinceTimestamp *uint64  `query:"since_timestamp" form:"since_timestamp" description:"Retrieve activities starting from this timestamp" examples:"[1654000000]"`
-	UntilTimestamp *uint64  `query:"until_timestamp" form:"until_timestamp" description:"Retrieve activities up to this timestamp" examples:"[1696000000]"`
+	SinceTimestamp *uint64  `query:"since_timestamp" form:"since_timestamp" description:"Retrieve activities starting from this timestamp"`
+	UntilTimestamp *uint64  `query:"until_timestamp" form:"until_timestamp" description:"Retrieve activities up to this timestamp"`
 	Status         *bool    `query:"success" form:"success" description:"Retrieve activities based on status"`
 	Direction      *string  `query:"direction" form:"direction" description:"Retrieve activities based on direction"`
-	Network        []string `query:"network" form:"network" description:"Retrieve activities from the specified network(s)" examples:"[[\"ethereum\",\"polygon\"]]"`
+	Network        []string `query:"network" form:"network" description:"Retrieve activities from the specified network(s)"`
 	Tag            []string `query:"tag" form:"tag" description:"Retrieve activities from the specified tag(s)"`
 	Type           []string `query:"" form:"type" description:"Retrieve activities from the specified type(s)"`
 	Platform       []string `query:"platform" form:"platform" description:"Retrieve activities from the specified platform(s)"`
@@ -298,4 +306,61 @@ var TagToWorkersMap = map[filter.Tag][]string{
 	filter.TagMetaverse: {
 		filter.Aavegotchi.String(),
 	},
+}
+
+func GetRSSHubPath(param, query string, nodes []Cache) (map[common.Address]string, error) {
+	endpointMap, err := buildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
+	if err != nil {
+		return nil, fmt.Errorf("build path: %w", err)
+	}
+
+	return endpointMap, nil
+}
+
+func GetActivityByIDPath(query ActivityRequest, nodes []Cache) (map[common.Address]string, error) {
+	endpointMap, err := buildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
+	if err != nil {
+		return nil, fmt.Errorf("build path: %w", err)
+	}
+
+	return endpointMap, nil
+}
+
+func GetAccountActivitiesPath(query AccountActivitiesRequest, nodes []Cache) (map[common.Address]string, error) {
+	endpointMap, err := buildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
+	if err != nil {
+		return nil, fmt.Errorf("build path: %w", err)
+	}
+
+	return endpointMap, nil
+}
+
+func buildPath(path string, query any, nodes []Cache) (map[common.Address]string, error) {
+	if query != nil {
+		values, err := form.NewEncoder().Encode(query)
+
+		if err != nil {
+			return nil, fmt.Errorf("build params %w", err)
+		}
+
+		path = fmt.Sprintf("%s?%s", path, values.Encode())
+	}
+
+	urls := make(map[common.Address]string, len(nodes))
+
+	for _, node := range nodes {
+		fullURL, err := url.JoinPath(node.Endpoint, path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to join path for node %s: %w", node.Address, err)
+		}
+
+		decodedURL, err := url.QueryUnescape(fullURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unescape url for node %s: %w", node.Address, err)
+		}
+
+		urls[common.HexToAddress(node.Address)] = decodedURL
+	}
+
+	return urls, nil
 }
