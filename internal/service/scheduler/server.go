@@ -7,16 +7,16 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/sort"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
 	"github.com/redis/go-redis/v9"
 )
 
 func New(server string, databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
 	switch server {
-	case "detector":
+	case detector.Name:
 		return detector.New(databaseClient, redis)
-	case "sort":
-		return sort.New(databaseClient, redis, ethereumClient)
+	case integrator.Name:
+		return integrator.New(databaseClient, redis, ethereumClient)
 	}
 
 	return nil, fmt.Errorf("unknown scheduler server: %s", server)

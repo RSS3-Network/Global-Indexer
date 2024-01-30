@@ -1,4 +1,4 @@
-package sort
+package integrator
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
@@ -21,6 +20,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -34,8 +34,12 @@ type server struct {
 	databaseClient  database.Client
 }
 
+func (s *server) Spec() string {
+	return "*/10 * * * * *"
+}
+
 func (s *server) Run(ctx context.Context) error {
-	err := s.cronJob.AddFunc(ctx, "*/5 * * * * *", func() {
+	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
 		if err := s.sortNodes(ctx); err != nil {
 			zap.L().Error("sort nodes error", zap.Error(err))
 			return
@@ -56,58 +60,94 @@ func (s *server) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) sortNodes(_ context.Context) error {
-	var (
-		stats []*schema.Stat
+func (s *server) sortNodes(ctx context.Context) error {
+	var limit = 100
 
-		err error
-	)
-
-	ctx := context.Background()
-
-	stats, err = s.databaseClient.FindNodeStats(ctx, []common.Address{})
+	epoch, err := s.stakingContract.CurrentEpoch(&bind.CallOpts{})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("get current epoch: %w", err)
 	}
 
-	for _, stat := range stats {
-		if err = s.updateNodeEpochStats(stat); err != nil {
+	query := &schema.StatQuery{
+		Limit: &limit,
+	}
+
+	for first := true; query.Cursor != nil || first; first = false {
+		stats, err := s.databaseClient.FindNodeStats(ctx, query)
+
+		if err != nil {
 			return err
 		}
 
-		calcPoints(stat)
+		statsPool := pool.New().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
 
-		if err = s.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+		for _, stat := range stats {
+			stat := stat
+
+			statsPool.Go(func(ctx context.Context) error {
+				if err = s.updateNodeEpochStats(stat, epoch.Int64()); err != nil {
+					return err
+				}
+
+				s.calcPoints(stat)
+
+				return nil
+			})
+		}
+
+		if err := statsPool.Wait(); err != nil {
+			return fmt.Errorf("wait stats pool: %w", err)
+		}
+
+		if err = s.databaseClient.SaveNodeStats(ctx, stats); err != nil {
 			return err
 		}
+
+		if len(stats) == 0 {
+			break
+		}
+
+		lastStat, _ := lo.Last(stats)
+		query.Cursor = lo.ToPtr(lastStat.Address.String())
 	}
 
-	// Update node cache.
-	rssNodes, err := s.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), 3)
+	return s.updateNodeCache(ctx)
+}
+
+func (s *server) updateNodeCache(ctx context.Context) error {
+	rssNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		IsRssNode: lo.ToPtr(true),
+		Limit:     lo.ToPtr(3),
+	})
 
 	if err != nil {
 		return err
 	}
 
-	if err = setNodeCache(ctx, node.RssNodeCacheKey, rssNodes); err != nil {
+	if err = s.setNodeCache(ctx, node.RssNodeCacheKey, rssNodes); err != nil {
 		return err
 	}
 
-	fullNodes, err := s.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, 3)
-
+	fullNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		IsFullNode: lo.ToPtr(true),
+		Limit:      lo.ToPtr(3),
+	})
 	if err != nil {
 		return err
 	}
 
-	if err = setNodeCache(ctx, node.FullNodeCacheKey, fullNodes); err != nil {
+	if err = s.setNodeCache(ctx, node.FullNodeCacheKey, fullNodes); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *server) updateNodeEpochStats(stat *schema.Stat) error {
+func (s *server) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
 	nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
 
 	if err != nil {
@@ -115,13 +155,17 @@ func (s *server) updateNodeEpochStats(stat *schema.Stat) error {
 	}
 
 	stat.Staking = float64(nodeInfo.StakingPoolTokens.Uint64())
-	stat.EpochRequest = 0
-	stat.EpochInvalidRequest = 0
+
+	if epoch != stat.Epoch {
+		stat.EpochRequest = 0
+		stat.EpochInvalidRequest = 0
+		stat.Epoch = epoch
+	}
 
 	return nil
 }
 
-func setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
+func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
 	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) node.Cache {
 		return node.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
@@ -134,7 +178,7 @@ func setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
 }
 
 // calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
-func calcPoints(stat *schema.Stat) {
+func (s *server) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
 	stat.Points = math.Min(math.Log2(stat.Staking/100000)+1, 0.2)
 

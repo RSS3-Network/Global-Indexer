@@ -88,6 +88,7 @@ type Stat struct {
 	IsFullNode           bool           `gorm:"column:is_full_node"`
 	IsRssNode            bool           `gorm:"column:is_rss_node"`
 	Staking              float64        `gorm:"column:staking"`
+	Epoch                int64          `gorm:"column:epoch"`
 	TotalRequest         int64          `gorm:"column:total_request_count"`
 	EpochRequest         int64          `gorm:"column:epoch_request_count"`
 	EpochInvalidRequest  int64          `gorm:"column:epoch_invalid_request_count"`
@@ -95,6 +96,7 @@ type Stat struct {
 	FederatedNetwork     int            `gorm:"column:federated_network_count"`
 	Indexer              int            `gorm:"column:indexer_count"`
 	ResetAt              time.Time      `gorm:"column:reset_at"`
+	CreatedAt            time.Time      `gorm:"column:created_at"`
 }
 
 func (*Stat) TableName() string {
@@ -109,6 +111,7 @@ func (s *Stat) Import(stat *schema.Stat) (err error) {
 	s.IsFullNode = stat.IsFullNode
 	s.IsRssNode = stat.IsRssNode
 	s.Staking = stat.Staking
+	s.Epoch = stat.Epoch
 	s.TotalRequest = stat.TotalRequest
 	s.EpochRequest = stat.EpochRequest
 	s.EpochInvalidRequest = stat.EpochInvalidRequest
@@ -129,6 +132,7 @@ func (s *Stat) Export() (*schema.Stat, error) {
 		IsFullNode:           s.IsFullNode,
 		IsRssNode:            s.IsRssNode,
 		Staking:              s.Staking,
+		Epoch:                s.Epoch,
 		TotalRequest:         s.TotalRequest,
 		EpochRequest:         s.EpochRequest,
 		EpochInvalidRequest:  s.EpochInvalidRequest,

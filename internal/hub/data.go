@@ -321,7 +321,11 @@ func (h *Hub) routerActivitiesData(ctx context.Context, request node.AccountActi
 	}
 
 	if len(nodeAddresses) > 0 {
-		nodeStats, err := h.databaseClient.FindNodeStats(ctx, nodeAddresses)
+		nodeStats, err := h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+			AddressList: nodeAddresses,
+			Limit:       lo.ToPtr(defaultNodeCount),
+			PointsOrder: lo.ToPtr("DESC"),
+		})
 
 		if err != nil {
 			return nil, err
@@ -669,13 +673,21 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]node.Cache, erro
 	if errors.Is(err, redis.Nil) {
 		switch key {
 		case node.RssNodeCacheKey:
-			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, nil, lo.ToPtr(true), defaultNodeCount)
+			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+				IsRssNode:   lo.ToPtr(true),
+				Limit:       lo.ToPtr(defaultNodeCount),
+				PointsOrder: lo.ToPtr("DESC"),
+			})
 
 			if err != nil {
 				return nil, err
 			}
 		case node.FullNodeCacheKey:
-			nodes, err = h.databaseClient.FindNodeStatsByType(ctx, lo.ToPtr(true), nil, defaultNodeCount)
+			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+				IsFullNode:  lo.ToPtr(true),
+				Limit:       lo.ToPtr(defaultNodeCount),
+				PointsOrder: lo.ToPtr("DESC"),
+			})
 
 			if err != nil {
 				return nil, err
@@ -916,7 +928,10 @@ func (h *Hub) verifyPlatform(ctx context.Context, feed *node.Feed, platformMap, 
 		return
 	}
 
-	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Uniq(nodeAddresses))
+	stats, err := h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		AddressList: nodeAddresses,
+		PointsOrder: lo.ToPtr("DESC"),
+	})
 
 	if err != nil || len(stats) == 0 {
 		return
@@ -1046,9 +1061,12 @@ func (h *Hub) verifyData(ctx context.Context, results []node.DataResponse) error
 }
 
 func (h *Hub) getNodeStatsMap(ctx context.Context, results []node.DataResponse) (map[common.Address]*schema.Stat, error) {
-	stats, err := h.databaseClient.FindNodeStats(ctx, lo.Map(results, func(result node.DataResponse, _ int) common.Address {
-		return result.Address
-	}))
+	stats, err := h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		AddressList: lo.Map(results, func(result node.DataResponse, _ int) common.Address {
+			return result.Address
+		}),
+		PointsOrder: lo.ToPtr("DESC"),
+	})
 
 	if err != nil {
 		return nil, err

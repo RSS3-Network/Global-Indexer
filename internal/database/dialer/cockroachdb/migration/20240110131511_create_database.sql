@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "node_stat"
     "is_full_node"                bool        NOT NULL,
     "is_rss_node"                 bool        NOT NULL,
     "staking"                     decimal     NOT NULL,
+    "epoch"                       int         NOT NULL,
     "total_request_count"         int         NOT NULL,
     "epoch_request_count"         int         NOT NULL,
     "epoch_invalid_request_count" int         NOT NULL,
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "node_stat"
 CREATE INDEX IF NOT EXISTS "idx_indexes_points" ON "node_stat" ("points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_full_node" ON "node_stat" ("is_full_node", "points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_rss_node" ON "node_stat" ("is_rss_node", "points" DESC);
+CREATE INDEX IF NOT EXISTS "idx_indexes_created_at" ON "node_stat" ("created_at" ASC);
 
 CREATE TABLE IF NOT EXISTS "node_indexer"
 (

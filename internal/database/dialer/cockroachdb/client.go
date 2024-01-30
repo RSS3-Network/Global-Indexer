@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -161,44 +162,91 @@ func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp i
 	})
 }
 
-func (c *client) FindNodeStat(_ context.Context) (*schema.Stat, error) {
-	return nil, nil
-}
-
-func (c *client) FindNodeStats(ctx context.Context, nodeAddresses []common.Address) ([]*schema.Stat, error) {
-	databaseStatement := c.database.WithContext(ctx)
-
-	if len(nodeAddresses) > 0 {
-		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
-	}
-
+func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
 	var stats table.Stats
 
-	if err := databaseStatement.Limit(3).Order("points DESC").Find(&stats).Error; err != nil {
+	internalDatabase, err := c.buildNodeStatQuery(ctx, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("build find node stats: %w", err)
+	}
+
+	if err = internalDatabase.Find(&stats).Error; err != nil {
 		return nil, fmt.Errorf("find nodes: %w", err)
 	}
 
 	return stats.Export()
 }
 
-func (c *client) FindNodeStatsByType(ctx context.Context, fullNode, rssNode *bool, limit int) ([]*schema.Stat, error) {
+func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery) (*gorm.DB, error) {
 	databaseStatement := c.database.WithContext(ctx)
 
-	if fullNode != nil {
-		databaseStatement = databaseStatement.Where("is_full_node = ?", *fullNode)
+	if query.Cursor != nil {
+		var statCursor *table.Stat
+
+		if err := c.database.WithContext(ctx).First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
+			return nil, fmt.Errorf("get node cursor: %w", err)
+		}
+
+		databaseStatement.Where(clause.Gt{
+			Column: "created_at",
+			Value:  statCursor.CreatedAt,
+		})
 	}
 
-	if rssNode != nil {
-		databaseStatement = databaseStatement.Where("is_rss_node = ?", *rssNode)
+	if query.Address != nil {
+		databaseStatement.Where(clause.Eq{
+			Column: "address",
+			Value:  query.Address,
+		})
 	}
 
-	var stats table.Stats
-
-	if err := databaseStatement.Limit(limit).Order("points DESC").Find(&stats).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+	if len(query.AddressList) > 0 {
+		databaseStatement.Where(clause.IN{
+			Column: "address",
+			Values: lo.ToAnySlice(query.AddressList),
+		})
 	}
 
-	return stats.Export()
+	if query.IsFullNode != nil {
+		databaseStatement.Where(clause.Eq{
+			Column: "is_full_node",
+			Value:  query.IsFullNode,
+		})
+	}
+
+	if query.IsRssNode != nil {
+		databaseStatement.Where(clause.Eq{
+			Column: "is_rss_node",
+			Value:  query.IsRssNode,
+		})
+	}
+
+	if query.Limit != nil {
+		databaseStatement.Limit(*query.Limit)
+	}
+
+	orderByPointsClause := clause.OrderByColumn{
+		Column: clause.Column{
+			Name: "points",
+		},
+	}
+
+	orderByCreatedAtClause := clause.OrderByColumn{
+		Column: clause.Column{
+			Name: "created_at",
+		},
+	}
+
+	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
+		orderByPointsClause.Desc = true
+
+		databaseStatement.Order(orderByPointsClause)
+	} else {
+		databaseStatement.Order(orderByCreatedAtClause)
+	}
+
+	return databaseStatement, nil
 }
 
 func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
