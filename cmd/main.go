@@ -7,7 +7,6 @@ import (
 	"os/signal"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
@@ -51,14 +50,14 @@ var command = cobra.Command{
 		}
 
 		// Dial redis.
-		redisClient, err := cache.New(config.Redis)
+		options, err := redis.ParseURL(config.Redis.URI)
 		if err != nil {
-			return fmt.Errorf("dial redis: %w", err)
+			return fmt.Errorf("parse redis uri: %w", err)
 		}
 
-		cache.ReplaceGlobal(redisClient)
+		redisClient := redis.NewClient(options)
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}

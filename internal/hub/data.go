@@ -19,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -660,7 +659,7 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]model.Cache, err
 		nodes      []*schema.Stat
 	)
 
-	err := cache.Get(ctx, key, &nodesCache)
+	err := h.cacheClient.Get(ctx, key, &nodesCache)
 
 	if err == nil {
 		return nodesCache, nil
@@ -1180,7 +1179,7 @@ func (h *Hub) setNodeCache(ctx context.Context, key string, stats []*schema.Stat
 		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
-	if err := cache.Set(ctx, key, nodesCache); err != nil {
+	if err := h.cacheClient.Set(ctx, key, nodesCache); err != nil {
 		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
 	}
 

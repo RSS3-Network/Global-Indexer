@@ -3,45 +3,23 @@ package cache
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"sync"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
-var (
-	globalLocker      sync.RWMutex
-	globalRedisClient *redis.Client
-)
-
-func Global() *redis.Client {
-	globalLocker.RLock()
-
-	defer globalLocker.RUnlock()
-
-	return globalRedisClient
+type Client interface {
+	Get(ctx context.Context, key string, dest interface{}) error
+	Set(ctx context.Context, key string, value interface{}) error
 }
 
-func ReplaceGlobal(db *redis.Client) {
-	globalLocker.Lock()
+var _ Client = (*client)(nil)
 
-	defer globalLocker.Unlock()
-
-	globalRedisClient = db
+type client struct {
+	cacheClient *redis.Client
 }
 
-func New(config *config.Redis) (*redis.Client, error) {
-	options, err := redis.ParseURL(config.URI)
-	if err != nil {
-		return nil, fmt.Errorf("parse redis uri: %w", err)
-	}
-
-	return redis.NewClient(options), nil
-}
-
-func Get(ctx context.Context, key string, dest interface{}) error {
-	data, err := globalRedisClient.Get(ctx, key).Bytes()
+func (c *client) Get(ctx context.Context, key string, dest interface{}) error {
+	data, err := c.cacheClient.Get(ctx, key).Bytes()
 
 	if err != nil {
 		return err
@@ -54,11 +32,17 @@ func Get(ctx context.Context, key string, dest interface{}) error {
 	return nil
 }
 
-func Set(ctx context.Context, key string, value interface{}) error {
+func (c *client) Set(ctx context.Context, key string, value interface{}) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	return globalRedisClient.Set(ctx, key, data, 0).Err()
+	return c.cacheClient.Set(ctx, key, data, 0).Err()
+}
+
+func New(redisClient *redis.Client) Client {
+	return &client{
+		cacheClient: redisClient,
+	}
 }

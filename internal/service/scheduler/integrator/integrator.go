@@ -32,6 +32,7 @@ type server struct {
 	cronJob         *cronjob.CronJob
 	stakingContract *l2.Staking
 	databaseClient  database.Client
+	cacheClient     cache.Client
 }
 
 func (s *server) Spec() string {
@@ -172,7 +173,7 @@ func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.S
 		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
-	if err := cache.Set(ctx, key, nodesCache); err != nil {
+	if err := s.cacheClient.Set(ctx, key, nodesCache); err != nil {
 		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
 	}
 
@@ -213,6 +214,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 
 	instance := server{
 		databaseClient:  databaseClient,
+		cacheClient:     cache.New(redis),
 		stakingContract: stakingContract,
 		cronJob:         cronjob.New(redis, Name, 10*time.Second),
 	}
