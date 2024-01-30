@@ -36,3 +36,19 @@ type BridgeTransaction struct {
 	TokenValue     *big.Int              `json:"tokenValue"`
 	Data           string                `json:"data"`
 }
+
+type BridgeTransactionQuery struct {
+	ID       *common.Hash    `query:"id"`
+	Sender   *common.Address `query:"address"`
+	Receiver *common.Address `query:"receiver"`
+	Address  *common.Address `query:"address"`
+	Type     *string         `query:"type"`
+}
+
+type BridgeTransactionsQuery struct {
+	ID       *common.Hash    `query:"id"`
+	Sender   *common.Address `query:"address"`
+	Receiver *common.Address `query:"receiver"`
+	Address  *common.Address `query:"address"`
+	Type     *string         `query:"type"`
+}
