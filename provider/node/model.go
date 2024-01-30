@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/serving-node/schema/filter"
-	"github.com/rss3-network/serving-node/schema/metadata"
+	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/protocol-go/schema/metadata"
 )
 
 var (

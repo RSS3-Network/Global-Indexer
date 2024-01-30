@@ -24,8 +24,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/provider/node"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
-	"github.com/rss3-network/serving-node/config"
-	"github.com/rss3-network/serving-node/schema/filter"
+	"github.com/rss3-network/node/config"
+	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -132,7 +132,13 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
 
-	fullNode, err := h.isFullNode(request.Config.Decentralized)
+	var nodeConfig config.Node
+
+	if err = json.Unmarshal(request.Config, &nodeConfig); err != nil {
+		return fmt.Errorf("unmarshal node config: %w", err)
+	}
+
+	fullNode, err := h.isFullNode(nodeConfig.Decentralized)
 
 	if err != nil {
 		return fmt.Errorf("check full node error: %w", err)
@@ -144,18 +150,18 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 		IsPublicGood: nodeInfo.PublicGood,
 		ResetAt:      time.Now(),
 		IsFullNode:   fullNode,
-		IsRssNode:    len(request.Config.RSS) > 0,
-		DecentralizedNetwork: len(lo.UniqBy(request.Config.Decentralized, func(module *config.Module) filter.Network {
+		IsRssNode:    len(nodeConfig.RSS) > 0,
+		DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *config.Module) filter.Network {
 			return module.Network
 		})),
-		FederatedNetwork: len(request.Config.Federated),
-		Indexer:          len(request.Config.Decentralized),
+		FederatedNetwork: len(nodeConfig.Federated),
+		Indexer:          len(nodeConfig.Decentralized),
 	}
 
-	indexers := make([]*schema.Indexer, 0, len(request.Config.Decentralized))
+	indexers := make([]*schema.Indexer, 0, len(nodeConfig.Decentralized))
 
 	if !fullNode {
-		for _, indexer := range request.Config.Decentralized {
+		for _, indexer := range nodeConfig.Decentralized {
 			indexers = append(indexers, &schema.Indexer{
 				Address: request.Address,
 				Network: indexer.Network.String(),
