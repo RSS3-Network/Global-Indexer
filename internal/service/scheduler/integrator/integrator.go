@@ -120,8 +120,9 @@ func (s *server) sortNodes(ctx context.Context) error {
 
 func (s *server) updateNodeCache(ctx context.Context) error {
 	rssNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		IsRssNode: lo.ToPtr(true),
-		Limit:     lo.ToPtr(3),
+		IsRssNode:    lo.ToPtr(true),
+		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+		Limit:        lo.ToPtr(model.DefaultNodeCount),
 	})
 
 	if err != nil {
@@ -133,8 +134,9 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 	}
 
 	fullNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		IsFullNode: lo.ToPtr(true),
-		Limit:      lo.ToPtr(3),
+		IsFullNode:   lo.ToPtr(true),
+		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+		Limit:        lo.ToPtr(model.DefaultNodeCount),
 	})
 	if err != nil {
 		return err
@@ -177,7 +179,6 @@ func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.S
 	return nil
 }
 
-// calculation rule https://docs.google.com/spreadsheets/d/1N7zEwUooiOjCIHzhoHuf8aM_lbF5bS0ZC-4luxc2qNU/edit?pli=1#gid=0
 func (s *server) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
 	stat.Points = math.Min(math.Log2(stat.Staking/100000)+1, 0.2)

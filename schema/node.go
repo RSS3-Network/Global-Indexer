@@ -51,13 +51,14 @@ type Stat struct {
 }
 
 type StatQuery struct {
-	Address     *common.Address  `query:"address" form:"address,omitempty"`
-	AddressList []common.Address `query:"addressList" form:"addressList,omitempty"`
-	IsFullNode  *bool            `query:"isFullNode" form:"isFullNode,omitempty"`
-	IsRssNode   *bool            `query:"isRssNode" form:"isRssNode,omitempty"`
-	PointsOrder *string          `query:"pointsOrder" form:"pointsOrder,omitempty"`
-	Limit       *int             `query:"limit" form:"limit,omitempty"`
-	Cursor      *string          `query:"cursor" form:"cursor,omitempty"`
+	Address      *common.Address  `query:"address" form:"address,omitempty"`
+	AddressList  []common.Address `query:"addressList" form:"addressList,omitempty"`
+	IsFullNode   *bool            `query:"isFullNode" form:"isFullNode,omitempty"`
+	IsRssNode    *bool            `query:"isRssNode" form:"isRssNode,omitempty"`
+	PointsOrder  *string          `query:"pointsOrder" form:"pointsOrder,omitempty"`
+	ValidRequest *int             `query:"validRequest" form:"validRequest,omitempty"`
+	Limit        *int             `query:"limit" form:"limit,omitempty"`
+	Cursor       *string          `query:"cursor" form:"cursor,omitempty"`
 }
 
 type Indexer struct {

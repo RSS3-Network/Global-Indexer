@@ -44,6 +44,7 @@ CREATE INDEX IF NOT EXISTS "idx_indexes_points" ON "node_stat" ("points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_full_node" ON "node_stat" ("is_full_node", "points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_is_rss_node" ON "node_stat" ("is_rss_node", "points" DESC);
 CREATE INDEX IF NOT EXISTS "idx_indexes_created_at" ON "node_stat" ("created_at" ASC);
+CREATE INDEX IF NOT EXISTS "idx_indexes_epoch_invalid_request_count" ON "node_stat" ("epoch_invalid_request_count" ASC);
 
 CREATE TABLE IF NOT EXISTS "node_indexer"
 (

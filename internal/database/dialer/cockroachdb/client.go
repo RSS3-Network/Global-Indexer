@@ -226,6 +226,13 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		databaseStatement.Limit(*query.Limit)
 	}
 
+	if query.ValidRequest != nil {
+		databaseStatement.Where(clause.Lt{
+			Column: "epoch_invalid_request_count",
+			Value:  query.ValidRequest,
+		})
+	}
+
 	orderByPointsClause := clause.OrderByColumn{
 		Column: clause.Column{
 			Name: "points",
