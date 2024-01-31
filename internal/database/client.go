@@ -36,11 +36,9 @@ type Client interface {
 	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
 	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
 
-	FindBridgeTransaction(ctx context.Context, id common.Hash) (*schema.BridgeTransaction, error)
-	FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTransaction, error)
-	FindBridgeTransactionsByAddress(ctx context.Context, address common.Address) ([]*schema.BridgeTransaction, error)
-	FindBridgeEventsByID(ctx context.Context, id common.Hash) (*schema.BridgeEvent, error)
-	FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.BridgeEvent, error)
+	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
+	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
+	FindBridgeEvents(ctx context.Context, query schema.BridgeEventsQuery) ([]*schema.BridgeEvent, error)
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
 
