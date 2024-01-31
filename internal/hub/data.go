@@ -17,7 +17,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Serving Node."
+var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Node."
 
 func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := h.databaseClient.FindNode(ctx, address)
