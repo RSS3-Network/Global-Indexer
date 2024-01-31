@@ -297,7 +297,7 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 }
 
 func (c *client) DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error {
-	return c.database.WithContext(ctx).Delete(&table.Indexer{}, nodeAddress).Error
+	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Indexer{}).Error
 }
 
 func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error) {
@@ -331,17 +331,7 @@ func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexe
 		return err
 	}
 
-	// Save node indexers.
-	onConflict := clause.OnConflict{
-		Columns: []clause.Column{
-			{
-				Name: "address",
-			},
-		},
-		UpdateAll: true,
-	}
-
-	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tIndexers, math.MaxUint8).Error
+	return c.database.WithContext(ctx).CreateInBatches(tIndexers, math.MaxUint8).Error
 }
 
 // Dial dials a database.

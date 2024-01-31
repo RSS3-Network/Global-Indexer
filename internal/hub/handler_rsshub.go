@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rss3-network/node/common/http/response"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 )
 
 func (h *Hub) GetRSSHubHandler(c echo.Context) error {

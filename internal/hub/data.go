@@ -23,7 +23,6 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
-	"github.com/rss3-network/node/config"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
@@ -123,7 +122,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
 
-	var nodeConfig config.Node
+	var nodeConfig model.NodeConfig
 
 	if err = json.Unmarshal(request.Config, &nodeConfig); err != nil {
 		return fmt.Errorf("unmarshal node config: %w", err)
@@ -142,7 +141,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 		ResetAt:      time.Now(),
 		IsFullNode:   fullNode,
 		IsRssNode:    len(nodeConfig.RSS) > 0,
-		DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *config.Module) filter.Network {
+		DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *model.Module) filter.Network {
 			return module.Network
 		})),
 		FederatedNetwork: len(nodeConfig.Federated),
@@ -223,7 +222,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) erro
 	return h.databaseClient.SaveNode(ctx, node)
 }
 
-func (h *Hub) isFullNode(indexers []*config.Module) (bool, error) {
+func (h *Hub) isFullNode(indexers []*model.Module) (bool, error) {
 	if len(indexers) < len(model.WorkerToNetworksMap) {
 		return false, nil
 	}
