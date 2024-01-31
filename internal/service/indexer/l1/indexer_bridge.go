@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum-optimism/optimism/op-chain-ops/crossdomain"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -60,14 +62,17 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 
 	// Create the bridge transaction.
 	bridgeTransaction := schema.BridgeTransaction{
-		ID:             messageHash,
-		Type:           schema.BridgeTransactionTypeDeposit,
-		Sender:         erc20DepositInitiatedEvent.From,
-		Receiver:       erc20DepositInitiatedEvent.To,
-		TokenAddressL1: lo.ToPtr(erc20DepositInitiatedEvent.L1Token),
-		TokenAddressL2: lo.ToPtr(erc20DepositInitiatedEvent.L2Token),
-		TokenValue:     erc20DepositInitiatedEvent.Amount,
-		Data:           "",
+		ID:               messageHash,
+		Type:             schema.BridgeTransactionTypeDeposit,
+		Sender:           erc20DepositInitiatedEvent.From,
+		Receiver:         erc20DepositInitiatedEvent.To,
+		TokenAddressL1:   lo.ToPtr(erc20DepositInitiatedEvent.L1Token),
+		TokenAddressL2:   lo.ToPtr(erc20DepositInitiatedEvent.L2Token),
+		TokenValue:       erc20DepositInitiatedEvent.Amount,
+		Data:             hexutil.Encode(erc20DepositInitiatedEvent.ExtraData),
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	if err := databaseTransaction.SaveBridgeTransaction(ctx, &bridgeTransaction); err != nil {

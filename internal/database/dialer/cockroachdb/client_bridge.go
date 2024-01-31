@@ -13,25 +13,78 @@ import (
 	"gorm.io/gorm"
 )
 
-func (c *client) FindBridgeTransaction(ctx context.Context, id common.Hash) (*schema.BridgeTransaction, error) {
-	var row table.BridgeTransaction
+func (c *client) FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error) {
+	var row *table.BridgeTransaction
 
-	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&row).Error; err != nil {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
+	}
+
+	if query.Sender != nil {
+		databaseClient = databaseClient.Where(`"sender" = ?`, query.Sender.String())
+	}
+
+	if query.Receiver != nil {
+		databaseClient = databaseClient.Where(`"receiver" = ?`, query.Receiver.String())
+	}
+
+	if query.Address != nil {
+		databaseClient = databaseClient.Where(`"sender" = ? or "receiver" = ?`, query.Address.String(), query.Address.String())
+	}
+
+	if query.Type != nil {
+		databaseClient = databaseClient.Where(`"type" = ?`, *query.Type)
+	}
+
+	if err := databaseClient.First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
 
-		return nil, fmt.Errorf("find bridge transaction: %w", err)
+		return nil, err
 	}
 
-	return row.Export()
+	result, err := row.Export()
+	if err != nil {
+		return nil, fmt.Errorf("export row: %w", err)
+	}
+
+	return result, nil
 }
 
-func (c *client) FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTransaction, error) {
+func (c *client) FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error) {
 	var rows []table.BridgeTransaction
 
-	if err := c.database.WithContext(ctx).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find bridge transactions: %w", err)
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
+	}
+
+	if query.Sender != nil {
+		databaseClient = databaseClient.Where(`"sender" = ?`, query.Sender.String())
+	}
+
+	if query.Receiver != nil {
+		databaseClient = databaseClient.Where(`"receiver" = ?`, query.Receiver.String())
+	}
+
+	if query.Address != nil {
+		databaseClient = databaseClient.Where(`"sender" = ? or "receiver" = ?`, query.Address.String(), query.Address.String())
+	}
+
+	if query.Type != nil {
+		databaseClient = databaseClient.Where(`"type" = ?`, *query.Type)
+	}
+
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, err
 	}
 
 	results := make([]*schema.BridgeTransaction, 0, len(rows))
@@ -39,7 +92,7 @@ func (c *client) FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTr
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export bridge transaction: %w", err)
+			return nil, fmt.Errorf("export row: %w", err)
 		}
 
 		results = append(results, result)
@@ -48,49 +101,22 @@ func (c *client) FindBridgeTransactions(ctx context.Context) ([]*schema.BridgeTr
 	return results, nil
 }
 
-func (c *client) FindBridgeTransactionsByAddress(ctx context.Context, address common.Address) ([]*schema.BridgeTransaction, error) {
-	var rows []table.BridgeTransaction
+func (c *client) FindBridgeEvents(ctx context.Context, query schema.BridgeEventsQuery) ([]*schema.BridgeEvent, error) {
+	var rows []*table.BridgeEvent
 
-	if err := c.database.WithContext(ctx).Distinct("*").Where("sender = ? OR receiver = ?", address.String(), address.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find bridge transactions: %w", err)
+	databaseClient := c.database.WithContext(ctx)
+
+	if len(query.IDs) > 0 {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
+			return id.String()
+		}))
 	}
 
-	results := make([]*schema.BridgeTransaction, 0, len(rows))
-
-	for _, row := range rows {
-		result, err := row.Export()
-		if err != nil {
-			return nil, fmt.Errorf("export bridge transaction: %w", err)
-		}
-
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-func (c *client) FindBridgeEventsByID(ctx context.Context, id common.Hash) (*schema.BridgeEvent, error) {
-	var row table.BridgeEvent
-
-	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&row).Error; err != nil {
+	if err := databaseClient.Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
 
-		return nil, fmt.Errorf("find bridge event: %w", err)
-	}
-
-	return row.Export()
-}
-
-func (c *client) FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.BridgeEvent, error) {
-	var rows []table.BridgeEvent
-
-	transactionIDs := lo.Map(ids, func(id common.Hash, _ int) string {
-		return id.String()
-	})
-
-	if err := c.database.WithContext(ctx).Where("id IN ?", transactionIDs).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("find bridge event: %w", err)
 	}
 
@@ -99,7 +125,7 @@ func (c *client) FindBridgeEventsByIDs(ctx context.Context, ids []common.Hash) (
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export bridge event: %w", err)
+			return nil, fmt.Errorf("export row: %w", err)
 		}
 
 		results = append(results, result)

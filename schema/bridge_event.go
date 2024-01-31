@@ -57,3 +57,7 @@ func NewBridgeEvent(id common.Hash, eventType BridgeEventType, header *types.Hea
 
 	return &bridgeEvent
 }
+
+type BridgeEventsQuery struct {
+	IDs []common.Hash `query:"ids"`
+}

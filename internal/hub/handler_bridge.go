@@ -16,7 +16,10 @@ import (
 )
 
 type GetBridgeTransactionsRequest struct {
-	Address *string `query:"address"`
+	Sender   *common.Address `query:"sender"`
+	Receiver *common.Address `query:"receiver"`
+	Address  *common.Address `query:"address"`
+	Type     *string         `query:"type"`
 }
 
 func (h *Hub) GetBridgeTransactions(c echo.Context) error {
@@ -38,14 +41,12 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	var transactions []*schema.BridgeTransaction
-
-	if request.Address != nil {
-		transactions, err = databaseTransaction.FindBridgeTransactionsByAddress(c.Request().Context(), common.HexToAddress(*request.Address))
-	} else {
-		transactions, err = databaseTransaction.FindBridgeTransactions(c.Request().Context())
+	bridgeTransactionsQuery := schema.BridgeTransactionsQuery{
+		Address: request.Address,
+		Type:    request.Type,
 	}
 
+	transactions, err := databaseTransaction.FindBridgeTransactions(c.Request().Context(), bridgeTransactionsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -56,11 +57,13 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	ids := lo.Map(transactions, func(transaction *schema.BridgeTransaction, _ int) common.Hash {
-		return transaction.ID
-	})
+	bridgeEventsQuery := schema.BridgeEventsQuery{
+		IDs: lo.Map(transactions, func(transaction *schema.BridgeTransaction, _ int) common.Hash {
+			return transaction.ID
+		}),
+	}
 
-	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), ids)
+	events, err := databaseTransaction.FindBridgeEvents(c.Request().Context(), bridgeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -93,7 +96,7 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 }
 
 type GetBridgeTransactionRequest struct {
-	ID *string `param:"id"`
+	ID *common.Hash `param:"id"`
 }
 
 func (h *Hub) GetBridgeTransaction(c echo.Context) error {
@@ -115,7 +118,11 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	transaction, err := databaseTransaction.FindBridgeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
+	bridgeTransactionQuery := schema.BridgeTransactionQuery{
+		ID: request.ID,
+	}
+
+	bridgeTransaction, err := databaseTransaction.FindBridgeTransaction(c.Request().Context(), bridgeTransactionQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -126,7 +133,13 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	events, err := databaseTransaction.FindBridgeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
+	bridgeEventsQuery := schema.BridgeEventsQuery{
+		IDs: []common.Hash{
+			bridgeTransaction.ID,
+		},
+	}
+
+	bridgeEvents, err := databaseTransaction.FindBridgeEvents(c.Request().Context(), bridgeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -141,12 +154,12 @@ func (h *Hub) GetBridgeTransaction(c echo.Context) error {
 		return fmt.Errorf("commit database transaction")
 	}
 
-	events = lo.Filter(events, func(event *schema.BridgeEvent, _ int) bool {
-		return event.ID == transaction.ID
+	bridgeEvents = lo.Filter(bridgeEvents, func(bridgeEvent *schema.BridgeEvent, _ int) bool {
+		return bridgeEvent.ID == bridgeTransaction.ID
 	})
 
 	var response Response
-	response.Data = model.NewBridgeTransaction(transaction, events)
+	response.Data = model.NewBridgeTransaction(bridgeTransaction, bridgeEvents)
 
 	return c.JSON(http.StatusOK, response)
 }
