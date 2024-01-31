@@ -165,13 +165,13 @@ func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp i
 func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
 	var stats table.Stats
 
-	internalDatabase, err := c.buildNodeStatQuery(ctx, query)
+	databaseStatement, err := c.buildNodeStatQuery(ctx, query)
 
 	if err != nil {
 		return nil, fmt.Errorf("build find node stats: %w", err)
 	}
 
-	if err = internalDatabase.Find(&stats).Error; err != nil {
+	if err := databaseStatement.Find(&stats).Error; err != nil {
 		return nil, fmt.Errorf("find nodes: %w", err)
 	}
 
@@ -184,50 +184,50 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	if query.Cursor != nil {
 		var statCursor *table.Stat
 
-		if err := c.database.WithContext(ctx).First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
+		if err := databaseStatement.First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
 			return nil, fmt.Errorf("get node cursor: %w", err)
 		}
 
-		databaseStatement.Where(clause.Gt{
+		databaseStatement = databaseStatement.Where(clause.Gt{
 			Column: "created_at",
 			Value:  statCursor.CreatedAt,
 		})
 	}
 
 	if query.Address != nil {
-		databaseStatement.Where(clause.Eq{
+		databaseStatement = databaseStatement.Where(clause.Eq{
 			Column: "address",
 			Value:  query.Address,
 		})
 	}
 
 	if len(query.AddressList) > 0 {
-		databaseStatement.Where(clause.IN{
+		databaseStatement = databaseStatement.Where(clause.IN{
 			Column: "address",
 			Values: lo.ToAnySlice(query.AddressList),
 		})
 	}
 
 	if query.IsFullNode != nil {
-		databaseStatement.Where(clause.Eq{
+		databaseStatement = databaseStatement.Where(clause.Eq{
 			Column: "is_full_node",
 			Value:  query.IsFullNode,
 		})
 	}
 
 	if query.IsRssNode != nil {
-		databaseStatement.Where(clause.Eq{
+		databaseStatement = databaseStatement.Where(clause.Eq{
 			Column: "is_rss_node",
 			Value:  query.IsRssNode,
 		})
 	}
 
 	if query.Limit != nil {
-		databaseStatement.Limit(*query.Limit)
+		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
 
 	if query.ValidRequest != nil {
-		databaseStatement.Where(clause.Lt{
+		databaseStatement = databaseStatement.Where(clause.Lt{
 			Column: "epoch_invalid_request_count",
 			Value:  query.ValidRequest,
 		})
@@ -248,9 +248,9 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
 		orderByPointsClause.Desc = true
 
-		databaseStatement.Order(orderByPointsClause)
+		databaseStatement = databaseStatement.Order(orderByPointsClause)
 	} else {
-		databaseStatement.Order(orderByCreatedAtClause)
+		databaseStatement = databaseStatement.Order(orderByCreatedAtClause)
 	}
 
 	return databaseStatement, nil

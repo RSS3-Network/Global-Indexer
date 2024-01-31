@@ -671,9 +671,10 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]model.Cache, err
 		switch key {
 		case model.RssNodeCacheKey:
 			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-				IsRssNode:   lo.ToPtr(true),
-				Limit:       lo.ToPtr(model.DefaultNodeCount),
-				PointsOrder: lo.ToPtr("DESC"),
+				IsRssNode:    lo.ToPtr(true),
+				Limit:        lo.ToPtr(model.DefaultNodeCount),
+				ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+				PointsOrder:  lo.ToPtr("DESC"),
 			})
 
 			if err != nil {
@@ -681,9 +682,10 @@ func (h *Hub) retrieveNodes(ctx context.Context, key string) ([]model.Cache, err
 			}
 		case model.FullNodeCacheKey:
 			nodes, err = h.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-				IsFullNode:  lo.ToPtr(true),
-				Limit:       lo.ToPtr(model.DefaultNodeCount),
-				PointsOrder: lo.ToPtr("DESC"),
+				IsFullNode:   lo.ToPtr(true),
+				Limit:        lo.ToPtr(model.DefaultNodeCount),
+				ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+				PointsOrder:  lo.ToPtr("DESC"),
 			})
 
 			if err != nil {
