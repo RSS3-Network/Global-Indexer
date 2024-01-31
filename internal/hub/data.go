@@ -122,42 +122,27 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
 
-	var nodeConfig model.NodeConfig
+	var (
+		nodeConfig model.NodeConfig
+		indexers   []*schema.Indexer
+	)
 
 	if err = json.Unmarshal(request.Config, &nodeConfig); err != nil {
 		return fmt.Errorf("unmarshal node config: %w", err)
 	}
 
 	fullNode, err := h.isFullNode(nodeConfig.Decentralized)
-
 	if err != nil {
 		return fmt.Errorf("check full node error: %w", err)
 	}
 
-	stat := &schema.Stat{
-		Address:      request.Address,
-		Endpoint:     request.Endpoint,
-		IsPublicGood: nodeInfo.PublicGood,
-		ResetAt:      time.Now(),
-		IsFullNode:   fullNode,
-		IsRssNode:    len(nodeConfig.RSS) > 0,
-		DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *model.Module) filter.Network {
-			return module.Network
-		})),
-		FederatedNetwork: len(nodeConfig.Federated),
-		Indexer:          len(nodeConfig.Decentralized),
+	stat, err := h.updateNodeStat(ctx, request, nodeConfig, fullNode, nodeInfo.PublicGood)
+	if err != nil {
+		return fmt.Errorf("update node stat: %w", err)
 	}
 
-	indexers := make([]*schema.Indexer, 0, len(nodeConfig.Decentralized))
-
 	if !fullNode {
-		for _, indexer := range nodeConfig.Decentralized {
-			indexers = append(indexers, &schema.Indexer{
-				Address: request.Address,
-				Network: indexer.Network.String(),
-				Worker:  indexer.Worker.String(),
-			})
-		}
+		indexers = h.updateNodeIndexers(ctx, request.Address, nodeConfig)
 	}
 
 	// Save node info to the database.
@@ -197,6 +182,60 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	}
 
 	return nil
+}
+
+func (h *Hub) updateNodeStat(ctx context.Context, request *RegisterNodeRequest, nodeConfig model.NodeConfig, fullNode, publicNode bool) (*schema.Stat, error) {
+	var (
+		stat *schema.Stat
+		err  error
+	)
+
+	stat, err = h.databaseClient.FindNodeStat(ctx, request.Address)
+	if err != nil {
+		return nil, fmt.Errorf("find node stat: %w", err)
+	}
+
+	if stat == nil {
+		stat = &schema.Stat{
+			Address:      request.Address,
+			Endpoint:     request.Endpoint,
+			IsPublicGood: publicNode,
+			ResetAt:      time.Now(),
+			IsFullNode:   fullNode,
+			IsRssNode:    len(nodeConfig.RSS) > 0,
+			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *model.Module) filter.Network {
+				return module.Network
+			})),
+			FederatedNetwork: len(nodeConfig.Federated),
+			Indexer:          len(nodeConfig.Decentralized),
+		}
+	} else {
+		stat.Endpoint = request.Endpoint
+		stat.IsPublicGood = publicNode
+		stat.IsFullNode = fullNode
+		stat.IsRssNode = len(nodeConfig.RSS) > 0
+		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *model.Module) filter.Network {
+			return module.Network
+		}))
+		stat.FederatedNetwork = len(nodeConfig.Federated)
+		stat.Indexer = len(nodeConfig.Decentralized)
+	}
+
+	return stat, nil
+}
+
+func (h *Hub) updateNodeIndexers(_ context.Context, address common.Address, nodeConfig model.NodeConfig) []*schema.Indexer {
+	indexers := make([]*schema.Indexer, 0, len(nodeConfig.Decentralized))
+
+	for _, indexer := range nodeConfig.Decentralized {
+		indexers = append(indexers, &schema.Indexer{
+			Address: address,
+			Network: indexer.Network.String(),
+			Worker:  indexer.Worker.String(),
+		})
+	}
+
+	return indexers
 }
 
 func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) error {

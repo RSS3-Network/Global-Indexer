@@ -162,6 +162,20 @@ func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp i
 	})
 }
 
+func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {
+	var stat table.Stat
+
+	if err := c.database.WithContext(ctx).First(&stat, "address = ?", nodeAddress).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	return stat.Export()
+}
+
 func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
 	var stats table.Stats
 

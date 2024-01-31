@@ -28,6 +28,7 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
 
+	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error

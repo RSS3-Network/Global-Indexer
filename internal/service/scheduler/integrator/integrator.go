@@ -94,7 +94,9 @@ func (s *server) sortNodes(ctx context.Context) error {
 					return err
 				}
 
-				s.calcPoints(stat)
+				if err = s.updateNodePoints(stat); err != nil {
+					return err
+				}
 
 				return nil
 			})
@@ -164,6 +166,25 @@ func (s *server) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
 		stat.EpochInvalidRequest = 0
 		stat.Epoch = epoch
 	}
+
+	return nil
+}
+
+func (s *server) updateNodePoints(stat *schema.Stat) error {
+	node, err := s.databaseClient.FindNode(context.Background(), stat.Address)
+
+	if err != nil {
+		return fmt.Errorf("find node: %s, %w", stat.Address.String(), err)
+	}
+
+	if node.Status == schema.StatusOffline {
+		stat.ResetAt = time.Now()
+		stat.EpochInvalidRequest = int64(model.DefaultSlashCount)
+
+		return nil
+	}
+
+	s.calcPoints(stat)
 
 	return nil
 }
