@@ -268,9 +268,10 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		EndTimestamp:     event.EndTimestamp.Int64(),
 		TransactionHash:  transaction.Hash(),
 		BlockNumber:      header.Number,
+		TransactionIndex: receipt.TransactionIndex,
+		Success:          receipt.Status == types.ReceiptStatusSuccessful,
 		TotalRewardItems: len(event.NodeAddrs),
 		RewardItems:      make([]*schema.EpochItem, 0, len(event.NodeAddrs)),
-		Success:          receipt.Status == types.ReceiptStatusSuccessful,
 	}
 
 	if epoch.TotalRewardItems != len(event.StakingRewards) || epoch.TotalRewardItems != len(event.OperationRewards) ||

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS "epoch"
     "end_timestamp"  timestamptz,
     "block_number" bigint,
     "transaction_hash" text,
+    "transaction_index" bigint,
     "total_operation_rewards" decimal,
     "total_staking_rewards" decimal,
     "total_reward_items" int,
@@ -14,11 +15,11 @@ CREATE TABLE IF NOT EXISTS "epoch"
     "created_at"   timestamptz NOT NULL DEFAULT now(),
     "updated_at"   timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT "pk_epoch" PRIMARY KEY ("id" DESC)
+    CONSTRAINT "pk_epoch" PRIMARY KEY ("transaction_hash")
 );
 
 CREATE INDEX "idx_timestamp" ON "epoch" ("start_timestamp" DESC, "end_timestamp" DESC);
-CREATE INDEX "idx_transaction_hash" ON "epoch" ("transaction_hash");
+CREATE INDEX "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" DESC, "transaction_index" DESC);
 
 CREATE TABLE IF NOT EXISTS "epoch_item"
 (

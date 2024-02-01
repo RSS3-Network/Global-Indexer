@@ -15,11 +15,12 @@ type Epoch struct {
 	StartTimestamp        time.Time       `gorm:"column:start_timestamp"`
 	EndTimestamp          time.Time       `gorm:"column:end_timestamp"`
 	TransactionHash       string          `gorm:"column:transaction_hash"`
+	TransactionIndex      uint            `gorm:"column:transaction_index"`
 	BlockNumber           uint64          `gorm:"column:block_number"`
+	Success               bool            `json:"success"`
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
 	TotalRewardItems      int             `gorm:"column:total_reward_items"`
-	Success               bool            `json:"success"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
@@ -34,11 +35,12 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	e.StartTimestamp = time.Unix(epoch.StartTimestamp, 0)
 	e.EndTimestamp = time.Unix(epoch.EndTimestamp, 0)
 	e.TransactionHash = epoch.TransactionHash.String()
+	e.TransactionIndex = epoch.TransactionIndex
 	e.BlockNumber = epoch.BlockNumber.Uint64()
+	e.Success = epoch.Success
 	e.TotalOperationRewards = lo.Must(decimal.NewFromString(epoch.TotalOperationRewards))
 	e.TotalStakingRewards = lo.Must(decimal.NewFromString(epoch.TotalStakingRewards))
 	e.TotalRewardItems = epoch.TotalRewardItems
-	e.Success = epoch.Success
 
 	return nil
 }
@@ -49,6 +51,7 @@ func (e *Epoch) Export() (*schema.Epoch, error) {
 		StartTimestamp:        e.StartTimestamp.Unix(),
 		EndTimestamp:          e.EndTimestamp.Unix(),
 		TransactionHash:       common.HexToHash(e.TransactionHash),
+		TransactionIndex:      e.TransactionIndex,
 		BlockNumber:           new(big.Int).SetUint64(e.BlockNumber),
 		TotalOperationRewards: e.TotalOperationRewards.String(),
 		TotalStakingRewards:   e.TotalStakingRewards.String(),
