@@ -44,11 +44,14 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 	}
 
 	stakeTransaction := schema.StakeTransaction{
-		ID:    transaction.Hash(),
-		User:  user,
-		Node:  event.NodeAddr,
-		Type:  schema.StakeTransactionTypeDeposit,
-		Value: event.Amount,
+		ID:               transaction.Hash(),
+		Type:             schema.StakeTransactionTypeDeposit,
+		User:             user,
+		Node:             event.NodeAddr,
+		Value:            event.Amount,
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -85,11 +88,14 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 	}
 
 	stakeTransaction := schema.StakeTransaction{
-		ID:    common.BigToHash(event.RequestId),
-		Type:  schema.StakeTransactionTypeWithdraw,
-		User:  user,
-		Node:  event.NodeAddr,
-		Value: event.Amount,
+		ID:               common.BigToHash(event.RequestId),
+		Type:             schema.StakeTransactionTypeWithdraw,
+		User:             user,
+		Node:             event.NodeAddr,
+		Value:            event.Amount,
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -145,11 +151,14 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 	}
 
 	stakeTransaction := schema.StakeTransaction{
-		ID:    transaction.Hash(),
-		Type:  schema.StakeTransactionTypeStake,
-		User:  event.User,
-		Node:  event.NodeAddr,
-		Value: event.Amount,
+		ID:               transaction.Hash(),
+		Type:             schema.StakeTransactionTypeStake,
+		User:             event.User,
+		Node:             event.NodeAddr,
+		Value:            event.Amount,
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	for i := uint64(0); i+event.StartTokenId.Uint64() <= event.EndTokenId.Uint64(); i++ {
@@ -199,12 +208,15 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 	}
 
 	stakeTransaction := schema.StakeTransaction{
-		ID:    common.BigToHash(event.RequestId),
-		Type:  schema.StakeTransactionTypeUnstake,
-		User:  event.User,
-		Node:  event.NodeAddr,
-		Value: event.UnstakeAmount,
-		Chips: event.ChipsIds,
+		ID:               common.BigToHash(event.RequestId),
+		Type:             schema.StakeTransactionTypeUnstake,
+		User:             event.User,
+		Node:             event.NodeAddr,
+		Value:            event.UnstakeAmount,
+		Chips:            event.ChipsIds,
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
