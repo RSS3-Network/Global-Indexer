@@ -7,13 +7,31 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 	"github.com/rss3-network/protocol-go/schema/filter"
 )
 
+func (h *Hub) GetRSSHubHandler(c echo.Context) error {
+	path := c.Param("*")
+	query := c.Request().URL.RawQuery
+
+	data, err := h.routerRSSHubData(c.Request().Context(), path, query)
+
+	if err != nil {
+		return response.InternalError(c, err)
+	}
+
+	return c.JSONBlob(http.StatusOK, data)
+}
+
+type ActivityRequest struct {
+	ID          string `param:"id"`
+	ActionLimit int    `query:"action_limit" default:"10" min:"1" max:"20"`
+	ActionPage  int    `query:"action_page" default:"1" min:"1"`
+}
+
 func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
-	request := model.ActivityRequest{}
+	var request ActivityRequest
 
 	if err = c.Bind(&request); err != nil {
 		return response.BadRequestError(c, err)
@@ -35,8 +53,23 @@ func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activity)
 }
 
+type AccountActivitiesRequest struct {
+	Account        string   `param:"account"`
+	Limit          *int     `query:"limit" default:"100" min:"1" max:"100"`
+	ActionLimit    *int     `query:"action_limit" default:"10" min:"1" max:"20"`
+	Cursor         *string  `query:"cursor"`
+	SinceTimestamp *uint64  `query:"since_timestamp"`
+	UntilTimestamp *uint64  `query:"until_timestamp"`
+	Status         *bool    `query:"success"`
+	Direction      *string  `query:"direction"`
+	Network        []string `query:"network"`
+	Tag            []string `query:"tag"`
+	Type           []string `query:"-"`
+	Platform       []string `query:"platform"`
+}
+
 func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
-	request := model.AccountActivitiesRequest{}
+	var request AccountActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
 		return response.BadRequestError(c, err)

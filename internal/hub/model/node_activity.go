@@ -1,141 +1,28 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
 	"github.com/rss3-network/protocol-go/schema/filter"
-	"github.com/rss3-network/protocol-go/schema/metadata"
 )
 
 var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
-	MessageNodeDataFailed = "request node data failed"
+	MessageNodeDataFailed = "failed to request node data "
 
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
 	DefaultVerifyCount = 3
 )
 
-type ActivityRequest struct {
-	ID          string `param:"id"`
-	ActionLimit int    `query:"action_limit" default:"10" min:"1" max:"20"`
-	ActionPage  int    `query:"action_page" default:"1" min:"1"`
-}
-
-type AccountActivitiesRequest struct {
-	Account        string   `param:"account"`
-	Limit          *int     `query:"limit" default:"100" min:"1" max:"100"`
-	ActionLimit    *int     `query:"action_limit" default:"10" min:"1" max:"20"`
-	Cursor         *string  `query:"cursor"`
-	SinceTimestamp *uint64  `query:"since_timestamp"`
-	UntilTimestamp *uint64  `query:"until_timestamp"`
-	Status         *bool    `query:"success"`
-	Direction      *string  `query:"direction"`
-	Network        []string `query:"network"`
-	Tag            []string `query:"tag"`
-	Type           []string `query:""`
-	Platform       []string `query:"platform"`
-}
-
-type DataResponse struct {
-	Address        common.Address
-	Data           []byte
-	First          bool
-	Err            error
-	Request        int
-	InvalidRequest int
-}
-
-type ErrResponse struct {
-	Error     string `json:"error"`
-	ErrorCode string `json:"error_code"`
-}
-
 type Cache struct {
 	Address  string `json:"address"`
 	Endpoint string `json:"endpoint"`
-}
-
-type ActivityResponse struct {
-	Data *Feed `json:"data"`
-}
-
-type ActivitiesResponse struct {
-	Data []*Feed     `json:"data"`
-	Meta *MetaCursor `json:"meta,omitempty"`
-}
-
-type MetaCursor struct {
-	Cursor string `json:"cursor"`
-}
-
-type Feed struct {
-	ID       string    `json:"id"`
-	Owner    string    `json:"owner,omitempty"`
-	Network  string    `json:"network"`
-	Index    uint      `json:"index"`
-	From     string    `json:"from"`
-	To       string    `json:"to"`
-	Tag      string    `json:"tag"`
-	Type     string    `json:"type"`
-	Platform string    `json:"platform,omitempty"`
-	Actions  []*Action `json:"actions"`
-}
-
-type Action struct {
-	Tag         string            `json:"tag"`
-	Type        string            `json:"type"`
-	Platform    string            `json:"platform,omitempty"`
-	From        string            `json:"from"`
-	To          string            `json:"to"`
-	Metadata    metadata.Metadata `json:"metadata"`
-	RelatedURLs []string          `json:"related_urls,omitempty"`
-}
-
-type Actions []*Action
-
-var _ json.Unmarshaler = (*Action)(nil)
-
-func (a *Action) UnmarshalJSON(bytes []byte) error {
-	type ActionAlias Action
-
-	type action struct {
-		ActionAlias
-
-		MetadataX json.RawMessage `json:"metadata"`
-	}
-
-	var temp action
-
-	err := json.Unmarshal(bytes, &temp)
-	if err != nil {
-		return fmt.Errorf("unmarshal action: %w", err)
-	}
-
-	tag, err := filter.TagString(temp.Tag)
-	if err != nil {
-		return fmt.Errorf("invalid action tag: %w", err)
-	}
-
-	typeX, err := filter.TypeString(tag, temp.Type)
-	if err != nil {
-		return fmt.Errorf("invalid action type: %w", err)
-	}
-
-	temp.Metadata, err = metadata.Unmarshal(typeX, temp.MetadataX)
-	if err != nil {
-		return fmt.Errorf("invalid action metadata: %w", err)
-	}
-
-	*a = Action(temp.ActionAlias)
-
-	return nil
 }
 
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
@@ -308,34 +195,7 @@ var TagToWorkersMap = map[filter.Tag][]string{
 	},
 }
 
-func GetRSSHubPath(param, query string, nodes []Cache) (map[common.Address]string, error) {
-	endpointMap, err := buildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
-	}
-
-	return endpointMap, nil
-}
-
-func GetActivityByIDPath(query ActivityRequest, nodes []Cache) (map[common.Address]string, error) {
-	endpointMap, err := buildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
-	}
-
-	return endpointMap, nil
-}
-
-func GetAccountActivitiesPath(query AccountActivitiesRequest, nodes []Cache) (map[common.Address]string, error) {
-	endpointMap, err := buildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
-	}
-
-	return endpointMap, nil
-}
-
-func buildPath(path string, query any, nodes []Cache) (map[common.Address]string, error) {
+func BuildPath(path string, query any, nodes []Cache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
