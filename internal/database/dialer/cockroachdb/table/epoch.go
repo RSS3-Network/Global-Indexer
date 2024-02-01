@@ -17,7 +17,7 @@ type Epoch struct {
 	TransactionHash       string          `gorm:"column:transaction_hash"`
 	TransactionIndex      uint            `gorm:"column:transaction_index"`
 	BlockNumber           uint64          `gorm:"column:block_number"`
-	Success               bool            `json:"success"`
+	Success               bool            `gorm:"column:success"`
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
 	TotalRewardItems      int             `gorm:"column:total_reward_items"`
