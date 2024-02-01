@@ -28,6 +28,14 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
 
+	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
+	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
+	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
+	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
+	FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error)
+	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
+	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
+
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
 	FindBridgeEvents(ctx context.Context, query schema.BridgeEventsQuery) ([]*schema.BridgeEvent, error)

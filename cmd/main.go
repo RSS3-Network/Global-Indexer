@@ -49,7 +49,15 @@ var command = cobra.Command{
 			return fmt.Errorf("dial rss3 ethereum client: %w", err)
 		}
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient)
+		// Dial redis.
+		options, err := redis.ParseURL(config.Redis.URI)
+		if err != nil {
+			return fmt.Errorf("parse redis uri: %w", err)
+		}
+
+		redisClient := redis.NewClient(options)
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}
@@ -112,7 +120,13 @@ var schedulerCommand = &cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient)
+		// Dial rss3 ethereum client.
+		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.EndpointL2)
+		if err != nil {
+			return fmt.Errorf("dial rss3 ethereum client: %w", err)
+		}
+
+		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient, ethereumClient)
 		if err != nil {
 			return err
 		}

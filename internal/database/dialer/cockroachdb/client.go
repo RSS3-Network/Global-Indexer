@@ -6,6 +6,8 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -158,6 +160,192 @@ func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp i
 			}
 		}
 	})
+}
+
+func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {
+	var stat table.Stat
+
+	if err := c.database.WithContext(ctx).First(&stat, "address = ?", nodeAddress).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	return stat.Export()
+}
+
+func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
+	var stats table.Stats
+
+	databaseStatement, err := c.buildNodeStatQuery(ctx, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("build find node stats: %w", err)
+	}
+
+	if err := databaseStatement.Find(&stats).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
+	}
+
+	return stats.Export()
+}
+
+func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery) (*gorm.DB, error) {
+	databaseStatement := c.database.WithContext(ctx)
+
+	if query.Cursor != nil {
+		var statCursor *table.Stat
+
+		if err := databaseStatement.First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
+			return nil, fmt.Errorf("get node cursor: %w", err)
+		}
+
+		databaseStatement = databaseStatement.Where(clause.Gt{
+			Column: "created_at",
+			Value:  statCursor.CreatedAt,
+		})
+	}
+
+	if query.Address != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "address",
+			Value:  query.Address,
+		})
+	}
+
+	if len(query.AddressList) > 0 {
+		databaseStatement = databaseStatement.Where(clause.IN{
+			Column: "address",
+			Values: lo.ToAnySlice(query.AddressList),
+		})
+	}
+
+	if query.IsFullNode != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "is_full_node",
+			Value:  query.IsFullNode,
+		})
+	}
+
+	if query.IsRssNode != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "is_rss_node",
+			Value:  query.IsRssNode,
+		})
+	}
+
+	if query.Limit != nil {
+		databaseStatement = databaseStatement.Limit(*query.Limit)
+	}
+
+	if query.ValidRequest != nil {
+		databaseStatement = databaseStatement.Where(clause.Lt{
+			Column: "epoch_invalid_request_count",
+			Value:  query.ValidRequest,
+		})
+	}
+
+	orderByPointsClause := clause.OrderByColumn{
+		Column: clause.Column{
+			Name: "points",
+		},
+	}
+
+	orderByCreatedAtClause := clause.OrderByColumn{
+		Column: clause.Column{
+			Name: "created_at",
+		},
+	}
+
+	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
+		orderByPointsClause.Desc = true
+
+		databaseStatement = databaseStatement.Order(orderByPointsClause)
+	} else {
+		databaseStatement = databaseStatement.Order(orderByCreatedAtClause)
+	}
+
+	return databaseStatement, nil
+}
+
+func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
+	var stats table.Stat
+
+	if err := stats.Import(stat); err != nil {
+		return err
+	}
+
+	// Save node stat.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&stats).Error
+}
+
+func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error {
+	var tStats table.Stats
+
+	if err := tStats.Import(stats); err != nil {
+		return err
+	}
+
+	// Save node indexers.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
+}
+
+func (c *client) DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error {
+	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Indexer{}).Error
+}
+
+func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error) {
+	var indexers table.Indexers
+
+	databaseStatement := c.database.WithContext(ctx)
+
+	if len(nodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	}
+
+	if len(networks) > 0 {
+		databaseStatement = databaseStatement.Where("network IN ?", networks)
+	}
+
+	if len(workers) > 0 {
+		databaseStatement = databaseStatement.Where("worker IN ?", workers)
+	}
+
+	if err := databaseStatement.Find(&indexers).Error; err != nil {
+		return nil, fmt.Errorf("find nodes: %w", err)
+	}
+
+	return indexers.Export()
+}
+
+func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error {
+	var tIndexers table.Indexers
+
+	if err := tIndexers.Import(indexers); err != nil {
+		return err
+	}
+
+	return c.database.WithContext(ctx).CreateInBatches(tIndexers, math.MaxUint8).Error
 }
 
 // Dial dials a database.

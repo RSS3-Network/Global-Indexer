@@ -24,8 +24,12 @@ type server struct {
 	databaseClient database.Client
 }
 
+func (s *server) Spec() string {
+	return "*/5 * * * * *"
+}
+
 func (s *server) Run(ctx context.Context) error {
-	err := s.cronJob.AddFunc(ctx, "*/5 * * * * *", func() {
+	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
 		if err := s.updateNodeActivity(ctx); err != nil {
 			zap.L().Error("detect node activity error", zap.Error(err))
 			return
