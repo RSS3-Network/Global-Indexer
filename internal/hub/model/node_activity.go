@@ -23,24 +23,24 @@ var (
 )
 
 type ActivityRequest struct {
-	ID          string `param:"id" description:"Retrieve details for the specified activity ID"`
-	ActionLimit int    `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" default:"10" min:"1" max:"20"`
-	ActionPage  int    `query:"action_page" form:"action_page" description:"Specify the pagination for actions" default:"1" min:"1"`
+	ID          string `param:"id"`
+	ActionLimit int    `query:"action_limit" default:"10" min:"1" max:"20"`
+	ActionPage  int    `query:"action_page" default:"1" min:"1"`
 }
 
 type AccountActivitiesRequest struct {
-	Account        string   `param:"account" description:"Retrieve activities from the specified account"`
-	Limit          *int     `query:"limit" form:"limit" description:"Specify the number of activities to retrieve" default:"100" min:"1" max:"100"`
-	ActionLimit    *int     `query:"action_limit" form:"action_limit" description:"Specify the number of actions within the activity to retrieve" default:"10" min:"1" max:"20"`
-	Cursor         *string  `query:"cursor" form:"cursor" description:"Specify the cursor used for pagination"`
-	SinceTimestamp *uint64  `query:"since_timestamp" form:"since_timestamp" description:"Retrieve activities starting from this timestamp"`
-	UntilTimestamp *uint64  `query:"until_timestamp" form:"until_timestamp" description:"Retrieve activities up to this timestamp"`
-	Status         *bool    `query:"success" form:"success" description:"Retrieve activities based on status"`
-	Direction      *string  `query:"direction" form:"direction" description:"Retrieve activities based on direction"`
-	Network        []string `query:"network" form:"network" description:"Retrieve activities from the specified network(s)"`
-	Tag            []string `query:"tag" form:"tag" description:"Retrieve activities from the specified tag(s)"`
-	Type           []string `query:"" form:"type" description:"Retrieve activities from the specified type(s)"`
-	Platform       []string `query:"platform" form:"platform" description:"Retrieve activities from the specified platform(s)"`
+	Account        string   `param:"account"`
+	Limit          *int     `query:"limit" default:"100" min:"1" max:"100"`
+	ActionLimit    *int     `query:"action_limit" default:"10" min:"1" max:"20"`
+	Cursor         *string  `query:"cursor"`
+	SinceTimestamp *uint64  `query:"since_timestamp"`
+	UntilTimestamp *uint64  `query:"until_timestamp"`
+	Status         *bool    `query:"success"`
+	Direction      *string  `query:"direction"`
+	Network        []string `query:"network"`
+	Tag            []string `query:"tag"`
+	Type           []string `query:""`
+	Platform       []string `query:"platform"`
 }
 
 type DataResponse struct {

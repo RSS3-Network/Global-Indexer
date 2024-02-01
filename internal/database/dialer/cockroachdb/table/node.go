@@ -82,6 +82,7 @@ type Stat struct {
 	Indexer              int            `gorm:"column:indexer_count"`
 	ResetAt              time.Time      `gorm:"column:reset_at"`
 	CreatedAt            time.Time      `gorm:"column:created_at"`
+	UpdatedAt            time.Time      `gorm:"column:updated_at"`
 }
 
 func (*Stat) TableName() string {
