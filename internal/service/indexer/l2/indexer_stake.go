@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"go.uber.org/zap"
 )
 
 func (s *server) indexStakingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
@@ -27,6 +28,8 @@ func (s *server) indexStakingLog(ctx context.Context, header *types.Header, tran
 		return s.indexStakingUnstakeRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case l2.EventHashStakingUnstakeClaimed:
 		return s.indexStakingUnstakeClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashRewardDistributed:
+		return s.indexRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	default: // Discard all unsupported events.
 		return nil
 	}
@@ -248,6 +251,59 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
 		return fmt.Errorf("save stake event: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	event, err := s.contractStaking.ParseRewardDistributed(*log)
+	if err != nil {
+		return fmt.Errorf("parse RewardDistributed event: %w", err)
+	}
+
+	epoch := schema.Epoch{
+		ID:               event.Epoch,
+		StartTimestamp:   event.StartTimestamp.Int64(),
+		EndTimestamp:     event.EndTimestamp.Int64(),
+		TransactionHash:  transaction.Hash(),
+		BlockNumber:      header.Number,
+		TotalRewardItems: len(event.NodeAddrs),
+		RewardItems:      make([]*schema.EpochItem, 0, len(event.NodeAddrs)),
+		Success:          receipt.Status == types.ReceiptStatusSuccessful,
+	}
+
+	if epoch.TotalRewardItems != len(event.StakingRewards) || epoch.TotalRewardItems != len(event.OperationRewards) ||
+		epoch.TotalRewardItems != len(event.RequestFees) || epoch.TotalRewardItems != len(event.TaxAmounts) {
+		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardItems), zap.String("transaction.hash", transaction.Hash().Hex()))
+
+		return fmt.Errorf("length not match")
+	}
+
+	var totalOperationRewards, totalStakingRewards big.Int
+
+	for i := 0; i < epoch.TotalRewardItems; i++ {
+		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
+			EpochID:          event.Epoch,
+			Index:            i,
+			NodeAddress:      event.NodeAddrs[i],
+			RequestFees:      event.RequestFees[i].String(),
+			OperationRewards: event.OperationRewards[i].String(),
+			StakingRewards:   event.StakingRewards[i].String(),
+			TaxAmounts:       event.TaxAmounts[i].String(),
+		})
+
+		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
+		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
+	}
+
+	epoch.TotalOperationRewards = totalOperationRewards.String()
+	epoch.TotalStakingRewards = totalStakingRewards.String()
+
+	if err := databaseTransaction.SaveEpoch(ctx, &epoch); err != nil {
+		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
+
+		return fmt.Errorf("save epoch: %w", err)
 	}
 
 	return nil
