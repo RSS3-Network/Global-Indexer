@@ -577,8 +577,9 @@ func (h *Hub) batchRequest(_ context.Context, nodeMap map[common.Address]string,
 
 func (h *Hub) validateActivities(data []byte) (bool, *ActivitiesResponse) {
 	var (
-		res    ActivitiesResponse
-		errRes ErrResponse
+		res      ActivitiesResponse
+		errRes   ErrResponse
+		notFound NotFoundResponse
 	)
 
 	if err := json.Unmarshal(data, &errRes); err != nil {
@@ -590,6 +591,14 @@ func (h *Hub) validateActivities(data []byte) (bool, *ActivitiesResponse) {
 	}
 
 	if err := json.Unmarshal(data, &res); err != nil {
+		return false, nil
+	}
+
+	if err := json.Unmarshal(data, &notFound); err != nil {
+		return false, nil
+	}
+
+	if notFound.Message != "" {
 		return false, nil
 	}
 
@@ -598,8 +607,9 @@ func (h *Hub) validateActivities(data []byte) (bool, *ActivitiesResponse) {
 
 func (h *Hub) validateActivity(data []byte) (bool, *ActivityResponse) {
 	var (
-		res    ActivityResponse
-		errRes ErrResponse
+		res      ActivityResponse
+		errRes   ErrResponse
+		notFound NotFoundResponse
 	)
 
 	if err := json.Unmarshal(data, &errRes); err != nil {
@@ -611,6 +621,14 @@ func (h *Hub) validateActivity(data []byte) (bool, *ActivityResponse) {
 	}
 
 	if err := json.Unmarshal(data, &res); err != nil {
+		return false, nil
+	}
+
+	if err := json.Unmarshal(data, &notFound); err != nil {
+		return false, nil
+	}
+
+	if notFound.Message != "" {
 		return false, nil
 	}
 
@@ -985,6 +1003,10 @@ type DataResponse struct {
 type ErrResponse struct {
 	Error     string `json:"error"`
 	ErrorCode string `json:"error_code"`
+}
+
+type NotFoundResponse struct {
+	Message string `json:"message"`
 }
 
 type ActivityResponse struct {
