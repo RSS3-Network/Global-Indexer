@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS "node_indexer"
 
     CONSTRAINT "pk_indexes" PRIMARY KEY ("address","network","worker")
     );
-
 -- +goose StatementEnd
 
 -- +goose Down

@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS "node_info"
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_endpoint_unique" ON "node_info" ("endpoint");
 CREATE INDEX IF NOT EXISTS "idx_is_public" ON "node_info" ("is_public_good", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "idx_created_at" ON "node_info" ("address", "created_at" DESC);
-
 -- +goose StatementEnd
 
 -- +goose Down
