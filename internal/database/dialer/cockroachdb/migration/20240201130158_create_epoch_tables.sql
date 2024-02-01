@@ -3,11 +3,11 @@
 CREATE TABLE IF NOT EXISTS "epoch"
 (
     "id"    bigint NOT NULL,
-    "start_timestamp" timestamptz,
-    "end_timestamp"  timestamptz,
-    "block_number" bigint,
-    "transaction_hash" text,
-    "transaction_index" bigint,
+    "start_timestamp" timestamptz NOT NULL,
+    "end_timestamp"  timestamptz NOT NULL,
+    "block_number" bigint NOT NULL,
+    "transaction_hash" text NOT NULL,
+    "transaction_index" bigint NOT NULL,
     "total_operation_rewards" decimal,
     "total_staking_rewards" decimal,
     "total_reward_items" int,
