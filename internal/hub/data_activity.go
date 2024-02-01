@@ -685,10 +685,10 @@ func (h *Hub) processActivitiesResults(results []DataResponse) {
 		return result.Address
 	})
 
-	h.process2ndVerify(activities.Data, workingNodes)
+	h.processSecondVerify(activities.Data, workingNodes)
 }
 
-func (h *Hub) process2ndVerify(feeds []*Feed, workingNodes []common.Address) {
+func (h *Hub) processSecondVerify(feeds []*Feed, workingNodes []common.Address) {
 	ctx := context.Background()
 	platformMap := make(map[string]struct{})
 	statMap := make(map[string]struct{})
