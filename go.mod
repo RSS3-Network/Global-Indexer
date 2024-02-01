@@ -4,8 +4,6 @@ go 1.21.4
 
 replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101305.0
 
-replace github.com/kataras/iris/v12 => github.com/kataras/iris/v12 v12.2.10
-
 require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/creasty/defaults v1.7.0
@@ -71,6 +69,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
