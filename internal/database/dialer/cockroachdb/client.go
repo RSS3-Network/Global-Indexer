@@ -142,7 +142,7 @@ func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {
 		UpdateAll: true,
 	}
 
-	return c.database.WithContext(ctx).Clauses(onConflict).Save(&nodes).Error
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&nodes).Error
 }
 
 func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error {
