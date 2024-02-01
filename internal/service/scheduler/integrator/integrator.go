@@ -36,7 +36,7 @@ type server struct {
 }
 
 func (s *server) Spec() string {
-	return "*/10 * * * *"
+	return "0 */10 * * * *"
 }
 
 func (s *server) Run(ctx context.Context) error {
@@ -203,7 +203,7 @@ func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.S
 
 func (s *server) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
-	stat.Points = math.Min(math.Log2(stat.Staking/100000)+1, 0.2)
+	stat.Points = math.Min(math.Log2(stat.Staking/100000+1), 0.2)
 
 	// public good
 	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))

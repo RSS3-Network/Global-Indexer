@@ -287,7 +287,7 @@ func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
 		UpdateAll: true,
 	}
 
-	return c.database.WithContext(ctx).Clauses(onConflict).Save(&stats).Error
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&stats).Error
 }
 
 func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error {
