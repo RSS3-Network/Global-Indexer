@@ -17,7 +17,7 @@ type Checkpoint struct {
 	ChainID     uint64    `gorm:"column:chain_id"`
 	BlockNumber uint64    `gorm:"column:block_number"`
 	BlockHash   string    `gorm:"column:block_hash"`
-	CreatedAt   time.Time `gorm:"column:created_at;"`
+	CreatedAt   time.Time `gorm:"column:created_at"`
 	UpdatedAt   time.Time `gorm:"column:updated_at"`
 }
 
