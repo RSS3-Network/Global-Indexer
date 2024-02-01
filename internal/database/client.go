@@ -54,6 +54,8 @@ type Client interface {
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
+
+	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
 }
 
 type Session interface {
