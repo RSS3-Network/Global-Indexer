@@ -77,6 +77,17 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
 	}
 
+	if query.Pending != nil {
+		subQuery := c.database.WithContext(ctx).
+			Select("TRUE").
+			Table((*table.StakeEvent).TableName(nil)).
+			Where(`"transactions"."id" = "events"."id" AND "events"."type" = 'claimed'`)
+
+		databaseClient = databaseClient.
+			Where(`"type" IN (?, ?)`, schema.StakeTransactionTypeUnstake, schema.StakeTransactionTypeWithdraw).
+			Not(`EXISTS (?)`, subQuery)
+	}
+
 	var rows []table.StakeTransaction
 
 	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
