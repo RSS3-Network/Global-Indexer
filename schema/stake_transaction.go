@@ -55,4 +55,5 @@ type StakeTransactionsQuery struct {
 	Node    *common.Address       `query:"node"`
 	Address *common.Address       `query:"address"`
 	Type    *StakeTransactionType `query:"type"`
+	Pending *bool                 `query:"pending"`
 }

@@ -16,9 +16,10 @@ import (
 )
 
 type GetStakeTransactionsRequest struct {
-	User *common.Address              `query:"user"`
-	Node *common.Address              `query:"node"`
-	Type *schema.StakeTransactionType `query:"type"`
+	User    *common.Address              `query:"user"`
+	Node    *common.Address              `query:"node"`
+	Type    *schema.StakeTransactionType `query:"type"`
+	Pending *bool                        `query:"pending"`
 }
 
 func (h *Hub) GetStakeTransactions(c echo.Context) error {
@@ -41,9 +42,10 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	stakeTransactionsQuery := schema.StakeTransactionsQuery{
-		User: request.User,
-		Node: request.Node,
-		Type: request.Type,
+		User:    request.User,
+		Node:    request.Node,
+		Type:    request.Type,
+		Pending: request.Pending,
 	}
 
 	stakeTransactions, err := databaseTransaction.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
