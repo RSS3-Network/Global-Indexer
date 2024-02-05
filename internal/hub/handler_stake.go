@@ -16,8 +16,9 @@ import (
 )
 
 type GetStakeTransactionsRequest struct {
-	User *string `query:"user"`
-	Node *string `query:"node"`
+	User *common.Address              `query:"user"`
+	Node *common.Address              `query:"node"`
+	Type *schema.StakeTransactionType `query:"type"`
 }
 
 func (h *Hub) GetStakeTransactions(c echo.Context) error {
@@ -39,17 +40,13 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	var transactions []*schema.StakeTransaction
-
-	switch {
-	case request.User != nil:
-		transactions, err = databaseTransaction.FindStakeTransactionsByUser(c.Request().Context(), common.HexToAddress(*request.User))
-	case request.Node != nil:
-		transactions, err = databaseTransaction.FindStakeTransactionsByNode(c.Request().Context(), common.HexToAddress(*request.Node))
-	default:
-		transactions, err = databaseTransaction.FindStakeTransactions(c.Request().Context())
+	stakeTransactionsQuery := schema.StakeTransactionsQuery{
+		User: request.User,
+		Node: request.Node,
+		Type: request.Type,
 	}
 
+	stakeTransactions, err := databaseTransaction.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -60,11 +57,13 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	ids := lo.Map(transactions, func(transaction *schema.StakeTransaction, _ int) common.Hash {
-		return transaction.ID
-	})
+	stakeEventsQuery := schema.StakeEventsQuery{
+		IDs: lo.Map(stakeTransactions, func(transaction *schema.StakeTransaction, _ int) common.Hash {
+			return transaction.ID
+		}),
+	}
 
-	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), ids)
+	stakeEvents, err := databaseTransaction.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -79,25 +78,26 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		return fmt.Errorf("commit database transaction")
 	}
 
-	transactionModels := make([]*model.StakeTransaction, 0, len(transactions))
+	stakeTransactionModels := make([]*model.StakeTransaction, 0, len(stakeTransactions))
 
-	for _, transaction := range transactions {
-		events := lo.Filter(events, func(event *schema.StakeEvent, _ int) bool {
-			return event.ID == transaction.ID
+	for _, stakeTransaction := range stakeTransactions {
+		stakeEvents := lo.Filter(stakeEvents, func(stakeEvent *schema.StakeEvent, _ int) bool {
+			return stakeEvent.ID == stakeTransaction.ID
 		})
 
-		transactionModels = append(transactionModels, model.NewStakeTransaction(transaction, events))
+		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents))
 	}
 
 	var response Response
 
-	response.Data = transactionModels
+	response.Data = stakeTransactionModels
 
 	return c.JSON(http.StatusOK, response)
 }
 
 type GetStakeTransactionRequest struct {
-	ID *string `param:"id"`
+	ID   *common.Hash                 `param:"id"`
+	Type *schema.StakeTransactionType `query:"type"`
 }
 
 func (h *Hub) GetStakeTransaction(c echo.Context) error {
@@ -119,7 +119,12 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 
 	defer lo.Try(databaseTransaction.Rollback)
 
-	transaction, err := databaseTransaction.FindStakeTransaction(c.Request().Context(), common.HexToHash(*request.ID))
+	stakeTransactionQuery := schema.StakeTransactionQuery{
+		ID:   request.ID,
+		Type: request.Type,
+	}
+
+	stakeTransaction, err := databaseTransaction.FindStakeTransaction(c.Request().Context(), stakeTransactionQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -130,7 +135,11 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	events, err := databaseTransaction.FindStakeEventsByIDs(c.Request().Context(), []common.Hash{transaction.ID})
+	stakeEventsQuery := schema.StakeEventsQuery{
+		IDs: []common.Hash{stakeTransaction.ID},
+	}
+
+	stakeEvents, err := databaseTransaction.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -145,12 +154,12 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 		return fmt.Errorf("commit database transaction")
 	}
 
-	events = lo.Filter(events, func(event *schema.StakeEvent, _ int) bool {
-		return event.ID == transaction.ID
+	stakeEvents = lo.Filter(stakeEvents, func(stakeEvent *schema.StakeEvent, _ int) bool {
+		return stakeEvent.ID == stakeTransaction.ID
 	})
 
 	var response Response
-	response.Data = model.NewStakeTransaction(transaction, events)
+	response.Data = model.NewStakeTransaction(stakeTransaction, stakeEvents)
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -165,15 +174,19 @@ func (h *Hub) GetStakeNodeChips(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	chips, err := h.databaseClient.FindStakeChipsByNode(c.Request().Context(), request.Node)
+	stakeChipsQuery := schema.StakeChipsQuery{
+		Node: &request.Node,
+	}
+
+	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
-		zap.L().Error("find node stakers", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find node chips", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	response := Response{
-		Data: model.NewStakeStakers(chips),
+		Data: model.NewStakeStakers(stakeChips),
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -189,15 +202,19 @@ func (h *Hub) GetStakeWalletChips(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	chips, err := h.databaseClient.FindStakeChipsByOwner(c.Request().Context(), request.Wallet)
+	stakeChipsQuery := schema.StakeChipsQuery{
+		Owner: &request.Wallet,
+	}
+
+	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
-		zap.L().Error("find node stakers", zap.Error(err), zap.Any("request", request))
+		zap.L().Error("find node chips", zap.Error(err), zap.Any("request", request))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	response := Response{
-		Data: model.NewStakeNodes(chips),
+		Data: model.NewStakeNodes(stakeChips),
 	}
 
 	return c.JSON(http.StatusOK, response)

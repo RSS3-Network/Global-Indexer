@@ -42,14 +42,10 @@ type Client interface {
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
 
-	FindStakeTransaction(ctx context.Context, id common.Hash) (*schema.StakeTransaction, error)
-	FindStakeTransactions(ctx context.Context) ([]*schema.StakeTransaction, error)
-	FindStakeTransactionsByUser(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
-	FindStakeTransactionsByNode(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error)
-	FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*schema.StakeEvent, error)
-	FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error)
-	FindStakeChipsByOwner(ctx context.Context, owner common.Address) ([]*schema.StakeChip, error)
-	FindStakeChipsByNode(ctx context.Context, node common.Address) ([]*schema.StakeChip, error)
+	FindStakeTransaction(ctx context.Context, query schema.StakeTransactionQuery) (*schema.StakeTransaction, error)
+	FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error)
+	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
+	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error

@@ -42,17 +42,17 @@ type BridgeTransaction struct {
 }
 
 type BridgeTransactionQuery struct {
-	ID       *common.Hash    `query:"id"`
-	Sender   *common.Address `query:"address"`
-	Receiver *common.Address `query:"receiver"`
-	Address  *common.Address `query:"address"`
-	Type     *string         `query:"type"`
+	ID       *common.Hash           `query:"id"`
+	Sender   *common.Address        `query:"sender"`
+	Receiver *common.Address        `query:"receiver"`
+	Address  *common.Address        `query:"address"`
+	Type     *BridgeTransactionType `query:"type"`
 }
 
 type BridgeTransactionsQuery struct {
-	ID       *common.Hash    `query:"id"`
-	Sender   *common.Address `query:"address"`
-	Receiver *common.Address `query:"receiver"`
-	Address  *common.Address `query:"address"`
-	Type     *string         `query:"type"`
+	ID       *common.Hash           `query:"id"`
+	Sender   *common.Address        `query:"sender"`
+	Receiver *common.Address        `query:"receiver"`
+	Address  *common.Address        `query:"address"`
+	Type     *BridgeTransactionType `query:"type"`
 }
