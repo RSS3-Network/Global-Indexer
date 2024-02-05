@@ -56,6 +56,9 @@ type Client interface {
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
+	FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error)
+	FindEpoch(ctx context.Context, id uint64, itemsLimit int, cursor *string) (*schema.Epoch, error)
+	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
 }
 
 type Session interface {
