@@ -16,10 +16,32 @@ import (
 	"gorm.io/gorm"
 )
 
-func (c *client) FindStakeTransaction(ctx context.Context, id common.Hash) (*schema.StakeTransaction, error) {
+func (c *client) FindStakeTransaction(ctx context.Context, query schema.StakeTransactionQuery) (*schema.StakeTransaction, error) {
 	var row table.StakeTransaction
 
-	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&row).Error; err != nil {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
+	}
+
+	if query.User != nil {
+		databaseClient = databaseClient.Where(`"user" = ?`, query.User.String())
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	if query.Address != nil {
+		databaseClient = databaseClient.Where(`"user" = ? OR "node" = ?`, query.Address.String())
+	}
+
+	if query.Type != nil {
+		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
+	}
+
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -30,86 +52,58 @@ func (c *client) FindStakeTransaction(ctx context.Context, id common.Hash) (*sch
 	return row.Export()
 }
 
-func (c *client) FindStakeTransactions(ctx context.Context) ([]*schema.StakeTransaction, error) {
+func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.IDs != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
+			return id.String()
+		}))
+	}
+
+	if query.User != nil {
+		databaseClient = databaseClient.Where(`"user" = ?`, query.User.String())
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	if query.Address != nil {
+		databaseClient = databaseClient.Where(`"user" = ? OR "node" = ?`, query.Address.String())
+	}
+
+	if query.Type != nil {
+		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
+	}
+
+	if query.Pending != nil {
+		subQuery := c.database.WithContext(ctx).
+			Select("TRUE").
+			Table((*table.StakeEvent).TableName(nil)).
+			Where(`"transactions"."id" = "events"."id" AND "events"."type" = 'claimed'`)
+
+		databaseClient = databaseClient.
+			Where(`"type" IN (?, ?)`, schema.StakeTransactionTypeUnstake, schema.StakeTransactionTypeWithdraw).
+			Not(`EXISTS (?)`, subQuery)
+	}
+
 	var rows []table.StakeTransaction
 
-	if err := c.database.WithContext(ctx).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find stake transactions: %w", err)
-	}
-
-	results := make([]*schema.StakeTransaction, 0, len(rows))
-
-	for _, row := range rows {
-		result, err := row.Export()
-		if err != nil {
-			return nil, fmt.Errorf("export stake transaction: %w", err)
-		}
-
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-func (c *client) FindStakeTransactionsByUser(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error) {
-	var rows []table.StakeTransaction
-
-	if err := c.database.WithContext(ctx).Distinct("*").Where(`"user" = ?`, address.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find stake transactions: %w", err)
-	}
-
-	results := make([]*schema.StakeTransaction, 0, len(rows))
-
-	for _, row := range rows {
-		result, err := row.Export()
-		if err != nil {
-			return nil, fmt.Errorf("export stake transaction: %w", err)
-		}
-
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-func (c *client) FindStakeTransactionsByNode(ctx context.Context, address common.Address) ([]*schema.StakeTransaction, error) {
-	var rows []table.StakeTransaction
-
-	if err := c.database.WithContext(ctx).Distinct("*").Where(`"node" = ?`, address.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find stake transactions: %w", err)
-	}
-
-	results := make([]*schema.StakeTransaction, 0, len(rows))
-
-	for _, row := range rows {
-		result, err := row.Export()
-		if err != nil {
-			return nil, fmt.Errorf("export stake transaction: %w", err)
-		}
-
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-func (c *client) FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*schema.StakeEvent, error) {
-	var rows []table.StakeEvent
-
-	if err := c.database.WithContext(ctx).Where("id = ?", id.String()).First(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
 
-		return nil, fmt.Errorf("find stake event: %w", err)
+		return nil, fmt.Errorf("find stake transactions: %w", err)
 	}
 
-	results := make([]*schema.StakeEvent, 0, len(rows))
+	results := make([]*schema.StakeTransaction, 0, len(rows))
 
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export stake event: %w", err)
+			return nil, fmt.Errorf("export stake transaction: %w", err)
 		}
 
 		results = append(results, result)
@@ -118,15 +112,22 @@ func (c *client) FindStakeEventsByID(ctx context.Context, id common.Hash) ([]*sc
 	return results, nil
 }
 
-func (c *client) FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([]*schema.StakeEvent, error) {
+func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if len(query.IDs) > 0 {
+		databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
+			return id.String()
+		}))
+	}
+
 	var rows []table.StakeEvent
+	if err := c.database.WithContext(ctx).Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
 
-	transactionIDs := lo.Map(ids, func(id common.Hash, _ int) string {
-		return id.String()
-	})
-
-	if err := c.database.WithContext(ctx).Where("id IN ?", transactionIDs).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find stake event: %w", err)
+		return nil, fmt.Errorf("find stake events: %w", err)
 	}
 
 	results := make([]*schema.StakeEvent, 0, len(rows))
@@ -143,35 +144,29 @@ func (c *client) FindStakeEventsByIDs(ctx context.Context, ids []common.Hash) ([
 	return results, nil
 }
 
-func (c *client) FindStakeChipsByOwner(ctx context.Context, owner common.Address) ([]*schema.StakeChip, error) {
-	if owner == ethereum.AddressGenesis {
-		return make([]*schema.StakeChip, 0), nil
+func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
 	}
+
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
 
 	var rows []table.StakeChip
-
-	if err := c.database.WithContext(ctx).Where(`"owner" = ?`, owner.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("find stake chip: %w", err)
-	}
-
-	results := make([]*schema.StakeChip, 0, len(rows))
-
-	for _, row := range rows {
-		result, err := row.Export()
-		if err != nil {
-			return nil, fmt.Errorf("export stake chip: %w", err)
+	if err := databaseClient.Order(`"id" DESC`).Find(&rows).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
 		}
 
-		results = append(results, result)
-	}
-
-	return results, nil
-}
-
-func (c *client) FindStakeChipsByNode(ctx context.Context, node common.Address) ([]*schema.StakeChip, error) {
-	var rows []table.StakeChip
-
-	if err := c.database.WithContext(ctx).Where(`"node" = ? AND "owner" != ?`, node.String(), ethereum.AddressGenesis.String()).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("find stake chip: %w", err)
 	}
 

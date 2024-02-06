@@ -38,7 +38,7 @@ func (c *client) FindBridgeTransaction(ctx context.Context, query schema.BridgeT
 		databaseClient = databaseClient.Where(`"type" = ?`, *query.Type)
 	}
 
-	if err := databaseClient.First(&row).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).First(&row).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -112,7 +112,7 @@ func (c *client) FindBridgeEvents(ctx context.Context, query schema.BridgeEvents
 		}))
 	}
 
-	if err := databaseClient.Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
