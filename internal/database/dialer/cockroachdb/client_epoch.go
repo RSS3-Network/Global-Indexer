@@ -45,8 +45,12 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 
 	onConflict = clause.OnConflict{
 		Columns: []clause.Column{
-			{Name: "epoch_id"},
-			{Name: "index"},
+			{
+				Name: "epoch_id",
+			},
+			{
+				Name: "index",
+			},
 		},
 		UpdateAll: true,
 	}
