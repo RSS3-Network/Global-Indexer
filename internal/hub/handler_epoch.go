@@ -1,12 +1,14 @@
 package hub
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 )
 
 func (h *Hub) GetEpochsHandler(c echo.Context) error {
@@ -26,6 +28,10 @@ func (h *Hub) GetEpochsHandler(c echo.Context) error {
 
 	epoch, err := h.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
@@ -57,6 +63,10 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 
 	epoch, err := h.databaseClient.FindEpoch(c.Request().Context(), request.ID, request.ItemsLimit, request.Cursor)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
@@ -88,6 +98,10 @@ func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
 
 	epoch, err := h.databaseClient.FindEpochNodeRewards(c.Request().Context(), request.NodeAddress, request.Limit, request.Cursor)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 

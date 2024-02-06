@@ -91,7 +91,7 @@
   },
   {
     "inputs": [],
-    "name": "DepositedTokensSlashedAll",
+    "name": "CreateNodeToZeroAddress",
     "type": "error"
   },
   {
@@ -204,6 +204,16 @@
   },
   {
     "inputs": [],
+    "name": "ExcessWithdrawalAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientValue",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidArrayLength",
     "type": "error"
   },
@@ -265,6 +275,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "RewardDistributionFailed",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -272,12 +287,22 @@
         "type": "address"
       }
     ],
-    "name": "PublicGoodNodeNotStaked",
+    "name": "StakeToPublicGoodNode",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "TaxFractionTooLarge",
+    "name": "SubmissionIntervalNotElapsed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TaxRateBasisPointsTooLarge",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferFailed",
     "type": "error"
   },
   {

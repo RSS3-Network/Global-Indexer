@@ -14,8 +14,8 @@ var (
 	AddressL2StandardBridgeProxy       = predeploys.L2StandardBridgeAddr                                   // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000010
 	AddressL2CrossDomainMessengerProxy = predeploys.L2CrossDomainMessengerAddr                             // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
 	AddressL2ToL1MessagePasser         = predeploys.L2ToL1MessagePasserAddr                                // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
-	AddressStakingProxy                = common.HexToAddress("0x952C35d168eefcCD0C328b0FEf8B7Db51285F039") // https://scan.testnet.rss3.io/address/0x952C35d168eefcCD0C328b0FEf8B7Db51285F039
-	AddressChipsProxy                  = common.HexToAddress("0x3D0a9cE5D843465E6C465CCf5942cf02cD60dA58") // https://scan.testnet.rss3.io/token/0x3D0a9cE5D843465E6C465CCf5942cf02cD60dA58
+	AddressStakingProxy                = common.HexToAddress("0x6553a9971fe28DA69462613fb012b9c1c302Ce92") // https://scan.testnet.rss3.io/address/0x6553a9971fe28DA69462613fb012b9c1c302Ce92
+	AddressChipsProxy                  = common.HexToAddress("0x63144882F6c43d7844e38AcEE55B528a5D883e34") // https://scan.testnet.rss3.io/token/0x63144882F6c43d7844e38AcEE55B528a5D883e34
 )
 
 var (

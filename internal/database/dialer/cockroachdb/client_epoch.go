@@ -2,12 +2,14 @@ package cockroachdb
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -74,6 +76,10 @@ func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*
 	}
 
 	if err := databaseStatement.Limit(limit).Find(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
 		zap.L().Error("find epochs", zap.Error(err))
 
 		return nil, err
@@ -86,6 +92,10 @@ func (c *client) FindEpoch(ctx context.Context, id uint64, itemsLimit int, curso
 	var data table.Epoch
 
 	if err := c.database.WithContext(ctx).First(&data, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
 		zap.L().Error("find epoch", zap.Error(err), zap.Uint64("id", id))
 
 		return nil, err
@@ -119,8 +129,6 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	// Find epoch items by nodeAddress.
 	var items table.EpochItems
 
-	fmt.Println(nodeAddress.String())
-
 	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("node_address = ?", nodeAddress.String())
 
 	if cursor != nil {
@@ -128,6 +136,10 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	}
 
 	if err := databaseStatement.Limit(limit).Order("epoch_id DESC, index ASC").Find(&items).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
 		zap.L().Error("find epoch items", zap.Error(err), zap.String("nodeAddress", nodeAddress.String()))
 
 		return nil, err
