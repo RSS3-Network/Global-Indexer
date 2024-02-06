@@ -275,7 +275,7 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 	}
 
 	epoch := schema.Epoch{
-		ID:               event.Epoch,
+		ID:               event.Epoch.Uint64(),
 		StartTimestamp:   event.StartTimestamp.Int64(),
 		EndTimestamp:     event.EndTimestamp.Int64(),
 		TransactionHash:  transaction.Hash(),
@@ -293,25 +293,27 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		return fmt.Errorf("length not match")
 	}
 
-	var totalOperationRewards, totalStakingRewards big.Int
+	if epoch.Success {
+		var totalOperationRewards, totalStakingRewards big.Int
 
-	for i := 0; i < epoch.TotalRewardItems; i++ {
-		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
-			EpochID:          event.Epoch,
-			Index:            i,
-			NodeAddress:      event.NodeAddrs[i],
-			RequestFees:      event.RequestFees[i].String(),
-			OperationRewards: event.OperationRewards[i].String(),
-			StakingRewards:   event.StakingRewards[i].String(),
-			TaxAmounts:       event.TaxAmounts[i].String(),
-		})
+		for i := 0; i < epoch.TotalRewardItems; i++ {
+			epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
+				EpochID:          event.Epoch.Uint64(),
+				Index:            i,
+				NodeAddress:      event.NodeAddrs[i],
+				RequestFees:      event.RequestFees[i].String(),
+				OperationRewards: event.OperationRewards[i].String(),
+				StakingRewards:   event.StakingRewards[i].String(),
+				TaxAmounts:       event.TaxAmounts[i].String(),
+			})
 
-		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
-		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
+			totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
+			totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
+		}
+
+		epoch.TotalOperationRewards = totalOperationRewards.String()
+		epoch.TotalStakingRewards = totalStakingRewards.String()
 	}
-
-	epoch.TotalOperationRewards = totalOperationRewards.String()
-	epoch.TotalStakingRewards = totalStakingRewards.String()
 
 	if err := databaseTransaction.SaveEpoch(ctx, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))

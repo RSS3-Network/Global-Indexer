@@ -7,7 +7,7 @@ import (
 )
 
 type Epoch struct {
-	ID                    *big.Int     `json:"id"`
+	ID                    uint64       `json:"id"`
 	StartTimestamp        int64        `json:"startTimestamp"`
 	EndTimestamp          int64        `json:"endTimestamp"`
 	TransactionHash       common.Hash  `json:"transactionHash"`
@@ -23,7 +23,7 @@ type Epoch struct {
 }
 
 type EpochItem struct {
-	EpochID          *big.Int       `json:"-"`
+	EpochID          uint64         `json:"epochID"`
 	Index            int            `json:"index"`
 	NodeAddress      common.Address `json:"nodeAddress"`
 	RequestFees      string         `json:"requestFees"`

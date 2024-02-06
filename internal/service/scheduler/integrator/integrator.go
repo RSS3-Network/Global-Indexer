@@ -94,11 +94,7 @@ func (s *server) sortNodes(ctx context.Context) error {
 					return err
 				}
 
-				if err = s.updateNodePoints(stat); err != nil {
-					return err
-				}
-
-				return nil
+				return s.updateNodePoints(stat)
 			})
 		}
 
@@ -145,11 +141,7 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 		return err
 	}
 
-	if err = s.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes); err != nil {
-		return err
-	}
-
-	return nil
+	return s.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes)
 }
 
 func (s *server) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {

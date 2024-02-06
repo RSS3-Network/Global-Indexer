@@ -1,8 +1,6 @@
 package table
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
@@ -12,7 +10,7 @@ import (
 type EpochItem struct {
 	EpochID          uint64          `gorm:"column:epoch_id;primaryKey"`
 	Index            int             `gorm:"column:index;primaryKey"`
-	NodeAddress      common.Address  `gorm:"column:node_address"`
+	NodeAddress      string          `gorm:"column:node_address"`
 	RequestFees      decimal.Decimal `gorm:"column:request_fees"`
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
 	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
@@ -24,9 +22,9 @@ func (e *EpochItem) TableName() string {
 }
 
 func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
-	e.EpochID = epochRewardItem.EpochID.Uint64()
+	e.EpochID = epochRewardItem.EpochID
 	e.Index = epochRewardItem.Index
-	e.NodeAddress = epochRewardItem.NodeAddress
+	e.NodeAddress = epochRewardItem.NodeAddress.String()
 	e.RequestFees = lo.Must(decimal.NewFromString(epochRewardItem.RequestFees))
 	e.OperationRewards = lo.Must(decimal.NewFromString(epochRewardItem.OperationRewards))
 	e.StakingRewards = lo.Must(decimal.NewFromString(epochRewardItem.StakingRewards))
@@ -37,9 +35,9 @@ func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
 
 func (e *EpochItem) Export() (*schema.EpochItem, error) {
 	return &schema.EpochItem{
-		EpochID:          new(big.Int).SetUint64(e.EpochID),
+		EpochID:          e.EpochID,
 		Index:            e.Index,
-		NodeAddress:      e.NodeAddress,
+		NodeAddress:      common.HexToAddress(e.NodeAddress),
 		RequestFees:      e.RequestFees.String(),
 		OperationRewards: e.OperationRewards.String(),
 		StakingRewards:   e.StakingRewards.String(),
