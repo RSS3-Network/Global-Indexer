@@ -16,10 +16,10 @@ import (
 )
 
 type GetBridgeTransactionsRequest struct {
-	Sender   *common.Address `query:"sender"`
-	Receiver *common.Address `query:"receiver"`
-	Address  *common.Address `query:"address"`
-	Type     *string         `query:"type"`
+	Sender   *common.Address               `query:"sender"`
+	Receiver *common.Address               `query:"receiver"`
+	Address  *common.Address               `query:"address"`
+	Type     *schema.BridgeTransactionType `query:"type"`
 }
 
 func (h *Hub) GetBridgeTransactions(c echo.Context) error {

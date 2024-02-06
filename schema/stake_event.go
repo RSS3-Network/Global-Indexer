@@ -44,3 +44,11 @@ type StakeEvent struct {
 	BlockNumber       *big.Int       `json:"blockNumber"`
 	BlockTimestamp    time.Time      `json:"blockTimestamp"`
 }
+
+type StakeEventQuery struct {
+	ID *common.Hash `query:"id"`
+}
+
+type StakeEventsQuery struct {
+	IDs []common.Hash `query:"ids"`
+}

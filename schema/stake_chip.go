@@ -24,3 +24,9 @@ type StakeChip struct {
 	Owner common.Address `json:"owner"`
 	Node  common.Address `json:"node"`
 }
+
+type StakeChipsQuery struct {
+	ID    *big.Int        `query:"id"`
+	Owner *common.Address `query:"owner"`
+	Node  *common.Address `query:"node"`
+}

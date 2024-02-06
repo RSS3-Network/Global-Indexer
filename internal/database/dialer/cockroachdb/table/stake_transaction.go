@@ -2,6 +2,7 @@ package table
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
@@ -17,12 +18,15 @@ var (
 )
 
 type StakeTransaction struct {
-	ID    string          `gorm:"column:id"`
-	Type  string          `gorm:"column:type"`
-	User  string          `gorm:"column:user"`
-	Node  string          `gorm:"column:node"`
-	Value decimal.Decimal `gorm:"column:value"`
-	Chips pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
+	ID               string          `gorm:"column:id"`
+	Type             string          `gorm:"column:type"`
+	User             string          `gorm:"column:user"`
+	Node             string          `gorm:"column:node"`
+	Value            decimal.Decimal `gorm:"column:value"`
+	Chips            pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
+	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
+	BlockNumber      uint64          `gorm:"column:block_number"`
+	TransactionIndex uint            `gorm:"column:transaction_index"`
 }
 
 func (s *StakeTransaction) TableName() string {
@@ -30,7 +34,7 @@ func (s *StakeTransaction) TableName() string {
 }
 
 func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {
-	stakeTransaction := schema.StakeTransaction{
+	var stakeTransaction = schema.StakeTransaction{
 		ID:    common.HexToHash(s.ID),
 		Type:  schema.StakeTransactionType(s.Type),
 		User:  common.HexToAddress(s.User),
@@ -39,6 +43,9 @@ func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {
 		Chips: lo.Map(s.Chips, func(value int64, _ int) *big.Int {
 			return new(big.Int).SetInt64(value)
 		}),
+		BlockTimestamp:   s.BlockTimestamp,
+		BlockNumber:      s.BlockNumber,
+		TransactionIndex: s.TransactionIndex,
 	}
 
 	return &stakeTransaction, nil
@@ -53,6 +60,9 @@ func (s *StakeTransaction) Import(stakeTransaction schema.StakeTransaction) erro
 	s.Chips = lo.Map(stakeTransaction.Chips, func(value *big.Int, _ int) int64 {
 		return value.Int64()
 	})
+	s.BlockTimestamp = stakeTransaction.BlockTimestamp
+	s.BlockNumber = stakeTransaction.BlockNumber
+	s.TransactionIndex = stakeTransaction.TransactionIndex
 
 	return nil
 }
