@@ -22,6 +22,7 @@ type Node struct {
 	Config                 json.RawMessage `json:"-"`
 	Status                 Status          `json:"status"`
 	LastHeartbeatTimestamp int64           `json:"lastHeartbeat"`
+	CreatedAt              int64           `json:"createdAt"`
 }
 
 //go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=Status --linecomment --output node_status_string.go --json --yaml --sql
