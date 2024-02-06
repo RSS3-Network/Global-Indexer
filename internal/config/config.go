@@ -21,6 +21,7 @@ type File struct {
 	Database    *Database        `yaml:"database"`
 	Redis       *Redis           `yaml:"redis"`
 	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
+	NameService *NameService     `yaml:"name_service"`
 }
 
 type Database struct {
@@ -36,6 +37,13 @@ type RSS3ChainConfig struct {
 	EndpointL1     string `yaml:"endpoint_l1" validate:"required"`
 	EndpointL2     string `yaml:"endpoint_l2" validate:"required"`
 	BlockThreadsL1 uint64 `yaml:"block_threads_l1" default:"1"`
+}
+
+type NameService struct {
+	EnsEndpoint  string `yaml:"ens_endpoint"`
+	CsbEndpoint  string `yaml:"csb_endpoint"`
+	LensEndpoint string `yaml:"lens_endpoint"`
+	FcEndpoint   string `yaml:"fc_endpoint"`
 }
 
 func Setup(configFilePath string) (*File, error) {

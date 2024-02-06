@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
 	"github.com/redis/go-redis/v9"
@@ -57,7 +58,12 @@ var command = cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient)
+		nameService, err := nameresolver.NewNameResolver(cmd.Context(), config.NameService)
+		if err != nil {
+			return fmt.Errorf("init name resolver: %w", err)
+		}
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient, nameService)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}

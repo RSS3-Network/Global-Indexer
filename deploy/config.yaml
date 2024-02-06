@@ -12,3 +12,9 @@ rss3_chain:
   endpoint_l1: https://rpc.ankr.com/eth_sepolia
   endpoint_l2: https://rpc.testnet.rss3.io
   block_threads_l1: 20
+
+name_service:
+  ens_endpoint: https://rpc.ankr.com/eth
+  csb_endpoint: https://rpc.crossbell.io
+  lens_endpoint: https://rpc.ankr.com/polygon
+  fc_endpoint: https://nemes.farcaster.xyz:2281

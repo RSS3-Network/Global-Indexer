@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -28,8 +29,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient)
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, nameService *nameresolver.NameResolver) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
