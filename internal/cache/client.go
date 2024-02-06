@@ -20,16 +20,11 @@ type client struct {
 
 func (c *client) Get(ctx context.Context, key string, dest interface{}) error {
 	data, err := c.cacheClient.Get(ctx, key).Bytes()
-
 	if err != nil {
 		return err
 	}
 
-	if err = json.Unmarshal(data, dest); err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(data, dest)
 }
 
 func (c *client) Set(ctx context.Context, key string, value interface{}) error {

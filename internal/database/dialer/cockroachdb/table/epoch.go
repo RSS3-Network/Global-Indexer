@@ -31,7 +31,7 @@ func (e *Epoch) TableName() string {
 }
 
 func (e *Epoch) Import(epoch *schema.Epoch) error {
-	e.ID = epoch.ID.Uint64()
+	e.ID = epoch.ID
 	e.StartTimestamp = time.Unix(epoch.StartTimestamp, 0)
 	e.EndTimestamp = time.Unix(epoch.EndTimestamp, 0)
 	e.TransactionHash = epoch.TransactionHash.String()
@@ -45,9 +45,9 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	return nil
 }
 
-func (e *Epoch) Export() (*schema.Epoch, error) {
+func (e *Epoch) Export(epochItems []*schema.EpochItem) (*schema.Epoch, error) {
 	epoch := schema.Epoch{
-		ID:                    new(big.Int).SetUint64(e.ID),
+		ID:                    e.ID,
 		StartTimestamp:        e.StartTimestamp.Unix(),
 		EndTimestamp:          e.EndTimestamp.Unix(),
 		TransactionHash:       common.HexToHash(e.TransactionHash),
@@ -57,7 +57,25 @@ func (e *Epoch) Export() (*schema.Epoch, error) {
 		TotalStakingRewards:   e.TotalStakingRewards.String(),
 		TotalRewardItems:      e.TotalRewardItems,
 		Success:               e.Success,
+		RewardItems:           epochItems,
 	}
 
 	return &epoch, nil
+}
+
+type Epochs []*Epoch
+
+func (e *Epochs) Export() ([]*schema.Epoch, error) {
+	epochs := make([]*schema.Epoch, 0, len(*e))
+
+	for _, epoch := range *e {
+		epoch, err := epoch.Export(nil)
+		if err != nil {
+			return nil, err
+		}
+
+		epochs = append(epochs, epoch)
+	}
+
+	return epochs, nil
 }
