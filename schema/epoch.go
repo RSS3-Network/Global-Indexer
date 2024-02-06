@@ -17,7 +17,7 @@ type Epoch struct {
 	TotalOperationRewards string       `json:"totalOperationRewards"`
 	TotalStakingRewards   string       `json:"totalStakingRewards"`
 	TotalRewardItems      int          `json:"totalRewardItems"`
-	RewardItems           []*EpochItem `json:"rewardItems"`
+	RewardItems           []*EpochItem `json:"rewardItems,omitempty"`
 	CreatedAt             int64        `json:"-"`
 	UpdatedAt             int64        `json:"-"`
 }
