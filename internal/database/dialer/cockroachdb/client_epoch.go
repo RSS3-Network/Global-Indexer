@@ -72,7 +72,7 @@ func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*
 	databaseStatement := c.database.WithContext(ctx).Model(&table.Epoch{})
 
 	if cursor != nil {
-		databaseStatement = databaseStatement.Where("id > ?", cursor)
+		databaseStatement = databaseStatement.Where("id < ?", cursor)
 	}
 
 	if err := databaseStatement.Order("id DESC").Limit(limit).Find(&data).Error; err != nil {
