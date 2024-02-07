@@ -320,5 +320,27 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		return fmt.Errorf("save epoch: %w", err)
 	}
 
+	// Take a snapshot for the total number of nodes.
+	nodeSnapshot := schema.NodeSnapshot{
+		EpochID:        event.Epoch.Uint64(),
+		BlockHash:      header.Hash().String(),
+		BlockNumber:    header.Number.Uint64(),
+		BlockTimestamp: time.Unix(int64(header.Time), 0),
+	}
+	if err := databaseTransaction.SaveNodeSnapshot(ctx, &nodeSnapshot); err != nil {
+		return fmt.Errorf("save node snapshot: %w", err)
+	}
+
+	// Take a snapshot for the total number of stakers.
+	stakeSnapshot := schema.StakeSnapshot{
+		EpochID:        event.Epoch.Uint64(),
+		BlockHash:      header.Hash().String(),
+		BlockNumber:    header.Number.Uint64(),
+		BlockTimestamp: time.Unix(int64(header.Time), 0),
+	}
+	if err := databaseTransaction.SaveStakeSnapshot(ctx, &stakeSnapshot); err != nil {
+		return fmt.Errorf("save stake snapshot: %w", err)
+	}
+
 	return nil
 }
