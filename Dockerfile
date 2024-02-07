@@ -14,7 +14,7 @@ FROM base AS builder
 
 ENV CGO_ENABLED=0
 RUN --mount=type=cache,target=/go/pkg/mod/ \
-    make build
+    go build cmd/main.go
 
 FROM rss3/go-runtime AS runner
 
