@@ -20,6 +20,8 @@ type Client interface {
 	Session
 	Transaction
 
+	RollbackBlock(ctx context.Context, chainID, blockNUmber uint64) error
+
 	FindCheckpoint(ctx context.Context, chainID uint64) (*schema.Checkpoint, error)
 	SaveCheckpoint(ctx context.Context, checkpoint *schema.Checkpoint) error
 
