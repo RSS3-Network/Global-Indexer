@@ -12,8 +12,9 @@ type Epoch struct {
 	EndTimestamp          int64        `json:"endTimestamp"`
 	TransactionHash       common.Hash  `json:"transactionHash"`
 	TransactionIndex      uint         `json:"transactionIndex"`
+	BlockHash             common.Hash  `json:"blockHash"`
 	BlockNumber           *big.Int     `json:"blockNumber"`
-	Success               bool         `json:"success"`
+	BlockTimestamp        int64        `json:"blockTimestamp"`
 	TotalOperationRewards string       `json:"totalOperationRewards"`
 	TotalStakingRewards   string       `json:"totalStakingRewards"`
 	TotalRewardItems      int          `json:"totalRewardItems"`
