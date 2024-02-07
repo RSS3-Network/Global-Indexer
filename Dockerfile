@@ -1,7 +1,6 @@
 FROM rss3/go-builder AS base
 
 WORKDIR /root/gi
-RUN apk add --no-cache git make gcc libc-dev
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,source=go.sum,target=go.sum \
