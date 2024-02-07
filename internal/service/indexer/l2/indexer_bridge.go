@@ -3,8 +3,10 @@ package l2
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -86,14 +88,18 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 
 	// Create the bridge transaction.
 	bridgeTransaction := schema.BridgeTransaction{
-		ID:             messagePassedEvent.WithdrawalHash,
-		Type:           schema.BridgeTransactionTypeWithdraw,
-		Sender:         withdrawalInitiatedEvent.From,
-		Receiver:       withdrawalInitiatedEvent.To,
-		TokenAddressL1: lo.ToPtr(withdrawalInitiatedEvent.L1Token),
-		TokenAddressL2: lo.ToPtr(withdrawalInitiatedEvent.L2Token),
-		TokenValue:     withdrawalInitiatedEvent.Amount,
-		ChainID:        s.chainID.Uint64(),
+		ID:               messagePassedEvent.WithdrawalHash,
+		Type:             schema.BridgeTransactionTypeWithdraw,
+		Sender:           withdrawalInitiatedEvent.From,
+		Receiver:         withdrawalInitiatedEvent.To,
+		TokenAddressL1:   lo.ToPtr(withdrawalInitiatedEvent.L1Token),
+		TokenAddressL2:   lo.ToPtr(withdrawalInitiatedEvent.L2Token),
+		TokenValue:       withdrawalInitiatedEvent.Amount,
+		Data:             hexutil.Encode(messagePassedEvent.Data),
+		ChainID:          s.chainID.Uint64(),
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
 	}
 
 	if err := databaseTransaction.SaveBridgeTransaction(ctx, &bridgeTransaction); err != nil {
