@@ -72,10 +72,10 @@ func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*
 	databaseStatement := c.database.WithContext(ctx).Model(&table.Epoch{})
 
 	if cursor != nil {
-		databaseStatement = databaseStatement.Where("id > ?", cursor)
+		databaseStatement = databaseStatement.Where("id < ?", cursor)
 	}
 
-	if err := databaseStatement.Limit(limit).Find(&data).Error; err != nil {
+	if err := databaseStatement.Order("id DESC").Limit(limit).Find(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -109,7 +109,7 @@ func (c *client) FindEpoch(ctx context.Context, id uint64, itemsLimit int, curso
 		databaseStatement = databaseStatement.Where("index > ?", cursor)
 	}
 
-	if err := databaseStatement.Limit(itemsLimit).Find(&items).Error; err != nil {
+	if err := databaseStatement.Order("index ASC").Limit(itemsLimit).Find(&items).Error; err != nil {
 		zap.L().Error("find epoch items", zap.Error(err), zap.Uint64("id", id))
 
 		return nil, err
