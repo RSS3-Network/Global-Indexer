@@ -50,7 +50,7 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(relayedMessageEvent.MsgHash, schema.BridgeEventTypeDepositFinalized, header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(relayedMessageEvent.MsgHash, schema.BridgeEventTypeDepositFinalized, s.chainID.Uint64(), header, transaction, receipt)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge transaction: %w", err)
@@ -93,6 +93,7 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 		TokenAddressL1: lo.ToPtr(withdrawalInitiatedEvent.L1Token),
 		TokenAddressL2: lo.ToPtr(withdrawalInitiatedEvent.L2Token),
 		TokenValue:     withdrawalInitiatedEvent.Amount,
+		ChainID:        s.chainID.Uint64(),
 	}
 
 	if err := databaseTransaction.SaveBridgeTransaction(ctx, &bridgeTransaction); err != nil {
@@ -100,7 +101,7 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(messagePassedEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalInitialized, header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(messagePassedEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalInitialized, s.chainID.Uint64(), header, transaction, receipt)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge event: %w", err)
