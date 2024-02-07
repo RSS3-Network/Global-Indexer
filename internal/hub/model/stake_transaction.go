@@ -2,7 +2,6 @@ package model
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -45,19 +44,8 @@ type StakeTransactionEventTypeUnstake struct {
 }
 
 type StakeTransactionEvent struct {
-	Block       StakeTransactionEventBlock       `json:"block"`
-	Transaction StakeTransactionEventTransaction `json:"transaction"`
-}
-
-type StakeTransactionEventBlock struct {
-	Hash      common.Hash     `json:"hash"`
-	Number    decimal.Decimal `json:"number"`
-	Timestamp time.Time       `json:"timestamp"`
-}
-
-type StakeTransactionEventTransaction struct {
-	Hash  common.Hash `json:"hash"`
-	Index uint        `json:"index"`
+	Block       TransactionEventBlock       `json:"block"`
+	Transaction TransactionEventTransaction `json:"transaction"`
 }
 
 func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent) *StakeTransaction {
@@ -88,12 +76,12 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 		}
 
 		eventModel := StakeTransactionEvent{
-			Block: StakeTransactionEventBlock{
+			Block: TransactionEventBlock{
 				Hash:      event.BlockHash,
-				Number:    decimal.NewFromBigInt(event.BlockNumber, 0),
-				Timestamp: event.BlockTimestamp,
+				Number:    event.BlockNumber,
+				Timestamp: event.BlockTimestamp.Unix(),
 			},
-			Transaction: StakeTransactionEventTransaction{
+			Transaction: TransactionEventTransaction{
 				Hash:  event.TransactionHash,
 				Index: event.TransactionIndex,
 			},

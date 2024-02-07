@@ -279,9 +279,10 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		StartTimestamp:   event.StartTimestamp.Int64(),
 		EndTimestamp:     event.EndTimestamp.Int64(),
 		TransactionHash:  transaction.Hash(),
+		BlockHash:        header.Hash(),
 		BlockNumber:      header.Number,
+		BlockTimestamp:   int64(header.Time),
 		TransactionIndex: receipt.TransactionIndex,
-		Success:          receipt.Status == types.ReceiptStatusSuccessful,
 		TotalRewardItems: len(event.NodeAddrs),
 		RewardItems:      make([]*schema.EpochItem, 0, len(event.NodeAddrs)),
 	}
@@ -293,27 +294,25 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		return fmt.Errorf("length not match")
 	}
 
-	if epoch.Success {
-		var totalOperationRewards, totalStakingRewards big.Int
+	var totalOperationRewards, totalStakingRewards big.Int
 
-		for i := 0; i < epoch.TotalRewardItems; i++ {
-			epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
-				EpochID:          event.Epoch.Uint64(),
-				Index:            i,
-				NodeAddress:      event.NodeAddrs[i],
-				RequestFees:      event.RequestFees[i].String(),
-				OperationRewards: event.OperationRewards[i].String(),
-				StakingRewards:   event.StakingRewards[i].String(),
-				TaxAmounts:       event.TaxAmounts[i].String(),
-			})
+	for i := 0; i < epoch.TotalRewardItems; i++ {
+		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
+			EpochID:          event.Epoch.Uint64(),
+			Index:            i,
+			NodeAddress:      event.NodeAddrs[i],
+			RequestFees:      event.RequestFees[i].String(),
+			OperationRewards: event.OperationRewards[i].String(),
+			StakingRewards:   event.StakingRewards[i].String(),
+			TaxAmounts:       event.TaxAmounts[i].String(),
+		})
 
-			totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
-			totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
-		}
-
-		epoch.TotalOperationRewards = totalOperationRewards.String()
-		epoch.TotalStakingRewards = totalStakingRewards.String()
+		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
+		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
 	}
+
+	epoch.TotalOperationRewards = totalOperationRewards.String()
+	epoch.TotalStakingRewards = totalStakingRewards.String()
 
 	if err := databaseTransaction.SaveEpoch(ctx, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
