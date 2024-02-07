@@ -1,0 +1,881 @@
+openapi: 3.0.1
+info:
+  title: api-gateway
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /health:
+    get:
+      tags:
+      - health
+      summary: health check
+      operationId: healthCheck
+      parameters:
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum:
+          - liveness
+          - readiness
+      responses:
+        200:
+          description: Success
+          content: {}
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        404:
+          description: unknown check type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /users/siwe/nonce:
+    get:
+      tags:
+      - users
+      summary: Get SIWE nonce
+      description: Get SIWE nonce
+      operationId: SIWEGetNonce
+      responses:
+        200:
+          description: "Success"
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "abcdefghijklmnop"
+                description: nonce
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /users/siwe/session:
+    get:
+      tags:
+        - users
+      summary: Get SIWE session
+      description: Get SIWE session
+      operationId: SIWEGetSession
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SIWESessionResponse'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /users/siwe/verify:
+    post:
+      tags:
+        - users
+      summary: Verify SIWE (login)
+      description: Verify SIWE (login)
+      operationId: SIWEVerify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SIWEVerifyBody'
+        required: true
+      responses:
+        200:
+          description: "Success"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QiLCJpYXQiOjE1MTYyMzkwMjJ9.8KpF12Qf99ZkGzQY0cNv0nslhZiVYT9DBAD4TlNw7yA; Path=/; HttpOnly
+              description: A cookie containing the JWT token for authentication
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /users/siwe/logout:
+    get:
+      tags:
+        - users
+      summary: SIWE logout
+      description: SIWE logout
+      security:
+        - JWTAuth: []
+      operationId: SIWELogout
+      responses:
+        200:
+          description: "Success"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: auth_token=; Path=/; HttpOnly; expires=Thu, Jan 01 1970 00:00:00 UTC;
+              description: Clear cookie
+  /ru/status:
+    get:
+      tags:
+      - ru
+      summary: Get account usage
+      security:
+        - JWTAuth: []
+      operationId: GetRUStatus
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RUStatus'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+
+  /keys:
+    get:
+      tags:
+      - key
+      summary: List API Keys of current account
+      security:
+        - JWTAuth: []
+      operationId: GetKeys
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Keys'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /key:
+    post:
+      tags:
+        - key
+      summary: Generate an API Key
+      security:
+        - JWTAuth: [ ]
+      operationId: GenerateKey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KeyInfoBody'
+        required: true
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Key'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /key/{id}:
+    get:
+      tags:
+      - key
+      summary: Get an API Key' info
+      security:
+        - JWTAuth: []
+      operationId: GetKey
+      parameters:
+        - name: id
+          in: path
+          description: Key ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Key'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        404:
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+    delete:
+      tags:
+      - key
+      summary: Delete an API Key
+      security:
+        - JWTAuth: []
+      operationId: DeleteKey
+      parameters:
+        - name: id
+          in: path
+          description: Key ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        404:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+    put:
+      tags:
+        - key
+      summary: Update an API Key's info
+      security:
+        - JWTAuth: []
+      operationId: UpdateKeyInfo
+      parameters:
+        - name: id
+          in: path
+          description: Key ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KeyInfoBody'
+        required: true
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Key'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        404:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+    patch:
+      tags:
+        - key
+      summary: Reassign the API Key's secret
+      security:
+        - JWTAuth: []
+      operationId: RotateKey
+      parameters:
+        - name: id
+          in: path
+          description: Key ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Key'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        404:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+
+  /history/deposit:
+    get:
+      tags:
+        - history
+      summary: Get deposit history
+      security:
+        - JWTAuth: []
+      operationId: GetDepositHistory
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositHistoryResponse"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /history/withdrawal:
+    get:
+      tags:
+        - history
+      summary: Get withdrawal history
+      security:
+        - JWTAuth: []
+      operationId: GetWithdrawalHistory
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithdrawalHistoryResponse"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /history/collection:
+    get:
+      tags:
+        - history
+      summary: Get collection history
+      security:
+        - JWTAuth: []
+      operationId: GetCollectionHistory
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionHistoryResponse"
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /history/consumption/{key}:
+    get:
+      tags:
+        - history
+        - key
+        - consumption
+      summary: Get consumption history of a specific key
+      security:
+        - JWTAuth: [ ]
+      operationId: GetConsumptionHistoryByKey
+      parameters:
+        - name: key
+          in: path
+          description: key
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+        - $ref: '#/components/parameters/merge'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumptionLogResponse'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+
+  /history/consumption:
+    get:
+      tags:
+        - history
+        - consumption
+      summary: Get consumption history of a specific account
+      security:
+        - JWTAuth: []
+      operationId: GetConsumptionHistoryByAccount
+      parameters:
+        - $ref: '#/components/parameters/since'
+        - $ref: '#/components/parameters/until'
+        - $ref: '#/components/parameters/merge'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumptionLogResponse'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+  /request/withdraw:
+    get:
+      tags:
+        - request
+        - withdraw
+      summary: Get current withdraw request
+      security:
+        - JWTAuth: [ ]
+      operationId: GetPendingRequestWithdraw
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRequestWithdrawResponse'
+
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+
+    post:
+      tags:
+        - request
+        - withdraw
+      summary: Request withdraw tokens at the end of this epoch
+      security:
+        - JWTAuth: [ ]
+      operationId: SetPendingRequestWithdraw
+      parameters:
+        - $ref: '#/components/parameters/amount'
+      responses:
+        200:
+          description: Success
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+        500:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestRes'
+
+# /*:
+#   get:
+#     operationId: ProxyGet
+#     summary: Forward request to corresponding project
+#     description: This endpoint forwards the request to the corresponding project based on the proxy path.
+#     responses:
+#       '200':
+#         description: OK
+components:
+  securitySchemes:
+    JWTAuth:
+      type: apiKey
+      in: cookie
+      name: auth_token
+  schemas:
+    SIWEVerifyBody:
+      type: object
+      x-omitempty: false
+      properties:
+        message:
+          type: string
+          example: "localhost:3000 wants you to sign in with your Ethereum account:\n0xD3E8ce4841ed658Ec8dcb99B7a74beFC377253EA\nSign In With Ethereum to prove you control this wallet.\nURI: http://localhost:3000\nVersion: 1\nChain ID: 1\nNonce: zC8GO7DG2hVLRqeB\nIssued At: 2023-10-11T07:22:36.004Z"
+          x-omitempty: false
+        signature:
+          type: string
+          example: "0x5309c081764b3bd3922af7f1c8002a6bffe77a3eeae8e57d84a34f0e7355b551062d5687fe5d7176792ac0ed10d805341ba8df5235cc3137dac3dbbea12787ef1b"
+          x-omitempty: false
+    SIWESessionResponse:
+      type: object
+      x-omitempty: false
+      properties:
+        address:
+          type: string
+          x-omitempty: true
+        chainId:
+          type: integer
+          x-omitempty: true
+    BadRequestRes:
+      type: object
+      properties:
+        msg:
+          type: string
+          x-omitempty: false
+    UsersGetNonceResult:
+      type: object
+      properties:
+        nonce:
+          type: string
+          x-omitempty: false
+    Key:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        ru_used_total:
+          type: integer
+          description: RU used since this key's creation
+          format: int64
+        ru_used_current:
+          type: integer
+          description: RU used during this round
+          format: int64
+        api_calls_total:
+          type: integer
+          description: API calls count since this key's creation
+          format: int64
+        api_calls_current:
+          type: integer
+          description: API calls count during this round
+          format: int64
+    Keys:
+      type: array
+      items:
+        $ref: '#/components/schemas/Key'
+    RUStatus:
+      type: object
+      properties:
+        ru_limit:
+          type: integer
+          description: Current RU limit
+          format: int64
+        ru_used_total:
+          type: integer
+          description: RU used since this key's creation
+          format: int64
+        ru_used_current:
+          type: integer
+          description: RU used during this round
+          format: int64
+        api_calls_total:
+          type: integer
+          description: API calls count since this key's creation
+          format: int64
+        api_calls_current:
+          type: integer
+          description: API calls count during this round
+          format: int64
+    ConsumptionLogByKey:
+      type: object
+      properties:
+        key_name:
+          type: string
+          description: Key Name
+        consumption_date:
+          type: integer
+          description: Date of which the consumption is calculated for. timestamp in milliseconds.
+          format: int64
+        ru_used:
+          type: integer
+          description: Total RU used
+          format: int64
+        api_calls:
+          type: integer
+          description: Total number of API calls made
+          format: int64
+    ConsumptionLogResponse:
+      type: object
+      properties:
+        since:
+          type: integer
+          description: Date of which the consumption period starts. timestamp in milliseconds.
+          format: int64
+        until:
+          type: integer
+          description: Date of which the consumption period ends. timestamp in milliseconds.
+          format: int64
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsumptionLogByKey'
+    KeyInfoBody:
+      type: object
+      properties:
+        name:
+          type: string
+    DepositRecord:
+      type: object
+      properties:
+        tx_hash:
+          type: string
+        block_timestamp:
+          type: integer
+          description: Date of the record's block timestamp, in milliseconds.
+          format: int64
+        index:
+          type: integer
+        amount:
+          type: number
+    WithdrawalRecord:
+      type: object
+      properties:
+        tx_hash:
+          type: string
+        block_timestamp:
+          type: integer
+          description: Date of the record's block timestamp, in milliseconds.
+          format: int64
+        index:
+          type: integer
+        user:
+          type: string
+          description: Token been withdrew to which address
+        amount:
+          type: number
+        fee:
+          type: number
+    CollectionRecord:
+      type: object
+      properties:
+        tx_hash:
+          type: string
+        block_timestamp:
+          type: integer
+          description: Date of the record's block timestamp, in milliseconds.
+          format: int64
+        index:
+          type: integer
+        amount:
+          type: number
+
+    DepositHistoryResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/DepositRecord'
+        count:
+          type: integer
+          format: uint
+        page_current:
+          type: integer
+          format: int64
+        page_max:
+          type: integer
+          format: int64
+    WithdrawalHistoryResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/WithdrawalRecord'
+        count:
+          type: integer
+          format: uint
+        page_current:
+          type: integer
+          format: int64
+        page_max:
+          type: integer
+          format: int64
+    CollectionHistoryResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionRecord'
+        count:
+          type: integer
+          format: uint
+        page_current:
+          type: integer
+          format: int64
+        page_max:
+          type: integer
+          format: int64
+
+    GetRequestWithdrawResponse:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+
+  parameters:
+    since:
+      name: since
+      in: query
+      description: Since timestamp (milliseconds)
+      required: false
+      schema:
+        type: integer
+        format: int64
+    until:
+      name: until
+      in: query
+      description: Until timestamp (milliseconds)
+      required: false
+      schema:
+        type: integer
+        format: int64
+    merge:
+      name: merge
+      in: query
+      description: Whether to merge collection stats
+      required: false
+      schema:
+        type: boolean
+        default: false
+
+    page:
+      name: page
+      in: query
+      description: The page number
+      schema:
+        type: integer
+        format: int64
+    limit:
+      name: limit
+      in: query
+      description: Limit the number of items per page
+      schema:
+        type: integer
+        format: uint
+        default: 100
+
+    amount:
+      name: amount
+      in: query
+      description: Amount of tokens
+      required: true
+      schema:
+        type: number
+        format: float
