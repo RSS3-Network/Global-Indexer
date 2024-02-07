@@ -2,10 +2,10 @@ package indexer
 
 import (
 	"context"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l2"
 	"github.com/sourcegraph/conc/pool"
 )
