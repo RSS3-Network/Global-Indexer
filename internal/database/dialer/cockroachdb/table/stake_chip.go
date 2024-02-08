@@ -1,6 +1,8 @@
 package table
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/shopspring/decimal"
@@ -13,9 +15,11 @@ var (
 )
 
 type StakeChip struct {
-	ID    decimal.Decimal `gorm:"column:id"`
-	Owner string          `gorm:"column:owner"`
-	Node  string          `gorm:"column:node"`
+	ID             decimal.Decimal `gorm:"column:id"`
+	Owner          string          `gorm:"column:owner"`
+	Node           string          `gorm:"column:node"`
+	BlockNumber    decimal.Decimal `gorm:"column:block_number"`
+	BlockTimestamp time.Time       `gorm:"column:block_timestamp"`
 }
 
 func (s *StakeChip) TableName() string {
@@ -26,15 +30,19 @@ func (s *StakeChip) Import(stakeChip schema.StakeChip) error {
 	s.ID = decimal.NewFromBigInt(stakeChip.ID, 0)
 	s.Owner = stakeChip.Owner.String()
 	s.Node = stakeChip.Node.String()
+	s.BlockNumber = decimal.NewFromBigInt(stakeChip.BlockNumber, 0)
+	s.BlockTimestamp = time.Unix(int64(stakeChip.BlockTimestamp), 0)
 
 	return nil
 }
 
 func (s *StakeChip) Export() (*schema.StakeChip, error) {
 	stakeChip := schema.StakeChip{
-		ID:    s.ID.BigInt(),
-		Owner: common.HexToAddress(s.Owner),
-		Node:  common.HexToAddress(s.Node),
+		ID:             s.ID.BigInt(),
+		Owner:          common.HexToAddress(s.Owner),
+		Node:           common.HexToAddress(s.Node),
+		BlockNumber:    s.BlockNumber.BigInt(),
+		BlockTimestamp: uint64(s.BlockTimestamp.Unix()),
 	}
 
 	return &stakeChip, nil
