@@ -21,10 +21,6 @@ gateway:
       prom_port: 9000
     jwt_key: abcdefg1234567
     siwe_domain: "localhost:3000"
-  billing:
-    collect_token_to: "0x9E85cb8f7606dA552cdEb42130c315F3fed26625"
-    slack_notification:
-      blockchain_scan: "https://sepolia.etherscan.io/address/"
   apisix:
     admin:
       endpoint: "http://localhost:9180"
@@ -32,3 +28,8 @@ gateway:
     kafka:
       brokers: "localhost:19092"
       topic: "apisix"
+
+billing:
+  collect_token_to: "0x9E85cb8f7606dA552cdEb42130c315F3fed26625"
+  slack_notification:
+    blockchain_scan: "https://sepolia.etherscan.io/address/"

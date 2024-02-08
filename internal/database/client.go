@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"gorm.io/gorm"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -59,6 +60,8 @@ type Client interface {
 	SaveBillingRecordDeposited(ctx context.Context, billingRecord *schema.BillingRecordDeposited) error
 	SaveBillingRecordWithdrawal(ctx context.Context, billingRecord *schema.BillingRecordWithdrawal) error
 	SaveBillingRecordCollected(ctx context.Context, billingRecord *schema.BillingRecordCollected) error
+
+	Raw() *gorm.DB
 }
 
 type Session interface {

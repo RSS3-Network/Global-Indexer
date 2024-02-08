@@ -1,6 +1,7 @@
 package table
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"gorm.io/gorm"
 	gormSchema "gorm.io/gorm/schema"
 	"time"
@@ -15,10 +16,10 @@ type GatewayAccount struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	Address     string  `gorm:"primaryKey;column:address"`
-	RuLimit     int64   `gorm:"column:ru_limit"`
-	IsPaused    bool    `gorm:"column:is_paused"`
-	BillingRate float64 `gorm:"column:billing_rate"`
+	Address     common.Address `gorm:"primaryKey;type:bytea;column:address"`
+	RuLimit     int64          `gorm:"column:ru_limit"`
+	IsPaused    bool           `gorm:"column:is_paused"`
+	BillingRate float64        `gorm:"column:billing_rate"`
 
 	Keys []GatewayKey `gorm:"foreignKey:AccountAddress"` // Has many
 }

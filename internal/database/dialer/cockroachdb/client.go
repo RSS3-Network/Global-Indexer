@@ -348,6 +348,11 @@ func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexe
 	return c.database.WithContext(ctx).CreateInBatches(tIndexers, math.MaxUint8).Error
 }
 
+// Raw : get the raw db client
+func (c *client) Raw() *gorm.DB {
+	return c.database
+}
+
 // Dial dials a database.
 func Dial(_ context.Context, dataSourceName string) (database.Client, error) {
 	logger := zapgorm2.New(zap.L())

@@ -41,15 +41,15 @@ type BillingRecordCollected struct {
 }
 
 func (r *BillingRecordDeposited) TableName() string {
-	return "billing.record.deposited"
+	return "gateway.billing.record.deposited"
 }
 
 func (r *BillingRecordWithdrawal) TableName() string {
-	return "billing.record.withdrawn"
+	return "gateway.billing.record.withdrawn"
 }
 
 func (r *BillingRecordCollected) TableName() string {
-	return "billing.record.collected"
+	return "gateway.billing.record.collected"
 }
 
 func (r *BillingRecordDeposited) Import(billingRecord schema.BillingRecordDeposited) error {

@@ -22,6 +22,7 @@ type File struct {
 	Redis       *Redis           `yaml:"redis"`
 	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
 	Gateway     *GatewayConfig   `yaml:"gateway"`
+	Billing     *BillingConfig   `yaml:"billing"`
 }
 
 type Database struct {
@@ -42,31 +43,32 @@ type RSS3ChainConfig struct {
 type GatewayConfig struct {
 	API struct {
 		Listen struct {
-			Host     string `yaml:"host"`
-			Port     uint64 `yaml:"port"`
-			PromPort uint64 `yaml:"prom_port"`
+			Host     string `yaml:"host" default:"0.0.0.0"`
+			Port     uint64 `yaml:"port" default:"5555"`
+			PromPort uint64 `yaml:"prom_port" default:"9000"`
 		} `yaml:"listen"`
-		JWTKey     string `yaml:"jwt_key"`
-		SIWEDomain string `yaml:"siwe_domain"`
-	} `yaml:"api"`
-	Billing struct {
-		CollectTokenTo    string `yaml:"collect_token_to"`
-		SlackNotification struct {
-			BotToken       string `yaml:"bot_token"`
-			Channel        string `yaml:"channel"`
-			BlockchainScan string `yaml:"blockchain_scan"`
-		} `yaml:"slack_notification"`
-	} `yaml:"billing"`
+		JWTKey     string `yaml:"jwt_key" validate:"required"`
+		SIWEDomain string `yaml:"siwe_domain" validate:"required"`
+	} `yaml:"api" validate:"required"`
 	APISix struct {
 		Admin struct {
-			Endpoint string `yaml:"endpoint"`
-			Key      string `yaml:"key"`
-		} `yaml:"admin"`
+			Endpoint string `yaml:"endpoint" validate:"required"`
+			Key      string `yaml:"key" validate:"required"`
+		} `yaml:"admin" validate:"required"`
 		Kafka struct {
-			Brokers string `yaml:"brokers"`
-			Topic   string `yaml:"topic"`
-		} `yaml:"kafka"`
-	} `yaml:"apisix"`
+			Brokers string `yaml:"brokers" validate:"required"`
+			Topic   string `yaml:"topic" validate:"required"`
+		} `yaml:"kafka" validate:"required"`
+	} `yaml:"apisix" validate:"required"`
+}
+
+type BillingConfig struct {
+	CollectTokenTo    string `yaml:"collect_token_to" validate:"required"`
+	SlackNotification struct {
+		BotToken       string `yaml:"bot_token"`
+		Channel        string `yaml:"channel"`
+		BlockchainScan string `yaml:"blockchain_scan" validate:"required"`
+	} `yaml:"slack_notification"`
 }
 
 func Setup(configFilePath string) (*File, error) {

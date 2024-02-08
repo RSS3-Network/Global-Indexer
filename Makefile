@@ -26,8 +26,8 @@ run:
 	ENVIRONMENT=development go run ./cmd
 
 OAPI_SPEC ?= spec/gateway.yml
-OAPI_TARGET ?= internal/service/gateway/gen/api/
-OAPI_TARGET_FILENAME ?= api.go
+OAPI_TARGET ?= internal/service/gateway/gen/oapi/
+OAPI_TARGET_FILENAME ?= oapi.go
 gengatewayapi:
 	mkdir -p $(OAPI_TARGET)
 	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen -package oapi -generate=types,client,server,spec,skip-prune -o $(OAPI_TARGET)$(OAPI_TARGET_FILENAME) $(OAPI_SPEC)
