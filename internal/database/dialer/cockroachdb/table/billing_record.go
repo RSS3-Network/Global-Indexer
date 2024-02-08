@@ -1,8 +1,11 @@
 package table
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/shopspring/decimal"
 	gormSchema "gorm.io/gorm/schema"
+	"time"
 )
 
 var (
@@ -11,18 +14,30 @@ var (
 	_ gormSchema.Tabler = (*BillingRecordCollected)(nil)
 )
 
+type BillingRecordBase struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	TxHash         common.Hash `gorm:"primaryKey;type:bytea;column:tx_hash"`
+	Index          uint        `gorm:"column:index"`
+	BlockTimestamp time.Time   `gorm:"index;column:block_timestamp"`
+
+	User   common.Address  `gorm:"type:bytea;column:user"`
+	Amount decimal.Decimal `gorm:"column:amount"`
+}
+
 type BillingRecordDeposited struct {
-	schema.BillingRecordBase
+	BillingRecordBase
 }
 
 type BillingRecordWithdrawal struct {
-	schema.BillingRecordBase
+	BillingRecordBase
 
-	Fee float64
+	Fee decimal.Decimal
 }
 
 type BillingRecordCollected struct {
-	schema.BillingRecordBase
+	BillingRecordBase
 }
 
 func (r *BillingRecordDeposited) TableName() string {
@@ -42,7 +57,7 @@ func (r *BillingRecordDeposited) Import(billingRecord schema.BillingRecordDeposi
 	r.Index = billingRecord.Index
 	r.BlockTimestamp = billingRecord.BlockTimestamp
 	r.User = billingRecord.User
-	r.Amount = billingRecord.Amount
+	r.Amount = decimal.NewFromBigInt(billingRecord.Amount, 0)
 
 	return nil
 }
@@ -54,7 +69,7 @@ func (r *BillingRecordDeposited) Export() (*schema.BillingRecordDeposited, error
 			Index:          r.Index,
 			BlockTimestamp: r.BlockTimestamp,
 			User:           r.User,
-			Amount:         r.Amount,
+			Amount:         r.Amount.BigInt(),
 		},
 	}
 
@@ -66,8 +81,8 @@ func (r *BillingRecordWithdrawal) Import(billingRecord schema.BillingRecordWithd
 	r.Index = billingRecord.Index
 	r.BlockTimestamp = billingRecord.BlockTimestamp
 	r.User = billingRecord.User
-	r.Amount = billingRecord.Amount
-	r.Fee = billingRecord.Fee
+	r.Amount = decimal.NewFromBigInt(billingRecord.Amount, 0)
+	r.Fee = decimal.NewFromBigInt(billingRecord.Fee, 0)
 
 	return nil
 }
@@ -79,9 +94,9 @@ func (r *BillingRecordWithdrawal) Export() (*schema.BillingRecordWithdrawal, err
 			Index:          r.Index,
 			BlockTimestamp: r.BlockTimestamp,
 			User:           r.User,
-			Amount:         r.Amount,
+			Amount:         r.Amount.BigInt(),
 		},
-		Fee: r.Fee,
+		Fee: r.Fee.BigInt(),
 	}
 
 	return &billingRecord, nil
@@ -92,7 +107,7 @@ func (r *BillingRecordCollected) Import(billingRecord schema.BillingRecordCollec
 	r.Index = billingRecord.Index
 	r.BlockTimestamp = billingRecord.BlockTimestamp
 	r.User = billingRecord.User
-	r.Amount = billingRecord.Amount
+	r.Amount = decimal.NewFromBigInt(billingRecord.Amount, 0)
 
 	return nil
 }
@@ -104,7 +119,7 @@ func (r *BillingRecordCollected) Export() (*schema.BillingRecordCollected, error
 			Index:          r.Index,
 			BlockTimestamp: r.BlockTimestamp,
 			User:           r.User,
-			Amount:         r.Amount,
+			Amount:         r.Amount.BigInt(),
 		},
 	}
 

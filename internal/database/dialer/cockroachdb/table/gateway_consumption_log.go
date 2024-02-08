@@ -15,9 +15,9 @@ type GatewayConsumptionLog struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	ConsumptionDate time.Time `gorm:"index"`
-	RuUsed          int64
-	ApiCalls        int64
+	ConsumptionDate time.Time `gorm:"index;column:consumption_date"`
+	RuUsed          int64     `gorm:"column:ru_used"`
+	ApiCalls        int64     `gorm:"column:api_calls"`
 
 	Key uuid.UUID `gorm:"index"` // Foreign key of GatewayKey
 }

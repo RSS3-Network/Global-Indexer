@@ -13,7 +13,7 @@ type GatewayPendingWithdrawRequest struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Amount float64
+	Amount float64 `gorm:"column:amount"`
 
 	AccountAddress string         // Foreign key of GatewayAccount
 	Account        GatewayAccount `gorm:"foreignKey:AccountAddress"` // Belongs to GatewayAccount

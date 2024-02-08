@@ -15,10 +15,10 @@ type GatewayAccount struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	Address     string `gorm:"primaryKey"`
-	RuLimit     int64
-	IsPaused    bool
-	BillingRate float64
+	Address     string  `gorm:"primaryKey;column:address"`
+	RuLimit     int64   `gorm:"column:ru_limit"`
+	IsPaused    bool    `gorm:"column:is_paused"`
+	BillingRate float64 `gorm:"column:billing_rate"`
 
 	Keys []GatewayKey `gorm:"foreignKey:AccountAddress"` // Has many
 }

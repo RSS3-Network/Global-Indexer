@@ -16,14 +16,14 @@ type GatewayKey struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	Key uuid.UUID `gorm:"primaryKey"`
+	Key uuid.UUID `gorm:"primaryKey;column:key"`
 
-	RuUsedTotal     int64
-	RuUsedCurrent   int64
-	ApiCallsTotal   int64
-	ApiCallsCurrent int64
+	RuUsedTotal     int64 `gorm:"column:ru_used_total"`
+	RuUsedCurrent   int64 `gorm:"column:ru_used_current"`
+	ApiCallsTotal   int64 `gorm:"column:api_calls_total"`
+	ApiCallsCurrent int64 `gorm:"column:api_calls_current"`
 
-	Name string
+	Name string `gorm:"column:name"`
 
 	AccountAddress  string                  `gorm:"index"`          // Foreign key of GatewayAccount
 	ConsumptionLogs []GatewayConsumptionLog `gorm:"foreignKey:Key"` // Has many
