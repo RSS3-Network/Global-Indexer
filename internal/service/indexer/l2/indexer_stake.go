@@ -191,9 +191,11 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 
 	for index, chipID := range stakeTransaction.Chips {
 		stakeChips[index] = &schema.StakeChip{
-			ID:    chipID,
-			Owner: event.User,
-			Node:  event.NodeAddr,
+			ID:             chipID,
+			Owner:          event.User,
+			Node:           event.NodeAddr,
+			BlockNumber:    header.Number,
+			BlockTimestamp: header.Time,
 		}
 	}
 

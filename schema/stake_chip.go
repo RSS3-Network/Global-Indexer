@@ -20,9 +20,11 @@ type StakeChipTransformer interface {
 }
 
 type StakeChip struct {
-	ID    *big.Int       `json:"id"`
-	Owner common.Address `json:"owner"`
-	Node  common.Address `json:"node"`
+	ID             *big.Int       `json:"id"`
+	Owner          common.Address `json:"owner"`
+	Node           common.Address `json:"node"`
+	BlockNumber    *big.Int       `json:"blockNumber"`
+	BlockTimestamp uint64         `json:"blockTimestamp"`
 }
 
 type StakeChipsQuery struct {

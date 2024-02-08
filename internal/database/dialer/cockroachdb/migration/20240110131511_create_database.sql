@@ -121,9 +121,11 @@ CREATE INDEX "idx_id" ON "stake"."events" ("id");
 
 CREATE TABLE "stake"."chips"
 (
-    "id"    decimal NOT NULL UNIQUE,
-    "owner" text    NOT NULL,
-    "node"  text    NOT NULL,
+    "id"              decimal     NOT NULL UNIQUE,
+    "owner"           text        NOT NULL,
+    "node"            text        NOT NULL,
+    "block_number"    bigint      NOT NULL,
+    "block_timestamp" timestamptz NOT NULL,
 
     CONSTRAINT "pk_chips" PRIMARY KEY ("id")
 );
