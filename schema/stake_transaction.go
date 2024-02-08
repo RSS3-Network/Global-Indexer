@@ -36,7 +36,6 @@ type StakeTransaction struct {
 	Node             common.Address       `json:"receiver"`
 	Value            *big.Int             `json:"value"`
 	Chips            []*big.Int           `json:"chips"`
-	ChainID          uint64               `json:"chainID"`
 	BlockTimestamp   time.Time            `json:"blockTimestamp"`
 	BlockNumber      uint64               `json:"blockNumber"`
 	TransactionIndex uint                 `json:"transactionIndex"`
