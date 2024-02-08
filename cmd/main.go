@@ -162,7 +162,7 @@ var gatewayCommand = &cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		instance, err := gateway.New(databaseClient, redisClient)
+		instance, err := gateway.New(databaseClient, redisClient, *config.Gateway)
 
 		return instance.Run(cmd.Context())
 	},

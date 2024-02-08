@@ -12,3 +12,23 @@ rss3_chain:
   endpoint_l1: https://rpc.ankr.com/eth_sepolia
   endpoint_l2: https://rpc.testnet.rss3.io
   block_threads_l1: 20
+
+gateway:
+  api:
+    listen:
+      host: "0.0.0.0"
+      port: 5555
+      prom_port: 9000
+    jwt_key: abcdefg1234567
+    siwe_domain: "localhost:3000"
+  billing:
+    collect_token_to: "0x9E85cb8f7606dA552cdEb42130c315F3fed26625"
+    slack_notification:
+      blockchain_scan: "https://sepolia.etherscan.io/address/"
+  apisix:
+    admin:
+      endpoint: "http://localhost:9180"
+      key: "edd1c9f034335f136f87ad84b625c8f1"
+    kafka:
+      brokers: "localhost:19092"
+      topic: "apisix"
