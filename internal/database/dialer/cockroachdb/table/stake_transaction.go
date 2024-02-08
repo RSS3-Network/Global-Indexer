@@ -24,7 +24,6 @@ type StakeTransaction struct {
 	Node             string          `gorm:"column:node"`
 	Value            decimal.Decimal `gorm:"column:value"`
 	Chips            pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
-	ChainID          uint64          `gorm:"column:chain_id"`
 	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
 	BlockNumber      uint64          `gorm:"column:block_number"`
 	TransactionIndex uint            `gorm:"column:transaction_index"`
@@ -44,7 +43,6 @@ func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {
 		Chips: lo.Map(s.Chips, func(value int64, _ int) *big.Int {
 			return new(big.Int).SetInt64(value)
 		}),
-		ChainID:          s.ChainID,
 		BlockTimestamp:   s.BlockTimestamp,
 		BlockNumber:      s.BlockNumber,
 		TransactionIndex: s.TransactionIndex,
@@ -62,7 +60,6 @@ func (s *StakeTransaction) Import(stakeTransaction schema.StakeTransaction) erro
 	s.Chips = lo.Map(stakeTransaction.Chips, func(value *big.Int, _ int) int64 {
 		return value.Int64()
 	})
-	s.ChainID = stakeTransaction.ChainID
 	s.BlockTimestamp = stakeTransaction.BlockTimestamp
 	s.BlockNumber = stakeTransaction.BlockNumber
 	s.TransactionIndex = stakeTransaction.TransactionIndex
