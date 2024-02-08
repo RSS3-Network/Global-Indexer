@@ -55,6 +55,10 @@ type Client interface {
 	FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error)
 	FindEpoch(ctx context.Context, id uint64, itemsLimit int, cursor *string) (*schema.Epoch, error)
 	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
+
+	SaveBillingRecordDeposited(ctx context.Context, billingRecord *schema.BillingRecordDeposited) error
+	SaveBillingRecordWithdrawal(ctx context.Context, billingRecord *schema.BillingRecordWithdrawal) error
+	SaveBillingRecordCollected(ctx context.Context, billingRecord *schema.BillingRecordCollected) error
 }
 
 type Session interface {

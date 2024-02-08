@@ -33,6 +33,7 @@ type server struct {
 	contractOptimismPortal         *bindings.OptimismPortal
 	contractL1CrossDomainMessenger *bindings.L1CrossDomainMessenger
 	contractL1StandardBridge       *bindings.L1StandardBridge
+	contractBilling                *l1.Billing
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	blockThreads                   uint64
@@ -195,6 +196,10 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log %s %d: %w", log.TxHash, log.Index, err)
 				}
+			case l1.AddressBillingProxy:
+				if err := s.indexBillingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
+					return fmt.Errorf("index billing log %s %d: %w", log.TxHash, log.Index, err)
+				}
 			}
 		}
 	}
@@ -244,6 +249,10 @@ func NewServer(ctx context.Context, databaseClient database.Client, config Confi
 	}
 
 	if instance.contractL1StandardBridge, err = bindings.NewL1StandardBridge(l1.AddressL1StandardBridgeProxy, instance.ethereumClient); err != nil {
+		return nil, err
+	}
+
+	if instance.contractBilling, err = l1.NewBilling(l1.AddressBillingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
