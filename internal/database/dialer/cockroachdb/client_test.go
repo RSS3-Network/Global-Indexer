@@ -115,7 +115,7 @@ func TestClient(t *testing.T) {
 			require.NotEmpty(t, nodeFound.Address)
 
 			// Find nodes.
-			nodesFound, err := client.FindNodes(context.Background(), []common.Address{testcase.nodeCreated.Address}, nil, 10)
+			nodesFound, err := client.FindNodes(context.Background(), []common.Address{testcase.nodeCreated.Address}, nil, nil, 10)
 			require.NoError(t, err)
 			require.Equal(t, 1, len(nodesFound))
 

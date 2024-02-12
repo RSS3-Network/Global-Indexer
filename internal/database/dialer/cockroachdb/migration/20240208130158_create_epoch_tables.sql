@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS "epoch"
     CONSTRAINT "pk_epoch" PRIMARY KEY ("transaction_hash")
 );
 
-CREATE INDEX "idx_timestamp" ON "epoch" ("start_timestamp" DESC, "end_timestamp" DESC);
-CREATE INDEX "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" DESC, "transaction_index" DESC);
+CREATE INDEX IF NOT EXISTS "idx_timestamp" ON "epoch" ("start_timestamp" DESC, "end_timestamp" DESC);
+CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" DESC, "transaction_index" DESC);
 
 CREATE TABLE IF NOT EXISTS "epoch_item"
 (
@@ -37,11 +37,26 @@ CREATE TABLE IF NOT EXISTS "epoch_item"
     CONSTRAINT "pk_epoch_item" PRIMARY KEY ("epoch_id" DESC, "index" ASC)
 );
 
-CREATE INDEX "idx_epoch_item_node_address" ON "epoch_item" ("node_address");
+CREATE INDEX IF NOT EXISTS "idx_epoch_item_node_address" ON "epoch_item" ("node_address");
+
+CREATE TABLE IF NOT EXISTS "epoch_trigger"
+(
+    "transaction_hash" text        NOT NULL,
+    "epoch_id"         bigint      NOT NULL,
+    "data"             jsonb       NOT NULL,
+    "created_at"       timestamptz NOT NULL DEFAULT now(),
+    "updated_at"       timestamptz NOT NULL DEFAULT now(),
+
+    CONSTRAINT "pk_indexes" PRIMARY KEY ("transaction_hash")
+);
+
+CREATE INDEX IF NOT EXISTS "idx_created_at" ON "epoch_trigger" ("created_at");
+CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "epoch_trigger" ("epoch_id");
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE "epoch";
-DROP TABLE "epoch_item";
+DROP TABLE IF EXISTS "epoch";
+DROP TABLE IF EXISTS "epoch_item";
+DROP TABLE IF EXISTS "epoch_trigger";
 -- +goose StatementEnd
