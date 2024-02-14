@@ -18,6 +18,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const BatchSize = 200
+
 func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 	if err := s.mutex.Lock(); err != nil {
 		zap.L().Error("lock error", zap.String("key", s.mutex.Name()), zap.Error(err))
@@ -60,7 +62,7 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 }
 
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
-	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, 2)
+	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, BatchSize)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return nil, nil
