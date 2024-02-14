@@ -121,7 +121,6 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		now := time.Now()
 
-		// TODO: 18h
 		if now.Sub(lastEpochEventTime) >= 18*time.Hour && now.Sub(lastEpochTriggerTime) >= 18*time.Hour {
 			// Trigger new epoch
 			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
