@@ -2,19 +2,35 @@ package epoch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
 func (s *Server) trigger(ctx context.Context, epoch uint64) error {
+	if err := s.mutex.Lock(); err != nil {
+		zap.L().Error("lock error", zap.String("key", s.mutex.Name()), zap.Error(err))
+
+		return nil
+	}
+
+	defer func() {
+		if _, err := s.mutex.Unlock(); err != nil {
+			zap.L().Error("release lock error", zap.String("key", s.mutex.Name()), zap.Error(err))
+		}
+	}()
+
 	var cursor *string
 
 	for {
@@ -28,16 +44,28 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 			return nil
 		}
 
+		zap.L().Info("build distributeRewards", zap.Any("data", data))
+
 		// Trigger distributeReward contract.
-		if err := s.triggerDistributeRewards(ctx, lo.FromPtr(data)); err != nil {
-			return fmt.Errorf("trigger distributeReward: %w", err)
+		if err = retry.Do(func() error {
+			return s.triggerDistributeRewards(ctx, lo.FromPtr(data))
+		}, retry.Delay(time.Second), retry.Attempts(5)); err != nil {
+			zap.L().Error("retry trigger distributeReward", zap.Error(err))
+
+			return err
 		}
+
+		cursor = lo.ToPtr(data.NodeAddress[len(data.NodeAddress)-1].String())
 	}
 }
 
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
-	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, 200)
+	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, 2)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return nil, nil
+		}
+
 		zap.L().Error("find online nodes", zap.Error(err), zap.Any("cursor", cursor))
 
 		return nil, err
@@ -90,14 +118,9 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		return fmt.Errorf("get gas price: %w", err)
 	}
 
-	settlement, err := l2.NewSettlement(l2.AddressSettlementProxy, s.ethereumClient)
+	tx, err := s.settlementContract.DistributeRewards(transactor, data.Epoch, data.NodeAddress, data.RequestFees, data.OperationRewards)
 	if err != nil {
-		return fmt.Errorf("new settlement: %w", err)
-	}
-
-	tx, err := settlement.DistributeRewards(transactor, data.Epoch, data.NodeAddress, data.RequestFees, data.OperationRewards)
-	if err != nil {
-		zap.L().Error("distribute rewards", zap.Error(err), zap.String("tx", tx.Hash().String()), zap.Any("data", data))
+		zap.L().Error("distribute rewards", zap.Error(err), zap.Any("data", data))
 
 		return fmt.Errorf("distribute rewards: %w", err)
 	}
@@ -109,6 +132,26 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		Data:            data,
 	}); err != nil {
 		return fmt.Errorf("save epoch trigger: %w", err)
+	}
+
+	// Wait for transaction receipt.
+	for {
+		receipt, err := s.ethereumClient.TransactionReceipt(ctx, tx.Hash())
+		if err != nil {
+			zap.L().Warn("wait for transaction", zap.Error(err), zap.String("tx", tx.Hash().String()))
+
+			continue
+		}
+
+		if receipt.Status == types.ReceiptStatusSuccessful {
+			break
+		}
+
+		if receipt.Status == types.ReceiptStatusFailed {
+			zap.L().Error("distribute rewards failed", zap.String("tx", tx.Hash().String()), zap.Any("data", data))
+
+			return fmt.Errorf("distribute rewards failed, tx: %s", tx.Hash().String())
+		}
 	}
 
 	zap.L().Info("distribute rewards successfully", zap.String("tx", tx.Hash().String()), zap.Any("data", data))

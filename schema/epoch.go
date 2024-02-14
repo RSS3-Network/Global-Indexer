@@ -26,6 +26,7 @@ type Epoch struct {
 type EpochItem struct {
 	EpochID          uint64         `json:"epochID"`
 	Index            int            `json:"index"`
+	TransactionHash  common.Hash    `json:"transactionHash"`
 	NodeAddress      common.Address `json:"nodeAddress"`
 	RequestFees      string         `json:"requestFees"`
 	OperationRewards string         `json:"operationRewards"`

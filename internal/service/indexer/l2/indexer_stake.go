@@ -302,6 +302,7 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
+			TransactionHash:  transaction.Hash(),
 			NodeAddress:      event.NodeAddrs[i],
 			RequestFees:      event.RequestFees[i].String(),
 			OperationRewards: event.OperationRewards[i].String(),

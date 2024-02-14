@@ -9,7 +9,7 @@ import (
 
 type EpochTrigger struct {
 	TransactionHash common.Hash           `json:"transactionHash"`
-	EpochID         uint64                `json:"epochId"`
+	EpochID         uint64                `json:"epochID"`
 	Data            DistributeRewardsData `json:"data"`
 	CreatedAt       time.Time             `json:"createdAt"`
 	UpdatedAt       time.Time             `json:"updatedAt"`

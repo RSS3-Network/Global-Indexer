@@ -155,7 +155,14 @@ var epochCommand = &cobra.Command{
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
-		instance, err := epoch.New(cmd.Context(), databaseClient, *config)
+		options, err := redis.ParseURL(config.Redis.URI)
+		if err != nil {
+			return fmt.Errorf("parse redis uri: %w", err)
+		}
+
+		redisClient := redis.NewClient(options)
+
+		instance, err := epoch.New(cmd.Context(), databaseClient, redisClient, *config)
 		if err != nil {
 			return err
 		}

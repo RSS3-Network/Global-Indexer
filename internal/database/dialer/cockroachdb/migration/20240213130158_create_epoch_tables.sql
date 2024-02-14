@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS "epoch_item"
     "epoch_id" bigint NOT NULL,
     "index" int NOT NULL,
     "node_address" bytea NOT NULL,
+    "transaction_hash" text NOT NULL,
     "request_fees" decimal NOT NULL,
     "operation_rewards" decimal NOT NULL,
     "staking_rewards" decimal NOT NULL,
@@ -34,10 +35,11 @@ CREATE TABLE IF NOT EXISTS "epoch_item"
     "created_at"   timestamptz NOT NULL DEFAULT now(),
     "updated_at"   timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT "pk_epoch_item" PRIMARY KEY ("epoch_id" DESC, "index" ASC)
+    CONSTRAINT "pk_epoch_item" PRIMARY KEY ("transaction_hash" DESC, "index" ASC)
 );
 
 CREATE INDEX IF NOT EXISTS "idx_epoch_item_node_address" ON "epoch_item" ("node_address");
+CREATE INDEX IF NOT EXISTS "idx_epoch_item_epoch_id" ON "epoch_item" ("epoch_id");
 
 CREATE TABLE IF NOT EXISTS "epoch_trigger"
 (
