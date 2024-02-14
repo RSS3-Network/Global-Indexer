@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/shopspring/decimal"
@@ -33,19 +31,8 @@ type BridgeTransactionEventTypeWithdraw struct {
 }
 
 type BridgeTransactionEvent struct {
-	Block       BridgeTransactionEventBlock       `json:"block"`
-	Transaction BridgeTransactionEventTransaction `json:"transaction"`
-}
-
-type BridgeTransactionEventBlock struct {
-	Hash      common.Hash     `json:"hash"`
-	Number    decimal.Decimal `json:"number"`
-	Timestamp time.Time       `json:"timestamp"`
-}
-
-type BridgeTransactionEventTransaction struct {
-	Hash  common.Hash `json:"hash"`
-	Index uint        `json:"index"`
+	Block       TransactionEventBlock       `json:"block"`
+	Transaction TransactionEventTransaction `json:"transaction"`
 }
 
 func NewBridgeTransaction(transaction *schema.BridgeTransaction, events []*schema.BridgeEvent) *BridgeTransaction {
@@ -75,12 +62,12 @@ func NewBridgeTransaction(transaction *schema.BridgeTransaction, events []*schem
 		}
 
 		eventModel := BridgeTransactionEvent{
-			Block: BridgeTransactionEventBlock{
+			Block: TransactionEventBlock{
 				Hash:      event.BlockHash,
-				Number:    decimal.NewFromBigInt(event.BlockNumber, 0),
-				Timestamp: event.BlockTimestamp,
+				Number:    event.BlockNumber,
+				Timestamp: event.BlockTimestamp.Unix(),
 			},
-			Transaction: BridgeTransactionEventTransaction{
+			Transaction: TransactionEventTransaction{
 				Hash:  event.TransactionHash,
 				Index: event.TransactionIndex,
 			},

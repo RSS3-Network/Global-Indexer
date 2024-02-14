@@ -85,6 +85,41 @@ func (c *client) Commit() error {
 	return c.database.Commit().Error
 }
 
+func (c *client) RollbackBlock(ctx context.Context, chainID, blockNUmber uint64) error {
+	databaseClient := c.database.WithContext(ctx)
+
+	// Delete the bridge data.
+	if err := databaseClient.
+		Where(`"chain_id" = ? AND "block_number" >= ?`, chainID, blockNUmber).
+		Delete(&table.BridgeTransaction{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge transactions: %w", err)
+	}
+
+	if err := databaseClient.
+		Where(`"chain_id" = ? AND "block_number" >= ?`, chainID, blockNUmber).
+		Delete(&table.BridgeEvent{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge events: %w", err)
+	}
+
+	// Delete the stake data.
+	if err := databaseClient.
+		Where(`"block_number" >= ?`, blockNUmber).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge transactions: %w", err)
+	}
+
+	if err := databaseClient.
+		Where(`"block_number" >= ?`, blockNUmber).
+		Delete(&table.StakeEvent{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge events: %w", err)
+	}
+
+	return nil
+}
+
 func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error) {
 	var node table.Node
 

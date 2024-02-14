@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 )
 
 func (h *Hub) GetEpochsHandler(c echo.Context) error {
@@ -26,7 +27,7 @@ func (h *Hub) GetEpochsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	epoch, err := h.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
+	epochs, err := h.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -36,12 +37,12 @@ func (h *Hub) GetEpochsHandler(c echo.Context) error {
 	}
 
 	var cursor string
-	if len(epoch) > 0 && len(epoch) == request.Limit {
-		cursor = fmt.Sprintf("%d", epoch[len(epoch)-1].ID)
+	if len(epochs) > 0 && len(epochs) == request.Limit {
+		cursor = fmt.Sprintf("%d", epochs[len(epochs)-1].ID)
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data:   epoch,
+		Data:   model.NewEpochs(epochs),
 		Cursor: cursor,
 	})
 }
@@ -76,7 +77,7 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data:   epoch,
+		Data:   model.NewEpoch(epoch),
 		Cursor: cursor,
 	})
 }
@@ -96,7 +97,7 @@ func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	epoch, err := h.databaseClient.FindEpochNodeRewards(c.Request().Context(), request.NodeAddress, request.Limit, request.Cursor)
+	epochs, err := h.databaseClient.FindEpochNodeRewards(c.Request().Context(), request.NodeAddress, request.Limit, request.Cursor)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -106,12 +107,12 @@ func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
 	}
 
 	var cursor string
-	if len(epoch) > 0 && len(epoch) == request.Limit {
-		cursor = fmt.Sprintf("%d", epoch[len(epoch)-1].ID)
+	if len(epochs) > 0 && len(epochs) == request.Limit {
+		cursor = fmt.Sprintf("%d", epochs[len(epochs)-1].ID)
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data:   epoch,
+		Data:   model.NewEpochs(epochs),
 		Cursor: cursor,
 	})
 }

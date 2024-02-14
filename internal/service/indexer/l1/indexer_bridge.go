@@ -70,6 +70,7 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 		TokenAddressL2:   lo.ToPtr(erc20DepositInitiatedEvent.L2Token),
 		TokenValue:       erc20DepositInitiatedEvent.Amount,
 		Data:             hexutil.Encode(erc20DepositInitiatedEvent.ExtraData),
+		ChainID:          s.chainID.Uint64(),
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
@@ -80,7 +81,7 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(messageHash, schema.BridgeEventTypeDepositInitialized, header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(messageHash, schema.BridgeEventTypeDepositInitialized, s.chainID.Uint64(), header, transaction, receipt)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge event: %w", err)
@@ -115,7 +116,7 @@ func (s *server) indexL1StandardBridgeERC20WithdrawalFinalizedLog(ctx context.Co
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(optimismPortalEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalFinalized, header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(optimismPortalEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalFinalized, s.chainID.Uint64(), header, transaction, receipt)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge event: %w", err)
@@ -133,7 +134,7 @@ func (s *server) indexOptimismPortalWithdrawalProvenLog(ctx context.Context, hea
 	zap.L().Debug("indexing WithdrawalProven event for OptimismPortal", zap.Stringer("transaction.hash", transaction.Hash()), zap.Any("event", withdrawalProvenEvent))
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(withdrawalProvenEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalProved, header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(withdrawalProvenEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalProved, s.chainID.Uint64(), header, transaction, receipt)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge event: %w", err)
