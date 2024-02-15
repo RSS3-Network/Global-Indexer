@@ -94,7 +94,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		// Find the latest epoch event from database.
 		epochEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
-		if err != nil && errors.Is(err, database.ErrorRowNotFound) {
+		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch event from database", zap.Error(err))
 
 			return err
@@ -102,7 +102,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		// Find the latest epoch trigger from database.
 		epochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
-		if err != nil && errors.Is(err, database.ErrorRowNotFound) {
+		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch trigger from database", zap.Error(err))
 
 			return err
@@ -214,7 +214,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	return &Server{
 		chainID:            chainID,
 		privateKey:         privateKey,
-		mutex:              rs.NewMutex("epoch", redsync.WithExpiry(30*time.Minute)),
+		mutex:              rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
 		gasLimit:           config.Epoch.GasLimit,
 		settlementContract: settlement,
 		ethereumClient:     ethereumClient,

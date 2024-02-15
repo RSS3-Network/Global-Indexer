@@ -62,7 +62,7 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 }
 
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
-	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, BatchSize)
+	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, BatchSize+1)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return nil, nil
@@ -75,6 +75,13 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 
 	if len(nodes) == 0 {
 		return nil, nil
+	}
+
+	var isFinal = true
+
+	if len(nodes) > BatchSize {
+		nodes = nodes[:BatchSize]
+		isFinal = false
 	}
 
 	nodeAddress := make([]common.Address, 0, len(nodes))
@@ -94,6 +101,7 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 		NodeAddress:      nodeAddress,
 		RequestFees:      zeroRewards,
 		OperationRewards: zeroRewards,
+		IsFinal:          isFinal,
 	}, nil
 }
 
@@ -137,26 +145,32 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 	}
 
 	// Wait for transaction receipt.
-	for {
-		receipt, err := s.ethereumClient.TransactionReceipt(ctx, tx.Hash())
-		if err != nil {
-			zap.L().Warn("wait for transaction", zap.Error(err), zap.String("tx", tx.Hash().String()))
+	if err = s.transactionReceipt(ctx, tx.Hash()); err != nil {
+		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.Any("data", data))
 
-			continue
-		}
-
-		if receipt.Status == types.ReceiptStatusSuccessful {
-			break
-		}
-
-		if receipt.Status == types.ReceiptStatusFailed {
-			zap.L().Error("distribute rewards failed", zap.String("tx", tx.Hash().String()), zap.Any("data", data))
-
-			return fmt.Errorf("distribute rewards failed, tx: %s", tx.Hash().String())
-		}
+		return fmt.Errorf("wait for transaction receipt: %w", err)
 	}
 
 	zap.L().Info("distribute rewards successfully", zap.String("tx", tx.Hash().String()), zap.Any("data", data))
 
 	return nil
+}
+
+func (s *Server) transactionReceipt(ctx context.Context, txHash common.Hash) error {
+	for {
+		receipt, err := s.ethereumClient.TransactionReceipt(ctx, txHash)
+		if err != nil {
+			zap.L().Warn("wait for transaction", zap.Error(err), zap.String("tx", txHash.String()))
+
+			continue
+		}
+
+		if receipt.Status == types.ReceiptStatusSuccessful {
+			return nil
+		}
+
+		if receipt.Status == types.ReceiptStatusFailed {
+			return fmt.Errorf("transaction failed: %s", receipt.TxHash.String())
+		}
+	}
 }

@@ -20,4 +20,5 @@ type DistributeRewardsData struct {
 	NodeAddress      []common.Address `json:"nodeAddrs"`
 	RequestFees      []*big.Int       `json:"requestFees"`
 	OperationRewards []*big.Int       `json:"operationRewards"`
+	IsFinal          bool             `json:"isFinal"`
 }

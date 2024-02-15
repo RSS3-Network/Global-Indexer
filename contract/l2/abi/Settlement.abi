@@ -122,6 +122,11 @@
   },
   {
     "inputs": [],
+    "name": "InsufficientRequestFees",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InsufficientValue",
     "type": "error"
   },
@@ -154,6 +159,17 @@
   {
     "inputs": [],
     "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "traitId",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidTraitId",
     "type": "error"
   },
   {
@@ -200,6 +216,17 @@
   {
     "inputs": [],
     "name": "RewardDistributionFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nodeAddr",
+        "type": "address"
+      }
+    ],
+    "name": "RewardsAlreadyDistributed",
     "type": "error"
   },
   {
@@ -427,7 +454,7 @@
     ],
     "name": "distributeRewards",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -572,11 +599,6 @@
       {
         "internalType": "uint256",
         "name": "operationRewardsPercent",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "startEpoch",
         "type": "uint256"
       }
     ],
