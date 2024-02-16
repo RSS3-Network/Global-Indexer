@@ -48,7 +48,7 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 	onConflict = clause.OnConflict{
 		Columns: []clause.Column{
 			{
-				Name: "epoch_id",
+				Name: "transaction_hash",
 			},
 			{
 				Name: "index",
@@ -187,4 +187,38 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	}
 
 	return result, nil
+}
+
+func (c *client) SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error {
+	// Save epoch trigger.
+	var data table.EpochTrigger
+	if err := data.Import(epochTrigger); err != nil {
+		zap.L().Error("import epoch trigger", zap.Error(err), zap.Any("epochTrigger", epochTrigger))
+
+		return err
+	}
+
+	if err := c.database.WithContext(ctx).Create(&data).Error; err != nil {
+		zap.L().Error("insert epoch trigger", zap.Error(err), zap.Any("epochTrigger", epochTrigger))
+
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error) {
+	var data table.EpochTrigger
+
+	if err := c.database.WithContext(ctx).Order("created_at DESC").First(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		zap.L().Error("find latest epoch trigger", zap.Error(err))
+
+		return nil, err
+	}
+
+	return data.Export()
 }

@@ -13,6 +13,10 @@ rss3_chain:
   endpoint_l2: https://rpc.testnet.rss3.io
   block_threads_l1: 20
 
+epoch:
+  wallet_private_key:
+  gas_limit: 3000000
+
 name_service:
   ens_endpoint: https://rpc.ankr.com/eth
   csb_endpoint: https://rpc.crossbell.io

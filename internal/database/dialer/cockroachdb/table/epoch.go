@@ -69,6 +69,10 @@ func (e *Epoch) Export(epochItems []*schema.EpochItem) (*schema.Epoch, error) {
 type Epochs []*Epoch
 
 func (e *Epochs) Export() ([]*schema.Epoch, error) {
+	if len(*e) == 0 {
+		return nil, nil
+	}
+
 	epochs := make([]*schema.Epoch, 0, len(*e))
 
 	for _, epoch := range *e {

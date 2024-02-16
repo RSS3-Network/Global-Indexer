@@ -134,7 +134,7 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	return node.Export()
 }
 
-func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error) {
+func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.Status, cursor *string, limit int) ([]*schema.Node, error) {
 	databaseStatement := c.database.WithContext(ctx)
 
 	if cursor != nil {
@@ -145,6 +145,10 @@ func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, 
 		}
 
 		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
+	}
+
+	if status != nil {
+		databaseStatement = databaseStatement.Where("status = ?", status.String())
 	}
 
 	if len(nodeAddresses) > 0 {

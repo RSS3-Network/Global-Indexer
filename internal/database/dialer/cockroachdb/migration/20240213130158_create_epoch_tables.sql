@@ -19,14 +19,15 @@ CREATE TABLE IF NOT EXISTS "epoch"
     CONSTRAINT "pk_epoch" PRIMARY KEY ("transaction_hash")
 );
 
-CREATE INDEX "idx_timestamp" ON "epoch" ("start_timestamp" DESC, "end_timestamp" DESC);
-CREATE INDEX "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" DESC, "transaction_index" DESC);
+CREATE INDEX IF NOT EXISTS "idx_timestamp" ON "epoch" ("start_timestamp" DESC, "end_timestamp" DESC);
+CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" DESC, "transaction_index" DESC);
 
 CREATE TABLE IF NOT EXISTS "epoch_item"
 (
     "epoch_id" bigint NOT NULL,
     "index" int NOT NULL,
     "node_address" bytea NOT NULL,
+    "transaction_hash" text NOT NULL,
     "request_fees" decimal NOT NULL,
     "operation_rewards" decimal NOT NULL,
     "staking_rewards" decimal NOT NULL,
@@ -34,14 +35,30 @@ CREATE TABLE IF NOT EXISTS "epoch_item"
     "created_at"   timestamptz NOT NULL DEFAULT now(),
     "updated_at"   timestamptz NOT NULL DEFAULT now(),
 
-    CONSTRAINT "pk_epoch_item" PRIMARY KEY ("epoch_id" DESC, "index" ASC)
+    CONSTRAINT "pk_epoch_item" PRIMARY KEY ("transaction_hash" DESC, "index" ASC)
 );
 
-CREATE INDEX "idx_epoch_item_node_address" ON "epoch_item" ("node_address");
+CREATE INDEX IF NOT EXISTS "idx_epoch_item_node_address" ON "epoch_item" ("node_address");
+CREATE INDEX IF NOT EXISTS "idx_epoch_item_epoch_id" ON "epoch_item" ("epoch_id");
+
+CREATE TABLE IF NOT EXISTS "epoch_trigger"
+(
+    "transaction_hash" text        NOT NULL,
+    "epoch_id"         bigint      NOT NULL,
+    "data"             jsonb       NOT NULL,
+    "created_at"       timestamptz NOT NULL DEFAULT now(),
+    "updated_at"       timestamptz NOT NULL DEFAULT now(),
+
+    CONSTRAINT "pk_indexes" PRIMARY KEY ("transaction_hash")
+);
+
+CREATE INDEX IF NOT EXISTS "idx_created_at" ON "epoch_trigger" ("created_at");
+CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "epoch_trigger" ("epoch_id");
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE "epoch";
-DROP TABLE "epoch_item";
+DROP TABLE IF EXISTS "epoch";
+DROP TABLE IF EXISTS "epoch_item";
+DROP TABLE IF EXISTS "epoch_trigger";
 -- +goose StatementEnd
