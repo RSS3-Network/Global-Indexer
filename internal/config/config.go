@@ -46,10 +46,15 @@ type EpochConfig struct {
 }
 
 type NameService struct {
-	EnsEndpoint  string `yaml:"ens_endpoint"`
-	CsbEndpoint  string `yaml:"csb_endpoint"`
-	LensEndpoint string `yaml:"lens_endpoint"`
-	FcEndpoint   string `yaml:"fc_endpoint"`
+	Ens  *EndpointConfig `yaml:"ens"`
+	Csb  *EndpointConfig `yaml:"csb"`
+	Lens *EndpointConfig `yaml:"lens"`
+	Fc   *EndpointConfig `yaml:"fc"`
+}
+
+type EndpointConfig struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	APIkey   string `yaml:"api_key"`
 }
 
 func Setup(configFilePath string) (*File, error) {

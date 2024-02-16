@@ -14,10 +14,18 @@ func Test_Resolve(t *testing.T) {
 	t.Parallel()
 
 	resolverConfig := &config.NameService{
-		EnsEndpoint:  "https://rpc.ankr.com/eth",
-		CsbEndpoint:  "https://rpc.crossbell.io",
-		LensEndpoint: "https://rpc.ankr.com/polygon",
-		FcEndpoint:   "https://nemes.farcaster.xyz:2281",
+		Ens: &config.EndpointConfig{
+			Endpoint: "https://rpc.ankr.com/eth",
+		},
+		Csb: &config.EndpointConfig{
+			Endpoint: "https://rpc.crossbell.io",
+		},
+		Lens: &config.EndpointConfig{
+			Endpoint: "https://rpc.ankr.com/polygon",
+		},
+		Fc: &config.EndpointConfig{
+			Endpoint: "https://nemes.farcaster.xyz:2281",
+		},
 	}
 
 	nr, _ := nameresolver.NewNameResolver(context.Background(), resolverConfig)

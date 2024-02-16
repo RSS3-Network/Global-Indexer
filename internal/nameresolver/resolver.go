@@ -180,15 +180,15 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		farcasterClient    *fcClient
 	)
 
-	if config.EnsEndpoint != "" {
-		ensEthClient, err = ethclient.DialContext(ctx, config.EnsEndpoint)
+	if config.Ens != nil {
+		ensEthClient, err = ethclient.DialContext(ctx, config.Ens.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial ens ethereum client: %w", err)
 		}
 	}
 
-	if config.CsbEndpoint != "" {
-		csbEthClient, err := ethclient.DialContext(ctx, config.CsbEndpoint)
+	if config.Csb != nil {
+		csbEthClient, err := ethclient.DialContext(ctx, config.Csb.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial csb ethereum client: %w", err)
 		}
@@ -199,8 +199,8 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		}
 	}
 
-	if config.LensEndpoint != "" {
-		lensEthClient, err := ethclient.DialContext(ctx, config.LensEndpoint)
+	if config.Lens != nil {
+		lensEthClient, err := ethclient.DialContext(ctx, config.Lens.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial lens ethereum client: %w", err)
 		}
@@ -211,14 +211,22 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		}
 	}
 
-	if config.FcEndpoint != "" {
-		farcasterClient = &fcClient{
-			httpClient: http.DefaultClient,
-		}
+	if config.Fc != nil {
+		farcasterClient = &fcClient{}
 
-		if farcasterClient.endpointURL, err = url.Parse(config.FcEndpoint); err != nil {
+		if farcasterClient.endpointURL, err = url.Parse(config.Fc.Endpoint); err != nil {
 			return nil, fmt.Errorf("parse farcaster endpoint: %w", err)
 		}
+
+		var httpClient http.Client
+
+		if config.Fc.APIkey != "" {
+			httpClient.Transport = NewAuthenticationTransport(config.Fc.APIkey)
+		} else {
+			httpClient = *http.DefaultClient
+		}
+
+		farcasterClient.httpClient = &httpClient
 	}
 
 	return &NameResolver{
@@ -227,4 +235,23 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		lensHandleContract: lensHandleContract,
 		fcClient:           farcasterClient,
 	}, nil
+}
+
+type AuthenticationTransport struct {
+	APIKey string
+
+	roundTripper http.RoundTripper
+}
+
+func (a *AuthenticationTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	request.Header.Set("api_key", a.APIKey)
+
+	return a.roundTripper.RoundTrip(request)
+}
+
+func NewAuthenticationTransport(apiKey string) http.RoundTripper {
+	return &AuthenticationTransport{
+		APIKey:       apiKey,
+		roundTripper: http.DefaultTransport,
+	}
 }
