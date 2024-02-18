@@ -147,6 +147,20 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
 	databaseClient := c.database.WithContext(ctx)
 
+	if query.Direct {
+		if query.Cursor != nil {
+			databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
+		}
+
+		databaseClient = databaseClient.Order(`"node" ASC`)
+	} else {
+		if query.Cursor != nil {
+			databaseClient = databaseClient.Where(`"owner" > ?`, query.Cursor.String())
+		}
+
+		databaseClient = databaseClient.Order(`"owner" ASC`)
+	}
+
 	if query.ID != nil {
 		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
 	}
@@ -162,7 +176,7 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
 
 	var rows []table.StakeChip
-	if err := databaseClient.Order(`"id" DESC`).Find(&rows).Error; err != nil {
+	if err := databaseClient.Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}

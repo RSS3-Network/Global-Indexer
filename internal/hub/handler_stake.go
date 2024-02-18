@@ -166,6 +166,38 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+type GetStakeWalletsRequest struct {
+	Cursor *common.Address `query:"cursor"`
+}
+
+func (h *Hub) GetStakeWallets(c echo.Context) error {
+	var request GetStakeWalletsRequest
+	if err := c.Bind(&request); err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	stakeChipsQuery := schema.StakeChipsQuery{
+		Cursor: request.Cursor,
+	}
+
+	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	if err != nil {
+		zap.L().Error("find node wallets", zap.Error(err))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	response := Response{
+		Data: model.NewStakeStakers(stakeChips),
+	}
+
+	if length := len(stakeChips); length > 0 {
+		response.Cursor = stakeChips[length-1].Owner.String()
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
 type GetStakeNodeChipsRequest struct {
 	Node common.Address `param:"node"`
 }
@@ -177,7 +209,8 @@ func (h *Hub) GetStakeNodeChips(c echo.Context) error {
 	}
 
 	stakeChipsQuery := schema.StakeChipsQuery{
-		Node: &request.Node,
+		Node:   &request.Node,
+		Direct: true,
 	}
 
 	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
@@ -189,6 +222,10 @@ func (h *Hub) GetStakeNodeChips(c echo.Context) error {
 
 	response := Response{
 		Data: model.NewStakeStakers(stakeChips),
+	}
+
+	if length := len(stakeChips); length > 0 {
+		response.Cursor = stakeChips[length-1].Owner.String()
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -217,6 +254,10 @@ func (h *Hub) GetStakeWalletChips(c echo.Context) error {
 
 	response := Response{
 		Data: model.NewStakeNodes(stakeChips),
+	}
+
+	if length := len(stakeChips); length > 0 {
+		response.Cursor = stakeChips[length-1].Owner.String()
 	}
 
 	return c.JSON(http.StatusOK, response)
