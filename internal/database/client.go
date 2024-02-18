@@ -55,7 +55,8 @@ type Client interface {
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
 	FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error)
-	FindEpoch(ctx context.Context, id uint64, itemsLimit int, cursor *string) (*schema.Epoch, error)
+	FindEpochTransactions(ctx context.Context, id uint64, limit int, itemsLimit int, cursor *string) ([]*schema.Epoch, error)
+	FindEpochTransaction(ctx context.Context, transactionHash common.Hash, itemsLimit int, cursor *string) (*schema.Epoch, error)
 	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
 
 	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error

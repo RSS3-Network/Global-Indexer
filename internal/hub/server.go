@@ -59,6 +59,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 
 	instance.httpServer.GET("/epochs", instance.hub.GetEpochsHandler)
 	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpochHandler)
+	instance.httpServer.GET("/epochs/distribution/:transaction", instance.hub.GetEpochDistributionHandler)
 	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewardsHandler)
 
 	instance.httpServer.GET("/nodes/:node/chips", instance.hub.GetStakeNodeChips)
