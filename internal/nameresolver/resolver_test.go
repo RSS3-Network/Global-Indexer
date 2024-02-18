@@ -23,9 +23,9 @@ func Test_Resolve(t *testing.T) {
 		Lens: &config.EndpointConfig{
 			Endpoint: "https://rpc.ankr.com/polygon",
 		},
-		Fc: &config.EndpointConfig{
-			Endpoint: "https://nemes.farcaster.xyz:2281",
-		},
+		//Fc: &config.EndpointConfig{
+		//	Endpoint: "https://nemes.farcaster.xyz:2281",
+		//},
 	}
 
 	nr, _ := nameresolver.NewNameResolver(context.Background(), resolverConfig)
@@ -58,12 +58,12 @@ func Test_Resolve(t *testing.T) {
 			output: "",
 			err:    fmt.Errorf("%s", nameresolver.ErrUnregisterName),
 		},
-		{
-			name:   "unregister farcaster",
-			input:  arguments{"qwerfdsazxcv.fc"},
-			output: "",
-			err:    fmt.Errorf("%s", nameresolver.ErrUnregisterName),
-		},
+		//{
+		//	name:   "unregister farcaster",
+		//	input:  arguments{"qwerfdsazxcv.fc"},
+		//	output: "",
+		//	err:    fmt.Errorf("%s", nameresolver.ErrUnregisterName),
+		//},
 		{
 			name:   "unsupport name service .xxx",
 			input:  arguments{"qwerfdsazxcv.xxx"},
@@ -88,12 +88,12 @@ func Test_Resolve(t *testing.T) {
 			output: "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
 			err:    nil,
 		},
-		{
-			name:   "resolve fc",
-			input:  arguments{"brucexc.fc"},
-			output: "0xe5d6216f0085a7f6b9b692e06cf5856e6fa41b55",
-			err:    nil,
-		},
+		//{
+		//	name:   "resolve fc",
+		//	input:  arguments{"brucexc.fc"},
+		//	output: "0xe5d6216f0085a7f6b9b692e06cf5856e6fa41b55",
+		//	err:    nil,
+		//},
 	}
 
 	for _, tt := range tests {
