@@ -68,15 +68,25 @@ func (e *Epoch) Export(epochItems []*schema.EpochItem) (*schema.Epoch, error) {
 
 type Epochs []*Epoch
 
-func (e *Epochs) Export() ([]*schema.Epoch, error) {
+func (e *Epochs) Export(epochItems []*schema.EpochItem) ([]*schema.Epoch, error) {
 	if len(*e) == 0 {
 		return nil, nil
+	}
+
+	itemsMap := make(map[common.Hash][]*schema.EpochItem, len(epochItems))
+
+	for _, item := range epochItems {
+		if _, ok := itemsMap[item.TransactionHash]; !ok {
+			itemsMap[item.TransactionHash] = make([]*schema.EpochItem, 0, 1)
+		}
+
+		itemsMap[item.TransactionHash] = append(itemsMap[item.TransactionHash], item)
 	}
 
 	epochs := make([]*schema.Epoch, 0, len(*e))
 
 	for _, epoch := range *e {
-		epoch, err := epoch.Export(nil)
+		epoch, err := epoch.Export(itemsMap[common.HexToHash(epoch.TransactionHash)])
 		if err != nil {
 			return nil, err
 		}
