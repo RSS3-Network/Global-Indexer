@@ -246,6 +246,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "SettlementPhase",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -450,6 +455,11 @@
         "internalType": "uint256[]",
         "name": "operationRewards",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "isFinal",
+        "type": "bool"
       }
     ],
     "name": "distributeRewards",
