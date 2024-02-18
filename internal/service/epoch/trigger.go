@@ -128,7 +128,7 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		return fmt.Errorf("get gas price: %w", err)
 	}
 
-	tx, err := s.settlementContract.DistributeRewards(transactor, data.Epoch, data.NodeAddress, data.RequestFees, data.OperationRewards)
+	tx, err := s.settlementContract.DistributeRewards(transactor, data.Epoch, data.NodeAddress, data.RequestFees, data.OperationRewards, data.IsFinal)
 	if err != nil {
 		zap.L().Error("distribute rewards", zap.Error(err), zap.Any("data", data))
 
