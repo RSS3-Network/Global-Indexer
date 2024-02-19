@@ -50,6 +50,7 @@ type StakeTransactionQuery struct {
 }
 
 type StakeTransactionsQuery struct {
+	Cursor  *common.Hash          `query:"cursor"`
 	IDs     []common.Hash         `query:"ids"`
 	User    *common.Address       `query:"users"`
 	Node    *common.Address       `query:"node"`

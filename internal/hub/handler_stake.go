@@ -16,6 +16,7 @@ import (
 )
 
 type GetStakeTransactionsRequest struct {
+	Cursor  *common.Hash                 `query:"cursor"`
 	User    *common.Address              `query:"user"`
 	Node    *common.Address              `query:"node"`
 	Type    *schema.StakeTransactionType `query:"type"`
@@ -42,6 +43,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	stakeTransactionsQuery := schema.StakeTransactionsQuery{
+		Cursor:  request.Cursor,
 		User:    request.User,
 		Node:    request.Node,
 		Type:    request.Type,
@@ -90,9 +92,13 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents))
 	}
 
-	var response Response
+	response := Response{
+		Data: stakeTransactionModels,
+	}
 
-	response.Data = stakeTransactionModels
+	if length := len(stakeTransactionModels); length > 0 {
+		response.Cursor = stakeTransactionModels[length-1].ID.String()
+	}
 
 	return c.JSON(http.StatusOK, response)
 }
