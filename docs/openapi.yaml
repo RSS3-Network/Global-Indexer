@@ -19,6 +19,10 @@ paths:
       tags:
         - Bridge
       parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
         - name: sender
           in: query
           schema:
@@ -78,6 +82,7 @@ paths:
                           transaction:
                             hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
                             index: 1
+                cursor: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
   /bridge/transactions/{id}:
     get:
       description: "Get bridge transaction by id"
@@ -133,6 +138,10 @@ paths:
       tags:
         - Stake
       parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
         - name: user
           in: query
           schema:
@@ -168,32 +177,21 @@ paths:
                       $ref: "#/components/schemas/StakeTransaction"
               example:
                 data:
-                  - id: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
-                    sender: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
-                    receiver: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
-                    token:
-                      address:
-                        l1: "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23"
-                        l2: "0x4200000000000000000000000000000000000042"
-                      value: "10000000000000000000000"
+                  - id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                    user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    value: "10000000000000000000000"
                     event:
                       deposit:
-                        initialized:
+                        deposited:
                           block:
-                            hash: "0x7735d45a54e91e836881c2f185766b391f335b53734b0a57f6c8843f66d03a13"
-                            number: 5223592
-                            timestamp: 1707118764
+                            hash: "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015"
+                            number: 128115
+                            timestamp: 1707140550
                           transaction:
-                            hash: "0x28e8d8f6cbbdfcf14501ebf0bbd11647dfabab371fc7a989a1e441321af6a6ee"
-                            index: 49
-                        finalized:
-                          block:
-                            hash: "0xb0208c1b76aca5d51cb3cde5d10a90f20c2e520c935fbb99af0b66031489433e"
-                            number: 117285
-                            timestamp: 1707118890
-                          transaction:
-                            hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
+                            hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                             index: 1
+                cursor: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
   /stake/transactions/{id}:
     get:
       description: "Get stake transaction by id"
