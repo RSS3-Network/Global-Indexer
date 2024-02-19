@@ -79,7 +79,7 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data:   model.NewEpochTransactions(epoch),
+		Data:   model.NewEpoch(request.ID, epoch),
 		Cursor: cursor,
 	})
 }
