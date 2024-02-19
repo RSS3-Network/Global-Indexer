@@ -52,6 +52,13 @@ func NewEpochs(epochs []*schema.Epoch) []*Epoch {
 	return results
 }
 
+func NewEpoch(id uint64, epoch []*schema.Epoch) *Epoch {
+	return &Epoch{
+		ID:            id,
+		Distributions: NewEpochTransactions(epoch),
+	}
+}
+
 func NewEpochTransaction(epoch *schema.Epoch) *EpochTransaction {
 	return &EpochTransaction{
 		ID:             epoch.ID,
