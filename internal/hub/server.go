@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
 )
@@ -43,6 +44,10 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.HidePort = true
 	instance.httpServer.Validator = defaultValidator
 	instance.httpServer.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
+
+	{
+		instance.httpServer.FileFS("/docs/openapi.yaml", "openapi.yaml", docs.EmbedFS)
+	}
 
 	// register router
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
