@@ -64,23 +64,17 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	epoch, err := h.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.Limit, request.ItemsLimit, request.Cursor)
-	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			return c.NoContent(http.StatusNotFound)
-		}
+	epoch, err := h.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.ItemsLimit, request.Cursor)
+	if errors.Is(err, database.ErrorRowNotFound) || len(epoch) == 0 {
+		return c.NoContent(http.StatusNotFound)
+	}
 
+	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
-	var cursor string
-	if len(epoch) > 0 && len(epoch) == request.Limit {
-		cursor = epoch[len(epoch)-1].TransactionHash.String()
-	}
-
 	return c.JSON(http.StatusOK, Response{
-		Data:   model.NewEpoch(request.ID, epoch),
-		Cursor: cursor,
+		Data: model.NewEpoch(request.ID, epoch),
 	})
 }
 
@@ -161,7 +155,6 @@ type GetEpochsRequest struct {
 
 type GetEpochRequest struct {
 	ID         uint64  `param:"id" validate:"required"`
-	Limit      int     `query:"limit" validate:"min=1,max=100" default:"10"`
 	ItemsLimit int     `query:"itemsLimit" validate:"min=1,max=50" default:"10"`
 	Cursor     *string `query:"cursor"`
 }
