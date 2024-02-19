@@ -1,6 +1,7 @@
 package table
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	gormSchema "gorm.io/gorm/schema"
@@ -12,11 +13,12 @@ var (
 )
 
 type GatewayKey struct {
+	ID        uint `gorm:"primaryKey;column:id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	Key uuid.UUID `gorm:"primaryKey;column:key"`
+	Key uuid.UUID `gorm:"uniqueIndex;column:key"`
 
 	RuUsedTotal     int64 `gorm:"column:ru_used_total"`
 	RuUsedCurrent   int64 `gorm:"column:ru_used_current"`
@@ -25,8 +27,8 @@ type GatewayKey struct {
 
 	Name string `gorm:"column:name"`
 
-	AccountAddress  string                  `gorm:"index"`          // Foreign key of GatewayAccount
-	ConsumptionLogs []GatewayConsumptionLog `gorm:"foreignKey:Key"` // Has many
+	AccountAddress common.Address `gorm:"index;type:bytea;column:account_address"` // Foreign key of GatewayAccount
+	Account        GatewayAccount `gorm:"foreignKey:AccountAddress"`
 }
 
 func (r *GatewayKey) TableName() string {

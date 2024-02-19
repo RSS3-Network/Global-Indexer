@@ -1,30 +1,28 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/api-gateway/app"
-	"github.com/naturalselectionlabs/api-gateway/app/model"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/utils"
-	"github.com/naturalselectionlabs/api-gateway/gen/entschema"
-	"github.com/naturalselectionlabs/api-gateway/gen/entschema/account"
-	"github.com/naturalselectionlabs/api-gateway/gen/entschema/pendingwithdrawrequest"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
+	"gorm.io/gorm"
 	"net/http"
 )
 
-func (*App) GetPendingRequestWithdraw(ctx echo.Context) error {
-	user := ctx.Get("user").(*model.Account)
-	rctx := ctx.Request().Context()
+func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	amount := float32(0)
+
 	// Check if there's any pending withdraw requests
-	pendingWithdrawRequest, err := app.EntClient.PendingWithdrawRequest.Query().Where(
-		pendingwithdrawrequest.HasAccountWith(
-			account.ID(user.ID),
-		),
-	).First(rctx)
+	var pendingWithdrawRequest table.GatewayPendingWithdrawRequest
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Where("account_address = ?", user.Address).
+		First(&pendingWithdrawRequest).
+		Error
 	if err != nil {
-		if entschema.IsNotFound(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil // Not real error
 		}
 	} else {
@@ -38,37 +36,42 @@ func (*App) GetPendingRequestWithdraw(ctx echo.Context) error {
 	}
 }
 
-func (*App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendingRequestWithdrawParams) error {
-	user := ctx.Get("user").(*model.Account)
-	rctx := ctx.Request().Context()
+func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendingRequestWithdrawParams) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	// Check if there's any pending withdraw requests
-	pendingWithdrawRequest, err := app.EntClient.PendingWithdrawRequest.Query().Where(
-		pendingwithdrawrequest.HasAccountWith(
-			account.ID(user.ID),
-		),
-	).First(rctx)
+	var pendingWithdrawRequest table.GatewayPendingWithdrawRequest
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Where("account_address = ?", user.Address).
+		First(&pendingWithdrawRequest).
+		Error
 	if err != nil {
-		if entschema.IsNotFound(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil // Not real error
 			if params.Amount > 0 {
 				// Create
-				err = app.EntClient.PendingWithdrawRequest.Create().
-					SetAccountID(user.ID).
-					SetAmount(float64(params.Amount)).
-					Exec(rctx)
+				err = app.databaseClient.WithContext(ctx.Request().Context()).
+					Create(&table.GatewayPendingWithdrawRequest{
+						AccountAddress: user.Address,
+						Amount:         float64(params.Amount),
+					}).
+					Error
 			}
 		}
 	} else {
 		// Found record with no error
 		if params.Amount > 0 {
 			// Update
-			err = app.EntClient.PendingWithdrawRequest.UpdateOneID(pendingWithdrawRequest.ID).
-				SetAmount(float64(params.Amount)).
-				Exec(rctx)
+			err = app.databaseClient.WithContext(ctx.Request().Context()).
+				Where("account_address = ?", user.Address).
+				Update("amount", float64(params.Amount)).
+				Error
 		} else {
 			// Delete
-			err = app.EntClient.PendingWithdrawRequest.DeleteOneID(pendingWithdrawRequest.ID).Exec(rctx)
+			err = app.databaseClient.WithContext(ctx.Request().Context()).
+				Where("account_address = ?", user.Address).
+				Delete(&pendingWithdrawRequest).
+				Error
 		}
 	}
 

@@ -1,7 +1,6 @@
 package table
 
 import (
-	"github.com/google/uuid"
 	gormSchema "gorm.io/gorm/schema"
 	"time"
 )
@@ -19,7 +18,8 @@ type GatewayConsumptionLog struct {
 	RuUsed          int64     `gorm:"column:ru_used"`
 	ApiCalls        int64     `gorm:"column:api_calls"`
 
-	Key uuid.UUID `gorm:"index"` // Foreign key of GatewayKey
+	KeyID uint       `gorm:"index;column:key_id"` // Foreign key of GatewayKey
+	Key   GatewayKey `gorm:"foreignKey:KeyID"`
 }
 
 func (r *GatewayConsumptionLog) TableName() string {

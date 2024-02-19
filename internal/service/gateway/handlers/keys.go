@@ -1,38 +1,51 @@
 package handlers
 
 import (
-	"github.com/naturalselectionlabs/api-gateway/gen/entschema"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
+	"github.com/samber/lo"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
-
-	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/api-gateway/app/model"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/utils"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 )
 
-func (*App) DeleteKey(ctx echo.Context, key int) error {
-	k, err := getKey(ctx, key)
+func (app *App) DeleteKey(ctx echo.Context, keyID int) error {
+	k, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
-	if err := k.Delete(ctx.Request().Context()); err != nil {
+
+	err = app.databaseClient.WithContext(ctx.Request().Context()).
+		Delete(&k).
+		Error
+	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (*App) GenerateKey(ctx echo.Context) error {
-	user := ctx.Get("user").(*model.Account)
+func (app *App) GenerateKey(ctx echo.Context) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	var req oapi.KeyInfoBody
 	if err := ctx.Bind(&req); err != nil || req.Name == nil {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
-	k, err := model.KeyCreate(ctx.Request().Context(), user.ID, user.Address, *req.Name)
+	k := table.GatewayKey{
+		Key:            uuid.New(),
+		Name:           *req.Name,
+		AccountAddress: user.Address,
+	}
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Create(&k).
+		Error
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
@@ -41,10 +54,10 @@ func (*App) GenerateKey(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, createKeyResponse(&k))
 }
 
-func (*App) GetKey(ctx echo.Context, keyId int) error {
-	k, err := getKey(ctx, keyId)
+func (app *App) GetKey(ctx echo.Context, keyID int) error {
+	k, err := app.getKey(ctx, keyID)
 	if err != nil {
-		if entschema.IsNotFound(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return utils.SendJSONError(ctx, http.StatusNotFound)
 		} else {
 			log.Print(err)
@@ -55,12 +68,16 @@ func (*App) GetKey(ctx echo.Context, keyId int) error {
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
 }
 
-func (*App) GetKeys(ctx echo.Context) error {
-	rctx := ctx.Request().Context()
+func (app *App) GetKeys(ctx echo.Context) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
-	user := ctx.Get("user").(*model.Account)
+	var keys []table.GatewayKey
 
-	keys, err := user.ListKeys(rctx)
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayKey{}).
+		Where("account_address = ?", user.Address).
+		Error
+
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
@@ -68,39 +85,56 @@ func (*App) GetKeys(ctx echo.Context) error {
 
 	resp := oapi.Keys{}
 	for _, k := range keys {
-		resp = append(resp, createKeyResponse(k))
+		resp = append(resp, createKeyResponse(&k))
 	}
 
 	return ctx.JSON(http.StatusOK, resp)
 }
 
-func (*App) UpdateKeyInfo(ctx echo.Context, keyId int) error {
+func (app *App) UpdateKeyInfo(ctx echo.Context, keyID int) error {
 	var req oapi.KeyInfoBody
 	if err := ctx.Bind(&req); err != nil || req.Name == nil {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
-	k, err := getKey(ctx, keyId)
+	k, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusUnauthorized)
 	}
 
-	if err = k.UpdateInfo(ctx.Request().Context(), *req.Name); err != nil {
+	// Update fields
+	k.Name = *req.Name
+
+	err = app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayKey{}).
+		Where("id = ?", keyID).
+		Update("name", k.Name).
+		Error
+
+	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
 }
 
-func (*App) RotateKey(ctx echo.Context, keyId int) error {
-	k, err := getKey(ctx, keyId)
+func (app *App) RotateKey(ctx echo.Context, keyID int) error {
+	k, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
-	if err = k.Rotate(ctx.Request().Context()); err != nil {
+	k.Key = uuid.New()
+
+	err = app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayKey{}).
+		Where("id = ?", keyID).
+		Update("key", k.Key).
+		Error
+
+	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -108,14 +142,14 @@ func (*App) RotateKey(ctx echo.Context, keyId int) error {
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
 }
 
-func createKeyResponse(k *model.Key) oapi.Key { // Assuming KeyType is the type of k
+func createKeyResponse(k *table.GatewayKey) oapi.Key { // Assuming KeyType is the type of k
 	return oapi.Key{
-		Id:              &k.ID,
-		Key:             to.String_StringPtr(k.Key.Key.String()),
-		Name:            to.String_StringPtr(k.Name),
-		ApiCallsTotal:   to.Int64_Int64Ptr(k.APICallsTotal),
-		ApiCallsCurrent: to.Int64_Int64Ptr(k.APICallsCurrent),
-		RuUsedTotal:     to.Int64_Int64Ptr(k.RuUsedTotal),
-		RuUsedCurrent:   to.Int64_Int64Ptr(k.RuUsedCurrent),
+		Id:              lo.ToPtr(int(k.ID)),
+		Key:             lo.ToPtr(k.Key.String()),
+		Name:            &k.Name,
+		ApiCallsTotal:   &k.ApiCallsTotal,
+		ApiCallsCurrent: &k.ApiCallsCurrent,
+		RuUsedTotal:     &k.RuUsedTotal,
+		RuUsedCurrent:   &k.RuUsedCurrent,
 	}
 }

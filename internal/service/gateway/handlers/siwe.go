@@ -1,23 +1,22 @@
 package handlers
 
 import (
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
+	jwtext "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
+	"github.com/samber/lo"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
-	jwtext "github.com/naturalselectionlabs/api-gateway/app/jwt"
-	"github.com/naturalselectionlabs/api-gateway/app/model"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/siwe"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/utils"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 )
 
 // SIWEGetNonce implements oapi.ServerInterface
-func (*App) SIWEGetNonce(ctx echo.Context) error {
-	rctx, uctx := getCtx(ctx)
-	uctx.User = nil // clear User
-
+func (app *App) SIWEGetNonce(ctx echo.Context) error {
 	// Get nonce
-	nonce, err := siwe.GetNonce(rctx)
+	nonce, err := app.siweClient.GetNonce(ctx.Request().Context())
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -27,13 +26,13 @@ func (*App) SIWEGetNonce(ctx echo.Context) error {
 }
 
 // SIWEGetSession implements oapi.ServerInterface
-func (*App) SIWEGetSession(ctx echo.Context) error {
+func (app *App) SIWEGetSession(ctx echo.Context) error {
 	res := oapi.SIWESessionResponse{}
 
-	_, uctx := getCtx(ctx)
-	if uctx.User != nil {
-		res.Address = &uctx.User.Address
-		res.ChainId = &uctx.User.ChainId
+	_, user := app.getCtx(ctx)
+	if user != nil {
+		res.Address = lo.ToPtr(user.Address.Hex())
+		res.ChainId = &user.ChainId
 	}
 
 	// User has logged in
@@ -41,43 +40,67 @@ func (*App) SIWEGetSession(ctx echo.Context) error {
 }
 
 // SIWEVerify implements oapi.ServerInterface
-func (*App) SIWEVerify(ctx echo.Context) error {
-	rctx, uctx := getCtx(ctx)
-	uctx.User = nil // clear User
-
+func (app *App) SIWEVerify(ctx echo.Context) error {
 	var req oapi.SIWEVerifyBody
 	if err := ctx.Bind(&req); err != nil || req.Message == nil || req.Signature == nil {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
-	address, chainId, err := siwe.ValidateSIWESignature(rctx, *req.Message, *req.Signature)
+	address, chainId, err := app.siweClient.ValidateSIWESignature(ctx.Request().Context(), *req.Message, *req.Signature)
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusUnauthorized)
 	}
 
 	// get or create account
-	acc, err := model.AccountGetOrCreate(rctx, address)
+	var acc table.GatewayAccount
+	err = app.databaseClient.WithContext(ctx.Request().Context()).
+		FirstOrCreate(&acc, "address = ?", *address).
+		Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
-	// set User with expiration in 10 days
-	uctx.User = &jwtext.User{
+	// set User with expiration
+	expires := time.Now().Add(constants.AUTH_TOKEN_DURATION)
+	token, err := app.jwtClient.SignToken(&jwtext.User{
 		Address: acc.Address,
 		ChainId: chainId,
-	}
-	if err := uctx.SetUserCookie(); err != nil {
+		Expires: expires.Unix(),
+	})
+	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
+
+	cookie := &http.Cookie{
+		Name:     constants.AuthTokenCookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Expires:  expires,
+		Domain:   app.siweClient.Domain(),
+	}
+
+	ctx.SetCookie(cookie)
 
 	return ctx.NoContent(http.StatusOK)
 }
 
 // SIWELogout implements oapi.ServerInterface
-func (*App) SIWELogout(ctx echo.Context) error {
-	_, uctx := getCtx(ctx)
+func (app *App) SIWELogout(ctx echo.Context) error {
+	cookie := &http.Cookie{
+		Name:     constants.AuthTokenCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Expires:  time.Unix(0, 0),
+		Domain:   app.siweClient.Domain(),
+	}
 
-	uctx.ClearUserCookie()
+	ctx.SetCookie(cookie)
 
 	return ctx.NoContent(http.StatusOK)
 }

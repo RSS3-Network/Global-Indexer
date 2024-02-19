@@ -2,29 +2,33 @@ package handlers
 
 import (
 	"context"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/api-gateway/app/model"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/constants"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/middlewares"
-	"github.com/naturalselectionlabs/api-gateway/app/oapi/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 )
 
-func getCtx(ctx echo.Context) (context.Context, *types.UserContext) {
-	uctx := &types.UserContext{Context: ctx, User: middlewares.ParseUserWithToken(ctx)}
-	rctx := ctx.Request().Context()
-	return rctx, uctx
+func (app *App) getCtx(ctx echo.Context) (context.Context, *jwt.User) {
+	return ctx.Request().Context(), middlewares.ParseUserWithToken(ctx, app.jwtClient)
 }
 
-func getKey(ctx echo.Context, key int) (*model.Key, error) {
-	user := ctx.Get("user").(*model.Account)
+func (app *App) getKey(ctx echo.Context, keyID int) (*table.GatewayKey, error) {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
-	k, err := user.GetKey(ctx.Request().Context(), key)
+	var k table.GatewayKey
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayKey{}).
+		Where("account_address = ? AND id = ?", user.Address, keyID).
+		First(&k).
+		Error
 	if err != nil {
 		return nil, err
 	}
+
 	return &k, nil
 }
 

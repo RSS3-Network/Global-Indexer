@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway"
+	gateway_migrate "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway-migrate"
 	"os"
 	"os/signal"
 
@@ -151,10 +152,6 @@ var gatewayCommand = &cobra.Command{
 			return err
 		}
 
-		if err := databaseClient.Migrate(cmd.Context()); err != nil {
-			return fmt.Errorf("migrate database: %w", err)
-		}
-
 		options, err := redis.ParseURL(config.Redis.URI)
 		if err != nil {
 			return fmt.Errorf("parse redis uri: %w", err)
@@ -163,6 +160,26 @@ var gatewayCommand = &cobra.Command{
 		redisClient := redis.NewClient(options)
 
 		instance, err := gateway.New(databaseClient, redisClient, *config.Gateway)
+
+		return instance.Run(cmd.Context())
+	},
+}
+
+var gatewayMigrateCommand = &cobra.Command{
+	Use: "gateway-migrate",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
+		if err != nil {
+			return fmt.Errorf("setup config file: %w", err)
+		}
+
+		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
+		if err != nil {
+			return err
+		}
+
+		instance, err := gateway_migrate.New(databaseClient)
 
 		return instance.Run(cmd.Context())
 	},
@@ -182,6 +199,7 @@ func init() {
 	command.AddCommand(indexCommand)
 	command.AddCommand(schedulerCommand)
 	command.AddCommand(gatewayCommand)
+	command.AddCommand(gatewayMigrateCommand)
 	command.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 
 	indexCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
@@ -190,6 +208,7 @@ func init() {
 	schedulerCommand.PersistentFlags().String(flag.KeyServer, "detector", "server name")
 
 	gatewayCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+	gatewayMigrateCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 }
 
 func main() {

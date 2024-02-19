@@ -11,14 +11,16 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 )
 
-func (a *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistoryParams) error {
+func (app *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistoryParams) error {
 	user := ctx.Get("user").(*table.GatewayAccount)
 
 	// Parse date
 	limit, page := parseLimitPage(params.Limit, params.Page)
 
 	// Query from database
-	query := a.databaseClient.WithContext(ctx.Request().Context()).Model(&table.BillingRecordDeposited{}).Where("user = ?", user.Address)
+	query := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.BillingRecordDeposited{}).
+		Where("user = ?", user.Address)
 
 	var totalCount int64
 	err := query.Count(&totalCount).Error
@@ -35,12 +37,12 @@ func (a *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistoryP
 	var list []oapi.DepositRecord
 	for _, record := range records {
 		blockTs := record.BlockTimestamp.UnixMilli()
-		amount, _ := record.Amount.Float64()
+		amount, _ := utils.ParseAmount(record.Amount.BigInt()).Float32()
 		list = append(list, oapi.DepositRecord{
 			TxHash:         lo.ToPtr(record.TxHash.Hex()),
 			BlockTimestamp: &blockTs,
 			Index:          lo.ToPtr(int(record.Index)),
-			Amount:         lo.ToPtr(float32(amount)),
+			Amount:         &amount,
 		})
 	}
 
@@ -55,25 +57,25 @@ func (a *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistoryP
 	})
 }
 
-func (*App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawalHistoryParams) error {
-	user := ctx.Get("user").(*model.Account)
+func (app *App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawalHistoryParams) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	// Parse date
 	limit, page := parseLimitPage(params.Limit, params.Page)
 
 	// Query from database
-	query := app.EntClient.WithdrawalRecord.Query().Where(
-		withdrawalrecord.User(user.Address),
-	)
+	query := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.BillingRecordWithdrawal{}).
+		Where("user = ?", user.Address)
 
-	totalCount, err := query.Count(ctx.Request().Context())
+	var totalCount int64
+	err := query.Count(&totalCount).Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
-	records, err := query.Order(
-		entschema.Desc(withdrawalrecord.FieldBlockTimestamp),
-	).Offset(limit * (page - 1)).Limit(limit).All(ctx.Request().Context())
+	var records []table.BillingRecordWithdrawal
+	err = query.Order("block_timestamp DESC").Offset(limit * (page - 1)).Limit(limit).Find(&records).Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -81,13 +83,15 @@ func (*App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawalHist
 	var list []oapi.WithdrawalRecord
 	for _, record := range records {
 		blockTs := record.BlockTimestamp.UnixMilli()
+		amount, _ := utils.ParseAmount(record.Amount.BigInt()).Float32()
+		fee, _ := utils.ParseAmount(record.Fee.BigInt()).Float32()
 		list = append(list, oapi.WithdrawalRecord{
-			TxHash:         &record.TxHash,
+			TxHash:         lo.ToPtr(record.TxHash.Hex()),
 			BlockTimestamp: &blockTs,
-			Index:          to.Uint_IntPtr(record.Index),
-			User:           &record.User,
-			Amount:         to.Float64_Float32Ptr(record.Amount),
-			Fee:            to.Float64_Float32Ptr(record.Fee),
+			Index:          lo.ToPtr(int(record.Index)),
+			User:           lo.ToPtr(record.User.Hex()),
+			Amount:         &amount,
+			Fee:            &fee,
 		})
 	}
 
@@ -102,24 +106,24 @@ func (*App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawalHist
 	})
 }
 
-func (*App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollectionHistoryParams) error {
-	user := ctx.Get("user").(*model.Account)
+func (app *App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollectionHistoryParams) error {
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	limit, page := parseLimitPage(params.Limit, params.Page)
 
 	// Query from database
-	query := app.EntClient.CollectionRecord.Query().Where(
-		collectionrecord.User(user.Address),
-	)
+	query := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.BillingRecordCollected{}).
+		Where("user = ?", user.Address)
 
-	totalCount, err := query.Count(ctx.Request().Context())
+	var totalCount int64
+	err := query.Count(&totalCount).Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
-	records, err := query.Order(
-		entschema.Desc(collectionrecord.FieldBlockTimestamp),
-	).Offset(limit * (page - 1)).Limit(limit).All(ctx.Request().Context())
+	var records []table.BillingRecordCollected
+	err = query.Order("block_timestamp DESC").Offset(limit * (page - 1)).Limit(limit).Find(&records).Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -127,11 +131,12 @@ func (*App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollectionHist
 	var list []oapi.CollectionRecord
 	for _, record := range records {
 		blockTs := record.BlockTimestamp.UnixMilli()
+		amount, _ := utils.ParseAmount(record.Amount.BigInt()).Float32()
 		list = append(list, oapi.CollectionRecord{
-			TxHash:         &record.TxHash,
+			TxHash:         lo.ToPtr(record.TxHash.Hex()),
 			BlockTimestamp: &blockTs,
-			Index:          to.Uint_IntPtr(record.Index),
-			Amount:         to.Float64_Float32Ptr(record.Amount),
+			Index:          lo.ToPtr(int(record.Index)),
+			Amount:         &amount,
 		})
 	}
 
@@ -146,22 +151,22 @@ func (*App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollectionHist
 	})
 }
 
-func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, key int, params oapi.GetConsumptionHistoryByKeyParams) error {
-	k, err := getKey(ctx, key)
+func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, keyID int, params oapi.GetConsumptionHistoryByKeyParams) error {
+	since, until := parseDates(params.Since, params.Until)
+
+	// Query from database
+	k, err := app.getKey(ctx, keyID)
 	if err != nil {
-		return utils.SendJSONError(ctx, http.StatusUnauthorized)
+		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
 
-	since, until := parseDates(params.Since, params.Until)
-	logs, err := k.QueryConsumptionLogs().
-		Where(
-			consumptionlog.ConsumptionDateGTE(since),
-			consumptionlog.ConsumptionDateLTE(until),
-		).
-		Order(entschema.Desc(
-			consumptionlog.FieldConsumptionDate,
-		)).
-		All(ctx.Request().Context())
+	var logs []table.GatewayConsumptionLog
+	err = app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayConsumptionLog{}).
+		Where("key_id = ? AND consumption_date >= ? AND consumption_date <= ?", k.ID, since, until).
+		Order("consumption_date DESC").
+		Find(&logs).
+		Error
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -179,7 +184,7 @@ func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, key int, params oap
 			ruUsed   int64 = 0
 		)
 		for _, log := range logs {
-			apiCalls += log.APICalls
+			apiCalls += log.ApiCalls
 			ruUsed += log.RuUsed
 		}
 		*resp.History = append(*resp.History, oapi.ConsumptionLogByKey{
@@ -193,7 +198,7 @@ func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, key int, params oap
 			*resp.History = append(*resp.History, oapi.ConsumptionLogByKey{
 				KeyName:         &k.Name,
 				ConsumptionDate: &consumptionDate,
-				ApiCalls:        &log.APICalls,
+				ApiCalls:        &log.ApiCalls,
 				RuUsed:          &log.RuUsed,
 			})
 		}
@@ -203,11 +208,22 @@ func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, key int, params oap
 }
 
 func (app *App) GetConsumptionHistoryByAccount(ctx echo.Context, params oapi.GetConsumptionHistoryByAccountParams) error {
-	user := ctx.Get("user").(*model.Account)
+	user := ctx.Get("user").(*table.GatewayAccount)
 
 	since, until := parseDates(params.Since, params.Until)
 
-	results, err := user.GetUsageByDate(ctx.Request().Context(), since, until)
+	// Query from database
+	var logs []table.GatewayConsumptionLog
+	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&table.GatewayConsumptionLog{}).
+		Joins("JOIN gateway.key").
+		Where("account_address = ? AND consumption_date >= ? AND consumption_date <= ?", user.Address, since, until).
+		Order("consumption_date DESC").
+		Find(&logs).
+		Error
+	if err != nil {
+		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	}
 
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
@@ -220,22 +236,29 @@ func (app *App) GetConsumptionHistoryByAccount(ctx echo.Context, params oapi.Get
 		Until:   &untilInt64,
 		History: &[]oapi.ConsumptionLogByKey{},
 	}
-	if results != nil {
-		if params.Merge != nil && *params.Merge {
-			var (
-				apiCalls int64 = 0
-				ruUsed   int64 = 0
-			)
-			for _, log := range *results {
-				apiCalls += *log.ApiCalls
-				ruUsed += *log.RuUsed
-			}
+
+	if params.Merge != nil && *params.Merge {
+		var (
+			apiCalls int64 = 0
+			ruUsed   int64 = 0
+		)
+		for _, log := range logs {
+			apiCalls += log.ApiCalls
+			ruUsed += log.RuUsed
+		}
+		*resp.History = append(*resp.History, oapi.ConsumptionLogByKey{
+			ApiCalls: &apiCalls,
+			RuUsed:   &ruUsed,
+		})
+	} else {
+		for _, log := range logs {
+			consumptionDate := log.ConsumptionDate.UnixMilli()
 			*resp.History = append(*resp.History, oapi.ConsumptionLogByKey{
-				ApiCalls: &apiCalls,
-				RuUsed:   &ruUsed,
+				KeyName:         &log.Key.Name,
+				ConsumptionDate: &consumptionDate,
+				ApiCalls:        &log.ApiCalls,
+				RuUsed:          &log.RuUsed,
 			})
-		} else {
-			*resp.History = append(*resp.History, *results...)
 		}
 	}
 

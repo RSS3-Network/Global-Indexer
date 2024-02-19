@@ -37,14 +37,14 @@ func checkNextEpochRun(ctx context.Context, rc *redis.Client) bool {
 }
 
 // HealthCheck implements oapi.ServerInterface
-func (a *App) HealthCheck(ctx echo.Context, params oapi.HealthCheckParams) error {
+func (app *App) HealthCheck(ctx echo.Context, params oapi.HealthCheckParams) error {
 	if params.Type == nil {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
 	switch *params.Type {
 	case "liveness":
-		if checkNextEpochRun(ctx.Request().Context(), a.redisClient) {
+		if checkNextEpochRun(ctx.Request().Context(), app.redisClient) {
 			return ctx.NoContent(http.StatusOK)
 		} else {
 			return ctx.NoContent(http.StatusInternalServerError)

@@ -12,7 +12,9 @@ import (
 	apisixKafkaLog "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/kafkalog"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/handlers"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/siwe"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
@@ -42,17 +44,33 @@ func (s *Server) Run(ctx context.Context) error {
 			return err
 		}
 
+		// Prepare JWT
+		jwtClient, err := jwt.New(s.config.API.JWTKey)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Prepare SIWE
+		siweClient, err := siwe.New(s.config.API.SIWEDomain, s.redis)
+		if err != nil {
+			log.Panic(err)
+		}
+
 		// Prepare echo
 		e := echo.New()
-		echoHandler := handlers.NewApp(
-			s.config.API.SIWEDomain,
+		echoHandler, err := handlers.NewApp(
 			apisixAPIService,
 			s.redis,
 			s.databaseClient.Raw(),
+			jwtClient,
+			siweClient,
 		)
+		if err != nil {
+			log.Panic(err)
+		}
 
 		// Configure middlewares
-		configureMiddlewares(e, echoHandler)
+		s.configureMiddlewares(e, echoHandler, jwtClient)
 
 		// Connect to kafka for access logs
 		kafkaService, err := apisixKafkaLog.New(
@@ -64,7 +82,7 @@ func (s *Server) Run(ctx context.Context) error {
 			log.Panic(err)
 		}
 
-		err = kafkaService.Start(handlers.ProcessAccessLog)
+		err = kafkaService.Start(echoHandler.ProcessAccessLog)
 		if err != nil {
 			// Failed to start kafka consumer
 			log.Panic(err)
@@ -95,11 +113,11 @@ func New(databaseClient database.Client, redis *redis.Client, config config.Gate
 	return &instance, nil
 }
 
-func configureMiddlewares(e *echo.Echo, impls *handlers.App) {
-	oapi.RegisterHandlers(e, impls)
+func (s *Server) configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT) {
+	oapi.RegisterHandlers(e, app)
 
 	// Check user authentication
-	e.Use(middlewares.UserAuthenticationMiddleware)
+	e.Use(middlewares.UserAuthenticationMiddleware(s.databaseClient.Raw(), jwtClient))
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 }

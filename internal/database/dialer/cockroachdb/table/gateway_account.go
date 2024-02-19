@@ -20,8 +20,6 @@ type GatewayAccount struct {
 	RuLimit     int64          `gorm:"column:ru_limit"`
 	IsPaused    bool           `gorm:"column:is_paused"`
 	BillingRate float64        `gorm:"column:billing_rate"`
-
-	Keys []GatewayKey `gorm:"foreignKey:AccountAddress"` // Has many
 }
 
 func (r *GatewayAccount) TableName() string {
