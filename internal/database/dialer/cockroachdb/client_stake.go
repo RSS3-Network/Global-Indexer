@@ -204,7 +204,7 @@ func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapsho
 	var stakeSnapshots []*table.StakeSnapshot
 
 	if err := databaseClient.
-		Order(`"epoch_id" DESC`).
+		Order(`"date" DESC`).
 		Limit(100). // TODO Replace this constant with a query parameter.
 		Find(&stakeSnapshots).Error; err != nil {
 		return nil, err

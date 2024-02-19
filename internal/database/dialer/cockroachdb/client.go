@@ -336,7 +336,7 @@ func (c *client) FindNodeSnapshots(ctx context.Context) ([]*schema.NodeSnapshot,
 	var nodeSnapshots []*table.NodeSnapshot
 
 	if err := databaseClient.
-		Order(`"epoch_id" DESC`).
+		Order(`"date" DESC`).
 		Limit(100). // TODO Replace this constant with a query parameter.
 		Find(&nodeSnapshots).Error; err != nil {
 		return nil, err

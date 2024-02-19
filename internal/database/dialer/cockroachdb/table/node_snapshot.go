@@ -13,11 +13,8 @@ var (
 )
 
 type NodeSnapshot struct {
-	EpochID        uint64    `gorm:"column:epoch_id"`
-	Count          uint64    `gorm:"column:count"`
-	BlockHash      string    `gorm:"column:block_hash"`
-	BlockNumber    uint64    `gorm:"column:block_number"`
-	BlockTimestamp time.Time `gorm:"column:block_timestamp"`
+	Date  time.Time `gorm:"column:date"`
+	Count uint64    `gorm:"column:count"`
 }
 
 func (s *NodeSnapshot) TableName() string {
@@ -25,22 +22,16 @@ func (s *NodeSnapshot) TableName() string {
 }
 
 func (s *NodeSnapshot) Import(stakeSnapshot schema.NodeSnapshot) error {
-	s.EpochID = stakeSnapshot.EpochID
+	s.Date = stakeSnapshot.Date
 	s.Count = uint64(stakeSnapshot.Count)
-	s.BlockHash = stakeSnapshot.BlockHash
-	s.BlockNumber = stakeSnapshot.BlockNumber
-	s.BlockTimestamp = stakeSnapshot.BlockTimestamp
 
 	return nil
 }
 
 func (s *NodeSnapshot) Export() (*schema.NodeSnapshot, error) {
 	stakeSnapshot := schema.NodeSnapshot{
-		EpochID:        s.EpochID,
-		Count:          int64(s.Count),
-		BlockHash:      s.BlockHash,
-		BlockNumber:    s.BlockNumber,
-		BlockTimestamp: s.BlockTimestamp,
+		Date:  s.Date,
+		Count: int64(s.Count),
 	}
 
 	return &stakeSnapshot, nil

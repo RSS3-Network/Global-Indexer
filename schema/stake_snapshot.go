@@ -16,9 +16,6 @@ type StakeSnapshotTransformer interface {
 }
 
 type StakeSnapshot struct {
-	EpochID        uint64    `gorm:"column:epoch_id"`
-	Count          int64     `gorm:"column:count"`
-	BlockHash      string    `gorm:"column:block_hash"`
-	BlockNumber    uint64    `gorm:"column:block_number"`
-	BlockTimestamp time.Time `gorm:"column:block_timestamp"`
+	Date  time.Time `json:"date"`
+	Count int64     `json:"count"`
 }
