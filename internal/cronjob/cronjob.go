@@ -85,7 +85,7 @@ func New(redisClient *redis.Client, name string, timeout time.Duration) *CronJob
 	rs := redsync.New(pool)
 
 	return &CronJob{
-		crontab: cron.New(cron.WithSeconds()),
+		crontab: cron.New(cron.WithLocation(time.UTC), cron.WithSeconds()),
 		mutex:   rs.NewMutex(fmt.Sprintf(KeyPrefix, name), redsync.WithExpiry(timeout)),
 		timeout: timeout,
 	}
