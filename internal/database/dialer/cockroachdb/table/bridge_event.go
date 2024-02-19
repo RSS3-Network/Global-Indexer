@@ -20,6 +20,7 @@ type BridgeEvent struct {
 	TransactionHash   string    `gorm:"column:transaction_hash"`
 	TransactionIndex  uint      `gorm:"column:transaction_index"`
 	TransactionStatus uint64    `gorm:"column:transaction_status"`
+	ChainID           uint64    `gorm:"column:chain_id"`
 	BlockHash         string    `gorm:"column:block_hash"`
 	BlockNumber       uint64    `gorm:"column:block_number"`
 	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
@@ -49,6 +50,7 @@ func (b *BridgeEvent) Export() (*schema.BridgeEvent, error) {
 		TransactionHash:   common.HexToHash(b.TransactionHash),
 		TransactionIndex:  b.TransactionIndex,
 		TransactionStatus: b.TransactionStatus,
+		ChainID:           b.ChainID,
 		BlockHash:         common.HexToHash(b.BlockHash),
 		BlockNumber:       new(big.Int).SetUint64(b.BlockNumber),
 		BlockTimestamp:    b.BlockTimestamp,

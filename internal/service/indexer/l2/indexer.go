@@ -42,6 +42,11 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("get checkpoint: %w", err)
 	}
 
+	// Rollback to the specified block number state.
+	if err := s.databaseClient.RollbackBlock(ctx, s.checkpoint.ChainID, s.checkpoint.BlockNumber); err != nil {
+		return fmt.Errorf("rollback block: %w", err)
+	}
+
 	onRetry := retry.OnRetry(func(n uint, err error) {
 		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
 	})
@@ -50,7 +55,7 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return !errors.Is(err, context.Canceled)
 	})
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
+	return retry.Do(func() error { return s.run(ctx) }, retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
 }
 
 func (s *server) run(ctx context.Context) (err error) {

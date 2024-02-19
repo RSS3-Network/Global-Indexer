@@ -10,7 +10,12 @@ import (
 
 type StakeStaker struct {
 	User  common.Address `json:"user"`
-	Chips []*big.Int     `json:"chips"`
+	Chips []*StakeChip   `json:"chips"`
+}
+
+type StakeChip struct {
+	Node common.Address `json:"node"`
+	IDs  []*big.Int     `json:"ids"`
 }
 
 func NewStakeStakers(stakeChips []*schema.StakeChip) []*StakeStaker {
@@ -21,10 +26,23 @@ func NewStakeStakers(stakeChips []*schema.StakeChip) []*StakeStaker {
 	stakeStakerModels := make([]*StakeStaker, 0, len(stakeStakerMap))
 
 	for user, chips := range stakeStakerMap {
+		result := make(map[common.Address][]*big.Int)
+
+		for _, chip := range chips {
+			if _, exists := result[chip.Node]; !exists {
+				result[chip.Node] = make([]*big.Int, 0)
+			}
+
+			result[chip.Node] = append(result[chip.Node], chip.ID)
+		}
+
 		stakeStakerModel := StakeStaker{
 			User: user,
-			Chips: lo.Map(chips, func(chip *schema.StakeChip, _ int) *big.Int {
-				return chip.ID
+			Chips: lo.MapToSlice(result, func(node common.Address, ids []*big.Int) *StakeChip {
+				return &StakeChip{
+					Node: node,
+					IDs:  ids,
+				}
 			}),
 		}
 

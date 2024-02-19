@@ -23,6 +23,8 @@ type BridgeTransaction struct {
 	TokenAddressL1   *string         `gorm:"column:token_address_l1"`
 	TokenAddressL2   *string         `gorm:"column:token_address_l2"`
 	TokenValue       decimal.Decimal `gorm:"column:token_value"`
+	Data             string          `gorm:"column:data"`
+	ChainID          uint64          `gorm:"column:chain_id"`
 	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
 	BlockNumber      uint64          `gorm:"column:block_number"`
 	TransactionIndex uint            `gorm:"column:transaction_index"`
@@ -40,6 +42,8 @@ func (b *BridgeTransaction) Import(bridgeTransaction schema.BridgeTransaction) e
 	b.TokenAddressL1 = lo.ToPtr(bridgeTransaction.TokenAddressL1.String())
 	b.TokenAddressL2 = lo.ToPtr(bridgeTransaction.TokenAddressL2.String())
 	b.TokenValue = decimal.NewFromBigInt(bridgeTransaction.TokenValue, 0)
+	b.Data = bridgeTransaction.Data
+	b.ChainID = bridgeTransaction.ChainID
 	b.BlockTimestamp = bridgeTransaction.BlockTimestamp
 	b.BlockNumber = bridgeTransaction.BlockNumber
 	b.TransactionIndex = bridgeTransaction.TransactionIndex
@@ -68,7 +72,8 @@ func (b *BridgeTransaction) Export() (*schema.BridgeTransaction, error) {
 			return lo.ToPtr(common.HexToAddress(*tokenAddress))
 		}(b.TokenAddressL2),
 		TokenValue:       b.TokenValue.BigInt(),
-		Data:             "",
+		Data:             b.Data,
+		ChainID:          b.ChainID,
 		BlockTimestamp:   b.BlockTimestamp,
 		BlockNumber:      b.BlockNumber,
 		TransactionIndex: b.TransactionIndex,

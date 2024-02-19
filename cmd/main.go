@@ -13,6 +13,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/epoch"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
 	"github.com/redis/go-redis/v9"
@@ -137,6 +138,41 @@ var schedulerCommand = &cobra.Command{
 	},
 }
 
+var epochCommand = &cobra.Command{
+	Use: "epoch",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		flags = cmd.PersistentFlags()
+
+		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
+		if err != nil {
+			return fmt.Errorf("setup config file: %w", err)
+		}
+
+		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
+		if err != nil {
+			return err
+		}
+
+		if err := databaseClient.Migrate(cmd.Context()); err != nil {
+			return fmt.Errorf("migrate database: %w", err)
+		}
+
+		options, err := redis.ParseURL(config.Redis.URI)
+		if err != nil {
+			return fmt.Errorf("parse redis uri: %w", err)
+		}
+
+		redisClient := redis.NewClient(options)
+
+		instance, err := epoch.New(cmd.Context(), databaseClient, redisClient, *config)
+		if err != nil {
+			return err
+		}
+
+		return instance.Run(cmd.Context())
+	},
+}
+
 var gatewayCommand = &cobra.Command{
 	Use: "gateway",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -198,15 +234,15 @@ func init() {
 
 	command.AddCommand(indexCommand)
 	command.AddCommand(schedulerCommand)
+	command.AddCommand(epochCommand)
 	command.AddCommand(gatewayCommand)
 	command.AddCommand(gatewayMigrateCommand)
+
 	command.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
-
 	indexCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
-
 	schedulerCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	schedulerCommand.PersistentFlags().String(flag.KeyServer, "detector", "server name")
-
+	epochCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	gatewayCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	gatewayMigrateCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 }

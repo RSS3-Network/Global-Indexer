@@ -85,6 +85,41 @@ func (c *client) Commit() error {
 	return c.database.Commit().Error
 }
 
+func (c *client) RollbackBlock(ctx context.Context, chainID, blockNUmber uint64) error {
+	databaseClient := c.database.WithContext(ctx)
+
+	// Delete the bridge data.
+	if err := databaseClient.
+		Where(`"chain_id" = ? AND "block_number" >= ?`, chainID, blockNUmber).
+		Delete(&table.BridgeTransaction{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge transactions: %w", err)
+	}
+
+	if err := databaseClient.
+		Where(`"chain_id" = ? AND "block_number" >= ?`, chainID, blockNUmber).
+		Delete(&table.BridgeEvent{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge events: %w", err)
+	}
+
+	// Delete the stake data.
+	if err := databaseClient.
+		Where(`"block_number" >= ?`, blockNUmber).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge transactions: %w", err)
+	}
+
+	if err := databaseClient.
+		Where(`"block_number" >= ?`, blockNUmber).
+		Delete(&table.StakeEvent{}).
+		Error; err != nil {
+		return fmt.Errorf("delete bridge events: %w", err)
+	}
+
+	return nil
+}
+
 func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error) {
 	var node table.Node
 
@@ -99,7 +134,7 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	return node.Export()
 }
 
-func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error) {
+func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.Status, cursor *string, limit int) ([]*schema.Node, error) {
 	databaseStatement := c.database.WithContext(ctx)
 
 	if cursor != nil {
@@ -110,6 +145,10 @@ func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, 
 		}
 
 		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
+	}
+
+	if status != nil {
+		databaseStatement = databaseStatement.Where("status = ?", status.String())
 	}
 
 	if len(nodeAddresses) > 0 {

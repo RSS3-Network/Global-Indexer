@@ -36,6 +36,7 @@ type BridgeTransaction struct {
 	TokenAddressL2   *common.Address       `json:"tokenAddressL2"`
 	TokenValue       *big.Int              `json:"tokenValue"`
 	Data             string                `json:"data"`
+	ChainID          uint64                `json:"chainID"`
 	BlockTimestamp   time.Time             `json:"blockTimestamp"`
 	BlockNumber      uint64                `json:"blockNumber"`
 	TransactionIndex uint                  `json:"transactionIndex"`

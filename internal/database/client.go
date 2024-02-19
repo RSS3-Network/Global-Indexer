@@ -21,11 +21,13 @@ type Client interface {
 	Session
 	Transaction
 
+	RollbackBlock(ctx context.Context, chainID, blockNUmber uint64) error
+
 	FindCheckpoint(ctx context.Context, chainID uint64) (*schema.Checkpoint, error)
 	SaveCheckpoint(ctx context.Context, checkpoint *schema.Checkpoint) error
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
-	FindNodes(ctx context.Context, nodeAddresses []common.Address, cursor *string, limit int) ([]*schema.Node, error)
+	FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.Status, cursor *string, limit int) ([]*schema.Node, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
 
@@ -54,8 +56,12 @@ type Client interface {
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
 	FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error)
-	FindEpoch(ctx context.Context, id uint64, itemsLimit int, cursor *string) (*schema.Epoch, error)
+	FindEpochTransactions(ctx context.Context, id uint64, itemsLimit int, cursor *string) ([]*schema.Epoch, error)
+	FindEpochTransaction(ctx context.Context, transactionHash common.Hash, itemsLimit int, cursor *string) (*schema.Epoch, error)
 	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
+
+	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error
+	FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error)
 
 	SaveBillingRecordDeposited(ctx context.Context, billingRecord *schema.BillingRecordDeposited) error
 	SaveBillingRecordWithdrawal(ctx context.Context, billingRecord *schema.BillingRecordWithdrawal) error
