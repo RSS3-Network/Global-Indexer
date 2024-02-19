@@ -20,13 +20,17 @@ type StakeChipTransformer interface {
 }
 
 type StakeChip struct {
-	ID    *big.Int       `json:"id"`
-	Owner common.Address `json:"owner"`
-	Node  common.Address `json:"node"`
+	ID             *big.Int       `json:"id"`
+	Owner          common.Address `json:"owner"`
+	Node           common.Address `json:"node"`
+	BlockNumber    *big.Int       `json:"blockNumber"`
+	BlockTimestamp uint64         `json:"blockTimestamp"`
 }
 
 type StakeChipsQuery struct {
-	ID    *big.Int        `query:"id"`
-	Owner *common.Address `query:"owner"`
-	Node  *common.Address `query:"node"`
+	Cursor *common.Address
+	Direct bool
+	ID     *big.Int        `query:"id"`
+	Owner  *common.Address `query:"owner"`
+	Node   *common.Address `query:"node"`
 }

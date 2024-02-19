@@ -38,18 +38,20 @@ type BridgeEvent struct {
 	TransactionHash   common.Hash     `json:"transactionHash"`
 	TransactionIndex  uint            `json:"transactionIndex"`
 	TransactionStatus uint64          `json:"transactionStatus"`
+	ChainID           uint64          `json:"chainID"`
 	BlockHash         common.Hash     `json:"blockHash"`
 	BlockNumber       *big.Int        `json:"blockNumber"`
 	BlockTimestamp    time.Time       `json:"blockTimestamp"`
 }
 
-func NewBridgeEvent(id common.Hash, eventType BridgeEventType, header *types.Header, transaction *types.Transaction, receipt *types.Receipt) *BridgeEvent {
+func NewBridgeEvent(id common.Hash, eventType BridgeEventType, chainID uint64, header *types.Header, transaction *types.Transaction, receipt *types.Receipt) *BridgeEvent {
 	bridgeEvent := BridgeEvent{
 		ID:                id,
 		Type:              eventType,
 		TransactionHash:   transaction.Hash(),
 		TransactionIndex:  receipt.TransactionIndex,
 		TransactionStatus: receipt.Status,
+		ChainID:           chainID,
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),

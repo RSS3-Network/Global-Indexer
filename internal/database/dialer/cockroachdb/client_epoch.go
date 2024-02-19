@@ -3,11 +3,13 @@ package cockroachdb
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -48,7 +50,7 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 	onConflict = clause.OnConflict{
 		Columns: []clause.Column{
 			{
-				Name: "epoch_id",
+				Name: "transaction_hash",
 			},
 			{
 				Name: "index",
@@ -69,13 +71,13 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error) {
 	var data table.Epochs
 
-	databaseStatement := c.database.WithContext(ctx).Model(&table.Epoch{})
+	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{}).Select("DISTINCT id").Limit(limit).Order("id DESC")
 
 	if cursor != nil {
-		databaseStatement = databaseStatement.Where("id < ?", cursor)
+		subQuery = subQuery.Where("id < ?", cursor)
 	}
 
-	if err := databaseStatement.Order("id DESC").Limit(limit).Find(&data).Error; err != nil {
+	if err := c.database.WithContext(ctx).Model(&table.Epoch{}).Where("id IN (?)", subQuery).Order("id DESC, block_number DESC").Find(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -85,13 +87,26 @@ func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*
 		return nil, err
 	}
 
-	return data.Export()
+	return data.Export(nil)
 }
 
-func (c *client) FindEpoch(ctx context.Context, id uint64, itemsLimit int, cursor *string) (*schema.Epoch, error) {
-	var data table.Epoch
+func (c *client) FindEpochTransactions(ctx context.Context, id uint64, itemsLimit int, cursor *string) ([]*schema.Epoch, error) {
+	// Find epoch transactions by id.
+	databaseStatement := c.database.WithContext(ctx).Model(&table.Epoch{})
 
-	if err := c.database.WithContext(ctx).First(&data, "id = ?", id).Error; err != nil {
+	if cursor != nil {
+		var transaction *table.Epoch
+
+		if err := c.database.WithContext(ctx).First(&transaction, "transaction_hash = ?", cursor).Error; err != nil {
+			return nil, fmt.Errorf("find epoch cursor: %w", err)
+		}
+
+		databaseStatement = databaseStatement.Where("block_number < ?", transaction.BlockNumber)
+	}
+
+	var data table.Epochs
+
+	if err := databaseStatement.Where("id = ?", id).Order("block_number DESC").Find(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -101,15 +116,22 @@ func (c *client) FindEpoch(ctx context.Context, id uint64, itemsLimit int, curso
 		return nil, err
 	}
 
+	// Find epoch items by transaction_hash.
+	hashes := lo.Map(data, func(x *table.Epoch, _ int) string {
+		return x.TransactionHash
+	})
+
 	var items table.EpochItems
 
-	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("epoch_id = ?", id)
-
-	if cursor != nil {
-		databaseStatement = databaseStatement.Where("index > ?", cursor)
-	}
+	databaseStatement = c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("transaction_hash IN (?)", hashes).Where("index <= ?", itemsLimit)
 
 	if err := databaseStatement.Order("index ASC").Limit(itemsLimit).Find(&items).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zap.L().Error("find epoch items", zap.Error(err), zap.Any("hashes", hashes))
+
+			return data.Export(nil)
+		}
+
 		zap.L().Error("find epoch items", zap.Error(err), zap.Uint64("id", id))
 
 		return nil, err
@@ -118,6 +140,44 @@ func (c *client) FindEpoch(ctx context.Context, id uint64, itemsLimit int, curso
 	epochItems, err := items.Export()
 	if err != nil {
 		zap.L().Error("export epoch items", zap.Error(err), zap.Uint64("id", id))
+
+		return nil, err
+	}
+
+	return data.Export(epochItems)
+}
+
+func (c *client) FindEpochTransaction(ctx context.Context, transactionHash common.Hash, itemsLimit int, cursor *string) (*schema.Epoch, error) {
+	var data table.Epoch
+
+	if err := c.database.WithContext(ctx).Model(&table.Epoch{}).Where("transaction_hash = ?", transactionHash.String()).First(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		zap.L().Error("find epoch", zap.Error(err), zap.Any("transactionHash", transactionHash))
+
+		return nil, err
+	}
+
+	// Find epoch items by transaction_hash.
+	var items table.EpochItems
+
+	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("transaction_hash = ?", transactionHash.String())
+
+	if cursor != nil {
+		databaseStatement = databaseStatement.Where("index > ?", cursor)
+	}
+
+	if err := databaseStatement.Order("index ASC").Limit(itemsLimit).Find(&items).Error; err != nil {
+		zap.L().Error("find epoch items", zap.Error(err), zap.Any("transaction_hash", transactionHash))
+
+		return nil, err
+	}
+
+	epochItems, err := items.Export()
+	if err != nil {
+		zap.L().Error("export epoch items", zap.Error(err), zap.Any("transaction_hash", transactionHash))
 
 		return nil, err
 	}
@@ -187,4 +247,38 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	}
 
 	return result, nil
+}
+
+func (c *client) SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error {
+	// Save epoch trigger.
+	var data table.EpochTrigger
+	if err := data.Import(epochTrigger); err != nil {
+		zap.L().Error("import epoch trigger", zap.Error(err), zap.Any("epochTrigger", epochTrigger))
+
+		return err
+	}
+
+	if err := c.database.WithContext(ctx).Create(&data).Error; err != nil {
+		zap.L().Error("insert epoch trigger", zap.Error(err), zap.Any("epochTrigger", epochTrigger))
+
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error) {
+	var data table.EpochTrigger
+
+	if err := c.database.WithContext(ctx).Order("created_at DESC").First(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		zap.L().Error("find latest epoch trigger", zap.Error(err))
+
+		return nil, err
+	}
+
+	return data.Export()
 }

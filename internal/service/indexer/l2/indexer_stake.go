@@ -191,9 +191,11 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 
 	for index, chipID := range stakeTransaction.Chips {
 		stakeChips[index] = &schema.StakeChip{
-			ID:    chipID,
-			Owner: event.User,
-			Node:  event.NodeAddr,
+			ID:             chipID,
+			Owner:          event.User,
+			Node:           event.NodeAddr,
+			BlockNumber:    header.Number,
+			BlockTimestamp: header.Time,
 		}
 	}
 
@@ -300,6 +302,7 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
+			TransactionHash:  transaction.Hash(),
 			NodeAddress:      event.NodeAddrs[i],
 			RequestFees:      event.RequestFees[i].String(),
 			OperationRewards: event.OperationRewards[i].String(),

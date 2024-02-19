@@ -8,8 +8,9 @@ import (
 )
 
 type EpochItem struct {
-	EpochID          uint64          `gorm:"column:epoch_id;primaryKey"`
+	EpochID          uint64          `gorm:"column:epoch_id;"`
 	Index            int             `gorm:"column:index;primaryKey"`
+	TransactionHash  string          `gorm:"column:transaction_hash;primaryKey"`
 	NodeAddress      string          `gorm:"column:node_address"`
 	RequestFees      decimal.Decimal `gorm:"column:request_fees"`
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
@@ -24,6 +25,7 @@ func (e *EpochItem) TableName() string {
 func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
 	e.EpochID = epochRewardItem.EpochID
 	e.Index = epochRewardItem.Index
+	e.TransactionHash = epochRewardItem.TransactionHash.String()
 	e.NodeAddress = epochRewardItem.NodeAddress.String()
 	e.RequestFees = lo.Must(decimal.NewFromString(epochRewardItem.RequestFees))
 	e.OperationRewards = lo.Must(decimal.NewFromString(epochRewardItem.OperationRewards))
@@ -37,6 +39,7 @@ func (e *EpochItem) Export() (*schema.EpochItem, error) {
 	return &schema.EpochItem{
 		EpochID:          e.EpochID,
 		Index:            e.Index,
+		TransactionHash:  common.HexToHash(e.TransactionHash),
 		NodeAddress:      common.HexToAddress(e.NodeAddress),
 		RequestFees:      e.RequestFees.String(),
 		OperationRewards: e.OperationRewards.String(),
