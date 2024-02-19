@@ -3,7 +3,7 @@ package handlers
 import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
-	jwtext "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"github.com/samber/lo"
 	"net/http"
@@ -62,7 +62,7 @@ func (app *App) SIWEVerify(ctx echo.Context) error {
 
 	// set User with expiration
 	expires := time.Now().Add(constants.AUTH_TOKEN_DURATION)
-	token, err := app.jwtClient.SignToken(&jwtext.User{
+	token, err := app.jwtClient.SignToken(&jwt.User{
 		Address: acc.Address,
 		ChainId: chainId,
 		Expires: expires.Unix(),
