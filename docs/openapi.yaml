@@ -7,10 +7,17 @@ servers:
     description: Production
   - url: http://localhost
     description: Development
+tags:
+  - name: Default
+  - name: Bridge
+  - name: Stake
+  - name: Snapshot
 paths:
   /bridge/transactions:
     get:
       description: "Get bridge transactions"
+      tags:
+        - Bridge
       parameters:
         - name: sender
           in: query
@@ -74,6 +81,8 @@ paths:
   /bridge/transactions/{id}:
     get:
       description: "Get bridge transaction by id"
+      tags:
+        - Bridge
       parameters:
         - name: id
           in: path
@@ -121,6 +130,8 @@ paths:
   /stake/transactions:
     get:
       description: "Get stake transactions"
+      tags:
+        - Stake
       parameters:
         - name: user
           in: query
@@ -186,6 +197,8 @@ paths:
   /stake/transactions/{id}:
     get:
       description: "Get stake transaction by id"
+      tags:
+        - Stake
       parameters:
         - name: id
           in: path
@@ -218,6 +231,59 @@ paths:
                         transaction:
                           hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                           index: 1
+  /snapshot/nodes:
+    get:
+      description: "Get snapshots of the number of nodes"
+      tags:
+        - Snapshot
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+              example:
+                data:
+                  - date: "2024-02-19"
+                    count: 2
+
+  /snapshot/stakers:
+    get:
+      description: "Get snapshots of the number of stakers"
+      tags:
+        - Snapshot
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+              example:
+                data:
+                  - date: "2024-02-19"
+                    count: 2
 components:
   schemas:
     BridgeTransaction:

@@ -32,10 +32,12 @@ type Client interface {
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
+	FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error)
+	FindNodeSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
-	FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error)
 	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
+	SaveNodeSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
 	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
@@ -48,9 +50,11 @@ type Client interface {
 	FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error)
 	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
+	FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
+	SaveStakeSnapshot(ctx context.Context, stakeSnapshot *schema.StakeSnapshot) error
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
