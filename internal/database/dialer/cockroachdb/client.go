@@ -184,6 +184,27 @@ func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&nodes).Error
 }
 
+func (c *client) SaveNodeSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error {
+	databaseClient := c.database.WithContext(ctx)
+
+	if err := databaseClient.
+		Table((*table.Node).TableName(nil)).
+		Count(&nodeSnapshot.Count).
+		Error; err != nil {
+		return fmt.Errorf("query count: %w", err)
+	}
+
+	var value table.NodeSnapshot
+	if err := value.Import(*nodeSnapshot); err != nil {
+		return fmt.Errorf("import node snapshot: %w", err)
+	}
+
+	return databaseClient.
+		Table((*table.NodeSnapshot).TableName(nil)).
+		Create(nodeSnapshot).
+		Error
+}
+
 func (c *client) UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error {
 	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
 		for {
@@ -307,6 +328,32 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	}
 
 	return databaseStatement, nil
+}
+
+func (c *client) FindNodeSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	var nodeSnapshots []*table.NodeSnapshot
+
+	if err := databaseClient.
+		Order(`"date" DESC`).
+		Limit(100). // TODO Replace this constant with a query parameter.
+		Find(&nodeSnapshots).Error; err != nil {
+		return nil, err
+	}
+
+	values := make([]*schema.NodeSnapshot, 0, len(nodeSnapshots))
+
+	for _, nodeSnapshot := range nodeSnapshots {
+		value, err := nodeSnapshot.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export node snapshot: %w", err)
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
 }
 
 func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
