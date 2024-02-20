@@ -59,6 +59,27 @@ func (c *client) FindBridgeTransactions(ctx context.Context, query schema.Bridge
 
 	databaseClient := c.database.WithContext(ctx)
 
+	const limit = 100
+
+	if query.Cursor != nil {
+		var cursor table.BridgeTransaction
+		if err := databaseClient.Where(`"id" = ?`, query.Cursor.String()).First(&cursor).Error; err != nil {
+			return nil, fmt.Errorf("query cursor: %w", err)
+		}
+
+		// TODO Need a better cursor implementation.
+		databaseClient = databaseClient.Where(
+			`
+("block_timestamp" < ?) OR
+("block_timestamp" = ? AND "chain_id" = ? AND "block_number" < ?) OR
+("block_timestamp" = ? AND "chain_id" = ? AND "block_number" = ? AND "transaction_index" < ?)
+`,
+			cursor.BlockTimestamp,
+			cursor.BlockTimestamp, cursor.ChainID, cursor.BlockNumber,
+			cursor.BlockTimestamp, cursor.ChainID, cursor.BlockNumber, cursor.TransactionIndex,
+		)
+	}
+
 	if query.ID != nil {
 		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
 	}
@@ -79,7 +100,7 @@ func (c *client) FindBridgeTransactions(ctx context.Context, query schema.Bridge
 		databaseClient = databaseClient.Where(`"type" = ?`, *query.Type)
 	}
 
-	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(limit).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
