@@ -204,6 +204,7 @@ var gatewayCommand = &cobra.Command{
 var gatewayMigrateCommand = &cobra.Command{
 	Use: "gateway-migrate",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		flags = cmd.PersistentFlags()
 
 		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
 		if err != nil {
