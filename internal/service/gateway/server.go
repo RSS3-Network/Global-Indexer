@@ -15,10 +15,13 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/siwe"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/swagger"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -114,6 +117,21 @@ func New(databaseClient database.Client, redis *redis.Client, config config.Gate
 
 func (s *Server) configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT) {
 	oapi.RegisterHandlers(e, app)
+
+	// Add api docs
+	if os.Getenv(config.Environment) == config.EnvironmentDevelopment {
+		swg, err := oapi.GetSwagger()
+		if err != nil {
+			// Log but ignore
+			zap.L().Error("get swagger doc", zap.Error(err))
+		}
+		swgJSON, err := swg.MarshalJSON()
+		if err != nil {
+			// Log but ignore
+			zap.L().Error("marshal swagger doc", zap.Error(err))
+		}
+		e.Pre(swagger.SwaggerDoc("/", swgJSON))
+	}
 
 	// Check user authentication
 	e.Use(middlewares.UserAuthenticationMiddleware(s.databaseClient.Raw(), jwtClient))
