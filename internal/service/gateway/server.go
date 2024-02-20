@@ -18,7 +18,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -47,13 +46,13 @@ func (s *Server) Run(ctx context.Context) error {
 		// Prepare JWT
 		jwtClient, err := jwt.New(s.config.API.JWTKey)
 		if err != nil {
-			log.Panic(err)
+			return err
 		}
 
 		// Prepare SIWE
 		siweClient, err := siwe.New(s.config.API.SIWEDomain, s.redis)
 		if err != nil {
-			log.Panic(err)
+			return err
 		}
 
 		// Prepare echo
@@ -66,7 +65,7 @@ func (s *Server) Run(ctx context.Context) error {
 			siweClient,
 		)
 		if err != nil {
-			log.Panic(err)
+			return err
 		}
 
 		// Configure middlewares
@@ -79,13 +78,13 @@ func (s *Server) Run(ctx context.Context) error {
 		)
 		if err != nil {
 			// Failed to Initialize kafka consumer
-			log.Panic(err)
+			return err
 		}
 
 		err = kafkaService.Start(echoHandler.ProcessAccessLog)
 		if err != nil {
 			// Failed to start kafka consumer
-			log.Panic(err)
+			return err
 		}
 
 		// Start echo API server
