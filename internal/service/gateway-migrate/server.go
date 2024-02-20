@@ -12,7 +12,14 @@ type Server struct {
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	return s.databaseClient.Raw().WithContext(ctx).AutoMigrate(
+	// Prepare schema
+	err := s.databaseClient.Raw().WithContext(ctx).Exec(`CREATE SCHEMA IF NOT EXISTS "gateway";`).Error
+	if err != nil {
+		return err
+	}
+
+	// Prepare tables
+	err = s.databaseClient.Raw().WithContext(ctx).AutoMigrate(
 		&table.GatewayAccount{},
 		&table.GatewayKey{},
 		&table.GatewayConsumptionLog{},
@@ -22,6 +29,11 @@ func (s *Server) Run(ctx context.Context) error {
 		&table.BillingRecordWithdrawal{},
 		&table.BillingRecordCollected{},
 	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func New(databaseClient database.Client) (service.Server, error) {
