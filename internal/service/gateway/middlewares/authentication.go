@@ -2,25 +2,22 @@ package middlewares
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"regexp"
 )
 
-func authenticateUser(ctx echo.Context, jwtUser *jwt.User, databaseClient *gorm.DB) (*table.GatewayAccount, error) {
-	var account table.GatewayAccount
-	err := databaseClient.WithContext(ctx.Request().Context()).
-		Where("address = ?", jwtUser.Address).
-		First(&account).
-		Error
+func authenticateUser(ctx echo.Context, jwtUser *jwt.User, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) (*model.Account, error) {
+	account, _, err := model.AccountGetByAddress(ctx.Request().Context(), jwtUser.Address, databaseClient, apiSixAPIService)
 	if err != nil {
 		return nil, err
 	}
-	return &account, nil
+	return account, nil
 }
 
 func ParseUserWithToken(c echo.Context, jwtClient *jwt.JWT) *jwt.User {
@@ -37,7 +34,7 @@ var (
 	SkipMiddlewarePaths = regexp.MustCompile("^/(users/|health)")
 )
 
-func UserAuthenticationMiddleware(databaseClient *gorm.DB, jwtClient *jwt.JWT) echo.MiddlewareFunc {
+func UserAuthenticationMiddleware(databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService, jwtClient *jwt.JWT) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// this is a hack to workaround codegen and echo router group issue
@@ -54,7 +51,7 @@ func UserAuthenticationMiddleware(databaseClient *gorm.DB, jwtClient *jwt.JWT) e
 			}
 
 			// Authenticate user
-			account, err := authenticateUser(c, user, databaseClient)
+			account, err := authenticateUser(c, user, databaseClient, apiSixAPIService)
 			if err != nil || account == nil {
 				return utils.SendJSONError(c, http.StatusUnauthorized)
 			}

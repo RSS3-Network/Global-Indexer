@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"github.com/samber/lo"
 	"net/http"
@@ -52,10 +52,7 @@ func (app *App) SIWEVerify(ctx echo.Context) error {
 	}
 
 	// get or create account
-	var acc table.GatewayAccount
-	err = app.databaseClient.WithContext(ctx.Request().Context()).
-		FirstOrCreate(&acc, "address = ?", *address).
-		Error
+	acc, err := model.AccountGetOrCreate(ctx.Request().Context(), *address, app.databaseClient, app.apiSixAPIService)
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}

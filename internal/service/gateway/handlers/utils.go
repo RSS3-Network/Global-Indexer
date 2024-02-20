@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"context"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -16,20 +16,12 @@ func (app *App) getCtx(ctx echo.Context) (context.Context, *jwt.User) {
 	return ctx.Request().Context(), middlewares.ParseUserWithToken(ctx, app.jwtClient)
 }
 
-func (app *App) getKey(ctx echo.Context, keyID int) (*table.GatewayKey, error) {
-	user := ctx.Get("user").(*table.GatewayAccount)
+func (app *App) getKey(ctx echo.Context, keyID int) (*model.Key, error) {
+	user := ctx.Get("user").(*model.Account)
 
-	var k table.GatewayKey
-	err := app.databaseClient.WithContext(ctx.Request().Context()).
-		Model(&table.GatewayKey{}).
-		Where("account_address = ? AND id = ?", user.Address, keyID).
-		First(&k).
-		Error
-	if err != nil {
-		return nil, err
-	}
+	k, err := user.GetKey(ctx.Request().Context(), keyID)
 
-	return &k, nil
+	return k, err
 }
 
 func parseDates(since *oapi.Since, until *oapi.Until) (time.Time, time.Time) {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"github.com/samber/lo"
 	"math"
@@ -12,7 +13,7 @@ import (
 )
 
 func (app *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistoryParams) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	// Parse date
 	limit, page := parseLimitPage(params.Limit, params.Page)
@@ -58,7 +59,7 @@ func (app *App) GetDepositHistory(ctx echo.Context, params oapi.GetDepositHistor
 }
 
 func (app *App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawalHistoryParams) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	// Parse date
 	limit, page := parseLimitPage(params.Limit, params.Page)
@@ -107,7 +108,7 @@ func (app *App) GetWithdrawalHistory(ctx echo.Context, params oapi.GetWithdrawal
 }
 
 func (app *App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollectionHistoryParams) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	limit, page := parseLimitPage(params.Limit, params.Page)
 
@@ -208,19 +209,12 @@ func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, keyID int, params o
 }
 
 func (app *App) GetConsumptionHistoryByAccount(ctx echo.Context, params oapi.GetConsumptionHistoryByAccountParams) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	since, until := parseDates(params.Since, params.Until)
 
 	// Query from database
-	var logs []table.GatewayConsumptionLog
-	err := app.databaseClient.WithContext(ctx.Request().Context()).
-		Model(&table.GatewayConsumptionLog{}).
-		Joins("JOIN gateway.key").
-		Where("account_address = ? AND consumption_date >= ? AND consumption_date <= ?", user.Address, since, until).
-		Order("consumption_date DESC").
-		Find(&logs).
-		Error
+	logs, err := user.GetUsageByDate(ctx.Request().Context(), since, until)
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
@@ -242,7 +236,7 @@ func (app *App) GetConsumptionHistoryByAccount(ctx echo.Context, params oapi.Get
 			apiCalls int64 = 0
 			ruUsed   int64 = 0
 		)
-		for _, log := range logs {
+		for _, log := range *logs {
 			apiCalls += log.ApiCalls
 			ruUsed += log.RuUsed
 		}
@@ -251,7 +245,7 @@ func (app *App) GetConsumptionHistoryByAccount(ctx echo.Context, params oapi.Get
 			RuUsed:   &ruUsed,
 		})
 	} else {
-		for _, log := range logs {
+		for _, log := range *logs {
 			consumptionDate := log.ConsumptionDate.UnixMilli()
 			*resp.History = append(*resp.History, oapi.ConsumptionLogByKey{
 				KeyName:         &log.Key.Name,

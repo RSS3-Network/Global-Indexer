@@ -5,13 +5,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"gorm.io/gorm"
 	"net/http"
 )
 
 func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	amount := float32(0)
 
@@ -37,7 +38,7 @@ func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
 }
 
 func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendingRequestWithdrawParams) error {
-	user := ctx.Get("user").(*table.GatewayAccount)
+	user := ctx.Get("user").(*model.Account)
 
 	// Check if there's any pending withdraw requests
 	var pendingWithdrawRequest table.GatewayPendingWithdrawRequest

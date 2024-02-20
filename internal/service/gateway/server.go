@@ -72,7 +72,7 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 
 		// Configure middlewares
-		s.configureMiddlewares(e, echoHandler, jwtClient)
+		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), apisixAPIService)
 
 		// Connect to kafka for access logs
 		kafkaService, err := apisixKafkaLog.New(
@@ -115,7 +115,7 @@ func New(databaseClient database.Client, redis *redis.Client, config config.Gate
 	return &instance, nil
 }
 
-func (s *Server) configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT) {
+func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) {
 	oapi.RegisterHandlers(e, app)
 
 	// Add api docs
@@ -134,7 +134,7 @@ func (s *Server) configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient
 	}
 
 	// Check user authentication
-	e.Use(middlewares.UserAuthenticationMiddleware(s.databaseClient.Raw(), jwtClient))
+	e.Use(middlewares.UserAuthenticationMiddleware(databaseClient, apiSixAPIService, jwtClient))
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 }
