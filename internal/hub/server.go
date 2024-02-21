@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"fmt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"net"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -29,8 +30,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient)
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}

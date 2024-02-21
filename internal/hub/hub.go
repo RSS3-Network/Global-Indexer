@@ -37,15 +37,10 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client) (*Hub, error) {
+func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client) (*Hub, error) {
 	stakingContract, err := l2.NewStaking(l2.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
-	}
-
-	geoLite2, err := geolite2.NewClient("./common/geolite2/GeoLite2-City.mmdb")
-	if err != nil {
-		return nil, fmt.Errorf("new geo lite2 client: %w", err)
 	}
 
 	return &Hub{

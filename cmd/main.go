@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"os"
 	"os/signal"
 
@@ -58,7 +59,12 @@ var command = cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient)
+		geoLite2, err := geolite2.NewClient(config.GeoIP)
+		if err != nil {
+			return fmt.Errorf("new geo lite2 client: %w", err)
+		}
+
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient, geoLite2)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}

@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"path/filepath"
 
+	"github.com/maxmind/geoipupdate/v6/pkg/geoipupdate"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/oschwald/geoip2-golang"
 )
@@ -66,8 +69,29 @@ func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.Node
 	return records, nil
 }
 
-func NewClient(file string) (*Client, error) {
-	reader, err := geoip2.Open(file)
+func NewClient(conf *config.GeoIP) (*Client, error) {
+	dir := filepath.Dir(conf.File)
+
+	config := &geoipupdate.Config{
+		URL:               "https://updates.maxmind.com",
+		DatabaseDirectory: dir,
+		LockFile:          filepath.Join(dir, ".geoipupdate.lock"),
+		AccountID:         conf.Account,
+		LicenseKey:        conf.LicenseKey,
+		EditionIDs:        []string{"GeoLite2-City"},
+		Output:            true,
+		Verbose:           true,
+		Parallelism:       1,
+	}
+
+	client := geoipupdate.NewClient(config)
+
+	err := client.Run(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("run geoipupdate: %w", err)
+	}
+
+	reader, err := geoip2.Open(conf.File)
 	if err != nil {
 		return nil, fmt.Errorf("open geolite2: %w", err)
 	}
