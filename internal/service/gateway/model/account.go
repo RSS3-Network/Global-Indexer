@@ -147,7 +147,7 @@ func (acc *Account) GetBalance(ctx context.Context) (int64, error) {
 	return acc.RuLimit - ruUsed, nil
 }
 
-func (acc *Account) GetKey(ctx context.Context, keyID int) (*Key, error) {
+func (acc *Account) GetKey(ctx context.Context, keyID uint) (*Key, bool, error) {
 
 	var k table.GatewayKey
 	err := acc.databaseClient.WithContext(ctx).
@@ -156,8 +156,12 @@ func (acc *Account) GetKey(ctx context.Context, keyID int) (*Key, error) {
 		First(&k).
 		Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, false, nil
+		} else {
+			return nil, false, err
+		}
 	}
 
-	return &Key{k, acc.databaseClient, acc.apiSixAPIService}, nil
+	return &Key{k, acc.databaseClient, acc.apiSixAPIService}, true, nil
 }

@@ -42,10 +42,12 @@ var (
 
 	validAuthToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiMHhmMkY2ZTI4NkI2MmRlNEEwQjM2ODczMjcxQzAxNThlMTU4REZhYmU3IiwiY2hhaW5faWQiOjEsImV4cCI6MjAwNjkzODM1Mn0.lUdTv8nHuEu3rGT7BbXV-4GtiKKG98Rz9hCGeUS_apw"
 	validAddress   = common.HexToAddress("0xf2F6e286B62de4A0B36873271C0158e158DFabe7")
+
+	fakeUserAddr = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 var (
-	echoHandler      *handlers.App
+	gatewayApp       *handlers.App
 	redisClient      *redis.Client
 	databaseClient   *gorm.DB
 	jwtClient        *jwtImpl.JWT
@@ -100,7 +102,7 @@ func init() {
 
 	// Prepare echo
 	e := echo.New()
-	echoHandler, err = handlers.NewApp(
+	gatewayApp, err = handlers.NewApp(
 		apisixAPIService,
 		redisClient,
 		databaseClient,
@@ -112,7 +114,9 @@ func init() {
 	}
 
 	// Configure middlewares
-	configureMiddlewares(e, echoHandler, jwtClient, databaseClient, apisixAPIService)
+	configureMiddlewares(e, gatewayApp, jwtClient, databaseClient, apisixAPIService)
+
+	handler = e.Server.Handler
 }
 
 func setup() {
@@ -419,9 +423,9 @@ func Test_KeyAndRU(t *testing.T) {
 	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
 	assert.NoError(t, err)
 	assert.Equal(t, keyCounts, 2)
-	var user table.GatewayAccount
-	err = databaseClient.Model(&table.GatewayAccount{}).Where("address = ?", validAddress).First(&user).Error
+	user, exist, err := model.AccountGetByAddress(ctx, validAddress, databaseClient, apisixAPIService)
 	assert.NoError(t, err)
+	assert.True(t, exist)
 	client.GET("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusOK).
 		JSON().Object().IsEqual(map[string]any{
 		"id":                obj.Value("id").Number().Raw(),
@@ -444,13 +448,15 @@ func Test_KeyAndRU(t *testing.T) {
 	})
 
 	// create new account with key
-	fakeUserAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
 	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixAPIService)
 	assert.NoError(t, err)
 	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixAPIService)
 	assert.NoError(t, err)
-	assert.Equal(t, len(app.EntClient.Key.Query().AllX(ctx)), 3)
-	app.EntClient.Key.Update().SetRuUsedCurrent(100).Where(key.IDEQ(fakeUserKey.ID)).ExecX(ctx)
+	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
+	assert.NoError(t, err)
+	assert.Equal(t, keyCounts, 3)
+	err = databaseClient.Model(&table.GatewayKey{}).Where("id = ?", fakeUserKey.ID).Update("ru_used_current", 100).Error
+	assert.NoError(t, err)
 	_, ruu, _, apicalls, err := fakeUser.GetUsage(ctx)
 	assert.NoError(t, err)
 	assert.EqualValues(t, ruu, 100)
@@ -478,7 +484,7 @@ func Test_KeyAndRU(t *testing.T) {
 	assert.Equal(t, len(dbKeys), 2)
 	dbKeyStrs := make([]string, 2)
 	for i, k := range dbKeys {
-		dbKeyStrs[i] = k.Key.Key.String()
+		dbKeyStrs[i] = k.Key.String()
 	}
 	for _, obj := range objs.Iter() {
 		obj.Object().Value("key").String().NotEmpty()
@@ -526,7 +532,6 @@ func Test_RequestWithdraw(t *testing.T) {
 	setupAccount()
 	defer tearDownAccount()
 
-	ctx := context.Background()
 	client := getAuth(t)
 
 	// Get current withdrawal amount
@@ -535,7 +540,10 @@ func Test_RequestWithdraw(t *testing.T) {
 		"amount": 0,
 	})
 
-	assert.Equal(t, app.EntClient.PendingWithdrawRequest.Query().CountX(ctx), 0)
+	var pendingWithdrawRequestCount int64
+	err := databaseClient.Model(&table.GatewayPendingWithdrawRequest{}).Count(&pendingWithdrawRequestCount).Error
+	assert.NoError(t, err)
+	assert.Equal(t, pendingWithdrawRequestCount, int64(0))
 
 	// Create a withdrawal request
 	amount1 := float64(10)
@@ -546,7 +554,9 @@ func Test_RequestWithdraw(t *testing.T) {
 		"amount": amount1,
 	})
 
-	assert.Equal(t, app.EntClient.PendingWithdrawRequest.Query().CountX(ctx), 1)
+	err = databaseClient.Model(&table.GatewayPendingWithdrawRequest{}).Count(&pendingWithdrawRequestCount).Error
+	assert.NoError(t, err)
+	assert.Equal(t, pendingWithdrawRequestCount, int64(1))
 
 	// Update withdrawal request
 	amount2 := 20.5
@@ -557,7 +567,9 @@ func Test_RequestWithdraw(t *testing.T) {
 		"amount": amount2,
 	})
 
-	assert.Equal(t, len(app.EntClient.PendingWithdrawRequest.Query().AllX(ctx)), 1)
+	err = databaseClient.Model(&table.GatewayPendingWithdrawRequest{}).Count(&pendingWithdrawRequestCount).Error
+	assert.NoError(t, err)
+	assert.Equal(t, pendingWithdrawRequestCount, int64(1))
 
 	// Unset withdrawal request
 	client.POST("/request/withdraw").WithQuery("amount", 0).Expect().Status(http.StatusOK)
@@ -567,7 +579,9 @@ func Test_RequestWithdraw(t *testing.T) {
 		"amount": 0,
 	})
 
-	assert.Equal(t, app.EntClient.PendingWithdrawRequest.Query().CountX(ctx), 0)
+	err = databaseClient.Model(&table.GatewayPendingWithdrawRequest{}).Count(&pendingWithdrawRequestCount).Error
+	assert.NoError(t, err)
+	assert.Equal(t, pendingWithdrawRequestCount, int64(0))
 
 	// Set again
 
@@ -578,7 +592,9 @@ func Test_RequestWithdraw(t *testing.T) {
 		"amount": amount2,
 	})
 
-	assert.Equal(t, len(app.EntClient.PendingWithdrawRequest.Query().AllX(ctx)), 1)
+	err = databaseClient.Model(&table.GatewayPendingWithdrawRequest{}).Count(&pendingWithdrawRequestCount).Error
+	assert.NoError(t, err)
+	assert.Equal(t, pendingWithdrawRequestCount, int64(1))
 
 	// Unset again with negative amount
 	client.POST("/request/withdraw").WithQuery("amount", -1).Expect().Status(http.StatusOK)
@@ -621,15 +637,21 @@ func Test_ProcessAccessLog(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test account and add some RU
-	fakeUser, err := model.AccountCreate(ctx, "fake_user")
+	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixAPIService)
 	assert.NoError(t, err)
-	app.EntClient.Account.UpdateOneID(fakeUser.ID).SetRuLimit(100).ExecX(ctx)
-	assert.Equal(t, app.EntClient.Account.GetX(ctx, fakeUser.ID).RuLimit, int64(100))
+	err = databaseClient.Model(&table.GatewayAccount{}).Where("address = ?", fakeUser.Address).Update("ru_limit", 100).Error
+	assert.NoError(t, err)
+	fakeUser, exist, err := model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixAPIService)
+	assert.NoError(t, err)
+	assert.True(t, exist)
+	assert.Equal(t, fakeUser.RuLimit, int64(100))
 
 	// Create test key
-	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.ID, fakeUser.Address, "fake key")
+	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixAPIService)
 	assert.NoError(t, err)
-	assert.Equal(t, app.EntClient.Key.GetX(ctx, fakeUserKey.ID).RuUsedCurrent, int64(0))
+	fakeUserKey, exist, err = fakeUser.GetKey(ctx, fakeUserKey.ID)
+	assert.True(t, exist)
+	assert.Equal(t, fakeUserKey.RuUsedCurrent, int64(0))
 
 	// Mock some request logs
 	consumer := fmt.Sprintf("key_%d", fakeUserKey.ID)
@@ -669,13 +691,19 @@ func Test_ProcessAccessLog(t *testing.T) {
 		},
 	}
 
-	for _, log := range requestLogs {
-		handlers.ProcessAccessLog(log)
+	for _, reqLog := range requestLogs {
+		gatewayApp.ProcessAccessLog(reqLog)
 	}
 
 	// Check RU consumption
-	assert.Equal(t, app.EntClient.Account.GetX(ctx, fakeUser.ID).RuLimit, int64(100))
-	assert.Equal(t, app.EntClient.Key.GetX(ctx, fakeUserKey.ID).RuUsedCurrent, int64(10))
+	fakeUser, exist, err = model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixAPIService)
+	assert.NoError(t, err)
+	assert.True(t, exist)
+	assert.Equal(t, fakeUser.RuLimit, int64(100))
+	fakeUserKey, exist, err = fakeUser.GetKey(ctx, fakeUserKey.ID)
+	assert.NoError(t, err)
+	assert.True(t, exist)
+	assert.Equal(t, fakeUserKey.RuUsedCurrent, int64(10))
 
 	_, ruUsedCurrent, _, apiCallsCurrent, err := fakeUser.GetUsage(ctx)
 	assert.NoError(t, err)

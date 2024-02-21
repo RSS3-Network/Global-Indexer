@@ -16,12 +16,10 @@ func (app *App) getCtx(ctx echo.Context) (context.Context, *jwt.User) {
 	return ctx.Request().Context(), middlewares.ParseUserWithToken(ctx, app.jwtClient)
 }
 
-func (app *App) getKey(ctx echo.Context, keyID int) (*model.Key, error) {
+func (app *App) getKey(ctx echo.Context, keyID int) (*model.Key, bool, error) {
 	user := ctx.Get("user").(*model.Account)
 
-	k, err := user.GetKey(ctx.Request().Context(), keyID)
-
-	return k, err
+	return user.GetKey(ctx.Request().Context(), uint(keyID))
 }
 
 func parseDates(since *oapi.Since, until *oapi.Until) (time.Time, time.Time) {

@@ -1,21 +1,21 @@
 package handlers
 
 import (
-	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"github.com/samber/lo"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
 )
 
 func (app *App) DeleteKey(ctx echo.Context, keyID int) error {
-	k, err := app.getKey(ctx, keyID)
+	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
+		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	} else if !exist {
 		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
 
@@ -45,14 +45,12 @@ func (app *App) GenerateKey(ctx echo.Context) error {
 }
 
 func (app *App) GetKey(ctx echo.Context, keyID int) error {
-	k, err := app.getKey(ctx, keyID)
+	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return utils.SendJSONError(ctx, http.StatusNotFound)
-		} else {
-			log.Print(err)
-			return utils.SendJSONError(ctx, http.StatusInternalServerError)
-		}
+		log.Print(err)
+		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	} else if !exist {
+		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
 
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
@@ -81,10 +79,12 @@ func (app *App) UpdateKeyInfo(ctx echo.Context, keyID int) error {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
-	k, err := app.getKey(ctx, keyID)
+	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
-		return utils.SendJSONError(ctx, http.StatusUnauthorized)
+		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	} else if !exist {
+		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
 
 	err = k.UpdateInfo(ctx.Request().Context(), *req.Name)
@@ -96,10 +96,12 @@ func (app *App) UpdateKeyInfo(ctx echo.Context, keyID int) error {
 }
 
 func (app *App) RotateKey(ctx echo.Context, keyID int) error {
-	k, err := app.getKey(ctx, keyID)
+	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	} else if !exist {
+		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
 
 	err = k.Rotate(ctx.Request().Context())

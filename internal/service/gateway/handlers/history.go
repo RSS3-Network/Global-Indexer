@@ -156,9 +156,11 @@ func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, keyID int, params o
 	since, until := parseDates(params.Since, params.Until)
 
 	// Query from database
-	k, err := app.getKey(ctx, keyID)
+	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
+	} else if !exist {
+		return utils.SendJSONError(ctx, http.StatusNotFound)
 	}
 
 	var logs []table.GatewayConsumptionLog
