@@ -60,13 +60,15 @@ const (
 )
 
 func init() {
-	var err error
-
 	// Prepare databaseClient
 	dbc, err := dialer.Dial(context.Background(), &config.Database{
 		Driver: database.DriverCockroachDB,
 		URI:    "postgres://root@localhost:26257/defaultdb",
 	})
+	if err != nil {
+		log.Panic(err)
+	}
+	err = dbc.Migrate(context.Background())
 	if err != nil {
 		log.Panic(err)
 	}
@@ -120,27 +122,7 @@ func init() {
 }
 
 func setup() {
-
-	// Prepare schema
-	err := databaseClient.Exec(`CREATE SCHEMA IF NOT EXISTS "gateway";`).Error
-	if err != nil {
-		panic(err)
-	}
-
-	// Prepare tables
-	err = databaseClient.AutoMigrate(
-		&table.GatewayAccount{},
-		&table.GatewayKey{},
-		&table.GatewayConsumptionLog{},
-		&table.GatewayPendingWithdrawRequest{},
-
-		&table.BillingRecordDeposited{},
-		&table.BillingRecordWithdrawal{},
-		&table.BillingRecordCollected{},
-	)
-	if err != nil {
-		panic(err)
-	}
+	// Nothing to do for now
 }
 
 func tearDown() {
@@ -148,7 +130,13 @@ func tearDown() {
 
 	// clear tables
 	sqls := []string{
-		`DROP SCHEMA gateway CASCADE;`,
+		`DELETE FROM gateway.consumption_log CASCADE;`,
+		`DELETE FROM gateway.key CASCADE;`,
+		`DELETE FROM gateway.pending_withdraw_request CASCADE;`,
+		`DELETE FROM gateway.account CASCADE;`,
+		`DELETE FROM gateway.br_collected CASCADE;`,
+		`DELETE FROM gateway.br_deposited CASCADE;`,
+		`DELETE FROM gateway.br_withdrawn CASCADE;`,
 	}
 	for _, sql := range sqls {
 		if strings.TrimSpace(sql) == "" {
