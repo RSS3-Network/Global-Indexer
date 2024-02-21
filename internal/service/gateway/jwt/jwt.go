@@ -2,8 +2,8 @@ package jwt
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -13,7 +13,7 @@ type JWT struct {
 
 type User struct {
 	Address common.Address
-	ChainId int
+	ChainID int
 	Expires int64 // Unix time
 }
 
@@ -21,6 +21,7 @@ func New(key string) (*JWT, error) {
 	if len(key) == 0 {
 		return nil, errors.New("lack of key")
 	}
+
 	return &JWT{
 		key: []byte(key),
 	}, nil
@@ -36,13 +37,14 @@ func (d *JWT) ParseUser(authToken string) (*User, error) {
 	token, err := jwt.Parse(authToken, func(token *jwt.Token) (interface{}, error) {
 		return d.key, nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		user.Address = common.HexToAddress(claims["address"].(string))
-		user.ChainId = int(claims["chain_id"].(float64))
+		user.ChainID = int(claims["chain_id"].(float64))
 		user.Expires = int64(claims["exp"].(float64))
 	} else {
 		return nil, errors.New("invalid token")
@@ -55,7 +57,7 @@ func (d *JWT) SignToken(user *User) (string, error) {
 	// Create the Claims
 	claims := jwt.MapClaims{
 		"address":  user.Address.Hex(),
-		"chain_id": user.ChainId,
+		"chain_id": user.ChainID,
 		"exp":      user.Expires,
 	}
 

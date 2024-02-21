@@ -24,5 +24,6 @@ func calculateRU(uri string, ruReMap map[*regexp.Regexp]int64) int64 {
 			return ru
 		}
 	}
+
 	return 0
 }

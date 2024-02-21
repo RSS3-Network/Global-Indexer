@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -20,9 +24,6 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
-	"strings"
 )
 
 type Server struct {
@@ -36,24 +37,26 @@ func (s *Server) Run(ctx context.Context) error {
 
 	// Run echo server.
 	errorPool.Go(func(ctx context.Context) error {
-
 		// Initialize APISIX configurations
 		apisixAPIService, err := apisixHTTPAPI.New(
 			s.config.APISix.Admin.Endpoint,
 			s.config.APISix.Admin.Key,
 		)
+
 		if err != nil {
 			return err
 		}
 
 		// Prepare JWT
 		jwtClient, err := jwt.New(s.config.API.JWTKey)
+
 		if err != nil {
 			return err
 		}
 
 		// Prepare SIWE
 		siweClient, err := siwe.New(s.config.API.SIWEDomain, s.redis)
+
 		if err != nil {
 			return err
 		}
@@ -67,6 +70,7 @@ func (s *Server) Run(ctx context.Context) error {
 			jwtClient,
 			siweClient,
 		)
+
 		if err != nil {
 			return err
 		}
@@ -115,21 +119,25 @@ func New(databaseClient database.Client, redis *redis.Client, config config.Gate
 	return &instance, nil
 }
 
-func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) {
+func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) {
 	oapi.RegisterHandlers(e, app)
 
 	// Add api docs
 	if os.Getenv(config.Environment) == config.EnvironmentDevelopment {
 		swg, err := oapi.GetSwagger()
+
 		if err != nil {
 			// Log but ignore
 			zap.L().Error("get swagger doc", zap.Error(err))
 		}
+
 		swgJSON, err := swg.MarshalJSON()
+
 		if err != nil {
 			// Log but ignore
 			zap.L().Error("marshal swagger doc", zap.Error(err))
 		}
+
 		e.Pre(swagger.SwaggerDoc("/", swgJSON))
 	}
 

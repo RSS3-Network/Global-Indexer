@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway"
 	"os"
 	"os/signal"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/epoch"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
 	"github.com/redis/go-redis/v9"
@@ -199,6 +199,9 @@ var gatewayCommand = &cobra.Command{
 		redisClient := redis.NewClient(options)
 
 		instance, err := gateway.New(databaseClient, redisClient, *config.Gateway)
+		if err != nil {
+			return err
+		}
 
 		return instance.Run(cmd.Context())
 	},

@@ -1,11 +1,12 @@
 package table
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/shopspring/decimal"
 	gormSchema "gorm.io/gorm/schema"
-	"time"
 )
 
 var (

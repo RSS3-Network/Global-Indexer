@@ -12,14 +12,14 @@ import (
 var _ oapi.ServerInterface = (*App)(nil)
 
 type App struct {
-	apiSixAPIService *apisixHTTPAPI.HTTPAPIService
+	apiSixAPIService *apisixHTTPAPI.Service
 	redisClient      *redis.Client
 	databaseClient   *gorm.DB
 	jwtClient        *jwt.JWT
 	siweClient       *siwe.SIWE
 }
 
-func NewApp(apiService *apisixHTTPAPI.HTTPAPIService, redis *redis.Client, databaseClient *gorm.DB, jwtClient *jwt.JWT, siweClient *siwe.SIWE) (*App, error) {
+func NewApp(apiService *apisixHTTPAPI.Service, redis *redis.Client, databaseClient *gorm.DB, jwtClient *jwt.JWT, siweClient *siwe.SIWE) (*App, error) {
 	return &App{
 		apiSixAPIService: apiService,
 		redisClient:      redis,

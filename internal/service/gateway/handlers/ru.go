@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 )
 
 func (app *App) GetRUStatus(ctx echo.Context) error {

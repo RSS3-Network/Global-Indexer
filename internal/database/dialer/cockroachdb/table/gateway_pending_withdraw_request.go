@@ -1,9 +1,10 @@
 package table
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	gormSchema "gorm.io/gorm/schema"
-	"time"
 )
 
 var (

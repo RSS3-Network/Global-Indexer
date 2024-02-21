@@ -3,22 +3,22 @@ package model
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/httpapi"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Account struct {
 	table.GatewayAccount
 
 	databaseClient   *gorm.DB
-	apiSixAPIService *apisixHTTPAPI.HTTPAPIService
+	apiSixAPIService *apisixHTTPAPI.Service
 }
 
-func AccountCreate(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) (*Account, error) {
-
+func AccountCreate(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) (*Account, error) {
 	acc := table.GatewayAccount{
 		Address: address,
 	}
@@ -31,7 +31,7 @@ func AccountCreate(ctx context.Context, address common.Address, databaseClient *
 			return err
 		}
 		// APISix
-		err = apiSixAPIService.NewConsumerGroup(address.Hex())
+		err = apiSixAPIService.NewConsumerGroup(ctx, address.Hex())
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func AccountCreate(ctx context.Context, address common.Address, databaseClient *
 	return &Account{acc, databaseClient, apiSixAPIService}, nil
 }
 
-func AccountGetByAddress(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) (*Account, bool, error) {
+func AccountGetByAddress(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) (*Account, bool, error) {
 	var acc table.GatewayAccount
 
 	err := databaseClient.WithContext(ctx).
@@ -58,26 +58,24 @@ func AccountGetByAddress(ctx context.Context, address common.Address, databaseCl
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, false, nil
-		} else {
-			return nil, false, err
 		}
-	} else {
-		return &Account{acc, databaseClient, apiSixAPIService}, true, nil
+
+		return nil, false, err
 	}
+
+	return &Account{acc, databaseClient, apiSixAPIService}, true, nil
 }
 
-func AccountGetOrCreate(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.HTTPAPIService) (*Account, error) {
-
+func AccountGetOrCreate(ctx context.Context, address common.Address, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) (*Account, error) {
 	acc, exist, err := AccountGetByAddress(ctx, address, databaseClient, apiSixAPIService)
 
 	if err != nil {
 		return nil, err
 	} else if !exist {
 		return AccountCreate(ctx, address, databaseClient, apiSixAPIService)
-	} else {
-		return acc, nil
 	}
 
+	return acc, nil
 }
 
 func (acc *Account) ListKeys(ctx context.Context) ([]*Key, error) {
@@ -93,22 +91,22 @@ func (acc *Account) ListKeys(ctx context.Context) ([]*Key, error) {
 		return nil, err
 	}
 
-	var wrappedKeys []*Key
-	for _, k := range keys {
-		wrappedKeys = append(wrappedKeys, &Key{k, acc.databaseClient, acc.apiSixAPIService})
+	wrappedKeys := make([]*Key, len(keys))
+	for i, k := range keys {
+		wrappedKeys[i] = &Key{k, acc.databaseClient, acc.apiSixAPIService}
 	}
 
 	return wrappedKeys, nil
 }
 
 func (acc *Account) GetUsage(ctx context.Context) (int64, int64, int64, int64, error) {
-
 	var status struct {
-		RuUsedTotal     int64
-		RuUsedCurrent   int64
-		ApiCallsTotal   int64
-		ApiCallsCurrent int64
+		RuUsedTotal     int64 `gorm:"column:ru_used_total"`
+		RuUsedCurrent   int64 `gorm:"column:ru_used_current"`
+		APICallsTotal   int64 `gorm:"column:api_calls_total"`
+		APICallsCurrent int64 `gorm:"column:api_calls_current"`
 	}
+
 	err := acc.databaseClient.WithContext(ctx).
 		Model(&table.GatewayKey{}).
 		Unscoped().
@@ -117,11 +115,12 @@ func (acc *Account) GetUsage(ctx context.Context) (int64, int64, int64, int64, e
 		Find(&status).
 		Error
 
-	return status.RuUsedTotal, status.RuUsedCurrent, status.ApiCallsTotal, status.ApiCallsCurrent, err
+	return status.RuUsedTotal, status.RuUsedCurrent, status.APICallsTotal, status.APICallsCurrent, err
 }
 
 func (acc *Account) GetUsageByDate(ctx context.Context, since time.Time, until time.Time) (*[]table.GatewayConsumptionLog, error) {
 	var logs []table.GatewayConsumptionLog
+
 	err := acc.databaseClient.WithContext(ctx).
 		Model(&table.GatewayConsumptionLog{}).
 		Joins("JOIN gateway.key").
@@ -149,19 +148,20 @@ func (acc *Account) GetBalance(ctx context.Context) (int64, error) {
 }
 
 func (acc *Account) GetKey(ctx context.Context, keyID uint64) (*Key, bool, error) {
-
 	var k table.GatewayKey
+
 	err := acc.databaseClient.WithContext(ctx).
 		Model(&table.GatewayKey{}).
 		Where("account_address = ? AND id = ?", acc.Address, keyID).
 		First(&k).
 		Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, false, nil
-		} else {
-			return nil, false, err
 		}
+
+		return nil, false, err
 	}
 
 	return &Key{k, acc.databaseClient, acc.apiSixAPIService}, true, nil

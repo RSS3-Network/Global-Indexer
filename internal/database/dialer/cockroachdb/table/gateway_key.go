@@ -1,11 +1,12 @@
 package table
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	gormSchema "gorm.io/gorm/schema"
-	"time"
 )
 
 var (
@@ -22,8 +23,8 @@ type GatewayKey struct {
 
 	RuUsedTotal     int64 `gorm:"column:ru_used_total"`
 	RuUsedCurrent   int64 `gorm:"column:ru_used_current"`
-	ApiCallsTotal   int64 `gorm:"column:api_calls_total"`
-	ApiCallsCurrent int64 `gorm:"column:api_calls_current"`
+	APICallsTotal   int64 `gorm:"column:api_calls_total"`
+	APICallsCurrent int64 `gorm:"column:api_calls_current"`
 
 	Name string `gorm:"column:name"`
 

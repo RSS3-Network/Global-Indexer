@@ -8,5 +8,5 @@ var (
 )
 
 const (
-	BILLING_TOKEN_DECIMALS = 1e18
+	BillingTokenDecimals = 1e18
 )

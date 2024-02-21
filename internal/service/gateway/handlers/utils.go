@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"context"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 )
 
 func (app *App) getCtx(ctx echo.Context) (context.Context, *jwt.User) {
@@ -21,6 +21,7 @@ func (app *App) getKey(ctx echo.Context, keyID string) (*model.Key, bool, error)
 	user := ctx.Get("user").(*model.Account)
 
 	keyIDUint64, err := strconv.ParseUint(keyID, 10, 64)
+
 	if err != nil {
 		return nil, false, err
 	}
@@ -30,12 +31,13 @@ func (app *App) getKey(ctx echo.Context, keyID string) (*model.Key, bool, error)
 
 func parseDates(since *oapi.Since, until *oapi.Until) (time.Time, time.Time) {
 	var startFrom, untilTo time.Time
+
 	nowTime := time.Now()
 
 	if since != nil {
 		startFrom = time.UnixMilli(*since)
 	} else {
-		startFrom = nowTime.Add(-constants.DEFAULT_HISTORY_SINCE)
+		startFrom = nowTime.Add(-constants.DefaultHistorySince)
 	}
 
 	if until != nil {
@@ -48,12 +50,13 @@ func parseDates(since *oapi.Since, until *oapi.Until) (time.Time, time.Time) {
 		// Swap
 		startFrom, untilTo = untilTo, startFrom
 	}
+
 	return startFrom, untilTo
 }
 
 func parseLimitPage(limit *oapi.Limit, page *oapi.Page) (int, int) {
 	var (
-		l = constants.DEFAULT_PAGINATION_LIMIT
+		l = constants.DefaultPaginationLimit
 		p = 1
 	)
 

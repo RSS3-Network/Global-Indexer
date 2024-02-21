@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
@@ -23,6 +24,7 @@ func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
 		Where("account_address = ?", user.Address).
 		First(&pendingWithdrawRequest).
 		Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil // Not real error
@@ -33,9 +35,9 @@ func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
 
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
-	} else {
-		return ctx.JSON(http.StatusOK, oapi.GetRequestWithdrawResponse{Amount: &amount})
 	}
+
+	return ctx.JSON(http.StatusOK, oapi.GetRequestWithdrawResponse{Amount: &amount})
 }
 
 func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendingRequestWithdrawParams) error {
@@ -48,6 +50,7 @@ func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendi
 		Where("account_address = ?", user.Address).
 		First(&pendingWithdrawRequest).
 		Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			err = nil // Not real error
@@ -83,8 +86,7 @@ func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendi
 
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
-	} else {
-		return ctx.NoContent(http.StatusOK)
 	}
 
+	return ctx.NoContent(http.StatusOK)
 }

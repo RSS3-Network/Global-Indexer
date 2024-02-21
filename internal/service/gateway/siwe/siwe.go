@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
@@ -51,7 +52,7 @@ func (s *SIWE) ValidateSIWESignature(ctx context.Context, rawMessage, signature 
 }
 
 func (s *SIWE) buildNonceKey(nonce string) string {
-	return fmt.Sprintf("%s:%s", constants.NONCE_KEY_PREFIX, nonce)
+	return fmt.Sprintf("%s:%s", constants.NonceKeyPrefix, nonce)
 }
 
 func (s *SIWE) GetNonce(ctx context.Context) (string, error) {
@@ -64,7 +65,7 @@ func (s *SIWE) GetNonce(ctx context.Context) (string, error) {
 		ctx,
 		s.buildNonceKey(nonce),
 		"",
-		constants.NONCE_LIFE,
+		constants.NonceLife,
 	).Err(); err != nil {
 		return "", err
 	}
@@ -73,16 +74,15 @@ func (s *SIWE) GetNonce(ctx context.Context) (string, error) {
 }
 
 func (s *SIWE) ConsumeNonce(ctx context.Context, nonce string) error {
-
 	// Check if nonce exist
 	_, err := s.redisClient.Get(ctx, s.buildNonceKey(nonce)).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			// No such key
 			return errors.New("no such nonce")
-		} else {
-			return err
 		}
+
+		return err
 	}
 
 	s.redisClient.Del(ctx, s.buildNonceKey(nonce))

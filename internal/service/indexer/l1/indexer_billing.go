@@ -3,6 +3,7 @@ package l1
 import (
 	"context"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -23,7 +24,7 @@ func (s *server) indexBillingLog(ctx context.Context, header *types.Header, tran
 	}
 }
 
-func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, _ int, databaseTransaction database.Client) error {
 	billingTokensDepositedEvent, err := s.contractBilling.ParseTokensDeposited(*log)
 	if err != nil {
 		return fmt.Errorf("parse TokensDeposited event: %w", err)
@@ -40,7 +41,7 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 	return nil
 }
 
-func (s *server) indexBillingTokensWithdrawnLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (s *server) indexBillingTokensWithdrawnLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, _ int, databaseTransaction database.Client) error {
 	billingTokensWithdrawnEvent, err := s.contractBilling.ParseTokensWithdrawn(*log)
 	if err != nil {
 		return fmt.Errorf("parse TokensWithdrawn event: %w", err)
@@ -57,7 +58,7 @@ func (s *server) indexBillingTokensWithdrawnLog(ctx context.Context, header *typ
 	return nil
 }
 
-func (s *server) indexBillingTokensCollectedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (s *server) indexBillingTokensCollectedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, _ int, databaseTransaction database.Client) error {
 	billingTokensCollected, err := s.contractBilling.ParseTokensCollected(*log)
 	if err != nil {
 		return fmt.Errorf("parse TokensCollected event: %w", err)

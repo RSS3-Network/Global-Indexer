@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/utils"
 	"github.com/samber/lo"
-	"log"
-	"net/http"
-	"strconv"
 )
 
 func (app *App) DeleteKey(ctx echo.Context, keyID string) error {
@@ -25,6 +26,7 @@ func (app *App) DeleteKey(ctx echo.Context, keyID string) error {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)
 	}
+
 	return ctx.NoContent(http.StatusOK)
 }
 
@@ -119,8 +121,8 @@ func createKeyResponse(k *model.Key) oapi.Key { // Assuming KeyType is the type 
 		Id:              lo.ToPtr(strconv.FormatUint(k.ID, 10)),
 		Key:             lo.ToPtr(k.Key.String()),
 		Name:            &k.Name,
-		ApiCallsTotal:   &k.ApiCallsTotal,
-		ApiCallsCurrent: &k.ApiCallsCurrent,
+		ApiCallsTotal:   &k.APICallsTotal,
+		ApiCallsCurrent: &k.APICallsCurrent,
 		RuUsedTotal:     &k.RuUsedTotal,
 		RuUsedCurrent:   &k.RuUsedCurrent,
 	}

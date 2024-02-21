@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 
 // Documents: https://apisix.apache.org/zh/docs/apisix/admin-api/#consumer
 
-const CONSUMER_API_BASE = "/apisix/admin/consumers"
+const ConsumerAPIBase = "/apisix/admin/consumers"
 
 type KeyAuthPlugin struct {
 	Key string `json:"key"`
@@ -45,17 +46,17 @@ type ConsumerResponse struct {
 	ModifiedIndex *int `json:"modifiedIndex,omitempty"`
 }
 
-func (s *HTTPAPIService) consumerUsername(keyId uint64) string {
-	return fmt.Sprintf("key_%d", keyId)
+func (s *Service) consumerUsername(keyID uint64) string {
+	return fmt.Sprintf("key_%d", keyID)
 }
 
-func (s *HTTPAPIService) RecoverKeyIDFromConsumerUsername(username string) (int, error) {
+func (s *Service) RecoverKeyIDFromConsumerUsername(username string) (int, error) {
 	return strconv.Atoi(strings.Replace(username, "key_", "", 1))
 }
 
-func (s *HTTPAPIService) CheckConsumer(keyId uint64) (*ConsumerResponse, error) {
-	req, err := http.NewRequest("GET",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, CONSUMER_API_BASE, s.consumerUsername(keyId)),
+func (s *Service) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET",
+		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase, s.consumerUsername(keyID)),
 		nil,
 	)
 	if err != nil {
@@ -65,24 +66,30 @@ func (s *HTTPAPIService) CheckConsumer(keyId uint64) (*ConsumerResponse, error) 
 	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
+
 	if err != nil {
 		return nil, err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK {
 		var errBody APISixErr
 		err = json.NewDecoder(res.Body).Decode(&errBody)
+
 		if err != nil {
 			// Even failed to decode error body
 			return nil, err
-		} else {
-			// API wrongly called
-			return nil, errors.New(errBody.ErrorMsg)
 		}
+
+		// else API wrongly called
+		return nil, errors.New(errBody.ErrorMsg)
 	}
 
 	var cProps ConsumerResponse
+
 	err = json.NewDecoder(res.Body).Decode(&cProps)
+
 	if err != nil {
 		return nil, err
 	}
@@ -90,24 +97,25 @@ func (s *HTTPAPIService) CheckConsumer(keyId uint64) (*ConsumerResponse, error) 
 	return &cProps, nil
 }
 
-func (s *HTTPAPIService) NewConsumer(keyId uint64, key string, userAddress string) error {
+func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, userAddress string) error {
 	// Check consumer group
-	_, err := s.CheckConsumerGroup(userAddress)
+	_, err := s.CheckConsumerGroup(ctx, userAddress)
+
 	if err != nil {
 		if errors.Is(err, ErrNoSuchConsumerGroup) {
 			// Create consumer group
-			err = s.NewConsumerGroup(userAddress)
+			err = s.NewConsumerGroup(ctx, userAddress)
 			if err != nil {
 				return err
 			}
-		} else {
-			return err
 		}
+
+		return err
 	}
 
-	desc := fmt.Sprintf("Consumer %d for user (address): %s", keyId, userAddress)
+	desc := fmt.Sprintf("Consumer %d for user (address): %s", keyID, userAddress)
 	cProps := ConsumerPropsInput{
-		Username:    s.consumerUsername(keyId),
+		Username:    s.consumerUsername(keyID),
 		GroupID:     userAddress,
 		Description: &desc,
 		Labels:      nil,
@@ -116,14 +124,16 @@ func (s *HTTPAPIService) NewConsumer(keyId uint64, key string, userAddress strin
 	//cProps.Plugins.KeyAuth.Header = Config.APIGatewayKeyHeader
 
 	reqBytes, err := json.Marshal(&cProps)
+
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT",
-		fmt.Sprintf("%s%s", s.Config.APISixAdminEndpoint, CONSUMER_API_BASE),
+	req, err := http.NewRequestWithContext(ctx, "PUT",
+		fmt.Sprintf("%s%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase),
 		bytes.NewReader(reqBytes),
 	)
+
 	if err != nil {
 		return err
 	}
@@ -132,28 +142,33 @@ func (s *HTTPAPIService) NewConsumer(keyId uint64, key string, userAddress strin
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := (&http.Client{}).Do(req)
+
 	if err != nil {
 		return err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
 		var errBody APISixErr
 		err = json.NewDecoder(res.Body).Decode(&errBody)
+
 		if err != nil {
 			// Even failed to decode error body
 			return err
-		} else {
-			// API wrongly called
-			return errors.New(errBody.ErrorMsg)
 		}
+
+		// else API wrongly called
+
+		return errors.New(errBody.ErrorMsg)
 	}
 
 	return nil
 }
 
-func (s *HTTPAPIService) DeleteConsumer(keyId uint64) error {
-	req, err := http.NewRequest("DELETE",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, CONSUMER_API_BASE, s.consumerUsername(keyId)),
+func (s *Service) DeleteConsumer(ctx context.Context, keyID uint64) error {
+	req, err := http.NewRequestWithContext(ctx, "DELETE",
+		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase, s.consumerUsername(keyID)),
 		nil,
 	)
 	if err != nil {
@@ -163,20 +178,23 @@ func (s *HTTPAPIService) DeleteConsumer(keyId uint64) error {
 	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
+
 	if err != nil {
 		return err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
 		var errBody APISixErr
 		err = json.NewDecoder(res.Body).Decode(&errBody)
+
 		if err != nil {
 			// Even failed to decode error body
 			return err
-		} else {
-			// API wrongly called
-			return errors.New(errBody.ErrorMsg)
 		}
+		// else API wrongly called
+		return errors.New(errBody.ErrorMsg)
 	}
 
 	return nil

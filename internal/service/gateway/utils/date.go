@@ -3,7 +3,6 @@ package utils
 import "time"
 
 func GetUTCDate(input time.Time) time.Time {
-
 	input = input.UTC()
 
 	// set the time to 00:00:00

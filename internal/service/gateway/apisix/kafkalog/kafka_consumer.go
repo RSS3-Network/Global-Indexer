@@ -17,8 +17,8 @@ type KafkaConsumerService struct {
 }
 
 func New(brokers []string, topic string) (*KafkaConsumerService, error) {
-
 	log.Printf("Validating configurations...")
+
 	if len(brokers) == 0 {
 		return nil, fmt.Errorf("missing brokers")
 	}
@@ -34,9 +34,11 @@ func New(brokers []string, topic string) (*KafkaConsumerService, error) {
 		kgo.ConsumerGroup("api-gateway"),
 		kgo.ConsumeTopics(topic),
 	)
+
 	if err != nil {
 		return nil, err
 	}
+
 	kcs := &KafkaConsumerService{
 		kafkaClient: cl,
 		isStarted:   false,
@@ -48,12 +50,13 @@ func New(brokers []string, topic string) (*KafkaConsumerService, error) {
 }
 
 func (kcs *KafkaConsumerService) Start(processor accessLogProcessor) error {
-
 	log.Printf("Starting kafka consumer...")
+
 	kcs.isStarted = true
 
 	go func() {
 		ctx := context.Background()
+
 		for {
 			fetches := kcs.kafkaClient.PollFetches(ctx)
 			if errs := fetches.Errors(); len(errs) > 0 {
@@ -89,8 +92,8 @@ func (kcs *KafkaConsumerService) Start(processor accessLogProcessor) error {
 }
 
 func (kcs *KafkaConsumerService) Stop() {
-
 	log.Printf("Stoping kafka consumer...")
+
 	kcs.isStarted = false
 
 	kcs.kafkaClient.Close()
