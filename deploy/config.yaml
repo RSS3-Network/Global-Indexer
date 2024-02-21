@@ -16,3 +16,7 @@ rss3_chain:
 epoch:
   wallet_private_key:
   gas_limit: 3000000
+
+geo_ip:
+  account:
+  license_key:
