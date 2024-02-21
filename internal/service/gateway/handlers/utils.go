@@ -6,6 +6,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/middlewares"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -16,10 +17,15 @@ func (app *App) getCtx(ctx echo.Context) (context.Context, *jwt.User) {
 	return ctx.Request().Context(), middlewares.ParseUserWithToken(ctx, app.jwtClient)
 }
 
-func (app *App) getKey(ctx echo.Context, keyID int) (*model.Key, bool, error) {
+func (app *App) getKey(ctx echo.Context, keyID string) (*model.Key, bool, error) {
 	user := ctx.Get("user").(*model.Account)
 
-	return user.GetKey(ctx.Request().Context(), uint(keyID))
+	keyIDUint64, err := strconv.ParseUint(keyID, 10, 64)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return user.GetKey(ctx.Request().Context(), keyIDUint64)
 }
 
 func parseDates(since *oapi.Since, until *oapi.Until) (time.Time, time.Time) {

@@ -18,7 +18,7 @@ type GatewayConsumptionLog struct {
 	RuUsed          int64     `gorm:"column:ru_used"`
 	ApiCalls        int64     `gorm:"column:api_calls"`
 
-	KeyID uint       `gorm:"index;column:key_id"` // Foreign key of GatewayKey
+	KeyID uint64     `gorm:"index;column:key_id"` // Foreign key of GatewayKey
 	Key   GatewayKey `gorm:"foreignKey:KeyID"`
 }
 

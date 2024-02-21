@@ -353,10 +353,9 @@ func Test_KeyAndRU(t *testing.T) {
 		"api_calls_current": 0,
 	})
 
-	keyId := obj.Value("id").Number()
-	keyId.IsInt()
+	keyId := obj.Value("id").String()
 	// get key
-	client.GET("/key/" + strconv.Itoa(int(keyId.Raw()))).Expect().Status(http.StatusOK).
+	client.GET("/key/" + keyId.Raw()).Expect().Status(http.StatusOK).
 		JSON().Object().IsEqual(map[string]any{
 		"id":                keyId.Raw(),
 		"key":               obj.Value("key").String().Raw(),
@@ -375,9 +374,9 @@ func Test_KeyAndRU(t *testing.T) {
 		"ru_used_current":   gorm.Expr("ru_used_current + ?", 3),
 	}).Error
 	assert.NoError(t, err)
-	client.GET("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusOK).
+	client.GET("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusOK).
 		JSON().Object().IsEqual(map[string]any{
-		"id":                obj.Value("id").Number().Raw(),
+		"id":                obj.Value("id").String().Raw(),
 		"key":               obj.Value("key").String().Raw(),
 		"name":              "new key",
 		"ru_used_total":     0,
@@ -410,13 +409,13 @@ func Test_KeyAndRU(t *testing.T) {
 	var keyCounts int64
 	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
 	assert.NoError(t, err)
-	assert.Equal(t, keyCounts, 2)
+	assert.Equal(t, int64(2), keyCounts)
 	user, exist, err := model.AccountGetByAddress(ctx, validAddress, databaseClient, apisixAPIService)
 	assert.NoError(t, err)
 	assert.True(t, exist)
-	client.GET("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusOK).
+	client.GET("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusOK).
 		JSON().Object().IsEqual(map[string]any{
-		"id":                obj.Value("id").Number().Raw(),
+		"id":                obj.Value("id").String().Raw(),
 		"key":               obj.Value("key").String().Raw(),
 		"name":              "new key 2",
 		"ru_used_total":     0,
@@ -442,7 +441,7 @@ func Test_KeyAndRU(t *testing.T) {
 	assert.NoError(t, err)
 	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
 	assert.NoError(t, err)
-	assert.Equal(t, keyCounts, 3)
+	assert.Equal(t, int64(3), keyCounts)
 	err = databaseClient.Model(&table.GatewayKey{}).Where("id = ?", fakeUserKey.ID).Update("ru_used_current", 100).Error
 	assert.NoError(t, err)
 	_, ruu, _, apicalls, err := fakeUser.GetUsage(ctx)
@@ -486,7 +485,7 @@ func Test_KeyAndRU(t *testing.T) {
 	assert.EqualValues(t, result, -3)
 
 	// rename key
-	obj = client.PUT("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).WithJSON(map[string]any{
+	obj = client.PUT("/key/" + obj.Value("id").String().Raw()).WithJSON(map[string]any{
 		"name": "new key name",
 	}).Expect().Status(http.StatusOK).
 		JSON().Object()
@@ -495,22 +494,22 @@ func Test_KeyAndRU(t *testing.T) {
 	oldKey := obj.Value("key").String().Raw()
 
 	// rotate key
-	obj = client.PATCH("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).
+	obj = client.PATCH("/key/" + obj.Value("id").String().Raw()).
 		Expect().Status(http.StatusOK).
 		JSON().Object()
 	obj.Value("key").NotEqual(oldKey)
 
 	// delete key no Auth
-	getAuth(t, "").DELETE("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusUnauthorized)
+	getAuth(t, "").DELETE("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusUnauthorized)
 	// delete key
-	client.DELETE("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusOK)
+	client.DELETE("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusOK)
 	objs = client.GET("/keys").Expect().Status(http.StatusOK).
 		JSON().Array()
 	objs.Length().IsEqual(1)
 	result, err = user.GetBalance(ctx)
-	assert.EqualValues(t, result, -3)
+	assert.EqualValues(t, -3, result)
 	// delete key no key
-	client.DELETE("/key/" + strconv.Itoa(int(obj.Value("id").Number().Raw()))).Expect().Status(http.StatusNotFound).
+	client.DELETE("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusNotFound).
 		JSON().Object().Value("msg").String().Contains("Not Found")
 }
 

@@ -30,4 +30,6 @@ OAPI_TARGET ?= internal/service/gateway/gen/oapi/
 OAPI_TARGET_FILENAME ?= oapi.go
 gengatewayapi:
 	mkdir -p $(OAPI_TARGET)
+	go get github.com/deepmap/oapi-codegen/v2
 	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen -package oapi -generate=types,client,server,spec,skip-prune -o $(OAPI_TARGET)$(OAPI_TARGET_FILENAME) $(OAPI_SPEC)
+	go mod tidy

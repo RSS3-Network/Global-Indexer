@@ -45,7 +45,7 @@ type ConsumerResponse struct {
 	ModifiedIndex *int `json:"modifiedIndex,omitempty"`
 }
 
-func (s *HTTPAPIService) consumerUsername(keyId uint) string {
+func (s *HTTPAPIService) consumerUsername(keyId uint64) string {
 	return fmt.Sprintf("key_%d", keyId)
 }
 
@@ -53,7 +53,7 @@ func (s *HTTPAPIService) RecoverKeyIDFromConsumerUsername(username string) (int,
 	return strconv.Atoi(strings.Replace(username, "key_", "", 1))
 }
 
-func (s *HTTPAPIService) CheckConsumer(keyId uint) (*ConsumerResponse, error) {
+func (s *HTTPAPIService) CheckConsumer(keyId uint64) (*ConsumerResponse, error) {
 	req, err := http.NewRequest("GET",
 		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, CONSUMER_API_BASE, s.consumerUsername(keyId)),
 		nil,
@@ -90,7 +90,7 @@ func (s *HTTPAPIService) CheckConsumer(keyId uint) (*ConsumerResponse, error) {
 	return &cProps, nil
 }
 
-func (s *HTTPAPIService) NewConsumer(keyId uint, key string, userAddress string) error {
+func (s *HTTPAPIService) NewConsumer(keyId uint64, key string, userAddress string) error {
 	// Check consumer group
 	_, err := s.CheckConsumerGroup(userAddress)
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *HTTPAPIService) NewConsumer(keyId uint, key string, userAddress string)
 	return nil
 }
 
-func (s *HTTPAPIService) DeleteConsumer(keyId uint) error {
+func (s *HTTPAPIService) DeleteConsumer(keyId uint64) error {
 	req, err := http.NewRequest("DELETE",
 		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, CONSUMER_API_BASE, s.consumerUsername(keyId)),
 		nil,

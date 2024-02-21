@@ -110,7 +110,7 @@ type Key struct {
 
 	// ApiCallsTotal API calls count since this key's creation
 	ApiCallsTotal *int64  `json:"api_calls_total,omitempty"`
-	Id            *int    `json:"id,omitempty"`
+	Id            *string `json:"id,omitempty"`
 	Key           *string `json:"key,omitempty"`
 	Name          *string `json:"name,omitempty"`
 
@@ -188,6 +188,9 @@ type WithdrawalRecord struct {
 
 // Amount defines model for amount.
 type Amount = float32
+
+// KeyID defines model for keyID.
+type KeyID = string
 
 // Limit defines model for limit.
 type Limit = uint
@@ -361,7 +364,7 @@ type ClientInterface interface {
 	GetConsumptionHistoryByAccount(ctx context.Context, params *GetConsumptionHistoryByAccountParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetConsumptionHistoryByKey request
-	GetConsumptionHistoryByKey(ctx context.Context, key int, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetConsumptionHistoryByKey(ctx context.Context, keyID KeyID, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetDepositHistory request
 	GetDepositHistory(ctx context.Context, params *GetDepositHistoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -375,18 +378,18 @@ type ClientInterface interface {
 	GenerateKey(ctx context.Context, body GenerateKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteKey request
-	DeleteKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetKey request
-	GetKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RotateKey request
-	RotateKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RotateKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateKeyInfoWithBody request with any body
-	UpdateKeyInfoWithBody(ctx context.Context, id int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateKeyInfoWithBody(ctx context.Context, keyID KeyID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateKeyInfo(ctx context.Context, id int, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateKeyInfo(ctx context.Context, keyID KeyID, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetKeys request
 	GetKeys(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -451,8 +454,8 @@ func (c *Client) GetConsumptionHistoryByAccount(ctx context.Context, params *Get
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetConsumptionHistoryByKey(ctx context.Context, key int, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetConsumptionHistoryByKeyRequest(c.Server, key, params)
+func (c *Client) GetConsumptionHistoryByKey(ctx context.Context, keyID KeyID, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetConsumptionHistoryByKeyRequest(c.Server, keyID, params)
 	if err != nil {
 		return nil, err
 	}
@@ -511,8 +514,8 @@ func (c *Client) GenerateKey(ctx context.Context, body GenerateKeyJSONRequestBod
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteKeyRequest(c.Server, id)
+func (c *Client) DeleteKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteKeyRequest(c.Server, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -523,8 +526,8 @@ func (c *Client) DeleteKey(ctx context.Context, id int, reqEditors ...RequestEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetKeyRequest(c.Server, id)
+func (c *Client) GetKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKeyRequest(c.Server, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -535,8 +538,8 @@ func (c *Client) GetKey(ctx context.Context, id int, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) RotateKey(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRotateKeyRequest(c.Server, id)
+func (c *Client) RotateKey(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateKeyRequest(c.Server, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -547,8 +550,8 @@ func (c *Client) RotateKey(ctx context.Context, id int, reqEditors ...RequestEdi
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateKeyInfoWithBody(ctx context.Context, id int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateKeyInfoRequestWithBody(c.Server, id, contentType, body)
+func (c *Client) UpdateKeyInfoWithBody(ctx context.Context, keyID KeyID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateKeyInfoRequestWithBody(c.Server, keyID, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -559,8 +562,8 @@ func (c *Client) UpdateKeyInfoWithBody(ctx context.Context, id int, contentType 
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateKeyInfo(ctx context.Context, id int, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateKeyInfoRequest(c.Server, id, body)
+func (c *Client) UpdateKeyInfo(ctx context.Context, keyID KeyID, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateKeyInfoRequest(c.Server, keyID, body)
 	if err != nil {
 		return nil, err
 	}
@@ -875,12 +878,12 @@ func NewGetConsumptionHistoryByAccountRequest(server string, params *GetConsumpt
 }
 
 // NewGetConsumptionHistoryByKeyRequest generates requests for GetConsumptionHistoryByKey
-func NewGetConsumptionHistoryByKeyRequest(server string, key int, params *GetConsumptionHistoryByKeyParams) (*http.Request, error) {
+func NewGetConsumptionHistoryByKeyRequest(server string, keyID KeyID, params *GetConsumptionHistoryByKeyParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "key", runtime.ParamLocationPath, key)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyID", runtime.ParamLocationPath, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1133,12 +1136,12 @@ func NewGenerateKeyRequestWithBody(server string, contentType string, body io.Re
 }
 
 // NewDeleteKeyRequest generates requests for DeleteKey
-func NewDeleteKeyRequest(server string, id int) (*http.Request, error) {
+func NewDeleteKeyRequest(server string, keyID KeyID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyID", runtime.ParamLocationPath, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1167,12 +1170,12 @@ func NewDeleteKeyRequest(server string, id int) (*http.Request, error) {
 }
 
 // NewGetKeyRequest generates requests for GetKey
-func NewGetKeyRequest(server string, id int) (*http.Request, error) {
+func NewGetKeyRequest(server string, keyID KeyID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyID", runtime.ParamLocationPath, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1201,12 +1204,12 @@ func NewGetKeyRequest(server string, id int) (*http.Request, error) {
 }
 
 // NewRotateKeyRequest generates requests for RotateKey
-func NewRotateKeyRequest(server string, id int) (*http.Request, error) {
+func NewRotateKeyRequest(server string, keyID KeyID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyID", runtime.ParamLocationPath, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1235,23 +1238,23 @@ func NewRotateKeyRequest(server string, id int) (*http.Request, error) {
 }
 
 // NewUpdateKeyInfoRequest calls the generic UpdateKeyInfo builder with application/json body
-func NewUpdateKeyInfoRequest(server string, id int, body UpdateKeyInfoJSONRequestBody) (*http.Request, error) {
+func NewUpdateKeyInfoRequest(server string, keyID KeyID, body UpdateKeyInfoJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateKeyInfoRequestWithBody(server, id, "application/json", bodyReader)
+	return NewUpdateKeyInfoRequestWithBody(server, keyID, "application/json", bodyReader)
 }
 
 // NewUpdateKeyInfoRequestWithBody generates requests for UpdateKeyInfo with any type of body
-func NewUpdateKeyInfoRequestWithBody(server string, id int, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateKeyInfoRequestWithBody(server string, keyID KeyID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyID", runtime.ParamLocationPath, keyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1581,7 +1584,7 @@ type ClientWithResponsesInterface interface {
 	GetConsumptionHistoryByAccountWithResponse(ctx context.Context, params *GetConsumptionHistoryByAccountParams, reqEditors ...RequestEditorFn) (*GetConsumptionHistoryByAccountResponse, error)
 
 	// GetConsumptionHistoryByKeyWithResponse request
-	GetConsumptionHistoryByKeyWithResponse(ctx context.Context, key int, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*GetConsumptionHistoryByKeyResponse, error)
+	GetConsumptionHistoryByKeyWithResponse(ctx context.Context, keyID KeyID, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*GetConsumptionHistoryByKeyResponse, error)
 
 	// GetDepositHistoryWithResponse request
 	GetDepositHistoryWithResponse(ctx context.Context, params *GetDepositHistoryParams, reqEditors ...RequestEditorFn) (*GetDepositHistoryResponse, error)
@@ -1595,18 +1598,18 @@ type ClientWithResponsesInterface interface {
 	GenerateKeyWithResponse(ctx context.Context, body GenerateKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*GenerateKeyResponse, error)
 
 	// DeleteKeyWithResponse request
-	DeleteKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*DeleteKeyResponse, error)
+	DeleteKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*DeleteKeyResponse, error)
 
 	// GetKeyWithResponse request
-	GetKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*GetKeyResponse, error)
+	GetKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*GetKeyResponse, error)
 
 	// RotateKeyWithResponse request
-	RotateKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*RotateKeyResponse, error)
+	RotateKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*RotateKeyResponse, error)
 
 	// UpdateKeyInfoWithBodyWithResponse request with any body
-	UpdateKeyInfoWithBodyWithResponse(ctx context.Context, id int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error)
+	UpdateKeyInfoWithBodyWithResponse(ctx context.Context, keyID KeyID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error)
 
-	UpdateKeyInfoWithResponse(ctx context.Context, id int, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error)
+	UpdateKeyInfoWithResponse(ctx context.Context, keyID KeyID, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error)
 
 	// GetKeysWithResponse request
 	GetKeysWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetKeysResponse, error)
@@ -2112,8 +2115,8 @@ func (c *ClientWithResponses) GetConsumptionHistoryByAccountWithResponse(ctx con
 }
 
 // GetConsumptionHistoryByKeyWithResponse request returning *GetConsumptionHistoryByKeyResponse
-func (c *ClientWithResponses) GetConsumptionHistoryByKeyWithResponse(ctx context.Context, key int, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*GetConsumptionHistoryByKeyResponse, error) {
-	rsp, err := c.GetConsumptionHistoryByKey(ctx, key, params, reqEditors...)
+func (c *ClientWithResponses) GetConsumptionHistoryByKeyWithResponse(ctx context.Context, keyID KeyID, params *GetConsumptionHistoryByKeyParams, reqEditors ...RequestEditorFn) (*GetConsumptionHistoryByKeyResponse, error) {
+	rsp, err := c.GetConsumptionHistoryByKey(ctx, keyID, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2156,8 +2159,8 @@ func (c *ClientWithResponses) GenerateKeyWithResponse(ctx context.Context, body 
 }
 
 // DeleteKeyWithResponse request returning *DeleteKeyResponse
-func (c *ClientWithResponses) DeleteKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*DeleteKeyResponse, error) {
-	rsp, err := c.DeleteKey(ctx, id, reqEditors...)
+func (c *ClientWithResponses) DeleteKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*DeleteKeyResponse, error) {
+	rsp, err := c.DeleteKey(ctx, keyID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2165,8 +2168,8 @@ func (c *ClientWithResponses) DeleteKeyWithResponse(ctx context.Context, id int,
 }
 
 // GetKeyWithResponse request returning *GetKeyResponse
-func (c *ClientWithResponses) GetKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*GetKeyResponse, error) {
-	rsp, err := c.GetKey(ctx, id, reqEditors...)
+func (c *ClientWithResponses) GetKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*GetKeyResponse, error) {
+	rsp, err := c.GetKey(ctx, keyID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2174,8 +2177,8 @@ func (c *ClientWithResponses) GetKeyWithResponse(ctx context.Context, id int, re
 }
 
 // RotateKeyWithResponse request returning *RotateKeyResponse
-func (c *ClientWithResponses) RotateKeyWithResponse(ctx context.Context, id int, reqEditors ...RequestEditorFn) (*RotateKeyResponse, error) {
-	rsp, err := c.RotateKey(ctx, id, reqEditors...)
+func (c *ClientWithResponses) RotateKeyWithResponse(ctx context.Context, keyID KeyID, reqEditors ...RequestEditorFn) (*RotateKeyResponse, error) {
+	rsp, err := c.RotateKey(ctx, keyID, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2183,16 +2186,16 @@ func (c *ClientWithResponses) RotateKeyWithResponse(ctx context.Context, id int,
 }
 
 // UpdateKeyInfoWithBodyWithResponse request with arbitrary body returning *UpdateKeyInfoResponse
-func (c *ClientWithResponses) UpdateKeyInfoWithBodyWithResponse(ctx context.Context, id int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error) {
-	rsp, err := c.UpdateKeyInfoWithBody(ctx, id, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateKeyInfoWithBodyWithResponse(ctx context.Context, keyID KeyID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error) {
+	rsp, err := c.UpdateKeyInfoWithBody(ctx, keyID, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateKeyInfoResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateKeyInfoWithResponse(ctx context.Context, id int, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error) {
-	rsp, err := c.UpdateKeyInfo(ctx, id, body, reqEditors...)
+func (c *ClientWithResponses) UpdateKeyInfoWithResponse(ctx context.Context, keyID KeyID, body UpdateKeyInfoJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeyInfoResponse, error) {
+	rsp, err := c.UpdateKeyInfo(ctx, keyID, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -2999,8 +3002,8 @@ type ServerInterface interface {
 	// (GET /history/consumption)
 	GetConsumptionHistoryByAccount(ctx echo.Context, params GetConsumptionHistoryByAccountParams) error
 	// Get consumption history of a specific key
-	// (GET /history/consumption/{key})
-	GetConsumptionHistoryByKey(ctx echo.Context, key int, params GetConsumptionHistoryByKeyParams) error
+	// (GET /history/consumption/{keyID})
+	GetConsumptionHistoryByKey(ctx echo.Context, keyID KeyID, params GetConsumptionHistoryByKeyParams) error
 	// Get deposit history
 	// (GET /history/deposit)
 	GetDepositHistory(ctx echo.Context, params GetDepositHistoryParams) error
@@ -3011,17 +3014,17 @@ type ServerInterface interface {
 	// (POST /key)
 	GenerateKey(ctx echo.Context) error
 	// Delete an API Key
-	// (DELETE /key/{id})
-	DeleteKey(ctx echo.Context, id int) error
+	// (DELETE /key/{keyID})
+	DeleteKey(ctx echo.Context, keyID KeyID) error
 	// Get an API Key' info
-	// (GET /key/{id})
-	GetKey(ctx echo.Context, id int) error
+	// (GET /key/{keyID})
+	GetKey(ctx echo.Context, keyID KeyID) error
 	// Reassign the API Key's secret
-	// (PATCH /key/{id})
-	RotateKey(ctx echo.Context, id int) error
+	// (PATCH /key/{keyID})
+	RotateKey(ctx echo.Context, keyID KeyID) error
 	// Update an API Key's info
-	// (PUT /key/{id})
-	UpdateKeyInfo(ctx echo.Context, id int) error
+	// (PUT /key/{keyID})
+	UpdateKeyInfo(ctx echo.Context, keyID KeyID) error
 	// List API Keys of current account
 	// (GET /keys)
 	GetKeys(ctx echo.Context) error
@@ -3135,12 +3138,12 @@ func (w *ServerInterfaceWrapper) GetConsumptionHistoryByAccount(ctx echo.Context
 // GetConsumptionHistoryByKey converts echo context to params.
 func (w *ServerInterfaceWrapper) GetConsumptionHistoryByKey(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "key" -------------
-	var key int
+	// ------------- Path parameter "keyID" -------------
+	var keyID KeyID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "key", ctx.Param("key"), &key, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "keyID", ctx.Param("keyID"), &keyID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter key: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyID: %s", err))
 	}
 
 	ctx.Set(JWTAuthScopes, []string{})
@@ -3169,7 +3172,7 @@ func (w *ServerInterfaceWrapper) GetConsumptionHistoryByKey(ctx echo.Context) er
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetConsumptionHistoryByKey(ctx, key, params)
+	err = w.Handler.GetConsumptionHistoryByKey(ctx, keyID, params)
 	return err
 }
 
@@ -3241,72 +3244,72 @@ func (w *ServerInterfaceWrapper) GenerateKey(ctx echo.Context) error {
 // DeleteKey converts echo context to params.
 func (w *ServerInterfaceWrapper) DeleteKey(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int
+	// ------------- Path parameter "keyID" -------------
+	var keyID KeyID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "keyID", ctx.Param("keyID"), &keyID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyID: %s", err))
 	}
 
 	ctx.Set(JWTAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.DeleteKey(ctx, id)
+	err = w.Handler.DeleteKey(ctx, keyID)
 	return err
 }
 
 // GetKey converts echo context to params.
 func (w *ServerInterfaceWrapper) GetKey(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int
+	// ------------- Path parameter "keyID" -------------
+	var keyID KeyID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "keyID", ctx.Param("keyID"), &keyID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyID: %s", err))
 	}
 
 	ctx.Set(JWTAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetKey(ctx, id)
+	err = w.Handler.GetKey(ctx, keyID)
 	return err
 }
 
 // RotateKey converts echo context to params.
 func (w *ServerInterfaceWrapper) RotateKey(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int
+	// ------------- Path parameter "keyID" -------------
+	var keyID KeyID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "keyID", ctx.Param("keyID"), &keyID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyID: %s", err))
 	}
 
 	ctx.Set(JWTAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.RotateKey(ctx, id)
+	err = w.Handler.RotateKey(ctx, keyID)
 	return err
 }
 
 // UpdateKeyInfo converts echo context to params.
 func (w *ServerInterfaceWrapper) UpdateKeyInfo(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "id" -------------
-	var id int
+	// ------------- Path parameter "keyID" -------------
+	var keyID KeyID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "keyID", ctx.Param("keyID"), &keyID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyID: %s", err))
 	}
 
 	ctx.Set(JWTAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.UpdateKeyInfo(ctx, id)
+	err = w.Handler.UpdateKeyInfo(ctx, keyID)
 	return err
 }
 
@@ -3432,14 +3435,14 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/health", wrapper.HealthCheck)
 	router.GET(baseURL+"/history/collection", wrapper.GetCollectionHistory)
 	router.GET(baseURL+"/history/consumption", wrapper.GetConsumptionHistoryByAccount)
-	router.GET(baseURL+"/history/consumption/:key", wrapper.GetConsumptionHistoryByKey)
+	router.GET(baseURL+"/history/consumption/:keyID", wrapper.GetConsumptionHistoryByKey)
 	router.GET(baseURL+"/history/deposit", wrapper.GetDepositHistory)
 	router.GET(baseURL+"/history/withdrawal", wrapper.GetWithdrawalHistory)
 	router.POST(baseURL+"/key", wrapper.GenerateKey)
-	router.DELETE(baseURL+"/key/:id", wrapper.DeleteKey)
-	router.GET(baseURL+"/key/:id", wrapper.GetKey)
-	router.PATCH(baseURL+"/key/:id", wrapper.RotateKey)
-	router.PUT(baseURL+"/key/:id", wrapper.UpdateKeyInfo)
+	router.DELETE(baseURL+"/key/:keyID", wrapper.DeleteKey)
+	router.GET(baseURL+"/key/:keyID", wrapper.GetKey)
+	router.PATCH(baseURL+"/key/:keyID", wrapper.RotateKey)
+	router.PUT(baseURL+"/key/:keyID", wrapper.UpdateKeyInfo)
 	router.GET(baseURL+"/keys", wrapper.GetKeys)
 	router.GET(baseURL+"/request/withdraw", wrapper.GetPendingRequestWithdraw)
 	router.POST(baseURL+"/request/withdraw", wrapper.SetPendingRequestWithdraw)
@@ -3454,51 +3457,51 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"iBB3cBVPPkz+FwAA///MAvVkHEQAAA==",
+	"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",
+	"/i8AAP//EoWVt4JDAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

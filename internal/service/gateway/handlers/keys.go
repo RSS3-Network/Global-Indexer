@@ -8,9 +8,10 @@ import (
 	"github.com/samber/lo"
 	"log"
 	"net/http"
+	"strconv"
 )
 
-func (app *App) DeleteKey(ctx echo.Context, keyID int) error {
+func (app *App) DeleteKey(ctx echo.Context, keyID string) error {
 	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
@@ -44,7 +45,7 @@ func (app *App) GenerateKey(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
 }
 
-func (app *App) GetKey(ctx echo.Context, keyID int) error {
+func (app *App) GetKey(ctx echo.Context, keyID string) error {
 	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
@@ -73,7 +74,7 @@ func (app *App) GetKeys(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, resp)
 }
 
-func (app *App) UpdateKeyInfo(ctx echo.Context, keyID int) error {
+func (app *App) UpdateKeyInfo(ctx echo.Context, keyID string) error {
 	var req oapi.KeyInfoBody
 	if err := ctx.Bind(&req); err != nil || req.Name == nil {
 		return ctx.NoContent(http.StatusBadRequest)
@@ -95,7 +96,7 @@ func (app *App) UpdateKeyInfo(ctx echo.Context, keyID int) error {
 	return ctx.JSON(http.StatusOK, createKeyResponse(k))
 }
 
-func (app *App) RotateKey(ctx echo.Context, keyID int) error {
+func (app *App) RotateKey(ctx echo.Context, keyID string) error {
 	k, exist, err := app.getKey(ctx, keyID)
 	if err != nil {
 		log.Print(err)
@@ -115,7 +116,7 @@ func (app *App) RotateKey(ctx echo.Context, keyID int) error {
 
 func createKeyResponse(k *model.Key) oapi.Key { // Assuming KeyType is the type of k
 	return oapi.Key{
-		Id:              lo.ToPtr(int(k.ID)),
+		Id:              lo.ToPtr(strconv.FormatUint(k.ID, 10)),
 		Key:             lo.ToPtr(k.Key.String()),
 		Name:            &k.Name,
 		ApiCallsTotal:   &k.ApiCallsTotal,

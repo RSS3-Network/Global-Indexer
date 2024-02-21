@@ -111,9 +111,9 @@ func (acc *Account) GetUsage(ctx context.Context) (int64, int64, int64, int64, e
 	err := acc.databaseClient.WithContext(ctx).
 		Model(&table.GatewayKey{}).
 		Unscoped().
-		Select("SUM(ru_used_total) AS ruUsedTotal, SUM(ru_used_current) AS ruUsedCurrent, SUM(api_calls_total) AS apiCallsTotal, SUM(api_calls_current) AS apiCallsCurrent").
+		Select("SUM(ru_used_total) AS ru_used_total, SUM(ru_used_current) AS ru_used_current, SUM(api_calls_total) AS api_calls_total, SUM(api_calls_current) AS api_calls_current").
 		Where("account_address = ?", acc.Address).
-		Scan(&status).
+		Find(&status).
 		Error
 
 	return status.RuUsedTotal, status.RuUsedCurrent, status.ApiCallsTotal, status.ApiCallsCurrent, err
@@ -147,7 +147,7 @@ func (acc *Account) GetBalance(ctx context.Context) (int64, error) {
 	return acc.RuLimit - ruUsed, nil
 }
 
-func (acc *Account) GetKey(ctx context.Context, keyID uint) (*Key, bool, error) {
+func (acc *Account) GetKey(ctx context.Context, keyID uint64) (*Key, bool, error) {
 
 	var k table.GatewayKey
 	err := acc.databaseClient.WithContext(ctx).

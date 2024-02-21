@@ -152,7 +152,7 @@ func (app *App) GetCollectionHistory(ctx echo.Context, params oapi.GetCollection
 	})
 }
 
-func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, keyID int, params oapi.GetConsumptionHistoryByKeyParams) error {
+func (app *App) GetConsumptionHistoryByKey(ctx echo.Context, keyID string, params oapi.GetConsumptionHistoryByKeyParams) error {
 	since, until := parseDates(params.Since, params.Until)
 
 	// Query from database

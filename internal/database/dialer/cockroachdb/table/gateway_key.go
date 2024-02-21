@@ -13,7 +13,7 @@ var (
 )
 
 type GatewayKey struct {
-	ID        uint `gorm:"primaryKey;column:id"`
+	ID        uint64 `gorm:"primaryKey;column:id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

@@ -223,7 +223,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestRes'
-  /key/{id}:
+  /key/{keyID}:
     get:
       tags:
       - key
@@ -232,12 +232,7 @@ paths:
         - JWTAuth: []
       operationId: GetKey
       parameters:
-        - name: id
-          in: path
-          description: Key ID
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/keyID'
       responses:
         200:
           description: Success
@@ -271,12 +266,7 @@ paths:
         - JWTAuth: []
       operationId: DeleteKey
       parameters:
-        - name: id
-          in: path
-          description: Key ID
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/keyID'
       responses:
         200:
           description: Success
@@ -300,12 +290,7 @@ paths:
         - JWTAuth: []
       operationId: UpdateKeyInfo
       parameters:
-        - name: id
-          in: path
-          description: Key ID
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/keyID'
       requestBody:
         content:
           application/json:
@@ -339,12 +324,7 @@ paths:
         - JWTAuth: []
       operationId: RotateKey
       parameters:
-        - name: id
-          in: path
-          description: Key ID
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/keyID'
       responses:
         200:
           description: Success
@@ -455,7 +435,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequestRes'
-  /history/consumption/{key}:
+  /history/consumption/{keyID}:
     get:
       tags:
         - history
@@ -466,12 +446,7 @@ paths:
         - JWTAuth: [ ]
       operationId: GetConsumptionHistoryByKey
       parameters:
-        - name: key
-          in: path
-          description: key
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/keyID'
         - $ref: '#/components/parameters/since'
         - $ref: '#/components/parameters/until'
         - $ref: '#/components/parameters/merge'
@@ -642,7 +617,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         key:
           type: string
         name:
@@ -854,7 +829,13 @@ components:
       schema:
         type: boolean
         default: false
-
+    keyID:
+      name: keyID
+      in: path
+      description: key
+      required: true
+      schema:
+        type: string
     page:
       name: page
       in: query
