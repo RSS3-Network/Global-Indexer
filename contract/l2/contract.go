@@ -40,3 +40,7 @@ var (
 
 	EventHashRewardDistributed = crypto.Keccak256Hash([]byte("RewardDistributed(uint256,uint256,uint256,address[],uint256[],uint256[],uint256[],uint256[])"))
 )
+
+var (
+	MethodDistributeRewards = "distributeRewards"
+)

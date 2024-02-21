@@ -2,17 +2,17 @@ package epoch
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
@@ -21,16 +21,16 @@ import (
 )
 
 type Server struct {
-	chainID            *big.Int
-	checkpoint         uint64
-	timer              *time.Timer
-	mutex              *redsync.Mutex
-	currentEpoch       uint64
-	privateKey         *ecdsa.PrivateKey
-	gasLimit           uint64
-	settlementContract *l2.Settlement
-	ethereumClient     *ethclient.Client
-	databaseClient     database.Client
+	chainID        *big.Int
+	checkpoint     uint64
+	timer          *time.Timer
+	mutex          *redsync.Mutex
+	currentEpoch   uint64
+	gasLimit       uint64
+	fromAddress    common.Address
+	rpcClient      *rpc.Client
+	ethereumClient *ethclient.Client
+	databaseClient database.Client
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -187,6 +187,20 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return checkpoint.BlockNumber, blockNumberLatest, nil
 }
 
+func (s *Server) ping() (string, error) {
+	var v string
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+
+	defer cancel()
+
+	if err := s.rpcClient.CallContext(ctx, &v, "health_status"); err != nil {
+		return "", err
+	}
+
+	return v, nil
+}
+
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
 	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
 	if err != nil {
@@ -198,26 +212,33 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("get chain ID: %w", err)
 	}
 
-	privateKey, err := crypto.HexToECDSA(config.Epoch.WalletPrivateKey)
+	rpcClient, err := rpc.DialOptions(ctx, config.Epoch.SignerEndpoint, rpc.WithHTTPClient(http.DefaultClient))
 	if err != nil {
-		return nil, fmt.Errorf("hex to ecdsa: %w", err)
-	}
-
-	settlement, err := l2.NewSettlement(l2.AddressSettlementProxy, ethereumClient)
-	if err != nil {
-		return nil, fmt.Errorf("new settlement: %w", err)
+		return nil, fmt.Errorf("dial rpc client: %w", err)
 	}
 
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
-	return &Server{
-		chainID:            chainID,
-		privateKey:         privateKey,
-		mutex:              rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
-		gasLimit:           config.Epoch.GasLimit,
-		settlementContract: settlement,
-		ethereumClient:     ethereumClient,
-		databaseClient:     databaseClient,
-	}, nil
+	server := &Server{
+		chainID:        chainID,
+		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
+		gasLimit:       config.Epoch.GasLimit,
+		fromAddress:    common.HexToAddress(config.Epoch.WalletAddress),
+		rpcClient:      rpcClient,
+		ethereumClient: ethereumClient,
+		databaseClient: databaseClient,
+	}
+
+	// Check signer if reachable
+	status, err := server.ping()
+	if err != nil {
+		return nil, err
+	}
+
+	if status != "ok" {
+		return nil, fmt.Errorf("signer service unreachable")
+	}
+
+	return server, nil
 }

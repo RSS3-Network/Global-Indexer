@@ -40,8 +40,9 @@ type RSS3ChainConfig struct {
 }
 
 type EpochConfig struct {
-	WalletPrivateKey string `yaml:"wallet_private_key" validate:"required"`
-	GasLimit         uint64 `yaml:"gas_limit" default:"2500000"`
+	WalletAddress  string `yaml:"wallet_address" validate:"required"`
+	SignerEndpoint string `yaml:"signer_endpoint" validate:"required"`
+	GasLimit       uint64 `yaml:"gas_limit" default:"2500000"`
 }
 
 func Setup(configFilePath string) (*File, error) {
