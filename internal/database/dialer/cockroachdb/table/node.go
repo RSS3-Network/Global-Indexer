@@ -45,9 +45,9 @@ func (n *Node) Import(node *schema.Node) (err error) {
 }
 
 func (n *Node) Export() (*schema.Node, error) {
-	var local []*schema.NodeLocal
+	local := make([]*schema.NodeLocal, 0)
 
-	if err := json.Unmarshal(n.Local, &local); err != nil {
+	if err := json.Unmarshal(n.Local, &local); len(n.Local) > 0 && err != nil {
 		return nil, fmt.Errorf("unmarshal node local: %w", err)
 	}
 
