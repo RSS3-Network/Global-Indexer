@@ -229,6 +229,26 @@ paths:
                         transaction:
                           hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                           index: 1
+  /stake/chips/{id}/image.svg:
+    get:
+      description: "Get image by chips id"
+      tags:
+        - Stake
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        404:
+          description: "Not found"
   /snapshot/nodes:
     get:
       description: "Get snapshots of the number of nodes"
@@ -255,7 +275,6 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-
   /snapshot/stakers:
     get:
       description: "Get snapshots of the number of stakers"
