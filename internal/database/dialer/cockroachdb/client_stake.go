@@ -213,6 +213,30 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	return results, nil
 }
 
+func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
+	}
+
+	var row table.StakeChip
+	if err := databaseClient.First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, fmt.Errorf("find stake chip: %w", err)
+	}
+
+	result, err := row.Export()
+	if err != nil {
+		return nil, fmt.Errorf("export row: %w", err)
+	}
+
+	return result, nil
+}
+
 func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error) {
 	databaseClient := c.database.WithContext(ctx)
 

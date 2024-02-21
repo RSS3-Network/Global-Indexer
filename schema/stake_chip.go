@@ -29,6 +29,10 @@ type StakeChip struct {
 	BlockTimestamp uint64          `json:"blockTimestamp"`
 }
 
+type StakeChipQuery struct {
+	ID *big.Int `query:"id"`
+}
+
 type StakeChipsQuery struct {
 	Cursor *common.Address `query:"cursor"`
 	Direct bool            `query:"direct"`
