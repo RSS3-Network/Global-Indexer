@@ -3,12 +3,12 @@ package hub
 import (
 	"context"
 	"fmt"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"net"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
