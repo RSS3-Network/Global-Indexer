@@ -16,6 +16,7 @@ import (
 )
 
 type GetBridgeTransactionsRequest struct {
+	Cursor   *common.Hash                  `query:"cursor"`
 	Sender   *common.Address               `query:"sender"`
 	Receiver *common.Address               `query:"receiver"`
 	Address  *common.Address               `query:"address"`
@@ -42,6 +43,7 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	bridgeTransactionsQuery := schema.BridgeTransactionsQuery{
+		Cursor:  request.Cursor,
 		Address: request.Address,
 		Type:    request.Type,
 	}
@@ -88,9 +90,13 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 		transactionModels = append(transactionModels, model.NewBridgeTransaction(transaction, events))
 	}
 
-	var response Response
+	response := Response{
+		Data: transactionModels,
+	}
 
-	response.Data = transactionModels
+	if length := len(transactionModels); length > 0 {
+		response.Cursor = transactionModels[length-1].ID.String()
+	}
 
 	return c.JSON(http.StatusOK, response)
 }
