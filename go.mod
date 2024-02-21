@@ -14,6 +14,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.11.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/lib/pq v1.10.9
+	github.com/maxmind/geoipupdate/v6 v6.1.0
 	github.com/orlangure/gnomock v0.30.0
 	github.com/oschwald/geoip2-golang v1.9.0
 	github.com/pressly/goose/v3 v3.17.0
@@ -93,7 +94,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
-	github.com/maxmind/geoipupdate/v6 v6.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
