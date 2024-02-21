@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS "node_info"
     "stream"                   json        NOT NULL,
     "config"                   json        NOT NULL,
     "status"                   TEXT        NOT NULL DEFAULT 'offline',
+    "local"                    json        NOT NULL DEFAULT '[]',
     "last_heartbeat_timestamp" timestamptz,
     "created_at"               timestamptz NOT NULL DEFAULT now(),
     "updated_at"               timestamptz NOT NULL DEFAULT now(),

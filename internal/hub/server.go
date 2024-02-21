@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
@@ -29,8 +30,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient)
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
@@ -62,6 +63,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.GET("/stake/transactions", instance.hub.GetStakeTransactions)
 	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
 	instance.httpServer.GET("/stake/wallets", instance.hub.GetStakeWallets)
+	instance.httpServer.GET("/stake/chips/:id/image.svg", instance.hub.GetStakeChipImage)
 
 	instance.httpServer.GET("/epochs", instance.hub.GetEpochsHandler)
 	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpochHandler)

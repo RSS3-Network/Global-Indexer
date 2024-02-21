@@ -90,7 +90,12 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	if err := h.register(c.Request().Context(), &request); err != nil {
+	ip, err := h.parseRequestIP(c.Request().Context(), c.Request())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("parse request ip failed: %v", err))
+	}
+
+	if err := h.register(c.Request().Context(), &request, ip.String()); err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("register node failed: %v", err))
 	}
 

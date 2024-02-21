@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -84,7 +87,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 	return nodes, nil
 }
 
-func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error {
+func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, requestIP string) error {
 	// Check signature.
 	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
 		return err
@@ -92,7 +95,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 
 	node := &schema.Node{
 		Address:  request.Address,
-		Endpoint: request.Endpoint,
+		Endpoint: h.parseEndpoint(ctx, request.Endpoint),
 		Stream:   request.Stream,
 		Config:   request.Config,
 	}
@@ -114,6 +117,11 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
+
+	node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
+	if err != nil {
+		zap.L().Error("get node local error", zap.Error(err))
+	}
 
 	var (
 		nodeConfig NodeConfig
@@ -139,7 +147,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 	}
 
 	// Save node info to the database.
-	if err = h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	return h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
 		// Save node to database.
 		if err = h.databaseClient.SaveNode(ctx, node); err != nil {
 			return fmt.Errorf("save node: %s, %w", node.Address.String(), err)
@@ -170,11 +178,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest) error 
 		}
 
 		return nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (h *Hub) updateNodeStat(ctx context.Context, request *RegisterNodeRequest, nodeConfig NodeConfig, fullNode, publicNode bool) (*schema.Stat, error) {
@@ -312,6 +316,32 @@ func (h *Hub) checkSignature(_ context.Context, address common.Address, signatur
 	}
 
 	return nil
+}
+
+func (h *Hub) parseEndpoint(_ context.Context, endpoint string) string {
+	if ip := net.ParseIP(endpoint); ip != nil {
+		return endpoint
+	}
+
+	uri, err := url.Parse(endpoint)
+	if err != nil {
+		return endpoint
+	}
+
+	return uri.Hostname()
+}
+
+func (h *Hub) parseRequestIP(_ context.Context, request *http.Request) (net.IP, error) {
+	if ip := request.Header.Get("X-Real-IP"); net.ParseIP(ip) != nil {
+		return net.ParseIP(ip), nil
+	}
+
+	ip, _, err := net.SplitHostPort(request.RemoteAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return net.ParseIP(ip), nil
 }
 
 type NodeConfig struct {
