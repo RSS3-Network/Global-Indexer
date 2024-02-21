@@ -57,7 +57,7 @@ func UserAuthenticationMiddleware(databaseClient *gorm.DB, apiSixAPIService *api
 			}
 
 			// Set user in context
-			c.Set("user", &account)
+			c.Set("user", account)
 
 			// Continue with the pipeline
 			return next(c)
