@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"fmt"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -16,6 +17,7 @@ import (
 
 type Hub struct {
 	databaseClient  database.Client
+	geoLite2        *geolite2.Client
 	cacheClient     cache.Client
 	stakingContract *l2.Staking
 	httpClient      *http.Client
@@ -41,8 +43,14 @@ func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *e
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	geoLite2, err := geolite2.NewClient("./common/geolite2/GeoLite2-City.mmdb")
+	if err != nil {
+		return nil, fmt.Errorf("new geo lite2 client: %w", err)
+	}
+
 	return &Hub{
 		databaseClient:  databaseClient,
+		geoLite2:        geoLite2,
 		cacheClient:     cache.New(redisClient),
 		stakingContract: stakingContract,
 		httpClient:      http.DefaultClient,
