@@ -86,6 +86,7 @@ func (acc *Account) ListKeys(ctx context.Context) ([]*Key, error) {
 	err := acc.databaseClient.WithContext(ctx).
 		Model(&table.GatewayKey{}).
 		Where("account_address = ?", acc.Address).
+		Find(&keys).
 		Error
 
 	if err != nil {
