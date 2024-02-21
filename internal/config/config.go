@@ -17,13 +17,14 @@ const (
 )
 
 type File struct {
-	Environment string           `yaml:"environment" validate:"required" default:"development"`
-	Database    *Database        `yaml:"database"`
-	Redis       *Redis           `yaml:"redis"`
-	RSS3Chain   *RSS3ChainConfig `yaml:"rss3_chain"`
-	Epoch       *EpochConfig     `yaml:"epoch"`
-	Gateway     *GatewayConfig   `yaml:"gateway"`
-	Billing     *BillingConfig   `yaml:"billing"`
+	Environment string     `yaml:"environment" validate:"required" default:"development"`
+	Database    *Database  `yaml:"database"`
+	Redis       *Redis     `yaml:"redis"`
+	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
+	Epoch       *Epoch     `yaml:"epoch"`
+	GeoIP       *GeoIP     `yaml:"geo_ip"`
+	Gateway     *Gateway   `yaml:"gateway"`
+	Billing     *Billing   `yaml:"billing"`
 }
 
 type Database struct {
@@ -35,18 +36,24 @@ type Redis struct {
 	URI string `mapstructure:"uri" validate:"required" default:"redis://localhost:6379/0"`
 }
 
-type RSS3ChainConfig struct {
+type RSS3Chain struct {
 	EndpointL1     string `yaml:"endpoint_l1" validate:"required"`
 	EndpointL2     string `yaml:"endpoint_l2" validate:"required"`
 	BlockThreadsL1 uint64 `yaml:"block_threads_l1" default:"1"`
 }
 
-type EpochConfig struct {
+type Epoch struct {
 	WalletPrivateKey string `yaml:"wallet_private_key" validate:"required"`
 	GasLimit         uint64 `yaml:"gas_limit" default:"2500000"`
 }
 
-type GatewayConfig struct {
+type GeoIP struct {
+	Account    int    `yaml:"account" validate:"required"`
+	LicenseKey string `yaml:"license_key" validate:"required"`
+	File       string `yaml:"file" validate:"required" default:"./common/geolite2/mmdb/GeoLite2-City.mmdb"`
+}
+
+type Gateway struct {
 	API struct {
 		Listen struct {
 			Host     string `yaml:"host" default:"0.0.0.0"`
@@ -68,7 +75,7 @@ type GatewayConfig struct {
 	} `yaml:"apisix" validate:"required"`
 }
 
-type BillingConfig struct {
+type Billing struct {
 	CollectTokenTo    string `yaml:"collect_token_to" validate:"required"`
 	SlackNotification struct {
 		BotToken       string `yaml:"bot_token"`

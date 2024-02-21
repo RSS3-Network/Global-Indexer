@@ -2,6 +2,7 @@ package table
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +17,7 @@ type Node struct {
 	Config                 json.RawMessage `gorm:"column:config;type:jsonb"`
 	Status                 schema.Status   `gorm:"column:status"`
 	LastHeartbeatTimestamp time.Time       `gorm:"column:last_heartbeat_timestamp"`
+	Local                  json.RawMessage `gorm:"column:local;type:jsonb"`
 	CreatedAt              time.Time       `gorm:"column:created_at"`
 	UpdatedAt              time.Time       `gorm:"column:updated_at"`
 }
@@ -34,10 +36,21 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Config = node.Config
 	n.CreatedAt = time.Unix(node.CreatedAt, 0)
 
+	n.Local, err = json.Marshal(node.Local)
+	if err != nil {
+		return fmt.Errorf("marshal node local: %w", err)
+	}
+
 	return nil
 }
 
 func (n *Node) Export() (*schema.Node, error) {
+	local := make([]*schema.NodeLocal, 0)
+
+	if err := json.Unmarshal(n.Local, &local); len(n.Local) > 0 && err != nil {
+		return nil, fmt.Errorf("unmarshal node local: %w", err)
+	}
+
 	return &schema.Node{
 		Address:                n.Address,
 		Endpoint:               n.Endpoint,
@@ -46,6 +59,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		LastHeartbeatTimestamp: n.LastHeartbeatTimestamp.Unix(),
 		Stream:                 n.Stream,
 		Config:                 n.Config,
+		Local:                  local,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }

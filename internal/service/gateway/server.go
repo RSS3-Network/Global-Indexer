@@ -27,7 +27,7 @@ import (
 )
 
 type Server struct {
-	config         config.GatewayConfig
+	config         config.Gateway
 	redis          *redis.Client
 	databaseClient database.Client
 }
@@ -109,7 +109,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, redis *redis.Client, config config.GatewayConfig) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, config config.Gateway) (service.Server, error) {
 	instance := Server{
 		config:         config,
 		redis:          redis,
