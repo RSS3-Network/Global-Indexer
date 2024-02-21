@@ -28,10 +28,10 @@ func Test_Consumer(t *testing.T) {
 
 	// Create 2 new consumers
 	key1 := uuid.New().String()
-	keyId1 := 114514
+	keyId1 := uint64(114514)
 
 	key2 := uuid.New().String()
-	keyId2 := 1919810
+	keyId2 := uint64(1919810)
 
 	err = s.NewConsumer(keyId1, key1, userAddr)
 	assert.NoError(t, err)
@@ -90,7 +90,7 @@ func Test_Consumer(t *testing.T) {
 	// Create consumer with non-exist group should create group automatically
 
 	key3 := uuid.New().String()
-	keyId3 := 25565
+	keyId3 := uint64(25565)
 
 	err = s.NewConsumer(keyId3, key3, userAddr)
 	assert.NoError(t, err)
@@ -111,7 +111,7 @@ func Test_UsernameChangeHelper(t *testing.T) {
 	// Init configs
 	s, _ := New("http://localhost:9180", "edd1c9f034335f136f87ad84b625c8f1")
 
-	keyId := 114514
+	keyId := uint64(114514)
 	res, err := s.RecoverKeyIDFromConsumerUsername(s.consumerUsername(keyId))
 	assert.Equal(t, keyId, res)
 	assert.NoError(t, err)
