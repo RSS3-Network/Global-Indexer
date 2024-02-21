@@ -19,6 +19,7 @@ func (app *App) GetPendingRequestWithdraw(ctx echo.Context) error {
 	// Check if there's any pending withdraw requests
 	var pendingWithdrawRequest table.GatewayPendingWithdrawRequest
 	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&pendingWithdrawRequest).
 		Where("account_address = ?", user.Address).
 		First(&pendingWithdrawRequest).
 		Error
@@ -43,6 +44,7 @@ func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendi
 	// Check if there's any pending withdraw requests
 	var pendingWithdrawRequest table.GatewayPendingWithdrawRequest
 	err := app.databaseClient.WithContext(ctx.Request().Context()).
+		Model(&pendingWithdrawRequest).
 		Where("account_address = ?", user.Address).
 		First(&pendingWithdrawRequest).
 		Error
@@ -52,6 +54,7 @@ func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendi
 			if params.Amount > 0 {
 				// Create
 				err = app.databaseClient.WithContext(ctx.Request().Context()).
+					Model(&pendingWithdrawRequest).
 					Create(&table.GatewayPendingWithdrawRequest{
 						AccountAddress: user.Address,
 						Amount:         float64(params.Amount),
@@ -64,12 +67,14 @@ func (app *App) SetPendingRequestWithdraw(ctx echo.Context, params oapi.SetPendi
 		if params.Amount > 0 {
 			// Update
 			err = app.databaseClient.WithContext(ctx.Request().Context()).
+				Model(&pendingWithdrawRequest).
 				Where("account_address = ?", user.Address).
 				Update("amount", float64(params.Amount)).
 				Error
 		} else {
 			// Delete
 			err = app.databaseClient.WithContext(ctx.Request().Context()).
+				Model(&pendingWithdrawRequest).
 				Where("account_address = ?", user.Address).
 				Delete(&pendingWithdrawRequest).
 				Error
