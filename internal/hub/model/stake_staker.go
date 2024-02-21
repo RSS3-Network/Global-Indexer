@@ -1,7 +1,7 @@
 package model
 
 import (
-	"math/big"
+	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -9,16 +9,11 @@ import (
 )
 
 type StakeStaker struct {
-	User  common.Address `json:"user"`
-	Chips []*StakeChip   `json:"chips"`
+	User  common.Address                  `json:"user"`
+	Chips map[common.Address][]*StakeChip `json:"chips"`
 }
 
-type StakeChip struct {
-	Node common.Address `json:"node"`
-	IDs  []*big.Int     `json:"ids"`
-}
-
-func NewStakeStakers(stakeChips []*schema.StakeChip) []*StakeStaker {
+func NewStakeStakers(stakeChips []*schema.StakeChip, baseURL url.URL) []*StakeStaker {
 	stakeStakerMap := lo.GroupBy(stakeChips, func(stakeChip *schema.StakeChip) common.Address {
 		return stakeChip.Owner
 	})
@@ -26,24 +21,24 @@ func NewStakeStakers(stakeChips []*schema.StakeChip) []*StakeStaker {
 	stakeStakerModels := make([]*StakeStaker, 0, len(stakeStakerMap))
 
 	for user, chips := range stakeStakerMap {
-		result := make(map[common.Address][]*big.Int)
+		result := make(map[common.Address][]*StakeChip)
 
 		for _, chip := range chips {
 			if _, exists := result[chip.Node]; !exists {
-				result[chip.Node] = make([]*big.Int, 0)
+				result[chip.Node] = make([]*StakeChip, 0)
 			}
 
-			result[chip.Node] = append(result[chip.Node], chip.ID)
+			metadata, _ := BuildStakeChipMetadata(chip.ID, chip.Metadata, baseURL)
+
+			result[chip.Node] = append(result[chip.Node], &StakeChip{
+				ID:       chip.ID,
+				Metadata: metadata,
+			})
 		}
 
 		stakeStakerModel := StakeStaker{
-			User: user,
-			Chips: lo.MapToSlice(result, func(node common.Address, ids []*big.Int) *StakeChip {
-				return &StakeChip{
-					Node: node,
-					IDs:  ids,
-				}
-			}),
+			User:  user,
+			Chips: result,
 		}
 
 		stakeStakerModels = append(stakeStakerModels, &stakeStakerModel)
