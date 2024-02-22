@@ -23,6 +23,7 @@ type File struct {
 	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
 	Epoch       *Epoch     `yaml:"epoch"`
 	GeoIP       *GeoIP     `yaml:"geo_ip"`
+	RPC         *RPC       `yaml:"rpc"`
 }
 
 type Database struct {
@@ -49,6 +50,22 @@ type GeoIP struct {
 	Account    int    `yaml:"account" validate:"required"`
 	LicenseKey string `yaml:"license_key" validate:"required"`
 	File       string `yaml:"file" validate:"required" default:"./common/geolite2/mmdb/GeoLite2-City.mmdb"`
+}
+
+type RPC struct {
+	RPCNetwork *RPCNetwork `yaml:"network"`
+}
+
+type RPCNetwork struct {
+	Ethereum  *RPCEndpoint `yaml:"ethereum"`
+	Crossbell *RPCEndpoint `yaml:"crossbell"`
+	Polygon   *RPCEndpoint `yaml:"polygon"`
+	Farcaster *RPCEndpoint `yaml:"farcaster"`
+}
+
+type RPCEndpoint struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	APIkey   string `yaml:"api_key"`
 }
 
 func Setup(configFilePath string) (*File, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -30,8 +31,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2)
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
