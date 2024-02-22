@@ -12,7 +12,7 @@ tags:
   - name: Bridge
   - name: Stake
   - name: Chips
-  - name: Snapshot
+  - name: Snapshots
 paths:
   /bridge/transactions:
     get:
@@ -340,7 +340,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/StakeChips"
+                      $ref: "#/components/schemas/Chips"
                   cursor:
                     type: string
   /chips/{id}:
@@ -360,7 +360,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StakeChips"
+                $ref: "#/components/schemas/Chips"
         404:
           description: "Not found"
   /chips/{id}/image.svg:
@@ -384,11 +384,11 @@ paths:
                 type: string
         404:
           description: "Not found"
-  /snapshot/nodes:
+  /snapshots/nodes:
     get:
       description: "Get snapshots of the number of nodes"
       tags:
-        - Snapshot
+        - Snapshots
       responses:
         200:
           description: "OK"
@@ -410,11 +410,11 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-  /snapshot/stakers:
+  /snapshots/stakers:
     get:
       description: "Get snapshots of the number of stakers"
       tags:
-        - Snapshot
+        - Snapshots
       responses:
         200:
           description: "OK"
@@ -594,32 +594,6 @@ components:
         transaction:
           hash: "0x6595192f1193c2584c28e7d4b50b9208242bf9b4538933f0081d3f4625373d2f"
           index: 1
-    StakeChips:
-      type: object
-      properties:
-        id:
-          type: integer
-        node:
-          type: string
-        owner:
-          type: string
-        metadata:
-          type: object
-          properties:
-            name:
-              type: string
-            description:
-              type: string
-            image:
-              type: string
-      example:
-        id: 474
-        node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-        owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
-        metadata:
-          name: "Chip #474"
-          description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-          image: "https://gi.rss3.dev/stake/chips/474/image.svg"
     StakeAddress:
       type: object
       properties:
@@ -633,7 +607,7 @@ components:
             showcase:
               type: array
               items:
-                $ref: "#/components/schemas/StakeChips"
+                $ref: "#/components/schemas/Chips"
       example:
         address: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
         chips:
@@ -674,3 +648,29 @@ components:
                 name: "Chip #279"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+    Chips:
+      type: object
+      properties:
+        id:
+          type: integer
+        node:
+          type: string
+        owner:
+          type: string
+        metadata:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            image:
+              type: string
+      example:
+        id: 474
+        node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+        owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        metadata:
+          name: "Chip #474"
+          description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+          image: "https://gi.rss3.dev/stake/chips/474/image.svg"
