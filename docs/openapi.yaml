@@ -239,7 +239,7 @@ paths:
           in: query
           schema:
             type: string
-        - name: ids
+        - name: id
           in: query
           schema:
             type: array

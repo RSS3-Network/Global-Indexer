@@ -181,7 +181,7 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 
 type GetStakeChipsRequest struct {
 	Cursor *big.Int        `query:"cursor"`
-	IDs    []*big.Int      `query:"ids"`
+	IDs    []*big.Int      `query:"id"`
 	Node   *common.Address `query:"node"`
 	User   *common.Address `query:"user"`
 	Limit  int             `query:"limit" default:"10" min:"1" max:"10"`
