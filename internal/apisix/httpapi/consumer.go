@@ -50,8 +50,8 @@ func (s *Service) consumerUsername(keyID uint64) string {
 	return fmt.Sprintf("key_%d", keyID)
 }
 
-func (s *Service) RecoverKeyIDFromConsumerUsername(username string) (int, error) {
-	return strconv.Atoi(strings.Replace(username, "key_", "", 1))
+func (s *Service) RecoverKeyIDFromConsumerUsername(username string) (uint64, error) {
+	return strconv.ParseUint(strings.Replace(username, "key_", "", 1), 10, 64)
 }
 
 func (s *Service) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerResponse, error) {

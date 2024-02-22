@@ -29,7 +29,7 @@ func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
 		return
 	}
 
-	key, _, err := model.KeyGetByID(rctx, uint(keyID), false, app.databaseClient, app.apiSixAPIService) // Deleted key could also be used for pending bills
+	key, _, err := model.KeyGetByID(rctx, keyID, false, app.databaseClient, app.apiSixAPIService) // Deleted key could also be used for pending bills
 
 	if err != nil {
 		log.Printf("Failed to get key by id with error: %v", err)

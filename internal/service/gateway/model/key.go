@@ -51,7 +51,7 @@ func KeyCreate(ctx context.Context, accountAddress common.Address, keyName strin
 	return &Key{k, databaseClient, apiSixAPIService}, nil
 }
 
-func KeyGetByID(ctx context.Context, KeyID uint, activeOnly bool, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) (*Key, bool, error) {
+func KeyGetByID(ctx context.Context, KeyID uint64, activeOnly bool, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) (*Key, bool, error) {
 	queryBase := databaseClient.WithContext(ctx).Model(&table.GatewayKey{})
 
 	if activeOnly {
