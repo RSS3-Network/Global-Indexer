@@ -38,4 +38,5 @@ type StakeChipsQuery struct {
 	IDs    []*big.Int      `query:"ids"`
 	Node   *common.Address `query:"node"`
 	User   *common.Address `query:"user"`
+	Limit  int
 }

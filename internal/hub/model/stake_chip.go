@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/samber/lo"
 )
 
 type StakeChip struct {
@@ -34,4 +35,10 @@ func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) *StakeChip {
 	result.Metadata, _ = json.Marshal(tokenMetadata)
 
 	return &result
+}
+
+func NewStakeChips(stakeChips []*schema.StakeChip, baseURL url.URL) []*StakeChip {
+	return lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) *StakeChip {
+		return NewStakeChip(stakeChip, baseURL)
+	})
 }

@@ -229,7 +229,71 @@ paths:
                         transaction:
                           hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                           index: 1
+  /stake/chips:
+    get:
+      description: "Get all chips by chips id"
+      tags:
+        - Stake
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: ids
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: node
+          in: query
+          schema:
+            type: string
+        - name: user
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StakeChips"
+                  cursor:
+                    type: string
+  /stake/chips/{id}:
+    get:
+      description: "Get chips by chips id"
+      tags:
+        - Stake
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StakeChips"
+        404:
+          description: "Not found"
   /stake/chips/{id}/image.svg:
+    description: "Not found"
     get:
       description: "Get image by chips id"
       tags:
@@ -249,6 +313,76 @@ paths:
                 type: string
         404:
           description: "Not found"
+  /stake/nodes/{address}/users:
+    get:
+      description: "Get the users that have staked on this node"
+      tags:
+        - Stake
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StakeAddress"
+                  cursor:
+                    type: string
+                    example: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+  /stake/users/{address}/nodes:
+    get:
+      description: "Get the nodes that have been staked by this user"
+      tags:
+        - Stake
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StakeAddress"
+                  cursor:
+                    type: string
+                    example: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
   /snapshot/nodes:
     get:
       description: "Get snapshots of the number of nodes"
@@ -459,3 +593,83 @@ components:
         transaction:
           hash: "0x6595192f1193c2584c28e7d4b50b9208242bf9b4538933f0081d3f4625373d2f"
           index: 1
+    StakeChips:
+      type: object
+      properties:
+        id:
+          type: integer
+        node:
+          type: string
+        user:
+          type: string
+        metadata:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            image:
+              type: string
+      example:
+        id: 474
+        node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+        user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        metadata:
+          name: "Chip #474"
+          description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+          image: "https://gi.rss3.dev/stake/chips/474/image.svg"
+    StakeAddress:
+      type: object
+      properties:
+        address:
+          type: string
+        chips:
+          type: object
+          properties:
+            total:
+              type: integer
+            showcase:
+              type: array
+              items:
+                $ref: "#/components/schemas/StakeChips"
+      example:
+        address: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+        chips:
+          total: 200
+          showcase:
+            - id: 275
+              node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+              metadata:
+                name: "Chip #275"
+                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+            - id: 276
+              node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+              metadata:
+                name: "Chip #276"
+                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+            - id: 277
+              node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+              metadata:
+                name: "Chip #277"
+                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+            - id: 278
+              node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+              metadata:
+                name: "Chip #278"
+                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+            - id: 279
+              node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+              metadata:
+                name: "Chip #279"
+                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
