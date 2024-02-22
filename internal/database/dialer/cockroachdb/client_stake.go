@@ -55,6 +55,21 @@ func (c *client) FindStakeTransaction(ctx context.Context, query schema.StakeTra
 func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error) {
 	databaseClient := c.database.WithContext(ctx)
 
+	const limit = 100
+
+	if query.Cursor != nil {
+		var cursor table.StakeTransaction
+		if err := databaseClient.Where(`"id" = ?`, query.Cursor.String()).First(&cursor).Error; err != nil {
+			return nil, fmt.Errorf("query cursor: %w", err)
+		}
+
+		databaseClient = databaseClient.Where(
+			`("block_number" < ?) OR ("block_number" = ? AND "transaction_index" < ?)`,
+			cursor.BlockNumber,
+			cursor.BlockNumber, cursor.TransactionIndex,
+		)
+	}
+
 	if query.IDs != nil {
 		databaseClient = databaseClient.Where(`"id" = ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
 			return id.String()
@@ -90,7 +105,7 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 
 	var rows []table.StakeTransaction
 
-	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(limit).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -198,6 +213,56 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	return results, nil
 }
 
+func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.ID != nil {
+		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
+	}
+
+	var row table.StakeChip
+	if err := databaseClient.First(&row).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, fmt.Errorf("find stake chip: %w", err)
+	}
+
+	result, err := row.Export()
+	if err != nil {
+		return nil, fmt.Errorf("export row: %w", err)
+	}
+
+	return result, nil
+}
+
+func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	var stakeSnapshots []*table.StakeSnapshot
+
+	if err := databaseClient.
+		Order(`"date" DESC`).
+		Limit(100). // TODO Replace this constant with a query parameter.
+		Find(&stakeSnapshots).Error; err != nil {
+		return nil, err
+	}
+
+	values := make([]*schema.StakeSnapshot, 0, len(stakeSnapshots))
+
+	for _, stakeSnapshot := range stakeSnapshots {
+		value, err := stakeSnapshot.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export stake snapshot: %w", err)
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
 func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error {
 	var value table.StakeTransaction
 	if err := value.Import(*stakeTransaction); err != nil {
@@ -238,4 +303,27 @@ func (c *client) UpdateStakeChipsOwner(ctx context.Context, owner common.Address
 	})
 
 	return c.database.WithContext(ctx).Model((*table.StakeChip)(nil)).Where(`"id" IN ?`, ids).UpdateColumn("owner", owner.String()).Error
+}
+
+func (c *client) SaveStakeSnapshot(ctx context.Context, stakeSnapshot *schema.StakeSnapshot) error {
+	databaseClient := c.database.WithContext(ctx)
+
+	if err := databaseClient.
+		Table((*table.StakeChip).TableName(nil)).
+		Distinct(`"owner"`).
+		Where(`"owner" != ?`, ethereum.AddressGenesis.String()).
+		Count(&stakeSnapshot.Count).
+		Error; err != nil {
+		return fmt.Errorf("query count: %w", err)
+	}
+
+	var value table.StakeSnapshot
+	if err := value.Import(*stakeSnapshot); err != nil {
+		return fmt.Errorf("import stake snapshot: %w", err)
+	}
+
+	return databaseClient.
+		Table((*table.StakeSnapshot).TableName(nil)).
+		Create(stakeSnapshot).
+		Error
 }

@@ -2,19 +2,19 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS "epoch"
 (
-    "id"    bigint NOT NULL,
-    "start_timestamp" timestamptz NOT NULL,
-    "end_timestamp"  timestamptz NOT NULL,
-    "block_hash" text NOT NULL,
-    "block_number" bigint NOT NULL,
-    "block_timestamp" timestamptz NOT NULL,
-    "transaction_hash" text NOT NULL,
-    "transaction_index" bigint NOT NULL,
+    "id"                      bigint      NOT NULL,
+    "start_timestamp"         timestamptz NOT NULL,
+    "end_timestamp"           timestamptz NOT NULL,
+    "block_hash"              text        NOT NULL,
+    "block_number"            bigint      NOT NULL,
+    "block_timestamp"         timestamptz NOT NULL,
+    "transaction_hash"        text        NOT NULL,
+    "transaction_index"       bigint      NOT NULL,
     "total_operation_rewards" decimal,
-    "total_staking_rewards" decimal,
-    "total_reward_items" int,
-    "created_at"   timestamptz NOT NULL DEFAULT now(),
-    "updated_at"   timestamptz NOT NULL DEFAULT now(),
+    "total_staking_rewards"   decimal,
+    "total_reward_items"      int,
+    "created_at"              timestamptz NOT NULL DEFAULT now(),
+    "updated_at"              timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT "pk_epoch" PRIMARY KEY ("transaction_hash")
 );
@@ -24,16 +24,16 @@ CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "epoch" ("id" DESC, "block_number" 
 
 CREATE TABLE IF NOT EXISTS "epoch_item"
 (
-    "epoch_id" bigint NOT NULL,
-    "index" int NOT NULL,
-    "node_address" bytea NOT NULL,
-    "transaction_hash" text NOT NULL,
-    "request_fees" decimal NOT NULL,
-    "operation_rewards" decimal NOT NULL,
-    "staking_rewards" decimal NOT NULL,
-    "tax_amounts" decimal NOT NULL,
-    "created_at"   timestamptz NOT NULL DEFAULT now(),
-    "updated_at"   timestamptz NOT NULL DEFAULT now(),
+    "epoch_id"          bigint      NOT NULL,
+    "index"             int         NOT NULL,
+    "node_address"      bytea       NOT NULL,
+    "transaction_hash"  text        NOT NULL,
+    "request_fees"      decimal     NOT NULL,
+    "operation_rewards" decimal     NOT NULL,
+    "staking_rewards"   decimal     NOT NULL,
+    "tax_amounts"       decimal     NOT NULL,
+    "created_at"        timestamptz NOT NULL DEFAULT now(),
+    "updated_at"        timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT "pk_epoch_item" PRIMARY KEY ("transaction_hash" DESC, "index" ASC)
 );

@@ -2,12 +2,17 @@ package hub
 
 import (
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -16,6 +21,7 @@ import (
 )
 
 type GetStakeTransactionsRequest struct {
+	Cursor  *common.Hash                 `query:"cursor"`
 	User    *common.Address              `query:"user"`
 	Node    *common.Address              `query:"node"`
 	Type    *schema.StakeTransactionType `query:"type"`
@@ -42,6 +48,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	stakeTransactionsQuery := schema.StakeTransactionsQuery{
+		Cursor:  request.Cursor,
 		User:    request.User,
 		Node:    request.Node,
 		Type:    request.Type,
@@ -90,9 +97,13 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents))
 	}
 
-	var response Response
+	response := Response{
+		Data: stakeTransactionModels,
+	}
 
-	response.Data = stakeTransactionModels
+	if length := len(stakeTransactionModels); length > 0 {
+		response.Cursor = stakeTransactionModels[length-1].ID.String()
+	}
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -188,7 +199,7 @@ func (h *Hub) GetStakeWallets(c echo.Context) error {
 	}
 
 	response := Response{
-		Data: model.NewStakeStakers(stakeChips),
+		Data: model.NewStakeStakers(stakeChips, baseURL(c)),
 	}
 
 	if length := len(stakeChips); length > 0 {
@@ -221,7 +232,7 @@ func (h *Hub) GetStakeNodeChips(c echo.Context) error {
 	}
 
 	response := Response{
-		Data: model.NewStakeStakers(stakeChips),
+		Data: model.NewStakeStakers(stakeChips, baseURL(c)),
 	}
 
 	if length := len(stakeChips); length > 0 {
@@ -253,7 +264,7 @@ func (h *Hub) GetStakeWalletChips(c echo.Context) error {
 	}
 
 	response := Response{
-		Data: model.NewStakeNodes(stakeChips),
+		Data: model.NewStakeNodes(stakeChips, baseURL(c)),
 	}
 
 	if length := len(stakeChips); length > 0 {
@@ -261,4 +272,41 @@ func (h *Hub) GetStakeWalletChips(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+type GetStakeChipsImageRequest struct {
+	ID *big.Int `param:"id"`
+}
+
+func (h *Hub) GetStakeChipImage(c echo.Context) error {
+	var request GetStakeChipsImageRequest
+	if err := c.Bind(&request); err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	stakeChipQuery := schema.StakeChipQuery{
+		ID: request.ID,
+	}
+
+	chip, err := h.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)
+	if err != nil {
+		return fmt.Errorf("find stake chip: %w", err)
+	}
+
+	var metadata l2.ChipsTokenMetadata
+	if err := json.Unmarshal(chip.Metadata, &metadata); err != nil {
+		return fmt.Errorf("invalid metadata: %w", err)
+	}
+
+	data, found := strings.CutPrefix(metadata.Image, "data:image/svg+xml;base64,")
+	if !found {
+		return fmt.Errorf("invalid image")
+	}
+
+	content, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return fmt.Errorf("invalid data: %w", err)
+	}
+
+	return c.Blob(http.StatusOK, "image/svg+xml", content)
 }

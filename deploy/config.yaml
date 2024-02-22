@@ -17,6 +17,11 @@ epoch:
   wallet_private_key:
   gas_limit: 3000000
 
+geo_ip:
+  account:
+  license_key:
+
+
 name_service:
   ens:
     endpoint: https://rpc.ankr.com/eth

@@ -1,0 +1,461 @@
+openapi: 3.0.3
+info:
+  title: Global Indexer
+  version: 0.1.0
+servers:
+  - url: https://gi.rss3.dev
+    description: Production
+  - url: http://localhost
+    description: Development
+tags:
+  - name: Default
+  - name: Bridge
+  - name: Stake
+  - name: Snapshot
+paths:
+  /bridge/transactions:
+    get:
+      description: "Get bridge transactions"
+      tags:
+        - Bridge
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: sender
+          in: query
+          schema:
+            type: string
+        - name: receiver
+          in: query
+          schema:
+            type: string
+        - name: address
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum:
+              - deposit
+              - withdraw
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BridgeTransaction"
+              example:
+                data:
+                  - id: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
+                    sender: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    receiver: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    token:
+                      address:
+                        l1: "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23"
+                        l2: "0x4200000000000000000000000000000000000042"
+                      value: "10000000000000000000000"
+                    event:
+                      deposit:
+                        initialized:
+                          block:
+                            hash: "0x7735d45a54e91e836881c2f185766b391f335b53734b0a57f6c8843f66d03a13"
+                            number: 5223592
+                            timestamp: 1707118764
+                          transaction:
+                            hash: "0x28e8d8f6cbbdfcf14501ebf0bbd11647dfabab371fc7a989a1e441321af6a6ee"
+                            index: 49
+                        finalized:
+                          block:
+                            hash: "0xb0208c1b76aca5d51cb3cde5d10a90f20c2e520c935fbb99af0b66031489433e"
+                            number: 117285
+                            timestamp: 1707118890
+                          transaction:
+                            hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
+                            index: 1
+                cursor: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
+  /bridge/transactions/{id}:
+    get:
+      description: "Get bridge transaction by id"
+      tags:
+        - Bridge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BridgeTransaction"
+              example:
+                data:
+                  id: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
+                  sender: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                  receiver: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                  token:
+                    address:
+                      l1: "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23"
+                      l2: "0x4200000000000000000000000000000000000042"
+                    value: "10000000000000000000000"
+                  event:
+                    deposit:
+                      initialized:
+                        block:
+                          hash: "0x7735d45a54e91e836881c2f185766b391f335b53734b0a57f6c8843f66d03a13"
+                          number: 5223592
+                          timestamp: 1707118764
+                        transaction:
+                          hash: "0x28e8d8f6cbbdfcf14501ebf0bbd11647dfabab371fc7a989a1e441321af6a6ee"
+                          index: 49
+                      finalized:
+                        block:
+                          hash: "0xb0208c1b76aca5d51cb3cde5d10a90f20c2e520c935fbb99af0b66031489433e"
+                          number: 117285
+                          timestamp: 1707118890
+                        transaction:
+                          hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
+                          index: 1
+  /stake/transactions:
+    get:
+      description: "Get stake transactions"
+      tags:
+        - Stake
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: user
+          in: query
+          schema:
+            type: string
+        - name: node
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum:
+              - deposit
+              - withdraw
+              - stake
+              - unstake
+        - name: pending
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StakeTransaction"
+              example:
+                data:
+                  - id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                    user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    value: "10000000000000000000000"
+                    event:
+                      deposit:
+                        deposited:
+                          block:
+                            hash: "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015"
+                            number: 128115
+                            timestamp: 1707140550
+                          transaction:
+                            hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                            index: 1
+                cursor: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+  /stake/transactions/{id}:
+    get:
+      description: "Get stake transaction by id"
+      tags:
+        - Stake
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/StakeTransaction"
+              example:
+                data:
+                  id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                  user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                  node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                  value: "10000000000000000000000"
+                  event:
+                    deposit:
+                      deposited:
+                        block:
+                          hash: "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015"
+                          number: 128115
+                          timestamp: 1707140550
+                        transaction:
+                          hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                          index: 1
+  /stake/chips/{id}/image.svg:
+    get:
+      description: "Get image by chips id"
+      tags:
+        - Stake
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        404:
+          description: "Not found"
+  /snapshot/nodes:
+    get:
+      description: "Get snapshots of the number of nodes"
+      tags:
+        - Snapshot
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+              example:
+                data:
+                  - date: "2024-02-19"
+                    count: 2
+  /snapshot/stakers:
+    get:
+      description: "Get snapshots of the number of stakers"
+      tags:
+        - Snapshot
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+              example:
+                data:
+                  - date: "2024-02-19"
+                    count: 2
+components:
+  schemas:
+    BridgeTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        sender:
+          type: string
+        receiver:
+          type: string
+        token:
+          type: object
+          properties:
+            address:
+              type: object
+              properties:
+                l1:
+                  type: string
+                l2:
+                  type: string
+            value:
+              type: string
+        event:
+          properties:
+            deposit:
+              type: object
+              nullable: true
+              properties:
+                initialized:
+                  $ref: "#/components/schemas/TransactionEvent"
+                finalized:
+                  $ref: "#/components/schemas/TransactionEvent"
+            withdraw:
+              type: object
+              nullable: true
+              properties:
+                initialized:
+                  $ref: "#/components/schemas/TransactionEvent"
+                proved:
+                  $ref: "#/components/schemas/TransactionEvent"
+                finalized:
+                  $ref: "#/components/schemas/TransactionEvent"
+      example:
+        id: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
+        sender: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        receiver: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        token:
+          address:
+            l1: "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23"
+            l2: "0x4200000000000000000000000000000000000042"
+          value: "10000000000000000000000"
+        event:
+          deposit:
+            initialized:
+              block:
+                hash: "0x7735d45a54e91e836881c2f185766b391f335b53734b0a57f6c8843f66d03a13"
+                number: 5223592
+                timestamp: 1707118764
+              transaction:
+                hash: "0x28e8d8f6cbbdfcf14501ebf0bbd11647dfabab371fc7a989a1e441321af6a6ee"
+                index: 49
+            finalized:
+              block:
+                hash: "0xb0208c1b76aca5d51cb3cde5d10a90f20c2e520c935fbb99af0b66031489433e"
+                number: 117285
+                timestamp: 1707118890
+              transaction:
+                hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
+                index: 1
+    StakeTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          type: string
+        node:
+          type: string
+        value:
+          type: string
+        chips:
+          type: array
+          nullable: true
+          items:
+            type: integer
+        event:
+          properties:
+            deposit:
+              type: object
+              nullable: true
+              properties:
+                requested:
+                  $ref: "#/components/schemas/TransactionEvent"
+                claimed:
+                  $ref: "#/components/schemas/TransactionEvent"
+            withdraw:
+              type: object
+              nullable: true
+              properties:
+                deposited:
+                  $ref: "#/components/schemas/TransactionEvent"
+            stake:
+              type: object
+              nullable: true
+              properties:
+                staked:
+                  $ref: "#/components/schemas/TransactionEvent"
+            unstake:
+              type: object
+              nullable: true
+              properties:
+                requested:
+                  $ref: "#/components/schemas/TransactionEvent"
+                claimed:
+                  $ref: "#/components/schemas/TransactionEvent"
+      example:
+        id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+        user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+        value: "10000000000000000000000"
+        event:
+          deposit:
+            deposited:
+              block:
+                hash: "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015"
+                number: 128115
+                timestamp: 1707140550
+              transaction:
+                hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
+                index: 1
+    TransactionEvent:
+      type: object
+      nullable: true
+      properties:
+        block:
+          properties:
+            hash:
+              type: string
+            number:
+              type: integer
+            timestamp:
+              type: integer
+        transaction:
+          type: object
+          properties:
+            hash:
+              type: string
+            index:
+              type: integer
+      example:
+        block:
+          hash: "0x200b26e118e51f23d052ef3aa92bc411dbd0a6ce811f511adb9f6049dc938614"
+          number: 726419
+          timestamp: 1708337158
+        transaction:
+          hash: "0x6595192f1193c2584c28e7d4b50b9208242bf9b4538933f0081d3f4625373d2f"
+          index: 1

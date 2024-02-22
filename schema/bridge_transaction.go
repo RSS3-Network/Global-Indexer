@@ -51,6 +51,7 @@ type BridgeTransactionQuery struct {
 }
 
 type BridgeTransactionsQuery struct {
+	Cursor   *common.Hash           `query:"cursor"`
 	ID       *common.Hash           `query:"id"`
 	Sender   *common.Address        `query:"sender"`
 	Receiver *common.Address        `query:"receiver"`

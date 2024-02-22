@@ -11,7 +11,7 @@ import (
 )
 
 type Server struct {
-	config         config.RSS3ChainConfig
+	config         config.RSS3Chain
 	databaseClient database.Client
 }
 
@@ -58,7 +58,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, config config.RSS3ChainConfig) (*Server, error) {
+func New(databaseClient database.Client, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
 		config:         config,
 		databaseClient: databaseClient,

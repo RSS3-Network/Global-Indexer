@@ -2,10 +2,13 @@ package l2
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
@@ -189,11 +192,32 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 
 	stakeChips := make([]*schema.StakeChip, len(stakeTransaction.Chips))
 
+	callOptions := bind.CallOpts{
+		Context:     ctx,
+		BlockNumber: header.Number,
+	}
+
 	for index, chipID := range stakeTransaction.Chips {
+		tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
+		if err != nil {
+			return fmt.Errorf("get #%d token uri", chipID)
+		}
+
+		encodedMetadata, found := strings.CutPrefix(tokenURI, "data:application/json;base64,")
+		if !found {
+			return fmt.Errorf("invalid #%d token uri", chipID)
+		}
+
+		metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+		if err != nil {
+			return fmt.Errorf("decode #%d token metadata", chipID)
+		}
+
 		stakeChips[index] = &schema.StakeChip{
 			ID:             chipID,
 			Owner:          event.User,
 			Node:           event.NodeAddr,
+			Metadata:       metadata,
 			BlockNumber:    header.Number,
 			BlockTimestamp: header.Time,
 		}
