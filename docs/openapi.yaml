@@ -275,8 +275,8 @@ paths:
                           node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                           owner: "0x827431510a5d249ce4fdb7f00c83a3353f471848"
                           metadata:
-                            name: "Chip #21",
-                            description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID.",
+                            name: "Chip #21"
+                            description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/stake/chips/21/image.svg"
                 cursor: "0x827431510a5D249cE4fdB7F00C83a3353F471848"
   /stake/stakers/{address}/nodes:
