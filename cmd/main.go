@@ -65,7 +65,7 @@ var command = cobra.Command{
 			return fmt.Errorf("new geo lite2 client: %w", err)
 		}
 
-		nameService, err := nameresolver.NewNameResolver(cmd.Context(), config.NameService)
+		nameService, err := nameresolver.NewNameResolver(cmd.Context(), config.RPC.RPCNetwork)
 		if err != nil {
 			return fmt.Errorf("init name resolver: %w", err)
 		}

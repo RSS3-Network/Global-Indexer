@@ -171,7 +171,7 @@ func (n *NameResolver) call(ctx context.Context, url string, result any) error {
 	return nil
 }
 
-func NewNameResolver(ctx context.Context, config *config.NameService) (*NameResolver, error) {
+func NewNameResolver(ctx context.Context, config *config.RPCNetwork) (*NameResolver, error) {
 	var (
 		err                error
 		ensEthClient       *ethclient.Client
@@ -180,15 +180,15 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		farcasterClient    *fcClient
 	)
 
-	if config.Ens != nil {
-		ensEthClient, err = ethclient.DialContext(ctx, config.Ens.Endpoint)
+	if config.Ethereum != nil {
+		ensEthClient, err = ethclient.DialContext(ctx, config.Ethereum.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial ens ethereum client: %w", err)
 		}
 	}
 
-	if config.Csb != nil {
-		csbEthClient, err := ethclient.DialContext(ctx, config.Csb.Endpoint)
+	if config.Crossbell != nil {
+		csbEthClient, err := ethclient.DialContext(ctx, config.Crossbell.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial csb ethereum client: %w", err)
 		}
@@ -199,8 +199,8 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		}
 	}
 
-	if config.Lens != nil {
-		lensEthClient, err := ethclient.DialContext(ctx, config.Lens.Endpoint)
+	if config.Polygon != nil {
+		lensEthClient, err := ethclient.DialContext(ctx, config.Polygon.Endpoint)
 		if err != nil {
 			return nil, fmt.Errorf("dial lens ethereum client: %w", err)
 		}
@@ -211,17 +211,17 @@ func NewNameResolver(ctx context.Context, config *config.NameService) (*NameReso
 		}
 	}
 
-	if config.Fc != nil {
+	if config.Farcaster != nil {
 		farcasterClient = &fcClient{}
 
-		if farcasterClient.endpointURL, err = url.Parse(config.Fc.Endpoint); err != nil {
+		if farcasterClient.endpointURL, err = url.Parse(config.Farcaster.Endpoint); err != nil {
 			return nil, fmt.Errorf("parse farcaster endpoint: %w", err)
 		}
 
 		var httpClient http.Client
 
-		if config.Fc.APIkey != "" {
-			httpClient.Transport = NewAuthenticationTransport(config.Fc.APIkey)
+		if config.Farcaster.APIkey != "" {
+			httpClient.Transport = NewAuthenticationTransport(config.Farcaster.APIkey)
 		} else {
 			httpClient = *http.DefaultClient
 		}

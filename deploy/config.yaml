@@ -21,13 +21,14 @@ geo_ip:
   account:
   license_key:
 
-name_service:
-  ens:
-    endpoint: https://rpc.ankr.com/eth
-  csb:
-    endpoint: https://rpc.crossbell.io
-  lens:
-    endpoint: https://rpc.ankr.com/polygon
-  fc:
-    endpoint: https://nemes.farcaster.xyz:2281
-    api_key:
+rpc:
+  network:
+    ethereum:
+      endpoint: https://rpc.ankr.com/eth
+    crossbell:
+      endpoint: https://rpc.crossbell.io
+    polygon:
+      endpoint: https://rpc.ankr.com/polygon
+    farcaster:
+      endpoint: https://nemes.farcaster.xyz:2281
+      api_key:

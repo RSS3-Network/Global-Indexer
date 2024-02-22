@@ -13,22 +13,24 @@ import (
 func Test_Resolve(t *testing.T) {
 	t.Parallel()
 
-	resolverConfig := &config.NameService{
-		Ens: &config.EndpointConfig{
-			Endpoint: "https://rpc.ankr.com/eth",
+	resolverConfig := &config.RPC{
+		RPCNetwork: &config.RPCNetwork{
+			Ethereum: &config.RPCEndpoint{
+				Endpoint: "https://rpc.ankr.com/eth",
+			},
+			Crossbell: &config.RPCEndpoint{
+				Endpoint: "https://rpc.crossbell.io",
+			},
+			Polygon: &config.RPCEndpoint{
+				Endpoint: "https://rpc.ankr.com/polygon",
+			},
+			//Farcaster: &config.RPCEndpoint{
+			//	Endpoint: "https://nemes.farcaster.xyz:2281",
+			//},
 		},
-		Csb: &config.EndpointConfig{
-			Endpoint: "https://rpc.crossbell.io",
-		},
-		Lens: &config.EndpointConfig{
-			Endpoint: "https://rpc.ankr.com/polygon",
-		},
-		//Fc: &config.EndpointConfig{
-		//	Endpoint: "https://nemes.farcaster.xyz:2281",
-		//},
 	}
 
-	nr, _ := nameresolver.NewNameResolver(context.Background(), resolverConfig)
+	nr, _ := nameresolver.NewNameResolver(context.Background(), resolverConfig.RPCNetwork)
 
 	type arguments struct {
 		ns string
