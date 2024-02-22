@@ -343,7 +343,7 @@ func (h *Hub) GetStakeNodeUsers(c echo.Context) error {
 	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
 
 	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Address.String()
+		response.Cursor = stakeAddresses[length-1].Staker.String()
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -384,7 +384,7 @@ func (h *Hub) GetStakeUserNodes(c echo.Context) error {
 	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
 
 	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Address.String()
+		response.Cursor = stakeAddresses[length-1].Node.String()
 	}
 
 	return c.JSON(http.StatusOK, response)

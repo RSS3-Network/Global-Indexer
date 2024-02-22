@@ -265,6 +265,20 @@ paths:
                   cursor:
                     type: string
                     example: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+              example:
+                data:
+                  - staker: "0x827431510a5d249ce4fdb7f00c83a3353f471848"
+                    chips:
+                      total: 1
+                      showcase:
+                        - id: 21
+                          node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                          owner: "0x827431510a5d249ce4fdb7f00c83a3353f471848"
+                          metadata:
+                            name: "Chip #21",
+                            description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID.",
+                            image: "https://gi.rss3.dev/stake/chips/21/image.svg"
+                cursor: "0x827431510a5D249cE4fdB7F00C83a3353F471848"
   /stake/stakers/{address}/nodes:
     get:
       description: "Get the nodes that have been staked by this staker"
@@ -597,7 +611,9 @@ components:
     StakeAddress:
       type: object
       properties:
-        address:
+        node:
+          type: string
+        owner:
           type: string
         chips:
           type: object
@@ -609,7 +625,7 @@ components:
               items:
                 $ref: "#/components/schemas/Chips"
       example:
-        address: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+        node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
         chips:
           total: 200
           showcase:

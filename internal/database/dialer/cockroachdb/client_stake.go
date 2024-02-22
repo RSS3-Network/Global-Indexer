@@ -272,7 +272,7 @@ func (c *client) FindStakeNodeUsers(ctx context.Context, query schema.StakeNodeU
 		}
 
 		result := schema.StakeAddress{
-			Address: common.HexToAddress(stakeChip.Owner),
+			Staker: lo.ToPtr(common.HexToAddress(stakeChip.Owner)),
 			Chips: &schema.StakeAddressChip{
 				Total: int64(stakeChip.Count),
 				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {
@@ -340,7 +340,7 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		}
 
 		result := schema.StakeAddress{
-			Address: common.HexToAddress(stakeChip.Node),
+			Node: lo.ToPtr(common.HexToAddress(stakeChip.Node)),
 			Chips: &schema.StakeAddressChip{
 				Total: int64(stakeChip.Count),
 				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {
