@@ -162,41 +162,27 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	if query.Direct {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
-		}
+	const limit = 100
 
-		databaseClient = databaseClient.Order(`"node" ASC`)
-	} else {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"owner" > ?`, query.Cursor.String())
-		}
-
-		databaseClient = databaseClient.Order(`"owner" ASC`)
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" > ?`, query.Cursor.String())
 	}
 
-	if query.ID != nil {
-		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
-	}
-
-	if query.Owner != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	if len(query.IDs) > 0 {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id *big.Int, _ int) uint64 { return id.Uint64() }))
 	}
 
 	if query.Node != nil {
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+	if query.User != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.User.String())
+	}
 
-	var rows []table.StakeChip
-	if err := databaseClient.Find(&rows).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
-		}
-
-		return nil, fmt.Errorf("find stake chip: %w", err)
+	var rows []*table.StakeChip
+	if err := databaseClient.Limit(limit).Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("find rows: %w", err)
 	}
 
 	results := make([]*schema.StakeChip, 0, len(rows))
@@ -204,7 +190,7 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export stake chip: %w", err)
+			return nil, fmt.Errorf("export row: %w", err)
 		}
 
 		results = append(results, result)

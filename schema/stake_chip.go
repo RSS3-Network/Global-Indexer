@@ -34,9 +34,8 @@ type StakeChipQuery struct {
 }
 
 type StakeChipsQuery struct {
-	Cursor *common.Address `query:"cursor"`
-	Direct bool            `query:"direct"`
-	ID     *big.Int        `query:"id"`
-	Owner  *common.Address `query:"owner"`
+	Cursor *big.Int        `query:"cursor"`
+	IDs    []*big.Int      `query:"ids"`
 	Node   *common.Address `query:"node"`
+	User   *common.Address `query:"user"`
 }

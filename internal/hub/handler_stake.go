@@ -177,99 +177,68 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-type GetStakeWalletsRequest struct {
-	Cursor *common.Address `query:"cursor"`
+type GetStakeChipsRequest struct {
+	Cursor *big.Int        `query:"cursor"`
+	IDs    []*big.Int      `query:"ids"`
+	Node   *common.Address `query:"node"`
+	User   *common.Address `query:"user"`
 }
 
-func (h *Hub) GetStakeWallets(c echo.Context) error {
-	var request GetStakeWalletsRequest
+func (h *Hub) GetStakeChips(c echo.Context) error {
+	var request GetStakeChipsRequest
 	if err := c.Bind(&request); err != nil {
-		return c.NoContent(http.StatusBadRequest)
+		return err
 	}
 
 	stakeChipsQuery := schema.StakeChipsQuery{
 		Cursor: request.Cursor,
+		IDs:    request.IDs,
+		Node:   request.Node,
+		User:   request.User,
 	}
 
 	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
-		zap.L().Error("find node wallets", zap.Error(err))
-
-		return c.NoContent(http.StatusInternalServerError)
+		return err
 	}
 
-	response := Response{
-		Data: model.NewStakeStakers(stakeChips, baseURL(c)),
-	}
+	var response Response
+	response.Data = lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) *model.StakeChip {
+		return model.NewStakeChip(stakeChip, baseURL(c))
+	})
 
 	if length := len(stakeChips); length > 0 {
-		response.Cursor = stakeChips[length-1].Owner.String()
+		response.Cursor = stakeChips[length-1].ID.String()
 	}
 
 	return c.JSON(http.StatusOK, response)
 }
 
-type GetStakeNodeChipsRequest struct {
-	Node common.Address `param:"node"`
+type GetStakeChipRequest struct {
+	ID *big.Int `param:"id"`
 }
 
-func (h *Hub) GetStakeNodeChips(c echo.Context) error {
-	var request GetStakeNodeChipsRequest
+func (h *Hub) GetStakeChip(c echo.Context) error {
+	var request GetStakeChipRequest
 	if err := c.Bind(&request); err != nil {
-		return c.NoContent(http.StatusBadRequest)
+		return err
 	}
 
-	stakeChipsQuery := schema.StakeChipsQuery{
-		Node:   &request.Node,
-		Direct: true,
+	stakeChipQuery := schema.StakeChipQuery{
+		ID: request.ID,
 	}
 
-	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	stakeChip, err := h.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)
 	if err != nil {
-		zap.L().Error("find node chips", zap.Error(err), zap.Any("request", request))
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNoContent)
+		}
 
-		return c.NoContent(http.StatusInternalServerError)
+		return err
 	}
 
-	response := Response{
-		Data: model.NewStakeStakers(stakeChips, baseURL(c)),
-	}
-
-	if length := len(stakeChips); length > 0 {
-		response.Cursor = stakeChips[length-1].Owner.String()
-	}
-
-	return c.JSON(http.StatusOK, response)
-}
-
-type GetStakeWalletChipsRequest struct {
-	Wallet common.Address `param:"wallet"`
-}
-
-func (h *Hub) GetStakeWalletChips(c echo.Context) error {
-	var request GetStakeWalletChipsRequest
-	if err := c.Bind(&request); err != nil {
-		return c.NoContent(http.StatusBadRequest)
-	}
-
-	stakeChipsQuery := schema.StakeChipsQuery{
-		Owner: &request.Wallet,
-	}
-
-	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
-	if err != nil {
-		zap.L().Error("find node chips", zap.Error(err), zap.Any("request", request))
-
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	response := Response{
-		Data: model.NewStakeNodes(stakeChips, baseURL(c)),
-	}
-
-	if length := len(stakeChips); length > 0 {
-		response.Cursor = stakeChips[length-1].Owner.String()
-	}
+	var response Response
+	response.Data = model.NewStakeChip(stakeChip, baseURL(c))
 
 	return c.JSON(http.StatusOK, response)
 }
