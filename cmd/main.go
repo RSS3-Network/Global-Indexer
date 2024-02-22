@@ -70,7 +70,7 @@ var command = cobra.Command{
 			return fmt.Errorf("init name resolver: %w", err)
 		}
 
-		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient, geoLite2,nameService)
+		hub, err := hub.NewServer(cmd.Context(), databaseClient, ethereumClient, redisClient, geoLite2, nameService)
 		if err != nil {
 			return fmt.Errorf("new hub server: %w", err)
 		}

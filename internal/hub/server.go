@@ -32,7 +32,7 @@ func (s *Server) Run(_ context.Context) error {
 }
 
 func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2,nameService)
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}

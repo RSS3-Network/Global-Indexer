@@ -17,13 +17,13 @@ const (
 )
 
 type File struct {
-	Environment string     `yaml:"environment" validate:"required" default:"development"`
-	Database    *Database  `yaml:"database"`
-	Redis       *Redis     `yaml:"redis"`
-	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
-	Epoch       *Epoch     `yaml:"epoch"`
-	GeoIP       *GeoIP     `yaml:"geo_ip"`
-	NameService *NameService     `yaml:"name_service"`
+	Environment string       `yaml:"environment" validate:"required" default:"development"`
+	Database    *Database    `yaml:"database"`
+	Redis       *Redis       `yaml:"redis"`
+	RSS3Chain   *RSS3Chain   `yaml:"rss3_chain"`
+	Epoch       *Epoch       `yaml:"epoch"`
+	GeoIP       *GeoIP       `yaml:"geo_ip"`
+	NameService *NameService `yaml:"name_service"`
 }
 
 type Database struct {
