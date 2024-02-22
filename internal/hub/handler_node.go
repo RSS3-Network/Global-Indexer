@@ -3,6 +3,7 @@ package hub
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
@@ -90,7 +91,7 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	ip, err := h.parseRequestIP(c.Request().Context(), c.Request())
+	ip, err := h.parseRequestIP(c)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("parse request ip failed: %v", err))
 	}
@@ -122,6 +123,19 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, Response{
 		Data: fmt.Sprintf("node heartbeat: %v", request.Address),
 	})
+}
+
+func (h *Hub) parseRequestIP(c echo.Context) (net.IP, error) {
+	if ip := net.ParseIP(c.RealIP()); ip != nil {
+		return ip, nil
+	}
+
+	ip, _, err := net.SplitHostPort(c.Request().RemoteAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return net.ParseIP(ip), nil
 }
 
 type RegisterNodeRequest struct {
