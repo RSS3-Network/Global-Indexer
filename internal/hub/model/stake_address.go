@@ -9,8 +9,9 @@ import (
 )
 
 type StakeAddress struct {
-	Address common.Address    `json:"address"`
-	Chips   *StakeAddressChip `json:"chips"`
+	Node   *common.Address   `json:"node,omitempty"`
+	Staker *common.Address   `json:"staker,omitempty"`
+	Chips  *StakeAddressChip `json:"chips"`
 }
 
 type StakeAddressChip struct {
@@ -20,7 +21,8 @@ type StakeAddressChip struct {
 
 func NewStakeAddress(stakeAddress *schema.StakeAddress, baseURL url.URL) *StakeAddress {
 	return &StakeAddress{
-		Address: stakeAddress.Address,
+		Node:   stakeAddress.Node,
+		Staker: stakeAddress.Staker,
 		Chips: &StakeAddressChip{
 			Total:    uint64(stakeAddress.Chips.Total),
 			Showcase: NewStakeChips(stakeAddress.Chips.Showcase, baseURL),

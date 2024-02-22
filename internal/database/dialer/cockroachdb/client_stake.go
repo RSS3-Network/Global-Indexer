@@ -174,8 +174,8 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	if query.User != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.User.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
 	}
 
 	var rows []*table.StakeChip
@@ -272,7 +272,7 @@ func (c *client) FindStakeNodeUsers(ctx context.Context, query schema.StakeNodeU
 		}
 
 		result := schema.StakeAddress{
-			Address: common.HexToAddress(stakeChip.Owner),
+			Staker: lo.ToPtr(common.HexToAddress(stakeChip.Owner)),
 			Chips: &schema.StakeAddressChip{
 				Total: int64(stakeChip.Count),
 				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {
@@ -300,8 +300,8 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
 	}
 
-	if query.User != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.User.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
 	}
 
 	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
@@ -331,7 +331,7 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		var rows []*table.StakeChip
 
 		if err := databaseClient.
-			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), query.User.String()).
+			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), query.Owner.String()).
 			Where(`"node" = ?`, stakeChip.Node).
 			Order(`"id"`).
 			Limit(limit).
@@ -340,7 +340,7 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		}
 
 		result := schema.StakeAddress{
-			Address: common.HexToAddress(stakeChip.Node),
+			Node: lo.ToPtr(common.HexToAddress(stakeChip.Node)),
 			Chips: &schema.StakeAddressChip{
 				Total: int64(stakeChip.Count),
 				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {

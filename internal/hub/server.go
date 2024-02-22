@@ -62,19 +62,20 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 
 	instance.httpServer.GET("/stake/transactions", instance.hub.GetStakeTransactions)
 	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
-	instance.httpServer.GET("/stake/chips", instance.hub.GetStakeChips)
-	instance.httpServer.GET("/stake/chips/:id", instance.hub.GetStakeChip)
-	instance.httpServer.GET("/stake/chips/:id/image.svg", instance.hub.GetStakeChipImage)
-	instance.httpServer.GET("/stake/nodes/:address/users", instance.hub.GetStakeNodeUsers)
-	instance.httpServer.GET("/stake/users/:address/nodes", instance.hub.GetStakeUserNodes)
+	instance.httpServer.GET("/stake/nodes/:address/stakers", instance.hub.GetStakeNodeUsers)
+	instance.httpServer.GET("/stake/stakers/:address/nodes", instance.hub.GetStakeUserNodes)
+
+	instance.httpServer.GET("/chips", instance.hub.GetStakeChips)
+	instance.httpServer.GET("/chips/:id", instance.hub.GetStakeChip)
+	instance.httpServer.GET("/chips/:id/image.svg", instance.hub.GetStakeChipImage)
 
 	instance.httpServer.GET("/epochs", instance.hub.GetEpochsHandler)
 	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpochHandler)
 	instance.httpServer.GET("/epochs/distributions/:transaction", instance.hub.GetEpochDistributionHandler)
 	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewardsHandler)
 
-	instance.httpServer.GET("/snapshot/nodes", instance.hub.GetNodeSnapshots)
-	instance.httpServer.GET("/snapshot/stakers", instance.hub.GetStakeSnapshots)
+	instance.httpServer.GET("/snapshots/nodes", instance.hub.GetNodeSnapshots)
+	instance.httpServer.GET("/snapshots/stakers", instance.hub.GetStakeSnapshots)
 
 	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHubHandler)
 	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivityHandler)

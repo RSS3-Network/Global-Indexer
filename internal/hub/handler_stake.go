@@ -181,9 +181,9 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 
 type GetStakeChipsRequest struct {
 	Cursor *big.Int        `query:"cursor"`
-	IDs    []*big.Int      `query:"ids"`
+	IDs    []*big.Int      `query:"id"`
 	Node   *common.Address `query:"node"`
-	User   *common.Address `query:"user"`
+	Owner  *common.Address `query:"owner"`
 	Limit  int             `query:"limit" default:"10" min:"1" max:"10"`
 }
 
@@ -205,7 +205,7 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		Cursor: request.Cursor,
 		IDs:    request.IDs,
 		Node:   request.Node,
-		User:   request.User,
+		Owner:  request.Owner,
 		Limit:  request.Limit,
 	}
 
@@ -343,7 +343,7 @@ func (h *Hub) GetStakeNodeUsers(c echo.Context) error {
 	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
 
 	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Address.String()
+		response.Cursor = stakeAddresses[length-1].Staker.String()
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -371,7 +371,7 @@ func (h *Hub) GetStakeUserNodes(c echo.Context) error {
 
 	stakeNodeUsersQuery := schema.StakeUserNodesQuery{
 		Cursor: request.Cursor,
-		User:   &request.Address,
+		Owner:  &request.Address,
 		Limit:  request.Limit,
 	}
 
@@ -384,7 +384,7 @@ func (h *Hub) GetStakeUserNodes(c echo.Context) error {
 	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
 
 	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Address.String()
+		response.Cursor = stakeAddresses[length-1].Node.String()
 	}
 
 	return c.JSON(http.StatusOK, response)

@@ -3,8 +3,9 @@ package schema
 import "github.com/ethereum/go-ethereum/common"
 
 type StakeAddress struct {
-	Address common.Address    `json:"address"`
-	Chips   *StakeAddressChip `json:"chips"`
+	Node   *common.Address   `json:"node,omitempty"`
+	Staker *common.Address   `json:"staker,omitempty"`
+	Chips  *StakeAddressChip `json:"chips"`
 }
 
 type StakeAddressChip struct {
@@ -20,6 +21,6 @@ type StakeNodeUsersQuery struct {
 
 type StakeUserNodesQuery struct {
 	Cursor *common.Address
-	User   *common.Address
+	Owner  *common.Address
 	Limit  int
 }

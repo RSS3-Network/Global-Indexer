@@ -15,7 +15,7 @@ import (
 type StakeChip struct {
 	ID       *big.Int        `json:"id"`
 	Node     common.Address  `json:"node"`
-	User     common.Address  `json:"user"`
+	Owner    common.Address  `json:"owner"`
 	Metadata json.RawMessage `json:"metadata"`
 }
 
@@ -23,7 +23,7 @@ func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) *StakeChip {
 	result := StakeChip{
 		ID:       stakeChip.ID,
 		Node:     stakeChip.Node,
-		User:     stakeChip.Owner,
+		Owner:    stakeChip.Owner,
 		Metadata: stakeChip.Metadata,
 	}
 
