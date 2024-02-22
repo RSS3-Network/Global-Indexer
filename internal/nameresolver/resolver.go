@@ -12,8 +12,8 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/character"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/lenshandle"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/crossbell"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/lens"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	goens "github.com/wealdtech/go-ens/v3"
 	"go.uber.org/zap"
@@ -26,8 +26,8 @@ const (
 
 type NameResolver struct {
 	ensEthClient       *ethclient.Client
-	csbHandleContract  *character.Character
-	lensHandleContract *lenshandle.LensHandle
+	csbHandleContract  *crossbell.Character
+	lensHandleContract *lens.LensHandle
 	fcClient           *fcClient
 }
 
@@ -175,8 +175,8 @@ func NewNameResolver(ctx context.Context, config *config.RPCNetwork) (*NameResol
 	var (
 		err                error
 		ensEthClient       *ethclient.Client
-		characterContract  *character.Character
-		lensHandleContract *lenshandle.LensHandle
+		characterContract  *crossbell.Character
+		lensHandleContract *lens.LensHandle
 		farcasterClient    *fcClient
 	)
 
@@ -193,7 +193,7 @@ func NewNameResolver(ctx context.Context, config *config.RPCNetwork) (*NameResol
 			return nil, fmt.Errorf("dial csb ethereum client: %w", err)
 		}
 
-		characterContract, err = character.NewCharacter(character.AddressCharacter, csbEthClient)
+		characterContract, err = crossbell.NewCharacter(crossbell.AddressCharacter, csbEthClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to crossbell character contract: %w", err)
 		}
@@ -205,7 +205,7 @@ func NewNameResolver(ctx context.Context, config *config.RPCNetwork) (*NameResol
 			return nil, fmt.Errorf("dial lens ethereum client: %w", err)
 		}
 
-		lensHandleContract, err = lenshandle.NewLensHandle(lenshandle.AddressLensHandle, lensEthClient)
+		lensHandleContract, err = lens.NewLensHandle(lens.AddressLensHandle, lensEthClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to lens handle contract: %w", err)
 		}
