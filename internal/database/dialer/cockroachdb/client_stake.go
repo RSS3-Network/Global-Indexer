@@ -174,8 +174,8 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	if query.User != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.User.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
 	}
 
 	var rows []*table.StakeChip
@@ -300,8 +300,8 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
 	}
 
-	if query.User != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.User.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
 	}
 
 	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
@@ -331,7 +331,7 @@ func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserN
 		var rows []*table.StakeChip
 
 		if err := databaseClient.
-			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), query.User.String()).
+			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), query.Owner.String()).
 			Where(`"node" = ?`, stakeChip.Node).
 			Order(`"id"`).
 			Limit(limit).

@@ -20,6 +20,6 @@ type StakeNodeUsersQuery struct {
 
 type StakeUserNodesQuery struct {
 	Cursor *common.Address
-	User   *common.Address
+	Owner  *common.Address
 	Limit  int
 }
