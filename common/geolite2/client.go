@@ -10,6 +10,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/oschwald/geoip2-golang"
+	"go.uber.org/zap"
 )
 
 type Client struct {
@@ -18,6 +19,8 @@ type Client struct {
 
 func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.NodeLocal, error) {
 	ips := make([]net.IP, 0)
+
+	zap.L().Info("Looking up local", zap.String("endpoint", endpoint))
 
 	if ip := net.ParseIP(endpoint); ip == nil {
 		ipAddresses, err := net.LookupIP(endpoint)
