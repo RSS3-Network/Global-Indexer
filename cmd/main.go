@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
+	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
@@ -93,7 +94,16 @@ var indexCommand = &cobra.Command{
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
-		instance, err := indexer.New(databaseClient, *config.RSS3Chain)
+		// Initialize APISIX configurations
+		apisixHTTPAPIService, err := apisixHTTPAPI.New(
+			config.APISixAdmin.Endpoint,
+			config.APISixAdmin.Key,
+		)
+		if err != nil {
+			return fmt.Errorf("prepare apisix httpapi service: %w", err)
+		}
+
+		instance, err := indexer.New(databaseClient, apisixHTTPAPIService, *config.RSS3Chain)
 		if err != nil {
 			return err
 		}
@@ -204,7 +214,16 @@ var gatewayCommand = &cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		instance, err := gateway.New(databaseClient, redisClient, *config.Gateway)
+		// Initialize APISIX configurations
+		apisixHTTPAPIService, err := apisixHTTPAPI.New(
+			config.APISixAdmin.Endpoint,
+			config.APISixAdmin.Key,
+		)
+		if err != nil {
+			return fmt.Errorf("prepare apisix httpapi service: %w", err)
+		}
+
+		instance, err := gateway.New(databaseClient, redisClient, apisixHTTPAPIService, *config.Gateway)
 		if err != nil {
 			return err
 		}

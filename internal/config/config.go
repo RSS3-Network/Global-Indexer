@@ -17,14 +17,15 @@ const (
 )
 
 type File struct {
-	Environment string     `yaml:"environment" validate:"required" default:"development"`
-	Database    *Database  `yaml:"database"`
-	Redis       *Redis     `yaml:"redis"`
-	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
-	Epoch       *Epoch     `yaml:"epoch"`
-	GeoIP       *GeoIP     `yaml:"geo_ip"`
-	Gateway     *Gateway   `yaml:"gateway"`
-	Billing     *Billing   `yaml:"billing"`
+	Environment string       `yaml:"environment" validate:"required" default:"development"`
+	Database    *Database    `yaml:"database"`
+	Redis       *Redis       `yaml:"redis"`
+	RSS3Chain   *RSS3Chain   `yaml:"rss3_chain"`
+	Epoch       *Epoch       `yaml:"epoch"`
+	GeoIP       *GeoIP       `yaml:"geo_ip"`
+	Gateway     *Gateway     `yaml:"gateway"`
+	APISixAdmin *APISixAdmin `yaml:"apisix_admin" validate:"required"`
+	Billing     *Billing     `yaml:"billing"`
 }
 
 type Database struct {
@@ -63,16 +64,15 @@ type Gateway struct {
 		JWTKey     string `yaml:"jwt_key" validate:"required"`
 		SIWEDomain string `yaml:"siwe_domain" validate:"required"`
 	} `yaml:"api" validate:"required"`
-	APISix struct {
-		Admin struct {
-			Endpoint string `yaml:"endpoint" validate:"required"`
-			Key      string `yaml:"key" validate:"required"`
-		} `yaml:"admin" validate:"required"`
-		Kafka struct {
-			Brokers string `yaml:"brokers" validate:"required"`
-			Topic   string `yaml:"topic" validate:"required"`
-		} `yaml:"kafka" validate:"required"`
-	} `yaml:"apisix" validate:"required"`
+	APISixKafka struct {
+		Brokers string `yaml:"brokers" validate:"required"`
+		Topic   string `yaml:"topic" validate:"required"`
+	} `yaml:"apisix_kafka" validate:"required"`
+}
+
+type APISixAdmin struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	Key      string `yaml:"key" validate:"required"`
 }
 
 type Billing struct {

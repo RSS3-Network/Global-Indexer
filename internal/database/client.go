@@ -72,6 +72,8 @@ type Client interface {
 	SaveBillingRecordWithdrawal(ctx context.Context, billingRecord *schema.BillingRecordWithdrawal) error
 	SaveBillingRecordCollected(ctx context.Context, billingRecord *schema.BillingRecordCollected) error
 
+	ResumeGatewayAccount(ctx context.Context, address common.Address) (bool, error)
+
 	Raw() *gorm.DB
 }
 

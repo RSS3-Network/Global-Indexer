@@ -29,13 +29,13 @@ gateway:
       prom_port: 9000
     jwt_key: abcdefg1234567
     siwe_domain: "localhost:3000"
-  apisix:
-    admin:
-      endpoint: "http://localhost:9180"
-      key: "edd1c9f034335f136f87ad84b625c8f1"
-    kafka:
-      brokers: "localhost:19092"
-      topic: "apisix"
+  apisix_kafka:
+    brokers: "localhost:19092"
+    topic: "apisix"
+
+apisix_admin:
+  endpoint: "http://localhost:9180"
+  key: "edd1c9f034335f136f87ad84b625c8f1"
 
 billing:
   collect_token_to: "0x9E85cb8f7606dA552cdEb42130c315F3fed26625"

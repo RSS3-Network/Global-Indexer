@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
+	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -37,6 +38,7 @@ type server struct {
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	blockThreads                   uint64
+	apisixHTTPAPIService           *apisixHTTPAPI.Service // For account resume only
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -224,11 +226,12 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIService *apisixHTTPAPI.Service, config Config) (service.Server, error) {
 	var (
 		instance = server{
-			databaseClient: databaseClient,
-			blockThreads:   config.BlockThreads,
+			databaseClient:       databaseClient,
+			blockThreads:         config.BlockThreads,
+			apisixHTTPAPIService: apisixHTTPAPIService,
 		}
 		err error
 	)

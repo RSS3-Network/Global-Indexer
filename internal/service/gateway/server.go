@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/httpapi"
 	apisixKafkaLog "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/kafkalog"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/handlers"
@@ -27,9 +27,10 @@ import (
 )
 
 type Server struct {
-	config         config.Gateway
-	redis          *redis.Client
-	databaseClient database.Client
+	config               config.Gateway
+	redis                *redis.Client
+	databaseClient       database.Client
+	apisixHTTPAPIService *apisixHTTPAPI.Service
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -37,16 +38,6 @@ func (s *Server) Run(ctx context.Context) error {
 
 	// Run echo server.
 	errorPool.Go(func(ctx context.Context) error {
-		// Initialize APISIX configurations
-		apisixAPIService, err := apisixHTTPAPI.New(
-			s.config.APISix.Admin.Endpoint,
-			s.config.APISix.Admin.Key,
-		)
-
-		if err != nil {
-			return err
-		}
-
 		// Prepare JWT
 		jwtClient, err := jwt.New(s.config.API.JWTKey)
 
@@ -64,7 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 		// Prepare echo
 		e := echo.New()
 		echoHandler, err := handlers.NewApp(
-			apisixAPIService,
+			s.apisixHTTPAPIService,
 			s.redis,
 			s.databaseClient.Raw(),
 			jwtClient,
@@ -76,12 +67,12 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 
 		// Configure middlewares
-		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), apisixAPIService)
+		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), s.apisixHTTPAPIService)
 
 		// Connect to kafka for access logs
 		kafkaService, err := apisixKafkaLog.New(
-			strings.Split(s.config.APISix.Kafka.Brokers, ","),
-			s.config.APISix.Kafka.Topic,
+			strings.Split(s.config.APISixKafka.Brokers, ","),
+			s.config.APISixKafka.Topic,
 		)
 		if err != nil {
 			// Failed to Initialize kafka consumer
@@ -109,11 +100,12 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, redis *redis.Client, config config.Gateway) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, apisixHTTPAPIService *apisixHTTPAPI.Service, config config.Gateway) (service.Server, error) {
 	instance := Server{
-		config:         config,
-		redis:          redis,
-		databaseClient: databaseClient,
+		config:               config,
+		redis:                redis,
+		databaseClient:       databaseClient,
+		apisixHTTPAPIService: apisixHTTPAPIService,
 	}
 
 	return &instance, nil

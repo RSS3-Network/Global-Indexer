@@ -38,6 +38,18 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 		return fmt.Errorf("save billing record: %w", err)
 	}
 
+	resumed, err := s.databaseClient.ResumeGatewayAccount(ctx, billingTokensDepositedEvent.User)
+	if err != nil {
+		return fmt.Errorf("resume account in database: %w", err)
+	}
+
+	if resumed {
+		err = s.apisixHTTPAPIService.ResumeConsumerGroup(ctx, billingTokensDepositedEvent.User.Hex())
+		if err != nil {
+			return fmt.Errorf("resume account in apisix: %w", err)
+		}
+	}
+
 	return nil
 }
 
