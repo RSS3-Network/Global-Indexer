@@ -37,9 +37,9 @@ type ConsumerGroupResponse struct {
 
 var ErrNoSuchConsumerGroup = errors.New("no such consumer group")
 
-func (s *Service) CheckConsumerGroup(ctx context.Context, userAddress string) (*ConsumerGroupResponse, error) {
+func (c *Client) CheckConsumerGroup(ctx context.Context, userAddress string) (*ConsumerGroupResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
+		fmt.Sprintf("%s%s/%s", c.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
 		nil,
 	)
 
@@ -47,7 +47,7 @@ func (s *Service) CheckConsumerGroup(ctx context.Context, userAddress string) (*
 		return nil, err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
 
@@ -87,7 +87,7 @@ func (s *Service) CheckConsumerGroup(ctx context.Context, userAddress string) (*
 	return &cgProps, nil
 }
 
-func (s *Service) NewConsumerGroup(ctx context.Context, userAddress string) error {
+func (c *Client) NewConsumerGroup(ctx context.Context, userAddress string) error {
 	desc := fmt.Sprintf("Consumer group for user (address): %s", userAddress)
 	reqBytes, err := json.Marshal(&ConsumerGroupPropsInput{
 		Plugins:     map[string]any{}, // TODO: add account level based traffic limit plugins, etc.
@@ -100,7 +100,7 @@ func (s *Service) NewConsumerGroup(ctx context.Context, userAddress string) erro
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "PUT",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
+		fmt.Sprintf("%s%s/%s", c.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
 		bytes.NewReader(reqBytes),
 	)
 
@@ -108,7 +108,7 @@ func (s *Service) NewConsumerGroup(ctx context.Context, userAddress string) erro
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := (&http.Client{}).Do(req)
@@ -136,9 +136,9 @@ func (s *Service) NewConsumerGroup(ctx context.Context, userAddress string) erro
 	return nil
 }
 
-func (s *Service) DeleteConsumerGroup(ctx context.Context, userAddress string) error {
+func (c *Client) DeleteConsumerGroup(ctx context.Context, userAddress string) error {
 	req, err := http.NewRequestWithContext(ctx, "DELETE",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
+		fmt.Sprintf("%s%s/%s", c.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
 		nil,
 	)
 
@@ -146,7 +146,7 @@ func (s *Service) DeleteConsumerGroup(ctx context.Context, userAddress string) e
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
 
@@ -209,7 +209,7 @@ var limitCountPluginProps = LimitCountPluginProps{
 	ShowLimitQuotaHeader: true,
 }
 
-func (s *Service) PauseConsumerGroup(ctx context.Context, userAddress string) error {
+func (c *Client) PauseConsumerGroup(ctx context.Context, userAddress string) error {
 	// Add a uri-blocker plugin
 	reqBytes, err := json.Marshal(&map[string]any{
 		//"uri-blocker": uriBlockerPluginProps,
@@ -221,7 +221,7 @@ func (s *Service) PauseConsumerGroup(ctx context.Context, userAddress string) er
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "PATCH",
-		fmt.Sprintf("%s%s/%s/plugins", s.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
+		fmt.Sprintf("%s%s/%s/plugins", c.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
 		bytes.NewReader(reqBytes),
 	)
 
@@ -229,7 +229,7 @@ func (s *Service) PauseConsumerGroup(ctx context.Context, userAddress string) er
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := (&http.Client{}).Do(req)
@@ -257,10 +257,10 @@ func (s *Service) PauseConsumerGroup(ctx context.Context, userAddress string) er
 	return nil
 }
 
-func (s *Service) ResumeConsumerGroup(ctx context.Context, userAddress string) error {
+func (c *Client) ResumeConsumerGroup(ctx context.Context, userAddress string) error {
 	// Remove all plugins
 	req, err := http.NewRequestWithContext(ctx, "PATCH",
-		fmt.Sprintf("%s%s/%s/plugins", s.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
+		fmt.Sprintf("%s%s/%s/plugins", c.Config.APISixAdminEndpoint, ConsumerGroupAPIBase, userAddress),
 		bytes.NewReader([]byte("{}")), // Empty
 	)
 
@@ -268,7 +268,7 @@ func (s *Service) ResumeConsumerGroup(ctx context.Context, userAddress string) e
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := (&http.Client{}).Do(req)

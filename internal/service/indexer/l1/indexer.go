@@ -38,7 +38,7 @@ type server struct {
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	blockThreads                   uint64
-	apisixHTTPAPIService           *apisixHTTPAPI.Service // For account resume only
+	apisixHTTPAPIClient            *apisixHTTPAPI.Client // For account resume only
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -226,12 +226,12 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIService *apisixHTTPAPI.Service, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
-			databaseClient:       databaseClient,
-			blockThreads:         config.BlockThreads,
-			apisixHTTPAPIService: apisixHTTPAPIService,
+			databaseClient:      databaseClient,
+			blockThreads:        config.BlockThreads,
+			apisixHTTPAPIClient: apisixHTTPAPIClient,
 		}
 		err error
 	)

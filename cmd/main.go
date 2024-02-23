@@ -95,7 +95,7 @@ var indexCommand = &cobra.Command{
 		}
 
 		// Initialize APISIX configurations
-		apisixHTTPAPIService, err := apisixHTTPAPI.New(
+		apisixHTTPAPIClient, err := apisixHTTPAPI.New(
 			config.APISixAdmin.Endpoint,
 			config.APISixAdmin.Key,
 		)
@@ -103,7 +103,7 @@ var indexCommand = &cobra.Command{
 			return fmt.Errorf("prepare apisix httpapi service: %w", err)
 		}
 
-		instance, err := indexer.New(databaseClient, apisixHTTPAPIService, *config.RSS3Chain)
+		instance, err := indexer.New(databaseClient, apisixHTTPAPIClient, *config.RSS3Chain)
 		if err != nil {
 			return err
 		}
@@ -215,7 +215,7 @@ var gatewayCommand = &cobra.Command{
 		redisClient := redis.NewClient(options)
 
 		// Initialize APISIX configurations
-		apisixHTTPAPIService, err := apisixHTTPAPI.New(
+		apisixHTTPAPIClient, err := apisixHTTPAPI.New(
 			config.APISixAdmin.Endpoint,
 			config.APISixAdmin.Key,
 		)
@@ -223,7 +223,7 @@ var gatewayCommand = &cobra.Command{
 			return fmt.Errorf("prepare apisix httpapi service: %w", err)
 		}
 
-		instance, err := gateway.New(databaseClient, redisClient, apisixHTTPAPIService, *config.Gateway)
+		instance, err := gateway.New(databaseClient, redisClient, apisixHTTPAPIClient, *config.Gateway)
 		if err != nil {
 			return err
 		}

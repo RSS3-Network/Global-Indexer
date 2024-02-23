@@ -46,24 +46,24 @@ type ConsumerResponse struct {
 	ModifiedIndex *int `json:"modifiedIndex,omitempty"`
 }
 
-func (s *Service) consumerUsername(keyID uint64) string {
+func (c *Client) consumerUsername(keyID uint64) string {
 	return fmt.Sprintf("key_%d", keyID)
 }
 
-func (s *Service) RecoverKeyIDFromConsumerUsername(username string) (uint64, error) {
+func (c *Client) RecoverKeyIDFromConsumerUsername(username string) (uint64, error) {
 	return strconv.ParseUint(strings.Replace(username, "key_", "", 1), 10, 64)
 }
 
-func (s *Service) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerResponse, error) {
+func (c *Client) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase, s.consumerUsername(keyID)),
+		fmt.Sprintf("%s%s/%s", c.Config.APISixAdminEndpoint, ConsumerAPIBase, c.consumerUsername(keyID)),
 		nil,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
 
@@ -97,14 +97,14 @@ func (s *Service) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerRes
 	return &cProps, nil
 }
 
-func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, userAddress string) error {
+func (c *Client) NewConsumer(ctx context.Context, keyID uint64, key string, userAddress string) error {
 	// Check consumer group
-	_, err := s.CheckConsumerGroup(ctx, userAddress)
+	_, err := c.CheckConsumerGroup(ctx, userAddress)
 
 	if err != nil {
 		if errors.Is(err, ErrNoSuchConsumerGroup) {
 			// Create consumer group
-			err = s.NewConsumerGroup(ctx, userAddress)
+			err = c.NewConsumerGroup(ctx, userAddress)
 			if err != nil {
 				return err
 			}
@@ -115,7 +115,7 @@ func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, use
 
 	desc := fmt.Sprintf("Consumer %d for user (address): %s", keyID, userAddress)
 	cProps := ConsumerPropsInput{
-		Username:    s.consumerUsername(keyID),
+		Username:    c.consumerUsername(keyID),
 		GroupID:     userAddress,
 		Description: &desc,
 		Labels:      nil,
@@ -130,7 +130,7 @@ func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, use
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "PUT",
-		fmt.Sprintf("%s%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase),
+		fmt.Sprintf("%s%s", c.Config.APISixAdminEndpoint, ConsumerAPIBase),
 		bytes.NewReader(reqBytes),
 	)
 
@@ -138,7 +138,7 @@ func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, use
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := (&http.Client{}).Do(req)
@@ -166,16 +166,16 @@ func (s *Service) NewConsumer(ctx context.Context, keyID uint64, key string, use
 	return nil
 }
 
-func (s *Service) DeleteConsumer(ctx context.Context, keyID uint64) error {
+func (c *Client) DeleteConsumer(ctx context.Context, keyID uint64) error {
 	req, err := http.NewRequestWithContext(ctx, "DELETE",
-		fmt.Sprintf("%s%s/%s", s.Config.APISixAdminEndpoint, ConsumerAPIBase, s.consumerUsername(keyID)),
+		fmt.Sprintf("%s%s/%s", c.Config.APISixAdminEndpoint, ConsumerAPIBase, c.consumerUsername(keyID)),
 		nil,
 	)
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("X-API-KEY", s.Config.APISixAdminKey)
+	req.Header.Set("X-API-KEY", c.Config.APISixAdminKey)
 
 	res, err := (&http.Client{}).Do(req)
 

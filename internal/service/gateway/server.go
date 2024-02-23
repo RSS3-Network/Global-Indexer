@@ -27,10 +27,10 @@ import (
 )
 
 type Server struct {
-	config               config.Gateway
-	redis                *redis.Client
-	databaseClient       database.Client
-	apisixHTTPAPIService *apisixHTTPAPI.Service
+	config              config.Gateway
+	redis               *redis.Client
+	databaseClient      database.Client
+	apisixHTTPAPIClient *apisixHTTPAPI.Client
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -55,7 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 		// Prepare echo
 		e := echo.New()
 		echoHandler, err := handlers.NewApp(
-			s.apisixHTTPAPIService,
+			s.apisixHTTPAPIClient,
 			s.redis,
 			s.databaseClient.Raw(),
 			jwtClient,
@@ -67,7 +67,7 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 
 		// Configure middlewares
-		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), s.apisixHTTPAPIService)
+		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), s.apisixHTTPAPIClient)
 
 		// Connect to kafka for access logs
 		kafkaService, err := apisixKafkaLog.New(
@@ -100,18 +100,18 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, redis *redis.Client, apisixHTTPAPIService *apisixHTTPAPI.Service, config config.Gateway) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config config.Gateway) (service.Server, error) {
 	instance := Server{
-		config:               config,
-		redis:                redis,
-		databaseClient:       databaseClient,
-		apisixHTTPAPIService: apisixHTTPAPIService,
+		config:              config,
+		redis:               redis,
+		databaseClient:      databaseClient,
+		apisixHTTPAPIClient: apisixHTTPAPIClient,
 	}
 
 	return &instance, nil
 }
 
-func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apiSixAPIService *apisixHTTPAPI.Service) {
+func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client) {
 	oapi.RegisterHandlers(e, app)
 
 	// Add api docs
@@ -134,7 +134,7 @@ func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, d
 	}
 
 	// Check user authentication
-	e.Use(middlewares.UserAuthenticationMiddleware(databaseClient, apiSixAPIService, jwtClient))
+	e.Use(middlewares.UserAuthenticationMiddleware(databaseClient, apisixHTTPAPIClient, jwtClient))
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 }

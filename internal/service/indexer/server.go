@@ -12,9 +12,9 @@ import (
 )
 
 type Server struct {
-	config               config.RSS3Chain
-	databaseClient       database.Client
-	apisixHTTPAPIService *apisixHTTPAPI.Service // For L1 billing - account resume only
+	config              config.RSS3Chain
+	databaseClient      database.Client
+	apisixHTTPAPIClient *apisixHTTPAPI.Client // For L1 billing - account resume only
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -27,7 +27,7 @@ func (s *Server) Run(ctx context.Context) error {
 			BlockThreads: s.config.BlockThreadsL1,
 		}
 
-		serverL1, err := l1.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIService, l1Config)
+		serverL1, err := l1.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, l1Config)
 		if err != nil {
 			return err
 		}
@@ -60,11 +60,11 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, apisixHTTPAPIService *apisixHTTPAPI.Service, config config.RSS3Chain) (*Server, error) {
+func New(databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
-		config:               config,
-		databaseClient:       databaseClient,
-		apisixHTTPAPIService: apisixHTTPAPIService,
+		config:              config,
+		databaseClient:      databaseClient,
+		apisixHTTPAPIClient: apisixHTTPAPIClient,
 	}
 
 	return &instance, nil

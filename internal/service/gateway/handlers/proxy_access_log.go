@@ -22,14 +22,14 @@ func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
 	}
 
 	// Find user
-	keyID, err := app.apiSixAPIService.RecoverKeyIDFromConsumerUsername(*accessLog.Consumer)
+	keyID, err := app.apisixHTTPAPIClient.RecoverKeyIDFromConsumerUsername(*accessLog.Consumer)
 
 	if err != nil {
 		log.Printf("Failed to recover key id with error: %v", err)
 		return
 	}
 
-	key, _, err := model.KeyGetByID(rctx, keyID, false, app.databaseClient, app.apiSixAPIService) // Deleted key could also be used for pending bills
+	key, _, err := model.KeyGetByID(rctx, keyID, false, app.databaseClient, app.apisixHTTPAPIClient) // Deleted key could also be used for pending bills
 
 	if err != nil {
 		log.Printf("Failed to get key by id with error: %v", err)
@@ -90,7 +90,7 @@ func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
 		log.Printf("Insufficient remain RU, pause account")
 		// Pause user account
 		if !key.Account.IsPaused {
-			err = app.apiSixAPIService.PauseConsumerGroup(rctx, key.Account.Address.Hex())
+			err = app.apisixHTTPAPIClient.PauseConsumerGroup(rctx, key.Account.Address.Hex())
 			if err != nil {
 				log.Printf("Failed to pause account with error: %v", err)
 			} else {

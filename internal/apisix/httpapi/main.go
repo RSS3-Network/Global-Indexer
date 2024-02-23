@@ -4,11 +4,11 @@ import (
 	"fmt"
 )
 
-type Service struct {
+type Client struct {
 	Config *cfg
 }
 
-func New(adminEndpoint string, adminKey string) (*Service, error) {
+func New(adminEndpoint string, adminKey string) (*Client, error) {
 	if adminEndpoint == "" {
 		return nil, fmt.Errorf("missing admin endpoint")
 	}
@@ -17,7 +17,7 @@ func New(adminEndpoint string, adminKey string) (*Service, error) {
 		return nil, fmt.Errorf("missing admin key")
 	}
 
-	return &Service{
+	return &Client{
 		Config: &cfg{
 			APISixAdminEndpoint: adminEndpoint,
 			APISixAdminKey:      adminKey,
