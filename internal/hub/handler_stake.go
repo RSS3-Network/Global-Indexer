@@ -28,12 +28,21 @@ type GetStakeTransactionsRequest struct {
 	Node    *common.Address              `query:"node"`
 	Type    *schema.StakeTransactionType `query:"type"`
 	Pending *bool                        `query:"pending"`
+	Limit   int                          `query:"limit" default:"20" min:"1" max:"20"`
 }
 
 func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	var request GetStakeTransactionsRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return response.ValidateFailedError(c, err)
+	}
+
+	if err := defaults.Set(&request); err != nil {
+		return response.InternalError(c, err)
 	}
 
 	databaseTransactionOptions := sql.TxOptions{
@@ -55,6 +64,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		Node:    request.Node,
 		Type:    request.Type,
 		Pending: request.Pending,
+		Limit:   request.Limit,
 	}
 
 	stakeTransactions, err := databaseTransaction.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
@@ -85,6 +95,22 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	chipsIDs := lo.Flatten(lo.FilterMap(stakeTransactions, func(stakeTransaction *schema.StakeTransaction, _ int) ([]*big.Int, bool) {
+		return stakeTransaction.Chips, len(stakeTransaction.Chips) != 0
+	}))
+
+	stakeChipsQuery := schema.StakeChipsQuery{
+		IDs: chipsIDs,
+	}
+	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
+	}
+
 	if err := databaseTransaction.Commit(); err != nil {
 		return fmt.Errorf("commit database transaction")
 	}
@@ -96,7 +122,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 			return stakeEvent.ID == stakeTransaction.ID
 		})
 
-		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents))
+		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents, stakeChips, baseURL(c)))
 	}
 
 	response := Response{
@@ -165,6 +191,18 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	stakeChipsQuery := schema.StakeChipsQuery{
+		IDs: stakeTransaction.Chips,
+	}
+	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
+	}
+
 	if err := databaseTransaction.Commit(); err != nil {
 		return fmt.Errorf("commit database transaction")
 	}
@@ -174,7 +212,7 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	})
 
 	var response Response
-	response.Data = model.NewStakeTransaction(stakeTransaction, stakeEvents)
+	response.Data = model.NewStakeTransaction(stakeTransaction, stakeEvents, stakeChips, baseURL(c))
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -206,7 +244,7 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		IDs:    request.IDs,
 		Node:   request.Node,
 		Owner:  request.Owner,
-		Limit:  request.Limit,
+		Limit:  &request.Limit,
 	}
 
 	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)

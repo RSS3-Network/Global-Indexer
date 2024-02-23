@@ -57,8 +57,6 @@ func (c *client) FindStakeTransaction(ctx context.Context, query schema.StakeTra
 func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	const limit = 100
-
 	if query.Cursor != nil {
 		var cursor table.StakeTransaction
 		if err := databaseClient.Where(`"id" = ?`, query.Cursor.String()).First(&cursor).Error; err != nil {
@@ -107,7 +105,7 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 
 	var rows []table.StakeTransaction
 
-	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(limit).Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(query.Limit).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -180,8 +178,12 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
 	}
 
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
+
 	var rows []*table.StakeChip
-	if err := databaseClient.Limit(query.Limit).Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := databaseClient.Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("find rows: %w", err)
 	}
 

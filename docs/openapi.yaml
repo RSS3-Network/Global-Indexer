@@ -164,6 +164,11 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
       responses:
         200:
           description: "OK"
@@ -504,7 +509,7 @@ components:
           type: array
           nullable: true
           items:
-            type: integer
+            $ref: "#/components/schemas/Chips"
         event:
           properties:
             deposit:

@@ -2,6 +2,7 @@ package model
 
 import (
 	"math/big"
+	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -14,7 +15,7 @@ type StakeTransaction struct {
 	Staker common.Address             `json:"staker"`
 	Node   common.Address             `json:"node"`
 	Value  decimal.Decimal            `json:"value"`
-	Chips  []decimal.Decimal          `json:"chips,omitempty"`
+	Chips  []*StakeChip               `json:"chips,omitempty"`
 	Event  StakeTransactionEventTypes `json:"event"`
 }
 
@@ -48,14 +49,25 @@ type StakeTransactionEvent struct {
 	Transaction TransactionEventTransaction `json:"transaction"`
 }
 
-func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent) *StakeTransaction {
+func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent, stakeChips []*schema.StakeChip, baseURL url.URL) *StakeTransaction {
 	transactionModel := StakeTransaction{
 		ID:     transaction.ID,
 		Staker: transaction.User,
 		Node:   transaction.Node,
 		Value:  decimal.NewFromBigInt(transaction.Value, 0),
-		Chips: lo.Map(transaction.Chips, func(item *big.Int, _ int) decimal.Decimal {
-			return decimal.NewFromBigInt(item, 0)
+		Chips: lo.FilterMap(transaction.Chips, func(id *big.Int, _ int) (*StakeChip, bool) {
+			stakeChip, found := lo.Find(stakeChips, func(stakeChip *schema.StakeChip) bool {
+				return stakeChip.ID.Cmp(id) == 0
+			})
+
+			if !found {
+				return nil, false
+			}
+
+			// Rewrite the owner address to restore the history.
+			stakeChip.Owner = transaction.User
+
+			return NewStakeChip(stakeChip, baseURL), true
 		}),
 	}
 
