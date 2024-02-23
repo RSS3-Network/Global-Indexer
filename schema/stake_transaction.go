@@ -57,4 +57,5 @@ type StakeTransactionsQuery struct {
 	Address *common.Address
 	Type    *StakeTransactionType
 	Pending *bool
+	Limit   int
 }
