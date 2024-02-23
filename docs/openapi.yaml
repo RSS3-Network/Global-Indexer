@@ -143,7 +143,7 @@ paths:
           in: query
           schema:
             type: string
-        - name: user
+        - name: staker
           in: query
           schema:
             type: string
@@ -179,7 +179,7 @@ paths:
               example:
                 data:
                   - id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
-                    user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                    staker: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     value: "10000000000000000000000"
                     event:
@@ -217,7 +217,7 @@ paths:
               example:
                 data:
                   id: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
-                  user: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
+                  staker: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                   node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                   value: "10000000000000000000000"
                   event:
@@ -230,18 +230,17 @@ paths:
                         transaction:
                           hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                           index: 1
-  /stake/nodes/{address}/stakers:
+  /stake/stakings:
     get:
-      description: "Get the stakers that have staked on this node"
+      description: "Get a list of stakers and nodes"
       tags:
         - Stake
       parameters:
-        - name: address
-          in: path
-          required: true
+        - name: staker
+          in: query
           schema:
             type: string
-        - name: cursor
+        - name: node
           in: query
           schema:
             type: string
@@ -250,6 +249,10 @@ paths:
           schema:
             type: integer
             default: 10
+        - name: cursor
+          in: query
+          schema:
+            type: string
       responses:
         200:
           description: "OK"
@@ -261,13 +264,14 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/StakeAddress"
+                      $ref: "#/components/schemas/StakeStaking"
                   cursor:
                     type: string
                     example: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               example:
                 data:
                   - staker: "0x827431510a5d249ce4fdb7f00c83a3353f471848"
+                    node: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     chips:
                       total: 1
                       showcase:
@@ -278,42 +282,7 @@ paths:
                             name: "Chip #21"
                             description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/stake/chips/21/image.svg"
-                cursor: "0x827431510a5D249cE4fdB7F00C83a3353F471848"
-  /stake/stakers/{address}/nodes:
-    get:
-      description: "Get the nodes that have been staked by this staker"
-      tags:
-        - Stake
-      parameters:
-        - name: address
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cursor
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
-      responses:
-        200:
-          description: "OK"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/StakeAddress"
-                  cursor:
-                    type: string
-                    example: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+                cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
   /chips:
     get:
       description: "Get all chips by chips id"
@@ -525,7 +494,7 @@ components:
       properties:
         id:
           type: string
-        user:
+        staker:
           type: string
         node:
           type: string
@@ -608,12 +577,12 @@ components:
         transaction:
           hash: "0x6595192f1193c2584c28e7d4b50b9208242bf9b4538933f0081d3f4625373d2f"
           index: 1
-    StakeAddress:
+    StakeStaking:
       type: object
       properties:
-        node:
+        staker:
           type: string
-        owner:
+        node:
           type: string
         chips:
           type: object
@@ -625,6 +594,7 @@ components:
               items:
                 $ref: "#/components/schemas/Chips"
       example:
+        staker: 0x3b6d02a24df681ffdf621d35d70aba7adaac07c1
         node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
         chips:
           total: 200
