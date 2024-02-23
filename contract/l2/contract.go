@@ -9,6 +9,7 @@ import (
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Staking.abi --pkg l2 --type Staking --out contract_staking.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Chips.abi --pkg l2 --type Chips --out contract_chips.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Settlement.abi --pkg l2 --type Settlement --out contract_settlement.go
+//go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Billing.abi --pkg l2 --type Billing --out contract_billing.go
 
 var (
 	AddressGovernanceTokenProxy        = predeploys.GovernanceTokenAddr                                    // https://scan.testnet.rss3.io/token/0x4200000000000000000000000000000000000042
@@ -18,6 +19,8 @@ var (
 	AddressStakingProxy                = common.HexToAddress("0x6553a9971fe28DA69462613fb012b9c1c302Ce92") // https://scan.testnet.rss3.io/address/0x6553a9971fe28DA69462613fb012b9c1c302Ce92
 	AddressChipsProxy                  = common.HexToAddress("0x63144882F6c43d7844e38AcEE55B528a5D883e34") // https://scan.testnet.rss3.io/token/0x63144882F6c43d7844e38AcEE55B528a5D883e34
 	AddressSettlementProxy             = common.HexToAddress("0x4D7801d1f3da81A367C0C55Df49601Ee744D03Fe") // https://scan.testnet.rss3.io/address/0x4D7801d1f3da81A367C0C55Df49601Ee744D03Fe
+
+	AddressBillingProxy = common.HexToAddress("TODO") // TODO
 )
 
 var (
@@ -39,6 +42,10 @@ var (
 	EventHashChipsTransfer = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 
 	EventHashRewardDistributed = crypto.Keccak256Hash([]byte("RewardDistributed(uint256,uint256,uint256,address[],uint256[],uint256[],uint256[],uint256[])"))
+
+	EventHashBillingTokensDeposited = crypto.Keccak256Hash([]byte("TokensDeposited(address,uint256)"))
+	EventHashBillingTokensWithdrawn = crypto.Keccak256Hash([]byte("TokensWithdrawn(address,uint256,uint256)"))
+	EventHashBillingTokensCollected = crypto.Keccak256Hash([]byte("TokensCollected(address,uint256)"))
 )
 
 type ChipsTokenMetadata struct {

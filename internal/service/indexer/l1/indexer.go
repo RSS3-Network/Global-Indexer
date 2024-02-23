@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -34,11 +33,9 @@ type server struct {
 	contractOptimismPortal         *bindings.OptimismPortal
 	contractL1CrossDomainMessenger *bindings.L1CrossDomainMessenger
 	contractL1StandardBridge       *bindings.L1StandardBridge
-	contractBilling                *l1.Billing
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	blockThreads                   uint64
-	apisixHTTPAPIClient            *apisixHTTPAPI.Client // For account resume only
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -203,10 +200,6 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log %s %d: %w", log.TxHash, log.Index, err)
 				}
-			case l1.AddressBillingProxy:
-				if err := s.indexBillingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
-					return fmt.Errorf("index billing log %s %d: %w", log.TxHash, log.Index, err)
-				}
 			}
 		}
 	}
@@ -226,12 +219,11 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
-			databaseClient:      databaseClient,
-			blockThreads:        config.BlockThreads,
-			apisixHTTPAPIClient: apisixHTTPAPIClient,
+			databaseClient: databaseClient,
+			blockThreads:   config.BlockThreads,
 		}
 		err error
 	)
@@ -257,10 +249,6 @@ func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAP
 	}
 
 	if instance.contractL1StandardBridge, err = bindings.NewL1StandardBridge(l1.AddressL1StandardBridgeProxy, instance.ethereumClient); err != nil {
-		return nil, err
-	}
-
-	if instance.contractBilling, err = l1.NewBilling(l1.AddressBillingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 

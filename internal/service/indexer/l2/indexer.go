@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -32,8 +33,10 @@ type server struct {
 	contractL2ToL1MessagePasser    *bindings.L2ToL1MessagePasser
 	contractStaking                *l2.Staking
 	contractChips                  *l2.Chips
+	contractBilling                *l2.Billing
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
+	apisixHTTPAPIClient            *apisixHTTPAPI.Client // For account resume only
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -153,6 +156,10 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 				if err := s.indexChipsLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
 					return fmt.Errorf("index staking log: %w", err)
 				}
+			case l2.AddressBillingProxy:
+				if err := s.indexBillingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
+					return fmt.Errorf("index billing log %s %d: %w", log.TxHash, log.Index, err)
+				}
 			}
 		}
 	}
@@ -172,10 +179,11 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
-			databaseClient: databaseClient,
+			databaseClient:      databaseClient,
+			apisixHTTPAPIClient: apisixHTTPAPIClient,
 		}
 		err error
 	)
@@ -209,6 +217,10 @@ func NewServer(ctx context.Context, databaseClient database.Client, config Confi
 	}
 
 	if instance.contractChips, err = l2.NewChips(l2.AddressChipsProxy, instance.ethereumClient); err != nil {
+		return nil, err
+	}
+
+	if instance.contractBilling, err = l2.NewBilling(l2.AddressBillingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 

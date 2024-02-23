@@ -27,7 +27,7 @@ func (s *Server) Run(ctx context.Context) error {
 			BlockThreads: s.config.BlockThreadsL1,
 		}
 
-		serverL1, err := l1.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, l1Config)
+		serverL1, err := l1.NewServer(ctx, s.databaseClient, l1Config)
 		if err != nil {
 			return err
 		}
@@ -41,7 +41,7 @@ func (s *Server) Run(ctx context.Context) error {
 			Endpoint: s.config.EndpointL2,
 		}
 
-		serverL2, err := l2.NewServer(ctx, s.databaseClient, l2Config)
+		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, l2Config)
 		if err != nil {
 			return err
 		}

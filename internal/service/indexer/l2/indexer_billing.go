@@ -1,11 +1,11 @@
-package l1
+package l2
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"go.uber.org/zap"
@@ -13,11 +13,11 @@ import (
 
 func (s *server) indexBillingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
 	switch eventHash := log.Topics[0]; eventHash {
-	case l1.EventHashBillingTokensDeposited:
+	case l2.EventHashBillingTokensDeposited:
 		return s.indexBillingTokensDepositedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
-	case l1.EventHashBillingTokensWithdrawn:
+	case l2.EventHashBillingTokensWithdrawn:
 		return s.indexBillingTokensWithdrawnLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
-	case l1.EventHashBillingTokensCollected:
+	case l2.EventHashBillingTokensCollected:
 		return s.indexBillingTokensCollectedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
 	default:
 		return nil
