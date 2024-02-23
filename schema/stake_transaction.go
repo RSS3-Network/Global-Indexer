@@ -42,19 +42,19 @@ type StakeTransaction struct {
 }
 
 type StakeTransactionQuery struct {
-	ID      *common.Hash          `query:"id"`
-	User    *common.Address       `query:"users"`
-	Node    *common.Address       `query:"node"`
-	Address *common.Address       `query:"address"`
-	Type    *StakeTransactionType `query:"type"`
+	ID      *common.Hash
+	User    *common.Address
+	Node    *common.Address
+	Address *common.Address
+	Type    *StakeTransactionType
 }
 
 type StakeTransactionsQuery struct {
-	Cursor  *common.Hash          `query:"cursor"`
-	IDs     []common.Hash         `query:"ids"`
-	User    *common.Address       `query:"users"`
-	Node    *common.Address       `query:"node"`
-	Address *common.Address       `query:"address"`
-	Type    *StakeTransactionType `query:"type"`
-	Pending *bool                 `query:"pending"`
+	Cursor  *common.Hash
+	IDs     []common.Hash
+	User    *common.Address
+	Node    *common.Address
+	Address *common.Address
+	Type    *StakeTransactionType
+	Pending *bool
 }

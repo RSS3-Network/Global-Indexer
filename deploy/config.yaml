@@ -21,6 +21,18 @@ geo_ip:
   account:
   license_key:
 
+rpc:
+  network:
+    ethereum:
+      endpoint: https://rpc.ankr.com/eth
+    crossbell:
+      endpoint: https://rpc.crossbell.io
+    polygon:
+      endpoint: https://rpc.ankr.com/polygon
+    farcaster:
+      endpoint: https://nemes.farcaster.xyz:2281
+      api_key:
+
 gateway:
   api:
     listen:

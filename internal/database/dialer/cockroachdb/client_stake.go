@@ -162,41 +162,25 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	if query.Direct {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
-		}
-
-		databaseClient = databaseClient.Order(`"node" ASC`)
-	} else {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"owner" > ?`, query.Cursor.String())
-		}
-
-		databaseClient = databaseClient.Order(`"owner" ASC`)
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" > ?`, query.Cursor.String())
 	}
 
-	if query.ID != nil {
-		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
-	}
-
-	if query.Owner != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	if len(query.IDs) > 0 {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id *big.Int, _ int) uint64 { return id.Uint64() }))
 	}
 
 	if query.Node != nil {
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	}
 
-	var rows []table.StakeChip
-	if err := databaseClient.Find(&rows).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
-		}
-
-		return nil, fmt.Errorf("find stake chip: %w", err)
+	var rows []*table.StakeChip
+	if err := databaseClient.Limit(query.Limit).Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("find rows: %w", err)
 	}
 
 	results := make([]*schema.StakeChip, 0, len(rows))
@@ -204,7 +188,7 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export stake chip: %w", err)
+			return nil, fmt.Errorf("export row: %w", err)
 		}
 
 		results = append(results, result)
@@ -235,6 +219,142 @@ func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery)
 	}
 
 	return result, nil
+}
+
+func (c *client) FindStakeNodeUsers(ctx context.Context, query schema.StakeNodeUsersQuery) ([]*schema.StakeAddress, error) {
+	const limit = 5
+
+	databaseClient := c.database.
+		WithContext(ctx).
+		Table((*table.StakeChip).TableName(nil))
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"owner" > ?`, query.Cursor.String())
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+
+	type StakeChip struct {
+		Owner string `gorm:"column:owner"`
+		Count uint64 `gorm:"column:count"`
+	}
+
+	var stakeChips []*StakeChip
+
+	if err := databaseClient.
+		Group(`"owner"`).
+		Order(`"owner"`).
+		Limit(query.Limit).
+		Select(`"owner", count(*) AS "count"`).
+		Scan(&stakeChips).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	results := make([]*schema.StakeAddress, 0, len(stakeChips))
+
+	databaseClient = c.database.WithContext(ctx)
+
+	// TODO Query all data at once.
+	for _, stakeChip := range stakeChips {
+		var rows []*table.StakeChip
+
+		if err := databaseClient.
+			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), stakeChip.Owner).
+			Where(`"node" = ?`, query.Node.String()).
+			Order(`"id"`).
+			Limit(limit).
+			Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		result := schema.StakeAddress{
+			Staker: lo.ToPtr(common.HexToAddress(stakeChip.Owner)),
+			Chips: &schema.StakeAddressChip{
+				Total: int64(stakeChip.Count),
+				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {
+					result, _ := row.Export()
+
+					return result
+				}),
+			},
+		}
+
+		results = append(results, &result)
+	}
+
+	return results, nil
+}
+
+func (c *client) FindStakeUserNodes(ctx context.Context, query schema.StakeUserNodesQuery) ([]*schema.StakeAddress, error) {
+	const limit = 5
+
+	databaseClient := c.database.
+		WithContext(ctx).
+		Table((*table.StakeChip).TableName(nil))
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
+	}
+
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	}
+
+	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+
+	type StakeChip struct {
+		Node  string `gorm:"column:node"`
+		Count uint64 `gorm:"column:count"`
+	}
+
+	var stakeChips []*StakeChip
+
+	if err := databaseClient.
+		Group(`"node"`).
+		Order(`"node"`).
+		Limit(query.Limit).
+		Select(`"node", count(*) AS "count"`).
+		Scan(&stakeChips).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	results := make([]*schema.StakeAddress, 0, len(stakeChips))
+
+	databaseClient = c.database.WithContext(ctx)
+
+	// TODO Query all data at once.
+	for _, stakeChip := range stakeChips {
+		var rows []*table.StakeChip
+
+		if err := databaseClient.
+			Where(`"owner" != ? AND "owner" = ?`, ethereum.AddressGenesis.String(), query.Owner.String()).
+			Where(`"node" = ?`, stakeChip.Node).
+			Order(`"id"`).
+			Limit(limit).
+			Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+
+		result := schema.StakeAddress{
+			Node: lo.ToPtr(common.HexToAddress(stakeChip.Node)),
+			Chips: &schema.StakeAddressChip{
+				Total: int64(stakeChip.Count),
+				Showcase: lo.Map(rows, func(row *table.StakeChip, _ int) *schema.StakeChip {
+					result, _ := row.Export()
+
+					return result
+				}),
+			},
+		}
+
+		results = append(results, &result)
+	}
+
+	return results, nil
 }
 
 func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error) {

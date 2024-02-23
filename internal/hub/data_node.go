@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -329,19 +328,6 @@ func (h *Hub) parseEndpoint(_ context.Context, endpoint string) string {
 	}
 
 	return uri.Hostname()
-}
-
-func (h *Hub) parseRequestIP(_ context.Context, request *http.Request) (net.IP, error) {
-	if ip := request.Header.Get("X-Real-IP"); net.ParseIP(ip) != nil {
-		return net.ParseIP(ip), nil
-	}
-
-	ip, _, err := net.SplitHostPort(request.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return net.ParseIP(ip), nil
 }
 
 type NodeConfig struct {
