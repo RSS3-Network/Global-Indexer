@@ -102,6 +102,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	stakeChipsQuery := schema.StakeChipsQuery{
 		IDs: chipsIDs,
 	}
+
 	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
@@ -194,6 +195,7 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	stakeChipsQuery := schema.StakeChipsQuery{
 		IDs: stakeTransaction.Chips,
 	}
+
 	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
