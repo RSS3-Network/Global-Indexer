@@ -109,7 +109,7 @@ var indexCommand = &cobra.Command{
 			return fmt.Errorf("prepare apisix httpapi service: %w", err)
 		}
 
-		instance, err := indexer.New(databaseClient, apisixHTTPAPIClient, *config.RSS3Chain)
+		instance, err := indexer.New(databaseClient, apisixHTTPAPIClient, config.Billing.RuPerToken, *config.RSS3Chain)
 		if err != nil {
 			return err
 		}

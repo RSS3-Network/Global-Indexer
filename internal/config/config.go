@@ -94,6 +94,7 @@ type APISixAdmin struct {
 
 type Billing struct {
 	CollectTokenTo    string `yaml:"collect_token_to" validate:"required"`
+	RuPerToken        int64  `yaml:"ru_per_token" default:"1000"`
 	SlackNotification struct {
 		BotToken       string `yaml:"bot_token"`
 		Channel        string `yaml:"channel"`

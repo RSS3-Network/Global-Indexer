@@ -3,8 +3,10 @@ package l2
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -38,9 +40,14 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 		return fmt.Errorf("save billing record: %w", err)
 	}
 
-	resumed, err := s.databaseClient.ResumeGatewayAccount(ctx, billingTokensDepositedEvent.User)
+	parsedRu, _ := new(big.Float).Mul(new(big.Float).Quo(
+		new(big.Float).SetInt(billingTokensDepositedEvent.Amount),
+		new(big.Float).SetInt(big.NewInt(ethereum.BillingTokenDecimals)),
+	), big.NewFloat(float64(s.ruPerToken))).Int64()
 
-	if resumed {
+	isResumed, err := s.databaseClient.GatewayDeposit(ctx, billingTokensDepositedEvent.User, parsedRu)
+
+	if isResumed {
 		// Try to resume anyway
 		err = s.apisixHTTPAPIClient.ResumeConsumerGroup(ctx, billingTokensDepositedEvent.User.Hex())
 		if err != nil {

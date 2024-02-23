@@ -5,22 +5,37 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
+	"gorm.io/gorm"
 )
 
-func (c *client) ResumeGatewayAccount(ctx context.Context, address common.Address) (bool, error) {
-	var account table.GatewayAccount
+func (c *client) GatewayDeposit(ctx context.Context, address common.Address, ruIncrease int64) (bool, error) {
+	account := table.GatewayAccount{
+		Address: address,
+	}
 
+	// Get account
 	err := c.database.WithContext(ctx).
-		Model(&table.GatewayAccount{}).
-		Where("address = ?", address).
-		First(&account).
+		FirstOrCreate(&account).
 		Error
 
 	if err != nil {
-		// Failed to query account
+		// Failed to get account
 		return false, err
 	}
 
+	// Increase RU
+	err = c.database.WithContext(ctx).
+		Model(&table.GatewayAccount{}).
+		Where("address = ?", address).
+		Update("ru_limit", gorm.Expr("ru_limit + ?", ruIncrease)).
+		Error
+
+	if err != nil {
+		// Failed to increase RU
+		return false, err
+	}
+
+	// Check if account has been paused
 	if !account.IsPaused {
 		// Not paused
 		return false, nil

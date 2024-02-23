@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -74,7 +75,11 @@ type Client interface {
 	SaveBillingRecordWithdrawal(ctx context.Context, billingRecord *schema.BillingRecordWithdrawal) error
 	SaveBillingRecordCollected(ctx context.Context, billingRecord *schema.BillingRecordCollected) error
 
-	ResumeGatewayAccount(ctx context.Context, address common.Address) (bool, error)
+	PrepareBillingCollectTokens(ctx context.Context, nowTime time.Time) (*map[common.Address]schema.BillingCollectDataPerAddress, error)
+	PrepareBillingWithdrawTokens(ctx context.Context) (*map[common.Address]float64, error)
+	UpdateBillingRuLimit(ctx context.Context, succeededUsersWithRu map[common.Address]int64) error
+
+	GatewayDeposit(ctx context.Context, address common.Address, ruIncrease int64) (bool, error)
 
 	Raw() *gorm.DB
 }

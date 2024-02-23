@@ -51,5 +51,6 @@ apisix_admin:
 
 billing:
   collect_token_to: "0x9E85cb8f7606dA552cdEb42130c315F3fed26625"
+  ru_per_token: 1000
   slack_notification:
-    blockchain_scan: "https://sepolia.etherscan.io/address/"
+    blockchain_scan: "https://scan.testnet.rss3.io/address/"

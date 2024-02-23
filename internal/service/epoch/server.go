@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redsync/redsync/v4"
@@ -29,8 +30,15 @@ type Server struct {
 	privateKey         *ecdsa.PrivateKey
 	gasLimit           uint64
 	settlementContract *l2.Settlement
+	billingContract    *l2.Billing
+	ruPerToken         int64
+	toAddress          common.Address
 	ethereumClient     *ethclient.Client
 	databaseClient     database.Client
+
+	slackNotificationChannel        string
+	slackNotificationBotToken       string
+	slackNotificationBlockchainScan string
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -208,6 +216,11 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("new settlement: %w", err)
 	}
 
+	billing, err := l2.NewBilling(l2.AddressBillingProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new billing: %w", err)
+	}
+
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
@@ -217,7 +230,14 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		mutex:              rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
 		gasLimit:           config.Epoch.GasLimit,
 		settlementContract: settlement,
+		billingContract:    billing,
+		ruPerToken:         config.Billing.RuPerToken,
+		toAddress:          common.HexToAddress(config.Billing.CollectTokenTo),
 		ethereumClient:     ethereumClient,
 		databaseClient:     databaseClient,
+
+		slackNotificationChannel:        config.Billing.SlackNotification.Channel,
+		slackNotificationBotToken:       config.Billing.SlackNotification.BotToken,
+		slackNotificationBlockchainScan: config.Billing.SlackNotification.BlockchainScan,
 	}, nil
 }

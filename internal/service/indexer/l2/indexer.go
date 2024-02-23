@@ -37,6 +37,7 @@ type server struct {
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	apisixHTTPAPIClient            *apisixHTTPAPI.Client // For account resume only
+	ruPerToken                     int64
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -179,11 +180,12 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, ruPerToken int64, config Config) (service.Server, error) {
 	var (
 		instance = server{
 			databaseClient:      databaseClient,
 			apisixHTTPAPIClient: apisixHTTPAPIClient,
+			ruPerToken:          ruPerToken,
 		}
 		err error
 	)

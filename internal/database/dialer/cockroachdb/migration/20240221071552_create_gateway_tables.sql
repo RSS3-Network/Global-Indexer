@@ -11,7 +11,7 @@ CREATE TABLE gateway.account
         primary key,
     ru_limit     bigint,
     is_paused    boolean,
-    billing_rate numeric
+    billing_rate numeric default 1.0
 );
 
 CREATE INDEX idx_gateway_account_deleted_at
@@ -39,6 +39,9 @@ CREATE TABLE gateway.key
 
 CREATE INDEX idx_gateway_key_deleted_at
     ON gateway.key (deleted_at);
+
+CREATE INDEX idx_gateway_key_ru_used_current
+    ON gateway.key (ru_used_current);
 
 CREATE INDEX idx_gateway_key_account_address
     ON gateway.key (account_address);

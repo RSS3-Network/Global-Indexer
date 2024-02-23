@@ -14,7 +14,8 @@ import (
 type Server struct {
 	config              config.RSS3Chain
 	databaseClient      database.Client
-	apisixHTTPAPIClient *apisixHTTPAPI.Client // For L1 billing - account resume only
+	apisixHTTPAPIClient *apisixHTTPAPI.Client // For billing - account resume only
+	ruPerToken          int64                 // For billing - deposit only
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -41,7 +42,7 @@ func (s *Server) Run(ctx context.Context) error {
 			Endpoint: s.config.EndpointL2,
 		}
 
-		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, l2Config)
+		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, s.ruPerToken, l2Config)
 		if err != nil {
 			return err
 		}
@@ -60,11 +61,12 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config config.RSS3Chain) (*Server, error) {
+func New(databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, ruPerToken int64, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
 		config:              config,
 		databaseClient:      databaseClient,
 		apisixHTTPAPIClient: apisixHTTPAPIClient,
+		ruPerToken:          ruPerToken,
 	}
 
 	return &instance, nil

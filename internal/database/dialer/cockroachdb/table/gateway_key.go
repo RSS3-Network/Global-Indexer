@@ -22,7 +22,7 @@ type GatewayKey struct {
 	Key uuid.UUID `gorm:"uniqueIndex;column:key"`
 
 	RuUsedTotal     int64 `gorm:"column:ru_used_total"`
-	RuUsedCurrent   int64 `gorm:"column:ru_used_current"`
+	RuUsedCurrent   int64 `gorm:"index;column:ru_used_current"`
 	APICallsTotal   int64 `gorm:"column:api_calls_total"`
 	APICallsCurrent int64 `gorm:"column:api_calls_current"`
 
