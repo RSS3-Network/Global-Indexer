@@ -10,12 +10,12 @@ import (
 )
 
 type StakeTransaction struct {
-	ID    common.Hash                `json:"id"`
-	User  common.Address             `json:"user"`
-	Node  common.Address             `json:"node"`
-	Value decimal.Decimal            `json:"value"`
-	Chips []decimal.Decimal          `json:"chips,omitempty"`
-	Event StakeTransactionEventTypes `json:"event"`
+	ID     common.Hash                `json:"id"`
+	Staker common.Address             `json:"staker"`
+	Node   common.Address             `json:"node"`
+	Value  decimal.Decimal            `json:"value"`
+	Chips  []decimal.Decimal          `json:"chips,omitempty"`
+	Event  StakeTransactionEventTypes `json:"event"`
 }
 
 type StakeTransactionEventTypes struct {
@@ -50,10 +50,10 @@ type StakeTransactionEvent struct {
 
 func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent) *StakeTransaction {
 	transactionModel := StakeTransaction{
-		ID:    transaction.ID,
-		User:  transaction.User,
-		Node:  transaction.Node,
-		Value: decimal.NewFromBigInt(transaction.Value, 0),
+		ID:     transaction.ID,
+		Staker: transaction.User,
+		Node:   transaction.Node,
+		Value:  decimal.NewFromBigInt(transaction.Value, 0),
 		Chips: lo.Map(transaction.Chips, func(item *big.Int, _ int) decimal.Decimal {
 			return decimal.NewFromBigInt(item, 0)
 		}),

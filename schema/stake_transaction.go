@@ -30,15 +30,15 @@ type StakeTransactionTransformer interface {
 }
 
 type StakeTransaction struct {
-	ID               common.Hash          `json:"id"`
-	Type             StakeTransactionType `json:"type"`
-	User             common.Address       `json:"sender"`
-	Node             common.Address       `json:"receiver"`
-	Value            *big.Int             `json:"value"`
-	Chips            []*big.Int           `json:"chips"`
-	BlockTimestamp   time.Time            `json:"blockTimestamp"`
-	BlockNumber      uint64               `json:"blockNumber"`
-	TransactionIndex uint                 `json:"transactionIndex"`
+	ID               common.Hash
+	Type             StakeTransactionType
+	User             common.Address
+	Node             common.Address
+	Value            *big.Int
+	Chips            []*big.Int
+	BlockTimestamp   time.Time
+	BlockNumber      uint64
+	TransactionIndex uint
 }
 
 type StakeTransactionQuery struct {
