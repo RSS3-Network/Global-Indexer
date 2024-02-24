@@ -2,9 +2,11 @@ package cockroachdb
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
@@ -55,8 +57,6 @@ func (c *client) FindStakeTransaction(ctx context.Context, query schema.StakeTra
 func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	const limit = 100
-
 	if query.Cursor != nil {
 		var cursor table.StakeTransaction
 		if err := databaseClient.Where(`"id" = ?`, query.Cursor.String()).First(&cursor).Error; err != nil {
@@ -105,7 +105,7 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 
 	var rows []table.StakeTransaction
 
-	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(limit).Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(query.Limit).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -162,41 +162,29 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	if query.Direct {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"node" > ?`, query.Cursor.String())
-		}
-
-		databaseClient = databaseClient.Order(`"node" ASC`)
-	} else {
-		if query.Cursor != nil {
-			databaseClient = databaseClient.Where(`"owner" > ?`, query.Cursor.String())
-		}
-
-		databaseClient = databaseClient.Order(`"owner" ASC`)
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" > ?`, query.Cursor.String())
 	}
 
-	if query.ID != nil {
-		databaseClient = databaseClient.Where(`"id" = ?`, query.ID.String())
-	}
-
-	if query.Owner != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	if len(query.IDs) > 0 {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id *big.Int, _ int) uint64 { return id.Uint64() }))
 	}
 
 	if query.Node != nil {
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	}
 
-	var rows []table.StakeChip
-	if err := databaseClient.Find(&rows).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
-		}
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
 
-		return nil, fmt.Errorf("find stake chip: %w", err)
+	var rows []*table.StakeChip
+	if err := databaseClient.Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("find rows: %w", err)
 	}
 
 	results := make([]*schema.StakeChip, 0, len(rows))
@@ -204,7 +192,7 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	for _, row := range rows {
 		result, err := row.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export stake chip: %w", err)
+			return nil, fmt.Errorf("export row: %w", err)
 		}
 
 		results = append(results, result)
@@ -235,6 +223,87 @@ func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery)
 	}
 
 	return result, nil
+}
+
+func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error) {
+	databaseClient := c.database.
+		WithContext(ctx).
+		Table((*table.StakeChip).TableName(nil))
+
+	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+
+	if query.Cursor != nil {
+		cursor, err := base64.StdEncoding.DecodeString(*query.Cursor)
+		if err != nil {
+			return nil, err
+		}
+
+		splits := strings.Split(string(cursor), "-")
+		if len(splits) != 2 {
+			return nil, fmt.Errorf("invalid cursor: %w", err)
+		}
+
+		databaseClient = databaseClient.Where(
+			`"owner" > ? OR ("owner" = ? AND "node" > ?)`,
+			splits[0], splits[0], splits[1],
+		)
+	}
+
+	if query.Staker != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Staker.String())
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	type StakeStaking struct {
+		Owner string `gorm:"column:owner"`
+		Node  string `gorm:"column:node"`
+		Count uint64 `gorm:"column:count"`
+	}
+
+	var stakeStakings []*StakeStaking
+	if err := databaseClient.
+		Select(`"owner", "node", count(*) AS "count"`).
+		Group(`"owner", "node"`).
+		Order(`"count" DESC, "owner", "node"`).
+		Limit(query.Limit).
+		Find(&stakeStakings).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	results := make([]*schema.StakeStaking, 0, len(stakeStakings))
+
+	for _, stakeStaking := range stakeStakings {
+		databaseClient := c.database.WithContext(ctx)
+
+		var stakeChips []*table.StakeChip
+		if err := databaseClient.
+			Where(
+				`"owner" = ? AND "node" = ? AND "owner" != ?`, stakeStaking.Owner, stakeStaking.Node, ethereum.AddressGenesis.String(),
+			).
+			Order(`"id"`).
+			Limit(5).
+			Find(&stakeChips).Error; err != nil {
+			return nil, err
+		}
+
+		results = append(results, &schema.StakeStaking{
+			Staker: common.HexToAddress(stakeStaking.Owner),
+			Node:   common.HexToAddress(stakeStaking.Node),
+			Chips: schema.StakeStakingChips{
+				Total: stakeStaking.Count,
+				Showcase: lo.Map(stakeChips, func(stakeChip *table.StakeChip, _ int) *schema.StakeChip {
+					result, _ := stakeChip.Export()
+
+					return result
+				}),
+			},
+		})
+	}
+
+	return results, nil
 }
 
 func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error) {

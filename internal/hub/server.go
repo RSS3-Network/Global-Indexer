@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -30,8 +31,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2)
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Server, error) {
+	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
@@ -62,19 +63,21 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 
 	instance.httpServer.GET("/stake/transactions", instance.hub.GetStakeTransactions)
 	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
-	instance.httpServer.GET("/stake/wallets", instance.hub.GetStakeWallets)
-	instance.httpServer.GET("/stake/chips/:id/image.svg", instance.hub.GetStakeChipImage)
+	instance.httpServer.GET("/stake/stakings", instance.hub.GetStakeStakings)
+	// instance.httpServer.GET("/stake/nodes/:address/stakers", instance.hub.GetStakeNodeUsers)
+	// instance.httpServer.GET("/stake/stakers/:address/nodes", instance.hub.GetStakeUserNodes)
+
+	instance.httpServer.GET("/chips", instance.hub.GetStakeChips)
+	instance.httpServer.GET("/chips/:id", instance.hub.GetStakeChip)
+	instance.httpServer.GET("/chips/:id/image.svg", instance.hub.GetStakeChipImage)
 
 	instance.httpServer.GET("/epochs", instance.hub.GetEpochsHandler)
 	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpochHandler)
 	instance.httpServer.GET("/epochs/distributions/:transaction", instance.hub.GetEpochDistributionHandler)
 	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewardsHandler)
 
-	instance.httpServer.GET("/nodes/:node/chips", instance.hub.GetStakeNodeChips)
-	instance.httpServer.GET("/wallets/:wallet/chips", instance.hub.GetStakeWalletChips)
-
-	instance.httpServer.GET("/snapshot/nodes", instance.hub.GetNodeSnapshots)
-	instance.httpServer.GET("/snapshot/stakers", instance.hub.GetStakeSnapshots)
+	instance.httpServer.GET("/snapshots/nodes", instance.hub.GetNodeSnapshots)
+	instance.httpServer.GET("/snapshots/stakers", instance.hub.GetStakeSnapshots)
 
 	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHubHandler)
 	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivityHandler)

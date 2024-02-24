@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
@@ -87,12 +88,24 @@ func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
 		return response.InternalError(c, err)
 	}
 
+	if !h.validEvmAddress(request.Account) {
+		request.Account, err = h.nameService.Resolve(c.Request().Context(), request.Account)
+		if err != nil {
+			return response.InternalError(c, err)
+		}
+	}
+
 	activities, err := h.routerActivitiesData(c.Request().Context(), request)
 	if err != nil {
 		return response.InternalError(c, err)
 	}
 
 	return c.JSONBlob(http.StatusOK, activities)
+}
+
+func (h *Hub) validEvmAddress(address string) bool {
+	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
+	return re.MatchString(address)
 }
 
 func (h *Hub) parseParams(params url.Values, tags []string) ([]string, error) {
