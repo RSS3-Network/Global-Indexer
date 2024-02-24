@@ -8,9 +8,9 @@ import (
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/L1StandardBridge.abi --pkg l1 --type L1StandardBridge --out contract_l1_standard_bridge.go
 
 var (
-	AddressL1CrossDomainMessengerProxy = common.HexToAddress("0xb0496292B1A82B284898fA946BE34BdB43B2aDee") // https://sepolia.etherscan.io/address/0xb0496292B1A82B284898fA946BE34BdB43B2aDee
-	AddressL1StandardBridgeProxy       = common.HexToAddress("0x30110496b378F5AaB1438E9cf48421f9173841A1") // https://sepolia.etherscan.io/address/0x30110496b378F5AaB1438E9cf48421f9173841A1
-	AddressOptimismPortalProxy         = common.HexToAddress("0xB5143A98b600559398A12cC5F4ec8B9F97A7aD63") // https://sepolia.etherscan.io/address/0xB5143A98b600559398A12cC5F4ec8B9F97A7aD63
+	AddressL1CrossDomainMessengerProxy = common.HexToAddress("0xf2aAAd7F0ec62f582891F9558dF5F953FEEcC1DA") // https://sepolia.etherscan.io/address/0xf2aAAd7F0ec62f582891F9558dF5F953FEEcC1DA
+	AddressL1StandardBridgeProxy       = common.HexToAddress("0xdDD29bb63B0839FB1cE0eE439Ff027738595D07B") // https://sepolia.etherscan.io/address/0xdDD29bb63B0839FB1cE0eE439Ff027738595D07B
+	AddressOptimismPortalProxy         = common.HexToAddress("0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57") // https://sepolia.etherscan.io/address/0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57
 	AddressGovernanceTokenProxy        = common.HexToAddress("0x3Ef1D5be1E2Ce46c583a0c8e511f015706A0ab23") // https://sepolia.etherscan.io/address/0x3Ef1D5be1E2Ce46c583a0c8e511f015706A0ab23
 )
 
