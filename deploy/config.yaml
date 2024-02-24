@@ -15,7 +15,7 @@ rss3_chain:
 
 epoch:
   wallet_address:
-  signer_endpoint:
+  signer_endpoint: http://localhost:3000
   gas_limit: 3000000
 
 geo_ip:
