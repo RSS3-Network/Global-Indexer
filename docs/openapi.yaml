@@ -194,7 +194,7 @@ paths:
                         metadata:
                           name: "Chip #2105"
                           description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                          image: "https://gi.rss3.dev/stake/chips/2105/image.svg"
+                          image: "https://gi.rss3.dev/chips/2105/image.svg"
                     event:
                       deposit:
                         deposited:
@@ -278,7 +278,7 @@ paths:
                           metadata:
                             name: "Chip #21"
                             description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                            image: "https://gi.rss3.dev/stake/chips/21/image.svg"
+                            image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
   /chips:
     get:
@@ -544,7 +544,7 @@ components:
             metadata:
               name: "Chip #2105"
               description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-              image: "https://gi.rss3.dev/stake/chips/2105/image.svg"
+              image: "https://gi.rss3.dev/chips/2105/image.svg"
         event:
           deposit:
             deposited:
@@ -610,35 +610,35 @@ components:
               metadata:
                 name: "Chip #275"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+                image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 276
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #276"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+                image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 277
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #277"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+                image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 278
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #278"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+                image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 279
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #279"
                 description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-                image: "https://gi.rss3.dev/stake/chips/275/image.svg"
+                image: "https://gi.rss3.dev/chips/275/image.svg"
     Chips:
       type: object
       properties:
@@ -664,4 +664,4 @@ components:
         metadata:
           name: "Chip #474"
           description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
-          image: "https://gi.rss3.dev/stake/chips/474/image.svg"
+          image: "https://gi.rss3.dev/chips/474/image.svg"
