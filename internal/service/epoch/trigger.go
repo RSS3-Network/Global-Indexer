@@ -39,22 +39,37 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 		// Build distribute rewards data.
 		data, err := s.buildDistributeRewards(ctx, epoch, cursor)
 		if err != nil {
+			zap.L().Error("finding online nodes", zap.Error(err))
+
 			return fmt.Errorf("find online nodes: %w", err)
+		}
+
+		// Check data existence.
+		if data == nil || len(data.NodeAddress) == 0 {
+			zap.L().Info("no more data to process. exiting")
+
+			break
 		}
 
 		zap.L().Info("build distributeRewards", zap.Any("data", data))
 
 		// Trigger distributeReward contract.
 		if err = retry.Do(func() error {
-			return s.triggerDistributeRewards(ctx, lo.FromPtr(data))
+			return s.triggerDistributeRewards(ctx, *data)
 		}, retry.Delay(time.Second), retry.Attempts(5)); err != nil {
 			zap.L().Error("retry trigger distributeReward", zap.Error(err))
 
 			return err
 		}
 
-		cursor = lo.ToPtr(data.NodeAddress[len(data.NodeAddress)-1].String())
+		if len(data.NodeAddress) > 0 {
+			cursor = lo.ToPtr(data.NodeAddress[len(data.NodeAddress)-1].String())
+		}
 	}
+
+	zap.L().Info("Reward distribution completed")
+
+	return nil
 }
 
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
