@@ -34,7 +34,6 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
 	n.Stream = node.Stream
 	n.Config = node.Config
-	n.CreatedAt = time.Unix(node.CreatedAt, 0)
 
 	n.Local, err = json.Marshal(node.Local)
 	if err != nil {
