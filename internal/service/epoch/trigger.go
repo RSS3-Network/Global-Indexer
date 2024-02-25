@@ -44,10 +44,6 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 			return fmt.Errorf("find online nodes: %w", err)
 		}
 
-		if data == nil {
-			return nil
-		}
-
 		zap.L().Info("build distributeRewards", zap.Any("data", data))
 
 		// Trigger distributeReward contract.
