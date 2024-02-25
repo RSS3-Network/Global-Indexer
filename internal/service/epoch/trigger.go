@@ -45,7 +45,7 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 		}
 
 		// Check data existence.
-		if data == nil || len(data.NodeAddress) == 0 {
+		if len(data.NodeAddress) == 0 && cursor != nil {
 			zap.L().Info("no more data to process. exiting")
 
 			break
@@ -82,10 +82,6 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 		zap.L().Error("find online nodes", zap.Error(err), zap.Any("cursor", cursor))
 
 		return nil, err
-	}
-
-	if len(nodes) == 0 {
-		return nil, nil
 	}
 
 	var isFinal = true
