@@ -46,8 +46,8 @@ jobs:
             --network ${{ job.container.network }} --network-alias apisix \
             -p 9180:9180/tcp -p 9080:9080/tcp -p 9091:9091/tcp -p 9443:9443/tcp \
             -e GITHUB_ACTIONS=true -e CI=true \
-            -v "${{ github.workspace }}/deploy/testing/apisix/config.yaml":"/usr/local/apisix/conf/config.yaml" \
-            -v "${{ github.workspace }}/deploy/testing/apisix/apisix.yaml":"/usr/local/apisix/conf/apisix.yaml" \
+            -v "${{ github.workspace }}/.github/testing/apisix/config.yaml":"/usr/local/apisix/conf/config.yaml" \
+            -v "${{ github.workspace }}/.github/testing/apisix/apisix.yaml":"/usr/local/apisix/conf/apisix.yaml" \
             apache/apisix:3.6.0-debian
       - name: Start Redpanda container
         run: |
