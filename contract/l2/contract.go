@@ -19,8 +19,7 @@ var (
 	AddressStakingProxy                = common.HexToAddress("0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db") // https://scan.testnet.rss3.io/address/0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db
 	AddressChipsProxy                  = common.HexToAddress("0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88") // https://scan.testnet.rss3.io/token/0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88
 	AddressSettlementProxy             = common.HexToAddress("0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9") // https://scan.testnet.rss3.io/address/0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9
-
-	AddressBillingProxy = common.HexToAddress("TODO") // TODO
+	AddressBillingProxy                = common.HexToAddress("0x4630b9ad9b149ebf13d185ab7b96cb4afe95e6c4") // https://scan.testnet.rss3.io/address/0x4630b9ad9b149ebf13d185ab7b96cb4afe95e6c4
 )
 
 var (
