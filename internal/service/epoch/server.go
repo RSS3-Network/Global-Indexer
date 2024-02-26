@@ -206,7 +206,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("hex to ecdsa: %w", err)
 	}
 
-	contractAddress := l2.ContractMap[chainID]
+	contractAddress := l2.ContractMap[chainID.Uint64()]
 	if contractAddress == nil {
 		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
 	}

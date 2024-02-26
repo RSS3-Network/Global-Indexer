@@ -45,7 +45,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, ethereumClient 
 		return nil, fmt.Errorf("get chain id: %w", err)
 	}
 
-	contractAddresses := l2.ContractMap[chainID]
+	contractAddresses := l2.ContractMap[chainID.Uint64()]
 	if contractAddresses != nil {
 		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
 	}

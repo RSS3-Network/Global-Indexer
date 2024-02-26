@@ -1,21 +1,19 @@
 package l1
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/L1StandardBridge.abi --pkg l1 --type L1StandardBridge --out contract_l1_standard_bridge.go
 
-var ContractMap = map[*big.Int]*struct {
+var ContractMap = map[uint64]*struct {
 	AddressL1CrossDomainMessengerProxy common.Address
 	AddressL1StandardBridgeProxy       common.Address
 	AddressOptimismPortalProxy         common.Address
 	AddressGovernanceTokenProxy        common.Address
 }{
-	big.NewInt(2331): {
+	11155111: {
 		AddressL1CrossDomainMessengerProxy: common.HexToAddress("0xf2aAAd7F0ec62f582891F9558dF5F953FEEcC1DA"), // https://sepolia.etherscan.io/address/0xf2aAAd7F0ec62f582891F9558dF5F953FEEcC1DA
 		AddressL1StandardBridgeProxy:       common.HexToAddress("0xdDD29bb63B0839FB1cE0eE439Ff027738595D07B"), // https://sepolia.etherscan.io/address/0xdDD29bb63B0839FB1cE0eE439Ff027738595D07B
 		AddressOptimismPortalProxy:         common.HexToAddress("0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57"), // https://sepolia.etherscan.io/address/0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57

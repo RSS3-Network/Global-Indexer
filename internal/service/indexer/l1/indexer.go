@@ -196,7 +196,7 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 			}
 
 			switch log.Address {
-			case l1.ContractMap[s.chainID].AddressL1StandardBridgeProxy, l1.ContractMap[s.chainID].AddressOptimismPortalProxy:
+			case l1.ContractMap[s.chainID.Uint64()].AddressL1StandardBridgeProxy, l1.ContractMap[s.chainID.Uint64()].AddressOptimismPortalProxy:
 				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log %s %d: %w", log.TxHash, log.Index, err)
 				}
@@ -236,7 +236,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, config Confi
 		return nil, fmt.Errorf("get chain id: %w", err)
 	}
 
-	contractAddresses := l1.ContractMap[instance.chainID]
+	contractAddresses := l1.ContractMap[instance.chainID.Uint64()]
 	if contractAddresses == nil {
 		return nil, fmt.Errorf("chain id %d is not supported", instance.chainID)
 	}
