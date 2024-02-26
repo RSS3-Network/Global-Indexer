@@ -39,6 +39,8 @@ jobs:
 #            kv/data/network/rss3-node ENDPOINT_ETHEREUM ;
 #            kv/data/network/rss3-node ENDPOINT_POLYGON ;
 #            kv/data/network/rss3-node FARCASTER_URI
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Start APISix container
         run: |
@@ -82,7 +84,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: "1.21"
-      - name: Checkout
-        uses: actions/checkout@v3
+
       - name: Test
         run: make test
