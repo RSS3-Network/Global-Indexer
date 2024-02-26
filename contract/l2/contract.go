@@ -48,6 +48,12 @@ var (
 	EventHashBillingTokensCollected = crypto.Keccak256Hash([]byte("TokensCollected(address,uint256)"))
 )
 
+var (
+	MethodDistributeRewards = "distributeRewards"
+	MethodCollectTokens     = "collectTokens"
+	MethodWithdrawTokens    = "withdrawTokens"
+)
+
 type ChipsTokenMetadata struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`

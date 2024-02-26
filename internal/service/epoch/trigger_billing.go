@@ -8,7 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -241,43 +245,65 @@ func (s *Server) buildBillingWithdrawTokens(ctx context.Context) ([]common.Addre
 
 func (s *Server) triggerBillingCollectTokens(ctx context.Context, users []common.Address, amounts []*big.Int) error {
 	// Trigger collectTokens contract.
-	transactor, err := s.prepareTransactor(ctx)
+	nonce, err := s.ethereumClient.PendingNonceAt(ctx, s.fromAddress)
 	if err != nil {
-		zap.L().Error("prepare transactor", zap.Error(err))
-
-		return fmt.Errorf("prepare transactor: %w", err)
+		return fmt.Errorf("get pending nonce: %w", err)
 	}
 
-	tx, err := s.billingContract.CollectTokens(transactor, users, amounts, s.toAddress)
+	gasPrice, err := s.ethereumClient.SuggestGasPrice(ctx)
+	if err != nil {
+		return fmt.Errorf("get gas price: %w", err)
+	}
+
+	input, err := s.encodeInput(l2.BillingMetaData.ABI, l2.MethodCollectTokens, users, amounts, s.toAddress)
+	if err != nil {
+		return fmt.Errorf("encode input: %w", err)
+	}
+
+	unsignedTX := types.NewTx(&types.LegacyTx{
+		Nonce:    nonce,
+		GasPrice: gasPrice,
+		Gas:      s.gasLimit,
+		To:       lo.ToPtr(l2.AddressSettlementProxy),
+		Value:    big.NewInt(0),
+		Data:     input,
+	})
+
+	args := s.newTransactionArgsFromTransaction(s.chainID, s.fromAddress, unsignedTX)
+
+	var result hexutil.Bytes
+	if err = s.rpcClient.CallContext(ctx, &result, "eth_signTransaction", args); err != nil {
+		return fmt.Errorf("eth_signTransaction failed: %w", err)
+	}
+
+	signedTX := &types.Transaction{}
+	if err = signedTX.UnmarshalBinary(result); err != nil {
+		return err
+	}
+
+	err = s.ethereumClient.SendTransaction(ctx, signedTX)
 	if err != nil {
 		zap.L().Error("collect tokens", zap.Error(err), zap.Any("users", users), zap.Any("amounts", amounts))
-		s.ReportFailedTransactionToSlack(err, tx.Hash().Hex(), "Collect", users, amounts)
+		s.ReportFailedTransactionToSlack(err, signedTX.Hash().Hex(), "Collect", users, amounts)
 
 		return fmt.Errorf("prepare billing collect tokens contract call: %w", err)
 	}
 
 	// Wait for transaction receipt.
-	if err = s.transactionReceipt(ctx, tx.Hash()); err != nil {
-		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.String("tx", tx.Hash().String()))
-		s.ReportFailedTransactionToSlack(err, tx.Hash().Hex(), "Collect", users, amounts)
+	if err = s.transactionReceipt(ctx, signedTX.Hash()); err != nil {
+		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.String("tx", signedTX.Hash().String()))
+		s.ReportFailedTransactionToSlack(err, signedTX.Hash().Hex(), "Collect", users, amounts)
 
 		return fmt.Errorf("wait for transaction receipt: %w", err)
 	}
 
-	zap.L().Info("collect tokens successfully", zap.String("tx", tx.Hash().String()))
+	zap.L().Info("collect tokens successfully", zap.String("tx", signedTX.Hash().String()))
 
 	return nil
 }
 
 func (s *Server) triggerBillingWithdrawTokens(ctx context.Context, users []common.Address, amounts []*big.Int, fee *big.Int) error {
 	// Trigger collectTokens contract.
-	transactor, err := s.prepareTransactor(ctx)
-	if err != nil {
-		zap.L().Error("prepare transactor", zap.Error(err))
-
-		return fmt.Errorf("prepare transactor: %w", err)
-	}
-
 	// Prepare fees
 	length := len(users)
 	fees := make([]*big.Int, length)
@@ -286,23 +312,59 @@ func (s *Server) triggerBillingWithdrawTokens(ctx context.Context, users []commo
 		fees[i] = fee
 	}
 
-	tx, err := s.billingContract.WithdrawTokens(transactor, users, amounts, fees)
+	nonce, err := s.ethereumClient.PendingNonceAt(ctx, s.fromAddress)
+	if err != nil {
+		return fmt.Errorf("get pending nonce: %w", err)
+	}
+
+	gasPrice, err := s.ethereumClient.SuggestGasPrice(ctx)
+	if err != nil {
+		return fmt.Errorf("get gas price: %w", err)
+	}
+
+	input, err := s.encodeInput(l2.BillingMetaData.ABI, l2.MethodWithdrawTokens, users, amounts, fees)
+	if err != nil {
+		return fmt.Errorf("encode input: %w", err)
+	}
+
+	unsignedTX := types.NewTx(&types.LegacyTx{
+		Nonce:    nonce,
+		GasPrice: gasPrice,
+		Gas:      s.gasLimit,
+		To:       lo.ToPtr(l2.AddressSettlementProxy),
+		Value:    big.NewInt(0),
+		Data:     input,
+	})
+
+	args := s.newTransactionArgsFromTransaction(s.chainID, s.fromAddress, unsignedTX)
+
+	var result hexutil.Bytes
+	if err = s.rpcClient.CallContext(ctx, &result, "eth_signTransaction", args); err != nil {
+		return fmt.Errorf("eth_signTransaction failed: %w", err)
+	}
+
+	signedTX := &types.Transaction{}
+	if err = signedTX.UnmarshalBinary(result); err != nil {
+		return err
+	}
+
+	err = s.ethereumClient.SendTransaction(ctx, signedTX)
 	if err != nil {
 		zap.L().Error("collect tokens", zap.Error(err), zap.Any("users", users), zap.Any("amounts", amounts))
-		s.ReportFailedTransactionToSlack(err, tx.Hash().Hex(), "Withdraw", users, amounts)
+		s.ReportFailedTransactionToSlack(err, signedTX.Hash().Hex(), "Withdraw", users, amounts)
 
 		return fmt.Errorf("prepare billing collect tokens contract call: %w", err)
 	}
 
 	// Wait for transaction receipt.
-	if err = s.transactionReceipt(ctx, tx.Hash()); err != nil {
-		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.String("tx", tx.Hash().String()))
-		s.ReportFailedTransactionToSlack(err, tx.Hash().Hex(), "Withdraw", users, amounts)
+	if err = s.transactionReceipt(ctx, signedTX.Hash()); err != nil {
+		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.String("tx", signedTX.Hash().String()))
+		s.ReportFailedTransactionToSlack(err, signedTX.Hash().Hex(), "Withdraw", users, amounts)
 
 		return fmt.Errorf("wait for transaction receipt: %w", err)
 	}
 
-	zap.L().Info("collect tokens successfully", zap.String("tx", tx.Hash().String()))
+	zap.L().Info("collect tokens successfully", zap.String("tx", signedTX.Hash().String()))
 
 	return nil
 }
