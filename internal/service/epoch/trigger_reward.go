@@ -25,10 +25,6 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 		return nil, err
 	}
 
-	if len(nodes) == 0 {
-		return nil, nil
-	}
-
 	var isFinal = true
 
 	if len(nodes) > BatchSize {

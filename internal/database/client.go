@@ -53,8 +53,7 @@ type Client interface {
 	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
 	FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
-	FindStakeNodeUsers(ctx context.Context, query schema.StakeNodeUsersQuery) ([]*schema.StakeAddress, error)
-	FindStakeUserNodes(ctx context.Context, query schema.StakeUserNodesQuery) ([]*schema.StakeAddress, error)
+	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
 	FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error

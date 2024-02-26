@@ -24,16 +24,25 @@ import (
 
 type GetStakeTransactionsRequest struct {
 	Cursor  *common.Hash                 `query:"cursor"`
-	User    *common.Address              `query:"user"`
+	Staker  *common.Address              `query:"staker"`
 	Node    *common.Address              `query:"node"`
 	Type    *schema.StakeTransactionType `query:"type"`
 	Pending *bool                        `query:"pending"`
+	Limit   int                          `query:"limit" default:"20" min:"1" max:"20"`
 }
 
 func (h *Hub) GetStakeTransactions(c echo.Context) error {
 	var request GetStakeTransactionsRequest
 	if err := c.Bind(&request); err != nil {
 		return c.NoContent(http.StatusBadRequest)
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return response.ValidateFailedError(c, err)
+	}
+
+	if err := defaults.Set(&request); err != nil {
+		return response.InternalError(c, err)
 	}
 
 	databaseTransactionOptions := sql.TxOptions{
@@ -51,10 +60,11 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 
 	stakeTransactionsQuery := schema.StakeTransactionsQuery{
 		Cursor:  request.Cursor,
-		User:    request.User,
+		User:    request.Staker,
 		Node:    request.Node,
 		Type:    request.Type,
 		Pending: request.Pending,
+		Limit:   request.Limit,
 	}
 
 	stakeTransactions, err := databaseTransaction.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
@@ -85,6 +95,23 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	chipsIDs := lo.Flatten(lo.FilterMap(stakeTransactions, func(stakeTransaction *schema.StakeTransaction, _ int) ([]*big.Int, bool) {
+		return stakeTransaction.Chips, len(stakeTransaction.Chips) != 0
+	}))
+
+	stakeChipsQuery := schema.StakeChipsQuery{
+		IDs: chipsIDs,
+	}
+
+	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
+	}
+
 	if err := databaseTransaction.Commit(); err != nil {
 		return fmt.Errorf("commit database transaction")
 	}
@@ -96,7 +123,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 			return stakeEvent.ID == stakeTransaction.ID
 		})
 
-		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents))
+		stakeTransactionModels = append(stakeTransactionModels, model.NewStakeTransaction(stakeTransaction, stakeEvents, stakeChips, baseURL(c)))
 	}
 
 	response := Response{
@@ -165,6 +192,19 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	stakeChipsQuery := schema.StakeChipsQuery{
+		IDs: stakeTransaction.Chips,
+	}
+
+	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
+	}
+
 	if err := databaseTransaction.Commit(); err != nil {
 		return fmt.Errorf("commit database transaction")
 	}
@@ -174,7 +214,7 @@ func (h *Hub) GetStakeTransaction(c echo.Context) error {
 	})
 
 	var response Response
-	response.Data = model.NewStakeTransaction(stakeTransaction, stakeEvents)
+	response.Data = model.NewStakeTransaction(stakeTransaction, stakeEvents, stakeChips, baseURL(c))
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -206,7 +246,7 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		IDs:    request.IDs,
 		Node:   request.Node,
 		Owner:  request.Owner,
-		Limit:  request.Limit,
+		Limit:  &request.Limit,
 	}
 
 	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
@@ -308,14 +348,15 @@ func (h *Hub) GetStakeChipImage(c echo.Context) error {
 	return c.Blob(http.StatusOK, "image/svg+xml", content)
 }
 
-type GetStakeNodeUsersRequest struct {
-	Address common.Address  `param:"address"`
-	Cursor  *common.Address `query:"cursor"`
-	Limit   int             `query:"limit" default:"10" min:"1" max:"10"`
+type GetStakeStakingsRequest struct {
+	Cursor *string         `query:"cursor"`
+	Staker *common.Address `query:"staker"`
+	Node   *common.Address `query:"node"`
+	Limit  int             `query:"limit" default:"2" min:"1" max:"10"`
 }
 
-func (h *Hub) GetStakeNodeUsers(c echo.Context) error {
-	var request GetStakeNodeUsersRequest
+func (h *Hub) GetStakeStakings(c echo.Context) error {
+	var request GetStakeStakingsRequest
 	if err := c.Bind(&request); err != nil {
 		return response.BadParamsError(c, err)
 	}
@@ -328,63 +369,24 @@ func (h *Hub) GetStakeNodeUsers(c echo.Context) error {
 		return response.InternalError(c, err)
 	}
 
-	stakeNodeUsersQuery := schema.StakeNodeUsersQuery{
+	stakeStakingsQuery := schema.StakeStakingsQuery{
 		Cursor: request.Cursor,
-		Node:   &request.Address,
+		Staker: request.Staker,
+		Node:   request.Node,
 		Limit:  request.Limit,
 	}
 
-	stakeAddresses, err := h.databaseClient.FindStakeNodeUsers(c.Request().Context(), stakeNodeUsersQuery)
+	stakeStakings, err := h.databaseClient.FindStakeStakings(c.Request().Context(), stakeStakingsQuery)
 	if err != nil {
 		return err
 	}
 
-	var response Response
-	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
-
-	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Staker.String()
+	response := Response{
+		Data: model.NewStakeStaking(stakeStakings, baseURL(c)),
 	}
 
-	return c.JSON(http.StatusOK, response)
-}
-
-type GetStakeUserNodesRequest struct {
-	Address common.Address  `param:"address"`
-	Cursor  *common.Address `query:"cursor"`
-	Limit   int             `query:"limit" default:"10" min:"1" max:"10"`
-}
-
-func (h *Hub) GetStakeUserNodes(c echo.Context) error {
-	var request GetStakeUserNodesRequest
-	if err := c.Bind(&request); err != nil {
-		return response.BadParamsError(c, err)
-	}
-
-	if err := c.Validate(&request); err != nil {
-		return response.ValidateFailedError(c, err)
-	}
-
-	if err := defaults.Set(&request); err != nil {
-		return response.InternalError(c, err)
-	}
-
-	stakeNodeUsersQuery := schema.StakeUserNodesQuery{
-		Cursor: request.Cursor,
-		Owner:  &request.Address,
-		Limit:  request.Limit,
-	}
-
-	stakeAddresses, err := h.databaseClient.FindStakeUserNodes(c.Request().Context(), stakeNodeUsersQuery)
-	if err != nil {
-		return err
-	}
-
-	var response Response
-	response.Data = model.NewStakeAddresses(stakeAddresses, baseURL(c))
-
-	if length := len(stakeAddresses); length > 0 {
-		response.Cursor = stakeAddresses[length-1].Node.String()
+	if length := len(stakeStakings); length > 0 {
+		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
 	}
 
 	return c.JSON(http.StatusOK, response)

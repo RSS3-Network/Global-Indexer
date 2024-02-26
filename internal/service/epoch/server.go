@@ -138,6 +138,9 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			}
 		} else if now.Sub(lastEpochEventTime) >= 18*time.Hour && now.Sub(lastEpochTriggerTime) < 18*time.Hour {
 			// Wait for epoch event indexer
+			zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
+				zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
+
 			time.Sleep(5 * time.Second)
 		} else if now.Sub(lastEpochEventTime) < 18*time.Hour {
 			// Set timer

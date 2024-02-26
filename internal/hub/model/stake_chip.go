@@ -30,7 +30,7 @@ func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) *StakeChip {
 	var tokenMetadata l2.ChipsTokenMetadata
 	_ = json.Unmarshal(stakeChip.Metadata, &tokenMetadata)
 
-	tokenMetadata.Image = baseURL.JoinPath(fmt.Sprintf("/stake/chips/%d/image.svg", result.ID)).String()
+	tokenMetadata.Image = baseURL.JoinPath(fmt.Sprintf("/chips/%d/image.svg", result.ID)).String()
 
 	result.Metadata, _ = json.Marshal(tokenMetadata)
 

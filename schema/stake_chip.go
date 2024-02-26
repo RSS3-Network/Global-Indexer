@@ -38,5 +38,5 @@ type StakeChipsQuery struct {
 	IDs    []*big.Int
 	Node   *common.Address
 	Owner  *common.Address
-	Limit  int
+	Limit  *int
 }
