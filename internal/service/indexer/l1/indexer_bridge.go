@@ -42,7 +42,7 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 	var sentMessageEvent *bindings.L1CrossDomainMessengerSentMessage
 
 	for _, log := range receipt.Logs[logIndex:] {
-		if log.Address == l1.AddressL1CrossDomainMessengerProxy {
+		if log.Address == l1.ContractMap[s.chainID].AddressL1CrossDomainMessengerProxy {
 			if len(log.Topics) > 0 && log.Topics[0] == l1.EventHashL1CrossDomainMessengerSentMessage {
 				if sentMessageEvent, err = s.contractL1CrossDomainMessenger.ParseSentMessage(*log); err != nil {
 					return fmt.Errorf("parse SentMessage event: %w", err)
@@ -102,7 +102,7 @@ func (s *server) indexL1StandardBridgeERC20WithdrawalFinalizedLog(ctx context.Co
 	var optimismPortalEvent *bindings.OptimismPortalWithdrawalFinalized
 
 	for _, log := range receipt.Logs[logIndex:] {
-		if log.Address == l1.AddressOptimismPortalProxy {
+		if log.Address == l1.ContractMap[s.chainID].AddressOptimismPortalProxy {
 			if len(log.Topics) > 0 && log.Topics[0] == l1.EventHashOptimismPortalWithdrawalFinalized {
 				if optimismPortalEvent, err = s.contractOptimismPortal.ParseWithdrawalFinalized(*log); err != nil {
 					return fmt.Errorf("parse RelayedMessage event: %w", err)

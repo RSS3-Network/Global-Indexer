@@ -206,7 +206,12 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("hex to ecdsa: %w", err)
 	}
 
-	settlement, err := l2.NewSettlement(l2.AddressSettlementProxy, ethereumClient)
+	contractAddress := l2.ContractMap[chainID]
+	if contractAddress == nil {
+		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
+	}
+
+	settlement, err := l2.NewSettlement(contractAddress.AddressSettlementProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new settlement: %w", err)
 	}
