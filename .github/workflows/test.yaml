@@ -13,6 +13,22 @@ jobs:
   test:
     name: Test
     runs-on: self-hosted
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+
+      etcd:
+        image: bitnami/etcd:3.4.15
+        env:
+          ETCD_ENABLE_V2: "true"
+          ALLOW_NONE_AUTHENTICATION: "yes"
+          ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+          ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+        ports:
+          - "2379:2379/tcp"
+
     steps:
 #      - name: Import Secrets
 #        uses: hashicorp/vault-action@v2.4.0
@@ -23,6 +39,45 @@ jobs:
 #            kv/data/network/rss3-node ENDPOINT_ETHEREUM ;
 #            kv/data/network/rss3-node ENDPOINT_POLYGON ;
 #            kv/data/network/rss3-node FARCASTER_URI
+
+      - name: Start APISix container
+        run: |
+          docker run -d --name apisix \
+            --network ${{ job.container.network }} --network-alias apisix \
+            -p 9180:9180/tcp -p 9080:9080/tcp -p 9091:9091/tcp -p 9443:9443/tcp \
+            -e GITHUB_ACTIONS=true -e CI=true \
+            -v "${{ github.workspace }}/deploy/testing/apisix/config.yaml":"/usr/local/apisix/conf/config.yaml" \
+            -v "${{ github.workspace }}/deploy/testing/apisix/apisix.yaml":"/usr/local/apisix/conf/apisix.yaml" \
+            apache/apisix:3.6.0-debian
+      - name: Start Redpanda container
+        run: |
+          docker run -d --name redpanda-0 \
+            --network ${{ job.container.network }} --network-alias redpanda-0 \
+            -p 9092:9092 -p 18081:18081 -p 18082:18082 -p 19092:19092 -p 19644:9644 \
+            -e GITHUB_ACTIONS=true -e CI=true \
+            docker.redpanda.com/redpandadata/redpanda:v23.2.12 \
+            redpanda start \
+              --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092 \
+              --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092 \
+              --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082 \
+              --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082 \
+              --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081 \
+              --rpc-addr redpanda-0:33145 \
+              --advertise-rpc-addr redpanda-0:33145 \
+              --smp 1 \
+              --memory 1G \
+              --mode dev-container \
+              --default-log-level=debug
+      - name: Start CRDB container
+        run: |
+          docker run -d --name crdb \
+            --network ${{ job.container.network }} --network-alias crdb \
+            -p 8080:8080 -p 26257:26257 \
+            cockroachdb/cockroach:v23.1.8 \
+            start-single-node \
+              --cluster-name=node \
+              --insecure
+
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
