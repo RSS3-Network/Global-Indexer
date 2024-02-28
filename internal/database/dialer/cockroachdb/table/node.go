@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 )
 
@@ -18,6 +19,7 @@ type Node struct {
 	Status                 schema.Status   `gorm:"column:status"`
 	LastHeartbeatTimestamp time.Time       `gorm:"column:last_heartbeat_timestamp"`
 	Local                  json.RawMessage `gorm:"column:local;type:jsonb"`
+	Avatar                 json.RawMessage `gorm:"column:avatar;type:jsonb"`
 	CreatedAt              time.Time       `gorm:"column:created_at"`
 	UpdatedAt              time.Time       `gorm:"column:updated_at"`
 }
@@ -40,6 +42,11 @@ func (n *Node) Import(node *schema.Node) (err error) {
 		return fmt.Errorf("marshal node local: %w", err)
 	}
 
+	n.Avatar, err = json.Marshal(node.Avatar)
+	if err != nil {
+		return fmt.Errorf("marshal node avatar: %w", err)
+	}
+
 	return nil
 }
 
@@ -48,6 +55,11 @@ func (n *Node) Export() (*schema.Node, error) {
 
 	if err := json.Unmarshal(n.Local, &local); len(n.Local) > 0 && err != nil {
 		return nil, fmt.Errorf("unmarshal node local: %w", err)
+	}
+
+	var avatar *l2.ChipsTokenMetadata
+	if err := json.Unmarshal(n.Avatar, &avatar); len(n.Avatar) > 0 && err != nil {
+		return nil, fmt.Errorf("unmarshal node avatar: %w", err)
 	}
 
 	return &schema.Node{
@@ -59,6 +71,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Stream:                 n.Stream,
 		Config:                 n.Config,
 		Local:                  local,
+		Avatar:                 avatar,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }

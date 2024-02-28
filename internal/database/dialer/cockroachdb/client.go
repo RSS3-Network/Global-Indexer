@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -162,6 +164,25 @@ func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, 
 	}
 
 	return nodes.Export()
+}
+
+func (c *client) FindNodeAvatar(ctx context.Context, nodeAddress common.Address) (*l2.ChipsTokenMetadata, error) {
+	var node table.Node
+
+	if err := c.database.WithContext(ctx).Model(&table.Node{}).Where("address = ?", nodeAddress).First(&node).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, err
+	}
+
+	var avatar l2.ChipsTokenMetadata
+	if err := json.Unmarshal(node.Avatar, &avatar); len(node.Avatar) > 0 && err != nil {
+		return nil, fmt.Errorf("unmarshal node avatar: %w", err)
+	}
+
+	return &avatar, nil
 }
 
 func (c *client) SaveNode(ctx context.Context, data *schema.Node) error {

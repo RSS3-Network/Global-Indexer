@@ -29,10 +29,11 @@ var _ service.Server = (*server)(nil)
 var Name = "sort"
 
 type server struct {
-	cronJob         *cronjob.CronJob
-	stakingContract *l2.Staking
-	databaseClient  database.Client
-	cacheClient     cache.Client
+	cronJob            *cronjob.CronJob
+	stakingContract    *l2.Staking
+	settlementContract *l2.Settlement
+	databaseClient     database.Client
+	cacheClient        cache.Client
 }
 
 func (s *server) Spec() string {
@@ -64,7 +65,7 @@ func (s *server) Run(ctx context.Context) error {
 func (s *server) sortNodes(ctx context.Context) error {
 	var limit = 100
 
-	epoch, err := s.stakingContract.CurrentEpoch(&bind.CallOpts{})
+	epoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
 
 	if err != nil {
 		return fmt.Errorf("get current epoch: %w", err)
@@ -225,11 +226,17 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	settlementContract, err := l2.NewSettlement(l2.AddressSettlementProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new settlement contract: %w", err)
+	}
+
 	instance := server{
-		databaseClient:  databaseClient,
-		cacheClient:     cache.New(redis),
-		stakingContract: stakingContract,
-		cronJob:         cronjob.New(redis, Name, 10*time.Second),
+		databaseClient:     databaseClient,
+		cacheClient:        cache.New(redis),
+		stakingContract:    stakingContract,
+		settlementContract: settlementContract,
+		cronJob:            cronjob.New(redis, Name, 10*time.Second),
 	}
 
 	return &instance, nil
