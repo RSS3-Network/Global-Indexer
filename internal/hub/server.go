@@ -55,6 +55,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
 	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
 	instance.httpServer.GET("/nodes/:id/challenge", instance.hub.GetNodeChallengeHandler)
+	instance.httpServer.GET("/nodes/:id/avatar.svg", instance.hub.GetNodeAvatarHandler)
 	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
 	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeatHandler)
 

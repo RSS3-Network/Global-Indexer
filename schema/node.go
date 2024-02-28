@@ -5,25 +5,27 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 )
 
 type Node struct {
-	Address                common.Address  `json:"address"`
-	Name                   string          `json:"name"`
-	Description            string          `json:"description"`
-	TaxRateBasisPoints     uint64          `json:"taxRateBasisPoints"`
-	IsPublicGood           bool            `json:"isPublicGood"`
-	OperationPoolTokens    string          `json:"operationPoolTokens"`
-	StakingPoolTokens      string          `json:"stakingPoolTokens"`
-	TotalShares            string          `json:"totalShares"`
-	SlashedTokens          string          `json:"slashedTokens"`
-	Endpoint               string          `json:"-"`
-	Stream                 json.RawMessage `json:"-"`
-	Config                 json.RawMessage `json:"-"`
-	Status                 Status          `json:"status"`
-	LastHeartbeatTimestamp int64           `json:"lastHeartbeat"`
-	Local                  []*NodeLocal    `json:"local"`
-	CreatedAt              int64           `json:"createdAt"`
+	Address                common.Address         `json:"address"`
+	Name                   string                 `json:"name"`
+	Description            string                 `json:"description"`
+	TaxRateBasisPoints     uint64                 `json:"taxRateBasisPoints"`
+	IsPublicGood           bool                   `json:"isPublicGood"`
+	OperationPoolTokens    string                 `json:"operationPoolTokens"`
+	StakingPoolTokens      string                 `json:"stakingPoolTokens"`
+	TotalShares            string                 `json:"totalShares"`
+	SlashedTokens          string                 `json:"slashedTokens"`
+	Endpoint               string                 `json:"-"`
+	Stream                 json.RawMessage        `json:"-"`
+	Config                 json.RawMessage        `json:"-"`
+	Status                 Status                 `json:"status"`
+	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
+	Local                  []*NodeLocal           `json:"local"`
+	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
+	CreatedAt              int64                  `json:"createdAt"`
 }
 
 type NodeLocal struct {

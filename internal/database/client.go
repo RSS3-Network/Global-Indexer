@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
@@ -27,6 +28,7 @@ type Client interface {
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
 	FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.Status, cursor *string, limit int) ([]*schema.Node, error)
+	FindNodeAvatar(ctx context.Context, nodeAddress common.Address) (*l2.ChipsTokenMetadata, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
 
