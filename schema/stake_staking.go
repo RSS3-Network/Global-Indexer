@@ -1,10 +1,14 @@
 package schema
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/shopspring/decimal"
+)
 
 type StakeStaking struct {
 	Staker common.Address    `json:"staker,omitempty"`
 	Node   common.Address    `json:"node,omitempty"`
+	Value  decimal.Decimal   `json:"value"`
 	Chips  StakeStakingChips `json:"chips"`
 }
 
