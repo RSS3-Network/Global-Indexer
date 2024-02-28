@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/shopspring/decimal"
 )
 
 type StakeChipImporter interface {
@@ -24,6 +25,7 @@ type StakeChip struct {
 	ID             *big.Int        `json:"id"`
 	Owner          common.Address  `json:"owner"`
 	Node           common.Address  `json:"node"`
+	Value          decimal.Decimal `json:"value"`
 	Metadata       json.RawMessage `json:"metadata"`
 	BlockNumber    *big.Int        `json:"blockNumber"`
 	BlockTimestamp uint64          `json:"blockTimestamp"`
