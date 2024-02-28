@@ -322,12 +322,11 @@ func (h *Hub) parseEndpoint(_ context.Context, endpoint string) string {
 		return endpoint
 	}
 
-	uri, err := url.Parse(endpoint)
-	if err != nil {
-		return endpoint
+	if uri, _ := url.Parse(endpoint); len(uri.Hostname()) > 0 {
+		return uri.Hostname()
 	}
 
-	return uri.Hostname()
+	return endpoint
 }
 
 type NodeConfig struct {
