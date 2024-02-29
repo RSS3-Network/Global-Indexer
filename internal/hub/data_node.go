@@ -2,6 +2,7 @@ package hub
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -86,6 +87,20 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 	return nodes, nil
 }
 
+func (h *Hub) getNodeAvatar(ctx context.Context, address common.Address) ([]byte, error) {
+	avatar, err := h.databaseClient.FindNodeAvatar(ctx, address)
+	if err != nil {
+		return nil, fmt.Errorf("get node avatar %s: %w", address, err)
+	}
+
+	data, ok := strings.CutPrefix(avatar.Image, "data:image/svg+xml;base64,")
+	if !ok {
+		return nil, fmt.Errorf("invalid avatar")
+	}
+
+	return base64.StdEncoding.DecodeString(data)
+}
+
 func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, requestIP string) error {
 	// Check signature.
 	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
@@ -99,7 +114,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		Config:   request.Config,
 	}
 
-	// Check node from chain.
+	// Check node from the chain.
 	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
 	if err != nil {
 		return fmt.Errorf("get node from chain: %w", err)
@@ -116,6 +131,26 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
+
+	// get node's avatar from the chain
+	avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, request.Address)
+	if err != nil {
+		return fmt.Errorf("get node avatar from chain: %w", err)
+	}
+
+	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
+	if !ok {
+		return fmt.Errorf("invalid avatar: %s", avatar)
+	}
+
+	metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+	if err != nil {
+		return fmt.Errorf("decode avatar metadata: %w", err)
+	}
+
+	if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
+		return fmt.Errorf("unmarshal avatar metadata: %w", err)
+	}
 
 	node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
 	if err != nil {
@@ -234,7 +269,7 @@ func (h *Hub) updateNodeIndexers(_ context.Context, address common.Address, node
 	return indexers
 }
 
-func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) error {
+func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requestIP string) error {
 	// Check signature.
 	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
 		return fmt.Errorf("check signature: %w", err)
@@ -250,7 +285,35 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest) erro
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	node.LastHeartbeatTimestamp = request.Timestamp
+	if len(node.Local) == 0 {
+		node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
+		if err != nil {
+			zap.L().Error("get node local error", zap.Error(err))
+		}
+	}
+
+	if node.Avatar == nil || node.Avatar.Name == "" {
+		avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, request.Address)
+		if err != nil {
+			return fmt.Errorf("get node avatar from chain: %w", err)
+		}
+
+		encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
+		if !ok {
+			return fmt.Errorf("invalid avatar: %s", avatar)
+		}
+
+		metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+		if err != nil {
+			return fmt.Errorf("decode avatar metadata: %w", err)
+		}
+
+		if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
+			return fmt.Errorf("unmarshal avatar metadata: %w", err)
+		}
+	}
+
+	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.StatusOnline
 
 	// Save node to database.
@@ -322,12 +385,11 @@ func (h *Hub) parseEndpoint(_ context.Context, endpoint string) string {
 		return endpoint
 	}
 
-	uri, err := url.Parse(endpoint)
-	if err != nil {
-		return endpoint
+	if uri, _ := url.Parse(endpoint); len(uri.Hostname()) > 0 {
+		return uri.Hostname()
 	}
 
-	return uri.Hostname()
+	return endpoint
 }
 
 type NodeConfig struct {

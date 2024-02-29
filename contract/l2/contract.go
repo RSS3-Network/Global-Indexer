@@ -50,6 +50,10 @@ var (
 	EventHashRewardDistributed = crypto.Keccak256Hash([]byte("RewardDistributed(uint256,uint256,uint256,address[],uint256[],uint256[],uint256[],uint256[])"))
 )
 
+var (
+	MethodDistributeRewards = "distributeRewards"
+)
+
 type ChipsTokenMetadata struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
