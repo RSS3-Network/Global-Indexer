@@ -236,7 +236,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	settlementContract, err := l2.NewSettlement(l2.AddressSettlementProxy, ethereumClient)
+	settlementContract, err := l2.NewSettlement(contractAddresses.AddressSettlementProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new settlement contract: %w", err)
 	}
