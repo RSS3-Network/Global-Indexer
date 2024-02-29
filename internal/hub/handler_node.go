@@ -2,6 +2,7 @@ package hub
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 )
 
@@ -30,6 +32,10 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 
 	nodes, err := h.getNodes(c.Request().Context(), &request)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
@@ -57,6 +63,10 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 
 	node, err := h.getNode(c.Request().Context(), request.Address)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
@@ -94,6 +104,10 @@ func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
 
 	avatar, err := h.getNodeAvatar(c.Request().Context(), request.Address)
 	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
