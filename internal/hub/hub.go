@@ -46,8 +46,8 @@ func NewHub(ctx context.Context, databaseClient database.Client, ethereumClient 
 	}
 
 	contractAddresses := l2.ContractMap[chainID.Uint64()]
-	if contractAddresses != nil {
-		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
+	if contractAddresses == nil {
+		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
 	}
 
 	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
