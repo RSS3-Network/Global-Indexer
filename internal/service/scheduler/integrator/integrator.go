@@ -227,7 +227,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 	}
 
 	contractAddresses := l2.ContractMap[chainID.Uint64()]
-	if contractAddresses != nil {
+	if contractAddresses == nil {
 		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
 	}
 
