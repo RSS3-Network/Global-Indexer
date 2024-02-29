@@ -14,6 +14,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -213,10 +214,16 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 			return fmt.Errorf("decode #%d token metadata", chipID)
 		}
 
+		value, err := s.contractStaking.MinTokensToStake(&callOptions, stakeTransaction.Node)
+		if err != nil {
+			return fmt.Errorf("get the minimum stake requirement for node %s", stakeTransaction.Node)
+		}
+
 		stakeChips[index] = &schema.StakeChip{
 			ID:             chipID,
 			Owner:          event.User,
 			Node:           event.NodeAddr,
+			Value:          decimal.NewFromBigInt(value, 0),
 			Metadata:       metadata,
 			BlockNumber:    header.Number,
 			BlockTimestamp: header.Time,

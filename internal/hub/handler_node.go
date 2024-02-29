@@ -10,6 +10,7 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -27,18 +28,18 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	node, err := h.getNodes(c.Request().Context(), &request)
+	nodes, err := h.getNodes(c.Request().Context(), &request)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
 	}
 
 	var cursor string
-	if len(node) > 0 && len(node) == request.Limit {
-		cursor = node[len(node)-1].Address.String()
+	if len(nodes) > 0 && len(nodes) == request.Limit {
+		cursor = nodes[len(nodes)-1].Address.String()
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data:   node,
+		Data:   model.NewNodes(nodes, baseURL(c)),
 		Cursor: cursor,
 	})
 }
@@ -60,7 +61,7 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, Response{
-		Data: node,
+		Data: model.NewNode(node, baseURL(c)),
 	})
 }
 
@@ -78,6 +79,25 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, Response{
 		Data: fmt.Sprintf(message, strings.ToLower(request.Address.String())),
 	})
+}
+
+func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
+	var request NodeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	avatar, err := h.getNodeAvatar(c.Request().Context(), request.Address)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+	}
+
+	return c.Blob(http.StatusOK, "image/svg+xml", avatar)
 }
 
 func (h *Hub) RegisterNodeHandler(c echo.Context) error {
@@ -116,7 +136,12 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	if err := h.heartbeat(c.Request().Context(), &request); err != nil {
+	ip, err := h.parseRequestIP(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("parse request ip failed: %v", err))
+	}
+
+	if err := h.heartbeat(c.Request().Context(), &request, ip.String()); err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("heartbeat failed: %v", err))
 	}
 
@@ -138,6 +163,10 @@ func (h *Hub) parseRequestIP(c echo.Context) (net.IP, error) {
 	return net.ParseIP(ip), nil
 }
 
+type NodeRequest struct {
+	Address common.Address `param:"id" validate:"required"`
+}
+
 type RegisterNodeRequest struct {
 	Address   common.Address  `json:"address" validate:"required"`
 	Signature string          `json:"signature" validate:"required"`
@@ -151,10 +180,6 @@ type NodeHeartbeatRequest struct {
 	Signature string         `json:"signature" validate:"required"`
 	Endpoint  string         `json:"endpoint" validate:"required"`
 	Timestamp int64          `json:"timestamp" validate:"required"`
-}
-
-type NodeRequest struct {
-	Address common.Address `param:"id" validate:"required"`
 }
 
 type BatchNodeRequest struct {

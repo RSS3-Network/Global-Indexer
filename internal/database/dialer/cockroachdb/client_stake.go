@@ -258,14 +258,15 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 	}
 
 	type StakeStaking struct {
-		Owner string `gorm:"column:owner"`
-		Node  string `gorm:"column:node"`
-		Count uint64 `gorm:"column:count"`
+		Owner string          `gorm:"column:owner"`
+		Node  string          `gorm:"column:node"`
+		Value decimal.Decimal `gorm:"column:value"`
+		Count uint64          `gorm:"column:count"`
 	}
 
 	var stakeStakings []*StakeStaking
 	if err := databaseClient.
-		Select(`"owner", "node", count(*) AS "count"`).
+		Select(`"owner", "node", count(*) AS "count", sum("value") AS "value"`).
 		Group(`"owner", "node"`).
 		Order(`"count" DESC, "owner", "node"`).
 		Limit(query.Limit).
@@ -292,6 +293,7 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 		results = append(results, &schema.StakeStaking{
 			Staker: common.HexToAddress(stakeStaking.Owner),
 			Node:   common.HexToAddress(stakeStaking.Node),
+			Value:  stakeStaking.Value,
 			Chips: schema.StakeStakingChips{
 				Total: stakeStaking.Count,
 				Showcase: lo.Map(stakeChips, func(stakeChip *table.StakeChip, _ int) *schema.StakeChip {
