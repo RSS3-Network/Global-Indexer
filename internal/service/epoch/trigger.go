@@ -135,7 +135,7 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		Nonce:    nonce,
 		GasPrice: gasPrice,
 		Gas:      s.gasLimit,
-		To:       lo.ToPtr(l2.AddressSettlementProxy),
+		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
 		Value:    big.NewInt(0),
 		Data:     input,
 	})

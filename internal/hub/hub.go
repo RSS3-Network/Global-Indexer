@@ -39,8 +39,18 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(_ context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Hub, error) {
-	stakingContract, err := l2.NewStaking(l2.AddressStakingProxy, ethereumClient)
+func NewHub(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Hub, error) {
+	chainID, err := ethereumClient.ChainID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get chain id: %w", err)
+	}
+
+	contractAddresses := l2.ContractMap[chainID.Uint64()]
+	if contractAddresses != nil {
+		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
+	}
+
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}

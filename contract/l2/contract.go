@@ -11,14 +11,23 @@ import (
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Settlement.abi --pkg l2 --type Settlement --out contract_settlement.go
 
 var (
-	AddressGovernanceTokenProxy        = predeploys.GovernanceTokenAddr                                    // https://scan.testnet.rss3.io/token/0x4200000000000000000000000000000000000042
-	AddressL2StandardBridgeProxy       = predeploys.L2StandardBridgeAddr                                   // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000010
-	AddressL2CrossDomainMessengerProxy = predeploys.L2CrossDomainMessengerAddr                             // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
-	AddressL2ToL1MessagePasser         = predeploys.L2ToL1MessagePasserAddr                                // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
-	AddressStakingProxy                = common.HexToAddress("0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db") // https://scan.testnet.rss3.io/address/0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db
-	AddressChipsProxy                  = common.HexToAddress("0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88") // https://scan.testnet.rss3.io/token/0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88
-	AddressSettlementProxy             = common.HexToAddress("0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9") // https://scan.testnet.rss3.io/address/0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9
+	AddressGovernanceTokenProxy        = predeploys.GovernanceTokenAddr        // https://scan.testnet.rss3.io/token/0x4200000000000000000000000000000000000042
+	AddressL2StandardBridgeProxy       = predeploys.L2StandardBridgeAddr       // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000010
+	AddressL2CrossDomainMessengerProxy = predeploys.L2CrossDomainMessengerAddr // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
+	AddressL2ToL1MessagePasser         = predeploys.L2ToL1MessagePasserAddr    // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000007
 )
+
+var ContractMap = map[uint64]*struct {
+	AddressStakingProxy    common.Address
+	AddressChipsProxy      common.Address
+	AddressSettlementProxy common.Address
+}{
+	2331: {
+		AddressStakingProxy:    common.HexToAddress("0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db"), // https://scan.testnet.rss3.io/address/0x8A312bC2dC1D9549e37f69A4922Da7Df8Bf239db
+		AddressChipsProxy:      common.HexToAddress("0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88"), // https://scan.testnet.rss3.io/token/0xFB5E5e6e4a90e17641af7EDc86412305E8e44b88
+		AddressSettlementProxy: common.HexToAddress("0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9"), // https://scan.testnet.rss3.io/address/0xFaF9d15Ab950220F7072db7B41DEEcA4616B15D9
+	},
+}
 
 var (
 	EventHashL2StandardBridgeWithdrawalInitiated = crypto.Keccak256Hash([]byte("WithdrawalInitiated(address,address,address,address,uint256,bytes)"))

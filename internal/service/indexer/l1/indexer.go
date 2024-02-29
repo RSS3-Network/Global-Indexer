@@ -196,7 +196,7 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 			}
 
 			switch log.Address {
-			case l1.AddressL1StandardBridgeProxy, l1.AddressOptimismPortalProxy:
+			case l1.ContractMap[s.chainID.Uint64()].AddressL1StandardBridgeProxy, l1.ContractMap[s.chainID.Uint64()].AddressOptimismPortalProxy:
 				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log %s %d: %w", log.TxHash, log.Index, err)
 				}
@@ -236,19 +236,24 @@ func NewServer(ctx context.Context, databaseClient database.Client, config Confi
 		return nil, fmt.Errorf("get chain id: %w", err)
 	}
 
-	if instance.contractGovernanceToken, err = bindings.NewGovernanceToken(l1.AddressGovernanceTokenProxy, instance.ethereumClient); err != nil {
+	contractAddresses := l1.ContractMap[instance.chainID.Uint64()]
+	if contractAddresses == nil {
+		return nil, fmt.Errorf("chain id %d is not supported", instance.chainID)
+	}
+
+	if instance.contractGovernanceToken, err = bindings.NewGovernanceToken(contractAddresses.AddressGovernanceTokenProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
-	if instance.contractOptimismPortal, err = bindings.NewOptimismPortal(l1.AddressOptimismPortalProxy, instance.ethereumClient); err != nil {
+	if instance.contractOptimismPortal, err = bindings.NewOptimismPortal(contractAddresses.AddressOptimismPortalProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
-	if instance.contractL1CrossDomainMessenger, err = bindings.NewL1CrossDomainMessenger(l1.AddressL1CrossDomainMessengerProxy, instance.ethereumClient); err != nil {
+	if instance.contractL1CrossDomainMessenger, err = bindings.NewL1CrossDomainMessenger(contractAddresses.AddressL1CrossDomainMessengerProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
-	if instance.contractL1StandardBridge, err = bindings.NewL1StandardBridge(l1.AddressL1StandardBridgeProxy, instance.ethereumClient); err != nil {
+	if instance.contractL1StandardBridge, err = bindings.NewL1StandardBridge(contractAddresses.AddressL1StandardBridgeProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
