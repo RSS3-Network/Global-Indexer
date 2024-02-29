@@ -152,6 +152,13 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return fmt.Errorf("unmarshal avatar metadata: %w", err)
 	}
 
+	minTokensToStake, err := h.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
+	if err != nil {
+		return fmt.Errorf("get min token to stake from chain: %w", err)
+	}
+
+	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
+
 	node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
 	if err != nil {
 		zap.L().Error("get node local error", zap.Error(err))
@@ -311,6 +318,15 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 		if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
 			return fmt.Errorf("unmarshal avatar metadata: %w", err)
 		}
+	}
+
+	if node.MinTokensToStake.IsZero() {
+		minTokensToStake, err := h.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
+		if err != nil {
+			return fmt.Errorf("get min token to stake from chain: %w", err)
+		}
+
+		node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
