@@ -26,7 +26,7 @@ type Node struct {
 	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
 	Local                  []*NodeLocal           `json:"local"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
-	MinTokensToStake       decimal.Decimal        `json:"min_tokens_to_stake"`
+	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 
