@@ -149,15 +149,15 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log: %w", err)
 				}
-			case l2.AddressStakingProxy:
+			case l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy:
 				if err := s.indexStakingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
 					return fmt.Errorf("index staking log: %w", err)
 				}
-			case l2.AddressChipsProxy:
+			case l2.ContractMap[s.chainID.Uint64()].AddressChipsProxy:
 				if err := s.indexChipsLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
 					return fmt.Errorf("index staking log: %w", err)
 				}
-			case l2.AddressBillingProxy:
+			case l2.ContractMap[s.chainID.Uint64()].AddressBillingProxy:
 				if err := s.indexBillingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
 					return fmt.Errorf("index billing log %s %d: %w", log.TxHash, log.Index, err)
 				}
@@ -198,6 +198,11 @@ func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAP
 		return nil, fmt.Errorf("get chain id: %w", err)
 	}
 
+	contractAddresses := l2.ContractMap[instance.chainID.Uint64()]
+	if contractAddresses == nil {
+		return nil, fmt.Errorf("chain id %d is not supported", instance.chainID)
+	}
+
 	if instance.contractGovernanceToken, err = bindings.NewGovernanceToken(l2.AddressGovernanceTokenProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
@@ -214,15 +219,15 @@ func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAP
 		return nil, err
 	}
 
-	if instance.contractStaking, err = l2.NewStaking(l2.AddressStakingProxy, instance.ethereumClient); err != nil {
+	if instance.contractStaking, err = l2.NewStaking(contractAddresses.AddressStakingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
-	if instance.contractChips, err = l2.NewChips(l2.AddressChipsProxy, instance.ethereumClient); err != nil {
+	if instance.contractChips, err = l2.NewChips(contractAddresses.AddressChipsProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
-	if instance.contractBilling, err = l2.NewBilling(l2.AddressBillingProxy, instance.ethereumClient); err != nil {
+	if instance.contractBilling, err = l2.NewBilling(contractAddresses.AddressBillingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 

@@ -264,7 +264,7 @@ func (s *Server) triggerBillingCollectTokens(ctx context.Context, users []common
 		Nonce:    nonce,
 		GasPrice: gasPrice,
 		Gas:      s.gasLimit,
-		To:       lo.ToPtr(l2.AddressSettlementProxy),
+		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
 		Value:    big.NewInt(0),
 		Data:     input,
 	})
@@ -331,7 +331,7 @@ func (s *Server) triggerBillingWithdrawTokens(ctx context.Context, users []commo
 		Nonce:    nonce,
 		GasPrice: gasPrice,
 		Gas:      s.gasLimit,
-		To:       lo.ToPtr(l2.AddressSettlementProxy),
+		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
 		Value:    big.NewInt(0),
 		Data:     input,
 	})
