@@ -126,11 +126,11 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	var node table.Node
 
 	if err := c.database.WithContext(ctx).First(&node, "address = ?", nodeAddress).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
 		}
 
-		return nil, nil
+		return nil, err
 	}
 
 	return node.Export()
@@ -160,7 +160,11 @@ func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, 
 	var nodes table.Nodes
 
 	if err := databaseStatement.Limit(limit).Order("created_at DESC").Find(&nodes).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, err
 	}
 
 	return nodes.Export()

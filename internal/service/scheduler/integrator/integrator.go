@@ -221,12 +221,22 @@ func (s *server) calcPoints(stat *schema.Stat) {
 }
 
 func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
-	stakingContract, err := l2.NewStaking(l2.AddressStakingProxy, ethereumClient)
+	chainID, err := ethereumClient.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("get chain id: %w", err)
+	}
+
+	contractAddresses := l2.ContractMap[chainID.Uint64()]
+	if contractAddresses == nil {
+		return nil, fmt.Errorf("contract address not found for chain id: %s", chainID.String())
+	}
+
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	settlementContract, err := l2.NewSettlement(l2.AddressSettlementProxy, ethereumClient)
+	settlementContract, err := l2.NewSettlement(contractAddresses.AddressSettlementProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new settlement contract: %w", err)
 	}

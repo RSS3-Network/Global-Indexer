@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/shopspring/decimal"
 )
 
 type Node struct {
@@ -20,6 +21,7 @@ type Node struct {
 	LastHeartbeatTimestamp time.Time       `gorm:"column:last_heartbeat_timestamp"`
 	Local                  json.RawMessage `gorm:"column:local;type:jsonb"`
 	Avatar                 json.RawMessage `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake       decimal.Decimal `gorm:"column:min_tokens_to_stake"`
 	CreatedAt              time.Time       `gorm:"column:created_at"`
 	UpdatedAt              time.Time       `gorm:"column:updated_at"`
 }
@@ -47,6 +49,8 @@ func (n *Node) Import(node *schema.Node) (err error) {
 		return fmt.Errorf("marshal node avatar: %w", err)
 	}
 
+	n.MinTokensToStake = node.MinTokensToStake
+
 	return nil
 }
 
@@ -72,6 +76,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Config:                 n.Config,
 		Local:                  local,
 		Avatar:                 avatar,
+		MinTokensToStake:       n.MinTokensToStake,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }
