@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/shopspring/decimal"
 )
 
 type Node struct {
@@ -25,6 +26,7 @@ type Node struct {
 	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
 	Local                  []*NodeLocal           `json:"local"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
+	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 
