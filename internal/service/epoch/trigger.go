@@ -35,12 +35,6 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 		}
 	}()
 
-	// billing
-	err := s.billingFlow(ctx)
-	if err != nil {
-		return err
-	}
-
 	// distribute rewards
 
 	var cursor *string
