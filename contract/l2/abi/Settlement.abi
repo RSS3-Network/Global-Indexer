@@ -22,6 +22,11 @@
     },
     {
         "inputs": [],
+        "name": "AlphaWithdrawNotAllowed",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "AlreadyClaimed",
         "type": "error"
     },
@@ -122,11 +127,6 @@
     },
     {
         "inputs": [],
-        "name": "InsufficientRequestFees",
-        "type": "error"
-    },
-    {
-        "inputs": [],
         "name": "InsufficientValue",
         "type": "error"
     },
@@ -181,6 +181,17 @@
             }
         ],
         "name": "InvalidTraitId",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "nodeAddr",
+                "type": "address"
+            }
+        ],
+        "name": "NodeAlreadyPublicGood",
         "type": "error"
     },
     {
@@ -241,22 +252,6 @@
         "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint8",
-                "name": "bits",
-                "type": "uint8"
-            },
-            {
-                "internalType": "uint256",
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "name": "SafeCastOverflowedUintDowncast",
-        "type": "error"
-    },
-    {
         "inputs": [],
         "name": "SettlementPhase",
         "type": "error"
@@ -285,6 +280,11 @@
     {
         "inputs": [],
         "name": "TaxRateBasisPointsTooLarge",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "TaxRateBasisPointsTooSmall",
         "type": "error"
     },
     {
@@ -382,19 +382,6 @@
     },
     {
         "inputs": [],
-        "name": "ADMIN_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "DEFAULT_ADMIN_ROLE",
         "outputs": [
             {
@@ -472,11 +459,6 @@
             },
             {
                 "internalType": "uint256[]",
-                "name": "requestFees",
-                "type": "uint256[]"
-            },
-            {
-                "internalType": "uint256[]",
                 "name": "operationRewards",
                 "type": "uint256[]"
             },
@@ -488,7 +470,7 @@
         ],
         "name": "distributeRewards",
         "outputs": [],
-        "stateMutability": "payable",
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -617,13 +599,23 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "admin",
+                "name": "staking",
                 "type": "address"
             },
             {
                 "internalType": "address",
                 "name": "oracleAccount",
                 "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "startTime",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "operationRewardsPercent",
+                "type": "uint256"
             }
         ],
         "name": "initialize",
@@ -670,9 +662,9 @@
     {
         "inputs": [
             {
-                "internalType": "address[]",
-                "name": "nodeAddrs",
-                "type": "address[]"
+                "internalType": "uint64",
+                "name": "taxRateBasisPoints",
+                "type": "uint64"
             }
         ],
         "name": "setTaxRateBasisPoints4PublicPool",
