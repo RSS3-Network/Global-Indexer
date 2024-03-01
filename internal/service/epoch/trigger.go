@@ -35,8 +35,6 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 		}
 	}()
 
-	// distribute rewards
-
 	var cursor *string
 
 	for {
