@@ -188,11 +188,6 @@
     },
     {
         "inputs": [],
-        "name": "InsufficientRequestFees",
-        "type": "error"
-    },
-    {
-        "inputs": [],
         "name": "InsufficientValue",
         "type": "error"
     },
@@ -247,6 +242,17 @@
             }
         ],
         "name": "InvalidTraitId",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "nodeAddr",
+                "type": "address"
+            }
+        ],
+        "name": "NodeAlreadyPublicGood",
         "type": "error"
     },
     {
@@ -493,6 +499,19 @@
         "anonymous": false,
         "inputs": [
             {
+                "indexed": true,
+                "internalType": "address",
+                "name": "nodeAddr",
+                "type": "address"
+            }
+        ],
+        "name": "NodeUpdated2PublicGood",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
                 "indexed": false,
                 "internalType": "address",
                 "name": "account",
@@ -578,12 +597,6 @@
                 "internalType": "address[]",
                 "name": "nodeAddrs",
                 "type": "address[]"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "requestFees",
-                "type": "uint256[]"
             },
             {
                 "indexed": false,
@@ -1093,11 +1106,6 @@
                 "internalType": "address[]",
                 "name": "nodeAddrs",
                 "type": "address[]"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "requestFees",
-                "type": "uint256[]"
             },
             {
                 "internalType": "uint256[]",
@@ -1940,6 +1948,13 @@
     {
         "inputs": [],
         "name": "unpause",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "updateToPublicGood",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
