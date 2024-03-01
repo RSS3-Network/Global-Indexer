@@ -12,7 +12,6 @@ type EpochItem struct {
 	Index            int             `gorm:"column:index;primaryKey"`
 	TransactionHash  string          `gorm:"column:transaction_hash;primaryKey"`
 	NodeAddress      string          `gorm:"column:node_address"`
-	RequestFees      decimal.Decimal `gorm:"column:request_fees"`
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
 	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
 	TaxAmounts       decimal.Decimal `gorm:"column:tax_amounts"`
@@ -27,7 +26,6 @@ func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
 	e.Index = epochRewardItem.Index
 	e.TransactionHash = epochRewardItem.TransactionHash.String()
 	e.NodeAddress = epochRewardItem.NodeAddress.String()
-	e.RequestFees = lo.Must(decimal.NewFromString(epochRewardItem.RequestFees))
 	e.OperationRewards = lo.Must(decimal.NewFromString(epochRewardItem.OperationRewards))
 	e.StakingRewards = lo.Must(decimal.NewFromString(epochRewardItem.StakingRewards))
 	e.TaxAmounts = lo.Must(decimal.NewFromString(epochRewardItem.TaxAmounts))
@@ -41,7 +39,6 @@ func (e *EpochItem) Export() (*schema.EpochItem, error) {
 		Index:            e.Index,
 		TransactionHash:  common.HexToHash(e.TransactionHash),
 		NodeAddress:      common.HexToAddress(e.NodeAddress),
-		RequestFees:      e.RequestFees.String(),
 		OperationRewards: e.OperationRewards.String(),
 		StakingRewards:   e.StakingRewards.String(),
 		TaxAmounts:       e.TaxAmounts.String(),

@@ -116,7 +116,6 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 	return &schema.DistributeRewardsData{
 		Epoch:            big.NewInt(int64(epoch)),
 		NodeAddress:      nodeAddress,
-		RequestFees:      zeroRewards,
 		OperationRewards: zeroRewards,
 		IsFinal:          isFinal,
 	}, nil
@@ -134,7 +133,7 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		return fmt.Errorf("get gas price: %w", err)
 	}
 
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.RequestFees, data.OperationRewards, data.IsFinal)
+	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
 	if err != nil {
 		return fmt.Errorf("encode input: %w", err)
 	}
