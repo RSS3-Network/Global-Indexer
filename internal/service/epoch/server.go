@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
@@ -21,6 +23,7 @@ import (
 )
 
 type Server struct {
+	txManager      txmgr.TxManager
 	chainID        *big.Int
 	checkpoint     uint64
 	timer          *time.Timer
@@ -190,20 +193,6 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return checkpoint.BlockNumber, blockNumberLatest, nil
 }
 
-func (s *Server) ping() (string, error) {
-	var v string
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-
-	defer cancel()
-
-	if err := s.rpcClient.CallContext(ctx, &v, "health_status"); err != nil {
-		return "", err
-	}
-
-	return v, nil
-}
-
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
 	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
 	if err != nil {
@@ -215,6 +204,13 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("get chain ID: %w", err)
 	}
 
+	from := common.HexToAddress(config.Epoch.WalletAddress)
+
+	nonce, err := ethereumClient.PendingNonceAt(ctx, from)
+	if err != nil {
+		return nil, fmt.Errorf("get pending nonce: %w", err)
+	}
+
 	rpcClient, err := rpc.DialOptions(ctx, config.Epoch.SignerEndpoint, rpc.WithHTTPClient(http.DefaultClient))
 	if err != nil {
 		return nil, fmt.Errorf("dial rpc client: %w", err)
@@ -222,6 +218,19 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
+
+	signerFactory, from, err := gicrypto.NewSignerFactory("", config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create signer")
+	}
+
+	txConfig := txmgr.Config{}
+	txManager, err := txmgr.NewSimpleTxManager(txConfig, chainID, nonce, ethereumClient, from, signerFactory(chainID))
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tx manager")
+	}
 
 	server := &Server{
 		chainID:        chainID,
@@ -231,16 +240,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		rpcClient:      rpcClient,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
-	}
-
-	// Check signer if reachable
-	status, err := server.ping()
-	if err != nil {
-		return nil, err
-	}
-
-	if status != "ok" {
-		return nil, fmt.Errorf("signer service unreachable")
+		txManager:      txManager,
 	}
 
 	return server, nil
