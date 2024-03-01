@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/labstack/echo/v4"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/constants"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func authenticateUser(ctx echo.Context, jwtUser *jwt.User, databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client) (*model.Account, error) {
-	account, _, err := model.AccountGetByAddress(ctx.Request().Context(), jwtUser.Address, databaseClient, apisixHTTPAPIClient)
+func authenticateUser(ctx echo.Context, jwtUser *jwt.User, databaseClient *gorm.DB, apisixClient *apisix.Client) (*model.Account, error) {
+	account, _, err := model.AccountGetByAddress(ctx.Request().Context(), jwtUser.Address, databaseClient, apisixClient)
 
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ var (
 	SkipMiddlewarePaths = regexp.MustCompile("^/(users/|health)")
 )
 
-func UserAuthenticationMiddleware(databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client, jwtClient *jwt.JWT) echo.MiddlewareFunc {
+func UserAuthenticationMiddleware(databaseClient *gorm.DB, apisixClient *apisix.Client, jwtClient *jwt.JWT) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// this is a hack to workaround codegen and echo router group issue
@@ -57,7 +57,7 @@ func UserAuthenticationMiddleware(databaseClient *gorm.DB, apisixHTTPAPIClient *
 			}
 
 			// Authenticate user
-			account, err := authenticateUser(c, user, databaseClient, apisixHTTPAPIClient)
+			account, err := authenticateUser(c, user, databaseClient, apisixClient)
 
 			if err != nil || account == nil {
 				return utils.SendJSONError(c, http.StatusUnauthorized)

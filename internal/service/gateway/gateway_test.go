@@ -8,7 +8,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/accesslog"
 	"log"
 	"net/http"
 	"strconv"
@@ -27,7 +28,6 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
-	apisixKafkaLog "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/kafkalog"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/handlers"
 	jwtImpl "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
@@ -49,12 +49,12 @@ var (
 )
 
 var (
-	gatewayApp          *handlers.App
-	redisClient         *redis.Client
-	databaseClient      *gorm.DB
-	jwtClient           *jwtImpl.JWT
-	siweClient          *siwe.SIWE
-	apisixHTTPAPIClient *apisixHTTPAPI.Client
+	gatewayApp     *handlers.App
+	redisClient    *redis.Client
+	databaseClient *gorm.DB
+	jwtClient      *jwtImpl.JWT
+	siweClient     *siwe.SIWE
+	apisixClient   *apisix.Client
 )
 
 const (
@@ -84,7 +84,7 @@ func init() {
 	redisClient = redis.NewClient(rc)
 
 	// Initialize APISIX configurations
-	apisixHTTPAPIClient, err = apisixHTTPAPI.New(
+	apisixClient, err = apisix.New(
 		"http://localhost:9180",
 		"edd1c9f034335f136f87ad84b625c8f1",
 	)
@@ -107,7 +107,7 @@ func init() {
 	// Prepare echo
 	e := echo.New()
 	gatewayApp, err = handlers.NewApp(
-		apisixHTTPAPIClient,
+		apisixClient,
 		redisClient,
 		databaseClient,
 		jwtClient,
@@ -118,7 +118,7 @@ func init() {
 	}
 
 	// Configure middlewares
-	configureMiddlewares(e, gatewayApp, jwtClient, databaseClient, apisixHTTPAPIClient)
+	configureMiddlewares(e, gatewayApp, jwtClient, databaseClient, apisixClient)
 
 	handler = e.Server.Handler
 }
@@ -178,7 +178,7 @@ func getAuth(t *testing.T, opts ...string) *httpexpect.Expect {
 
 func setupAccount() model.Account {
 	ctx := context.Background()
-	acc, err := model.AccountCreate(ctx, validAddress, databaseClient, apisixHTTPAPIClient)
+	acc, err := model.AccountCreate(ctx, validAddress, databaseClient, apisixClient)
 	if err != nil {
 		panic(err)
 	}
@@ -232,7 +232,7 @@ func Test_SIWEAuth(t *testing.T) {
 	publicKey := privateKey.PublicKey
 	addressRaw := crypto.PubkeyToAddress(publicKey)
 	address := addressRaw.Hex()
-	_, exist, err := model.AccountGetByAddress(ctx, addressRaw, databaseClient, apisixHTTPAPIClient)
+	_, exist, err := model.AccountGetByAddress(ctx, addressRaw, databaseClient, apisixClient)
 	assert.False(t, exist)
 	assert.NoError(t, err)
 
@@ -301,7 +301,7 @@ func Test_SIWEAuth(t *testing.T) {
 	assert.True(t, token.Valid)
 	claims := token.Claims.(jwt.MapClaims)
 	assert.Equal(t, address, claims["address"])
-	user, exist, err := model.AccountGetByAddress(ctx, addressRaw, databaseClient, apisixHTTPAPIClient)
+	user, exist, err := model.AccountGetByAddress(ctx, addressRaw, databaseClient, apisixClient)
 	assert.NoError(t, err)
 	assert.True(t, exist)
 	assert.Equal(t, user.Address.Hex(), claims["address"])
@@ -412,7 +412,7 @@ func Test_KeyAndRU(t *testing.T) {
 	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
 	assert.NoError(t, err)
 	assert.Equal(t, int64(2), keyCounts)
-	user, exist, err := model.AccountGetByAddress(ctx, validAddress, databaseClient, apisixHTTPAPIClient)
+	user, exist, err := model.AccountGetByAddress(ctx, validAddress, databaseClient, apisixClient)
 	assert.NoError(t, err)
 	assert.True(t, exist)
 	client.GET("/key/" + obj.Value("id").String().Raw()).Expect().Status(http.StatusOK).
@@ -437,9 +437,9 @@ func Test_KeyAndRU(t *testing.T) {
 	})
 
 	// create new account with key
-	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixHTTPAPIClient)
+	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixClient)
 	assert.NoError(t, err)
-	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixHTTPAPIClient)
+	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixClient)
 	assert.NoError(t, err)
 	err = databaseClient.Model(&table.GatewayKey{}).Count(&keyCounts).Error
 	assert.NoError(t, err)
@@ -625,17 +625,17 @@ func Test_ProcessAccessLog(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test account and add some RU
-	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixHTTPAPIClient)
+	fakeUser, err := model.AccountCreate(ctx, fakeUserAddr, databaseClient, apisixClient)
 	assert.NoError(t, err)
 	err = databaseClient.Model(&table.GatewayAccount{}).Where("address = ?", fakeUser.Address).Update("ru_limit", 100).Error
 	assert.NoError(t, err)
-	fakeUser, exist, err := model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixHTTPAPIClient)
+	fakeUser, exist, err := model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixClient)
 	assert.NoError(t, err)
 	assert.True(t, exist)
 	assert.Equal(t, fakeUser.RuLimit, int64(100))
 
 	// Create test key
-	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixHTTPAPIClient)
+	fakeUserKey, err := model.KeyCreate(ctx, fakeUser.Address, "fake key", databaseClient, apisixClient)
 	assert.NoError(t, err)
 	fakeUserKey, exist, err = fakeUser.GetKey(ctx, fakeUserKey.ID)
 	assert.True(t, exist)
@@ -650,7 +650,7 @@ func Test_ProcessAccessLog(t *testing.T) {
 	time3, err := time.Parse(time.RFC3339, "2023-11-01T08:13:43Z")
 	assert.NoError(t, err)
 
-	requestLogs := []apisixKafkaLog.AccessLog{
+	requestLogs := []accesslog.AccessLog{
 		{ // Should be billed
 			Consumer:  &consumer,
 			Timestamp: time1,
@@ -684,7 +684,7 @@ func Test_ProcessAccessLog(t *testing.T) {
 	}
 
 	// Check RU consumption
-	fakeUser, exist, err = model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixHTTPAPIClient)
+	fakeUser, exist, err = model.AccountGetByAddress(ctx, fakeUser.Address, databaseClient, apisixClient)
 	assert.NoError(t, err)
 	assert.True(t, exist)
 	assert.Equal(t, fakeUser.RuLimit, int64(100))

@@ -1,4 +1,4 @@
-package httpapi
+package apisix
 
 type cfg struct {
 	APISixAdminEndpoint string // http://127.0.0.1:9180

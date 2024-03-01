@@ -56,7 +56,7 @@ func (app *App) SIWEVerify(ctx echo.Context) error {
 	}
 
 	// get or create account
-	acc, err := model.AccountGetOrCreate(ctx.Request().Context(), *address, app.databaseClient, app.apisixHTTPAPIClient)
+	acc, err := model.AccountGetOrCreate(ctx.Request().Context(), *address, app.databaseClient, app.apisixClient)
 
 	if err != nil {
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)

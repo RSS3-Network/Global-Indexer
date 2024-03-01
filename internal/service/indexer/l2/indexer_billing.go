@@ -49,7 +49,7 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 
 	if isResumed {
 		// Try to resume anyway
-		err = s.apisixHTTPAPIClient.ResumeConsumerGroup(ctx, billingTokensDepositedEvent.User.Hex())
+		err = s.apisixClient.ResumeConsumerGroup(ctx, billingTokensDepositedEvent.User.Hex())
 		if err != nil {
 			return fmt.Errorf("resume account in apisix: %w", err)
 		}

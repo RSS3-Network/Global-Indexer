@@ -1,4 +1,4 @@
-package kafkalog
+package accesslog
 
 import (
 	"context"

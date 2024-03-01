@@ -1,4 +1,4 @@
-package httpapi
+package apisix
 
 import (
 	"bytes"
@@ -74,7 +74,7 @@ func (c *Client) CheckConsumer(ctx context.Context, keyID uint64) (*ConsumerResp
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -150,7 +150,7 @@ func (c *Client) NewConsumer(ctx context.Context, keyID uint64, key string, user
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) DeleteConsumer(ctx context.Context, keyID uint64) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {

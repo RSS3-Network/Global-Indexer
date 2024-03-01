@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
-	apisixKafkaLog "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/kafkalog"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/accesslog"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/model"
 	rules "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/ru_rules"
 )
 
-func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
+func (app *App) ProcessAccessLog(accessLog accesslog.AccessLog) {
 	rctx := context.Background()
 
 	// Check billing eligibility
@@ -22,14 +22,14 @@ func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
 	}
 
 	// Find user
-	keyID, err := app.apisixHTTPAPIClient.RecoverKeyIDFromConsumerUsername(*accessLog.Consumer)
+	keyID, err := app.apisixClient.RecoverKeyIDFromConsumerUsername(*accessLog.Consumer)
 
 	if err != nil {
 		log.Printf("Failed to recover key id with error: %v", err)
 		return
 	}
 
-	key, _, err := model.KeyGetByID(rctx, keyID, false, app.databaseClient, app.apisixHTTPAPIClient) // Deleted key could also be used for pending bills
+	key, _, err := model.KeyGetByID(rctx, keyID, false, app.databaseClient, app.apisixClient) // Deleted key could also be used for pending bills
 
 	if err != nil {
 		log.Printf("Failed to get key by id with error: %v", err)
@@ -90,7 +90,7 @@ func (app *App) ProcessAccessLog(accessLog apisixKafkaLog.AccessLog) {
 		log.Printf("Insufficient remain RU, pause account")
 		// Pause user account
 		if !key.Account.IsPaused {
-			err = app.apisixHTTPAPIClient.PauseConsumerGroup(rctx, key.Account.Address.Hex())
+			err = app.apisixClient.PauseConsumerGroup(rctx, key.Account.Address.Hex())
 			if err != nil {
 				log.Printf("Failed to pause account with error: %v", err)
 			} else {

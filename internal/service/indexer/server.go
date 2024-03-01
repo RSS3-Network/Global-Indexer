@@ -3,7 +3,7 @@ package indexer
 import (
 	"context"
 
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"
@@ -12,10 +12,10 @@ import (
 )
 
 type Server struct {
-	config              config.RSS3Chain
-	databaseClient      database.Client
-	apisixHTTPAPIClient *apisixHTTPAPI.Client // For billing - account resume only
-	ruPerToken          int64                 // For billing - deposit only
+	config         config.RSS3Chain
+	databaseClient database.Client
+	apisixClient   *apisix.Client // For billing - account resume only
+	ruPerToken     int64          // For billing - deposit only
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -42,7 +42,7 @@ func (s *Server) Run(ctx context.Context) error {
 			Endpoint: s.config.EndpointL2,
 		}
 
-		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.apisixHTTPAPIClient, s.ruPerToken, l2Config)
+		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.apisixClient, s.ruPerToken, l2Config)
 		if err != nil {
 			return err
 		}
@@ -61,12 +61,12 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, ruPerToken int64, config config.RSS3Chain) (*Server, error) {
+func New(databaseClient database.Client, apisixClient *apisix.Client, ruPerToken int64, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
-		config:              config,
-		databaseClient:      databaseClient,
-		apisixHTTPAPIClient: apisixHTTPAPIClient,
-		ruPerToken:          ruPerToken,
+		config:         config,
+		databaseClient: databaseClient,
+		apisixClient:   apisixClient,
+		ruPerToken:     ruPerToken,
 	}
 
 	return &instance, nil

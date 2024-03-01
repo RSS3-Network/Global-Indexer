@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	apisixKafkaLog "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/apisix/kafkalog"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/accesslog"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/handlers"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
@@ -27,10 +27,10 @@ import (
 )
 
 type Server struct {
-	config              config.Gateway
-	redis               *redis.Client
-	databaseClient      database.Client
-	apisixHTTPAPIClient *apisixHTTPAPI.Client
+	config         config.Gateway
+	redis          *redis.Client
+	databaseClient database.Client
+	apisixClient   *apisix.Client
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -55,7 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 		// Prepare echo
 		e := echo.New()
 		echoHandler, err := handlers.NewApp(
-			s.apisixHTTPAPIClient,
+			s.apisixClient,
 			s.redis,
 			s.databaseClient.Raw(),
 			jwtClient,
@@ -67,10 +67,10 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 
 		// Configure middlewares
-		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), s.apisixHTTPAPIClient)
+		configureMiddlewares(e, echoHandler, jwtClient, s.databaseClient.Raw(), s.apisixClient)
 
 		// Connect to kafka for access logs
-		kafkaService, err := apisixKafkaLog.New(
+		kafkaClient, err := accesslog.New(
 			strings.Split(s.config.APISixKafka.Brokers, ","),
 			s.config.APISixKafka.Topic,
 		)
@@ -79,7 +79,7 @@ func (s *Server) Run(ctx context.Context) error {
 			return err
 		}
 
-		err = kafkaService.Start(echoHandler.ProcessAccessLog)
+		err = kafkaClient.Start(echoHandler.ProcessAccessLog)
 		if err != nil {
 			// Failed to start kafka consumer
 			return err
@@ -100,18 +100,18 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, redis *redis.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, config config.Gateway) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, apisixClient *apisix.Client, config config.Gateway) (service.Server, error) {
 	instance := Server{
-		config:              config,
-		redis:               redis,
-		databaseClient:      databaseClient,
-		apisixHTTPAPIClient: apisixHTTPAPIClient,
+		config:         config,
+		redis:          redis,
+		databaseClient: databaseClient,
+		apisixClient:   apisixClient,
 	}
 
 	return &instance, nil
 }
 
-func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client) {
+func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, databaseClient *gorm.DB, apisixClient *apisix.Client) {
 	oapi.RegisterHandlers(e, app)
 
 	// Add api docs
@@ -134,7 +134,7 @@ func configureMiddlewares(e *echo.Echo, app *handlers.App, jwtClient *jwt.JWT, d
 	}
 
 	// Check user authentication
-	e.Use(middlewares.UserAuthenticationMiddleware(databaseClient, apisixHTTPAPIClient, jwtClient))
+	e.Use(middlewares.UserAuthenticationMiddleware(databaseClient, apisixClient, jwtClient))
 
 	e.HTTPErrorHandler = customHTTPErrorHandler
 }

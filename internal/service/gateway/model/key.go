@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"gorm.io/gorm"
 )
@@ -15,11 +15,11 @@ import (
 type Key struct {
 	table.GatewayKey
 
-	databaseClient      *gorm.DB
-	apisixHTTPAPIClient *apisixHTTPAPI.Client
+	databaseClient *gorm.DB
+	apisixClient   *apisix.Client
 }
 
-func KeyCreate(ctx context.Context, accountAddress common.Address, keyName string, databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client) (*Key, error) {
+func KeyCreate(ctx context.Context, accountAddress common.Address, keyName string, databaseClient *gorm.DB, apisixClient *apisix.Client) (*Key, error) {
 	keyUUID := uuid.New()
 	k := table.GatewayKey{
 		Key:            keyUUID,
@@ -36,7 +36,7 @@ func KeyCreate(ctx context.Context, accountAddress common.Address, keyName strin
 			return err
 		}
 		// APISix
-		err = apisixHTTPAPIClient.NewConsumer(ctx, k.ID, keyUUID.String(), accountAddress.Hex())
+		err = apisixClient.NewConsumer(ctx, k.ID, keyUUID.String(), accountAddress.Hex())
 		if err != nil {
 			return err
 		}
@@ -48,10 +48,10 @@ func KeyCreate(ctx context.Context, accountAddress common.Address, keyName strin
 		return nil, err
 	}
 
-	return &Key{k, databaseClient, apisixHTTPAPIClient}, nil
+	return &Key{k, databaseClient, apisixClient}, nil
 }
 
-func KeyGetByID(ctx context.Context, KeyID uint64, activeOnly bool, databaseClient *gorm.DB, apisixHTTPAPIClient *apisixHTTPAPI.Client) (*Key, bool, error) {
+func KeyGetByID(ctx context.Context, KeyID uint64, activeOnly bool, databaseClient *gorm.DB, apisixClient *apisix.Client) (*Key, bool, error) {
 	queryBase := databaseClient.WithContext(ctx).Model(&table.GatewayKey{})
 
 	if activeOnly {
@@ -70,7 +70,7 @@ func KeyGetByID(ctx context.Context, KeyID uint64, activeOnly bool, databaseClie
 		return nil, false, err
 	}
 
-	return &Key{k, databaseClient, apisixHTTPAPIClient}, true, nil
+	return &Key{k, databaseClient, apisixClient}, true, nil
 }
 
 func (k *Key) ConsumeRu(ctx context.Context, ru int64) error {
@@ -95,11 +95,11 @@ func (k *Key) ConsumeRu(ctx context.Context, ru int64) error {
 }
 
 func (k *Key) GetAccount(_ context.Context) (*Account, error) {
-	return &Account{k.Account, k.databaseClient, k.apisixHTTPAPIClient}, nil
+	return &Account{k.Account, k.databaseClient, k.apisixClient}, nil
 }
 
 func (k *Key) Delete(ctx context.Context) error {
-	err := k.apisixHTTPAPIClient.DeleteConsumer(ctx, k.ID)
+	err := k.apisixClient.DeleteConsumer(ctx, k.ID)
 
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (k *Key) UpdateInfo(ctx context.Context, name string) error {
 
 func (k *Key) Rotate(ctx context.Context) error {
 	// Replace old consumer
-	oldConsumer, err := k.apisixHTTPAPIClient.CheckConsumer(ctx, k.ID)
+	oldConsumer, err := k.apisixClient.CheckConsumer(ctx, k.ID)
 
 	if err != nil {
 		return err
@@ -150,7 +150,7 @@ func (k *Key) Rotate(ctx context.Context) error {
 	}
 
 	// Update consumer
-	err = k.apisixHTTPAPIClient.NewConsumer(ctx, k.ID, k.Key.String(), oldConsumer.Value.GroupID)
+	err = k.apisixClient.NewConsumer(ctx, k.ID, k.Key.String(), oldConsumer.Value.GroupID)
 	if err != nil {
 		return err
 	}

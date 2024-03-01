@@ -1,4 +1,4 @@
-package httpapi
+package apisix
 
 import (
 	"bytes"
@@ -63,7 +63,7 @@ func (c *Client) CheckConsumerGroup(ctx context.Context, userAddress string) (*C
 			return nil, ErrNoSuchConsumerGroup
 		}
 		// else
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -120,7 +120,7 @@ func (c *Client) NewConsumerGroup(ctx context.Context, userAddress string) error
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusOK {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -157,7 +157,7 @@ func (c *Client) DeleteConsumerGroup(ctx context.Context, userAddress string) er
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNotFound {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -241,7 +241,7 @@ func (c *Client) PauseConsumerGroup(ctx context.Context, userAddress string) err
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		var errBody APISixErr
+		var errBody Err
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 
 		if err != nil {
@@ -280,7 +280,7 @@ func (c *Client) ResumeConsumerGroup(ctx context.Context, userAddress string) er
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		var errBody APISixErr
+		var errBody Err
 
 		err = json.NewDecoder(res.Body).Decode(&errBody)
 

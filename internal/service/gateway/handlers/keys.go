@@ -38,7 +38,7 @@ func (app *App) GenerateKey(ctx echo.Context) error {
 		return ctx.NoContent(http.StatusBadRequest)
 	}
 
-	k, err := model.KeyCreate(ctx.Request().Context(), user.Address, *req.Name, app.databaseClient, app.apisixHTTPAPIClient)
+	k, err := model.KeyCreate(ctx.Request().Context(), user.Address, *req.Name, app.databaseClient, app.apisixClient)
 	if err != nil {
 		log.Print(err)
 		return utils.SendJSONError(ctx, http.StatusInternalServerError)

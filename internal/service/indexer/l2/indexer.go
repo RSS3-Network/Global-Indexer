@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	apisixHTTPAPI "github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix/httpapi"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -36,7 +36,7 @@ type server struct {
 	contractBilling                *l2.Billing
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
-	apisixHTTPAPIClient            *apisixHTTPAPI.Client // For account resume only
+	apisixClient                   *apisix.Client // For account resume only
 	ruPerToken                     int64
 }
 
@@ -180,12 +180,12 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, apisixHTTPAPIClient *apisixHTTPAPI.Client, ruPerToken int64, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, apisixClient *apisix.Client, ruPerToken int64, config Config) (service.Server, error) {
 	var (
 		instance = server{
-			databaseClient:      databaseClient,
-			apisixHTTPAPIClient: apisixHTTPAPIClient,
-			ruPerToken:          ruPerToken,
+			databaseClient: databaseClient,
+			apisixClient:   apisixClient,
+			ruPerToken:     ruPerToken,
 		}
 		err error
 	)
