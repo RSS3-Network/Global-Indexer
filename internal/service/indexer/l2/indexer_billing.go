@@ -34,9 +34,11 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 
 	zap.L().Debug("indexing TokensDeposited event for Billing", zap.Stringer("transaction.hash", transaction.Hash()), zap.Any("event", billingTokensDepositedEvent))
 
-	billingRecord := schema.NewBillingRecordDeposited(header, transaction, receipt, billingTokensDepositedEvent.User, billingTokensDepositedEvent.Amount)
+	billingRecord := schema.BillingRecordDeposited{
+		BillingRecordBase: schema.BillingRecordParseBase(header, transaction, receipt, billingTokensDepositedEvent.User, billingTokensDepositedEvent.Amount),
+	}
 
-	if err := databaseTransaction.SaveBillingRecordDeposited(ctx, billingRecord); err != nil {
+	if err := databaseTransaction.SaveBillingRecordDeposited(ctx, &billingRecord); err != nil {
 		return fmt.Errorf("save billing record: %w", err)
 	}
 
@@ -45,7 +47,7 @@ func (s *server) indexBillingTokensDepositedLog(ctx context.Context, header *typ
 		new(big.Float).SetInt(big.NewInt(ethereum.BillingTokenDecimals)),
 	), big.NewFloat(float64(s.ruPerToken))).Int64()
 
-	isResumed, err := s.databaseClient.GatewayDeposit(ctx, billingTokensDepositedEvent.User, parsedRu)
+	isResumed, err := databaseTransaction.GatewayDeposit(ctx, billingTokensDepositedEvent.User, parsedRu)
 
 	if isResumed {
 		// Try to resume anyway
@@ -70,9 +72,12 @@ func (s *server) indexBillingTokensWithdrawnLog(ctx context.Context, header *typ
 
 	zap.L().Debug("indexing TokensWithdrawn event for Billing", zap.Stringer("transaction.hash", transaction.Hash()), zap.Any("event", billingTokensWithdrawnEvent))
 
-	billingRecord := schema.NewBillingRecordWithdrawal(header, transaction, receipt, billingTokensWithdrawnEvent.User, billingTokensWithdrawnEvent.Amount, billingTokensWithdrawnEvent.Fee)
+	billingRecord := schema.BillingRecordWithdrawal{
+		BillingRecordBase: schema.BillingRecordParseBase(header, transaction, receipt, billingTokensWithdrawnEvent.User, billingTokensWithdrawnEvent.Amount),
+		Fee:               billingTokensWithdrawnEvent.Fee,
+	}
 
-	if err := databaseTransaction.SaveBillingRecordWithdrawal(ctx, billingRecord); err != nil {
+	if err := databaseTransaction.SaveBillingRecordWithdrawal(ctx, &billingRecord); err != nil {
 		return fmt.Errorf("save billing record: %w", err)
 	}
 
@@ -87,9 +92,11 @@ func (s *server) indexBillingTokensCollectedLog(ctx context.Context, header *typ
 
 	zap.L().Debug("indexing TokensCollected event for Billing", zap.Stringer("transaction.hash", transaction.Hash()), zap.Any("event", billingTokensCollected))
 
-	billingRecord := schema.NewBillingRecordCollected(header, transaction, receipt, billingTokensCollected.User, billingTokensCollected.Amount)
+	billingRecord := schema.BillingRecordCollected{
+		BillingRecordBase: schema.BillingRecordParseBase(header, transaction, receipt, billingTokensCollected.User, billingTokensCollected.Amount),
+	}
 
-	if err := databaseTransaction.SaveBillingRecordCollected(ctx, billingRecord); err != nil {
+	if err := databaseTransaction.SaveBillingRecordCollected(ctx, &billingRecord); err != nil {
 		return fmt.Errorf("save billing record: %w", err)
 	}
 

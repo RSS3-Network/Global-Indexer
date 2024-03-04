@@ -34,7 +34,7 @@ type BillingRecordCollected struct {
 	BillingRecordBase
 }
 
-func parseBase(header *types.Header, transaction *types.Transaction, receipt *types.Receipt, user common.Address, amount *big.Int) BillingRecordBase {
+func BillingRecordParseBase(header *types.Header, transaction *types.Transaction, receipt *types.Receipt, user common.Address, amount *big.Int) BillingRecordBase {
 	return BillingRecordBase{
 		TxHash:         transaction.Hash(),
 		Index:          receipt.TransactionIndex,
@@ -42,24 +42,5 @@ func parseBase(header *types.Header, transaction *types.Transaction, receipt *ty
 
 		User:   user,
 		Amount: amount,
-	}
-}
-
-func NewBillingRecordDeposited(header *types.Header, transaction *types.Transaction, receipt *types.Receipt, user common.Address, amount *big.Int) *BillingRecordDeposited {
-	return &BillingRecordDeposited{
-		BillingRecordBase: parseBase(header, transaction, receipt, user, amount),
-	}
-}
-
-func NewBillingRecordWithdrawal(header *types.Header, transaction *types.Transaction, receipt *types.Receipt, user common.Address, amount *big.Int, fee *big.Int) *BillingRecordWithdrawal {
-	return &BillingRecordWithdrawal{
-		BillingRecordBase: parseBase(header, transaction, receipt, user, amount),
-		Fee:               fee,
-	}
-}
-
-func NewBillingRecordCollected(header *types.Header, transaction *types.Transaction, receipt *types.Receipt, user common.Address, amount *big.Int) *BillingRecordCollected {
-	return &BillingRecordCollected{
-		BillingRecordBase: parseBase(header, transaction, receipt, user, amount),
 	}
 }
