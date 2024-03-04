@@ -28,7 +28,6 @@ type EpochItem struct {
 	Index            int            `json:"index"`
 	TransactionHash  common.Hash    `json:"transactionHash"`
 	NodeAddress      common.Address `json:"nodeAddress"`
-	RequestFees      string         `json:"requestFees"`
 	OperationRewards string         `json:"operationRewards"`
 	StakingRewards   string         `json:"stakingRewards"`
 	TaxAmounts       string         `json:"taxAmounts"`
