@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/gen/oapi"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/jwt"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/siwe"

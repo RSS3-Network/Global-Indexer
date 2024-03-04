@@ -3,7 +3,7 @@ package indexer
 import (
 	"context"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"

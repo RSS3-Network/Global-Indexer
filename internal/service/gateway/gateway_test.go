@@ -8,7 +8,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/apisix"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/apisix"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/gateway/accesslog"
 	"log"
 	"net/http"
