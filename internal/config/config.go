@@ -42,8 +42,9 @@ type RSS3Chain struct {
 }
 
 type Epoch struct {
-	WalletAddress  string `yaml:"wallet_address" validate:"required"`
-	SignerEndpoint string `yaml:"signer_endpoint" validate:"required"`
+	PrivateKey     string `yaml:"private_key"`
+	WalletAddress  string `yaml:"wallet_address"`
+	SignerEndpoint string `yaml:"signer_endpoint"`
 	GasLimit       uint64 `yaml:"gas_limit" default:"2500000"`
 }
 

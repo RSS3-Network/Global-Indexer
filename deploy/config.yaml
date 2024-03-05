@@ -14,6 +14,7 @@ rss3_chain:
   block_threads_l1: 20
 
 epoch:
+  private_key:
   wallet_address:
   signer_endpoint: http://localhost:3000
   gas_limit: 3000000

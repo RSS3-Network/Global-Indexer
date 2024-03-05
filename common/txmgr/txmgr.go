@@ -204,7 +204,6 @@ func (m *SimpleTxManager) suggestGasPriceCaps(ctx context.Context) (*big.Int, *b
 	}
 
 	cCtx, cancel = context.WithTimeout(ctx, m.cfg.NetworkTimeout)
-
 	defer cancel()
 
 	head, err := m.ethereumClient.HeaderByNumber(cCtx, nil)
@@ -311,6 +310,7 @@ func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, 
 		return tx, false
 	}
 }
+
 func errStringMatch(err, target error) bool {
 	if err == nil && target == nil {
 		return true
@@ -514,7 +514,6 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 	return newTx, nil
 }
 
-// NewSimpleTxManager initializes a new SimpleTxManager with the passed Config.
 func NewSimpleTxManager(conf Config, chainID *big.Int, nonce uint64, ethereumClient *ethclient.Client, from common.Address, singer gicrypto.SignerFn) (*SimpleTxManager, error) {
 	if err := conf.Check(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)

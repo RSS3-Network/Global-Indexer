@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
@@ -24,14 +22,12 @@ import (
 
 type Server struct {
 	txManager      txmgr.TxManager
-	chainID        *big.Int
 	checkpoint     uint64
+	chainID        *big.Int
 	timer          *time.Timer
 	mutex          *redsync.Mutex
 	currentEpoch   uint64
 	gasLimit       uint64
-	fromAddress    common.Address
-	rpcClient      *rpc.Client
 	ethereumClient *ethclient.Client
 	databaseClient database.Client
 }
@@ -194,9 +190,17 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 }
 
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
+	redisPool := goredis.NewPool(redisClient)
+	rs := redsync.New(redisPool)
+
 	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
 	if err != nil {
 		return nil, fmt.Errorf("dial ethereum client: %w", err)
+	}
+
+	nonce, err := ethereumClient.PendingNonceAt(ctx, common.HexToAddress(config.Epoch.WalletAddress))
+	if err != nil {
+		return nil, fmt.Errorf("get pending nonce: %w", err)
 	}
 
 	chainID, err := ethereumClient.ChainID(ctx)
@@ -204,29 +208,24 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("get chain ID: %w", err)
 	}
 
-	from := common.HexToAddress(config.Epoch.WalletAddress)
-
-	nonce, err := ethereumClient.PendingNonceAt(ctx, from)
-	if err != nil {
-		return nil, fmt.Errorf("get pending nonce: %w", err)
-	}
-
-	rpcClient, err := rpc.DialOptions(ctx, config.Epoch.SignerEndpoint, rpc.WithHTTPClient(http.DefaultClient))
-	if err != nil {
-		return nil, fmt.Errorf("dial rpc client: %w", err)
-	}
-
-	redisPool := goredis.NewPool(redisClient)
-	rs := redsync.New(redisPool)
-
-	signerFactory, from, err := gicrypto.NewSignerFactory("", config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
+	signerFactory, from, err := gicrypto.NewSignerFactory(config.Epoch.PrivateKey, config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signer")
 	}
 
-	txConfig := txmgr.Config{}
-	txManager, err := txmgr.NewSimpleTxManager(txConfig, chainID, nonce, ethereumClient, from, signerFactory(chainID))
+	defaultTxConfig := txmgr.Config{
+		ResubmissionTimeout:       1 * time.Second,
+		FeeLimitMultiplier:        5,
+		TxSendTimeout:             5 * time.Minute,
+		TxNotInMempoolTimeout:     1 * time.Hour,
+		NetworkTimeout:            5 * time.Minute,
+		ReceiptQueryInterval:      100 * time.Millisecond,
+		NumConfirmations:          10,
+		SafeAbortNonceTooLowCount: 3,
+	}
+
+	txManager, err := txmgr.NewSimpleTxManager(defaultTxConfig, chainID, nonce, ethereumClient, from, signerFactory(chainID))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tx manager")
@@ -236,8 +235,6 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		chainID:        chainID,
 		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
 		gasLimit:       config.Epoch.GasLimit,
-		fromAddress:    common.HexToAddress(config.Epoch.WalletAddress),
-		rpcClient:      rpcClient,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
 		txManager:      txManager,

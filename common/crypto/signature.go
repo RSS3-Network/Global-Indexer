@@ -67,7 +67,7 @@ func NewSignerFactory(privateKey, endpoint, address string) (SignerFactory, comm
 		)
 
 		if privateKey == "" {
-			return nil, common.Address{}, fmt.Errorf("cannot specify both a private key and a mnemonic")
+			return nil, common.Address{}, fmt.Errorf("at least specify a private key")
 		}
 
 		privKey, err = crypto.HexToECDSA(strings.TrimPrefix(privateKey, "0x"))
