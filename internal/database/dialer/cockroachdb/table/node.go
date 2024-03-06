@@ -12,18 +12,18 @@ import (
 )
 
 type Node struct {
-	Address                common.Address  `gorm:"column:address;primaryKey"`
-	Endpoint               string          `gorm:"column:endpoint"`
-	IsPublicGood           bool            `gorm:"column:is_public_good"`
-	Stream                 json.RawMessage `gorm:"column:stream"`
-	Config                 json.RawMessage `gorm:"column:config;type:jsonb"`
-	Status                 schema.Status   `gorm:"column:status"`
-	LastHeartbeatTimestamp time.Time       `gorm:"column:last_heartbeat_timestamp"`
-	Local                  json.RawMessage `gorm:"column:local;type:jsonb"`
-	Avatar                 json.RawMessage `gorm:"column:avatar;type:jsonb"`
-	MinTokensToStake       decimal.Decimal `gorm:"column:min_tokens_to_stake"`
-	CreatedAt              time.Time       `gorm:"column:created_at"`
-	UpdatedAt              time.Time       `gorm:"column:updated_at"`
+	Address                common.Address    `gorm:"column:address;primaryKey"`
+	Endpoint               string            `gorm:"column:endpoint"`
+	IsPublicGood           bool              `gorm:"column:is_public_good"`
+	Stream                 json.RawMessage   `gorm:"column:stream"`
+	Config                 json.RawMessage   `gorm:"column:config;type:jsonb"`
+	Status                 schema.NodeStatus `gorm:"column:status"`
+	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp"`
+	Local                  json.RawMessage   `gorm:"column:local;type:jsonb"`
+	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
+	CreatedAt              time.Time         `gorm:"column:created_at"`
+	UpdatedAt              time.Time         `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {

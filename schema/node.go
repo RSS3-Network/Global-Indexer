@@ -22,7 +22,7 @@ type Node struct {
 	Endpoint               string                 `json:"-"`
 	Stream                 json.RawMessage        `json:"-"`
 	Config                 json.RawMessage        `json:"-"`
-	Status                 Status                 `json:"status"`
+	Status                 NodeStatus             `json:"status"`
 	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
 	Local                  []*NodeLocal           `json:"local"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
@@ -38,12 +38,14 @@ type NodeLocal struct {
 	Longitude float64 `json:"longitude"`
 }
 
-//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=Status --linecomment --output node_status_string.go --json --yaml --sql
-type Status int64
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeStatus --linecomment --output node_status_string.go --json --yaml --sql
+type NodeStatus int64
 
 const (
-	StatusOnline  Status = iota // online
-	StatusOffline               // offline
+	NodeStatusRegistered NodeStatus = iota // registered
+	NodeStatusOnline                       // online
+	NodeStatusOffline                      // offline
+	NodeStatusExited                       // exiting
 )
 
 type Stat struct {

@@ -3,6 +3,7 @@ package l2
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -32,8 +33,10 @@ func (s *server) indexStakingLog(ctx context.Context, header *types.Header, tran
 		return s.indexStakingUnstakeRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case l2.EventHashStakingUnstakeClaimed:
 		return s.indexStakingUnstakeClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashRewardDistributed:
-		return s.indexRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashStakingRewardDistributed:
+		return s.indexStakingRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashStakingNodeCreated:
+		return s.indexStakingNodeCreated(ctx, header, transaction, receipt, log, databaseTransaction)
 	default: // Discard all unsupported events.
 		return nil
 	}
@@ -301,7 +304,7 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 	return nil
 }
 
-func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	event, err := s.contractStaking.ParseRewardDistributed(*log)
 	if err != nil {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
@@ -350,6 +353,59 @@ func (s *server) indexRewardDistributedLog(ctx context.Context, header *types.He
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	event, err := s.contractStaking.ParseNodeCreated(*log)
+	if err != nil {
+		return fmt.Errorf("parse NodeCreated event: %w", err)
+	}
+
+	// save createdNode event
+	nodeEvent := schema.NodeEvent{
+		TransactionHash:  transaction.Hash(),
+		TransactionIndex: receipt.TransactionIndex,
+		AddressFrom:      event.NodeAddr,
+		AddressTo:        receipt.ContractAddress,
+		Type:             schema.NodeEventNodeCreated,
+		LogIndex:         log.Index,
+		ChainID:          s.chainID.Uint64(),
+		BlockHash:        header.Hash(),
+		BlockNumber:      header.Number.Uint64(),
+		BlockTimestamp:   int64(header.Time),
+		Metadata: schema.NodeEventMetadata{
+			NodeCreatedMetadata: &schema.NodeCreatedMetadata{
+				Address:            event.NodeAddr,
+				Name:               event.Name,
+				Description:        event.Description,
+				TaxRateBasisPoints: event.TaxRateBasisPoints,
+				PublicGood:         event.PublicGood,
+			},
+		},
+	}
+
+	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
+		return fmt.Errorf("save node event: %w", err)
+	}
+
+	// save node
+	node := schema.Node{
+		Address:            event.NodeAddr,
+		Name:               event.Name,
+		Endpoint:           event.NodeAddr.String(), // initial endpoint
+		Description:        event.Description,
+		TaxRateBasisPoints: event.TaxRateBasisPoints,
+		IsPublicGood:       event.PublicGood,
+		Status:             schema.NodeStatusRegistered,
+		Stream:             json.RawMessage{},
+		Config:             json.RawMessage{},
+	}
+
+	if err := databaseTransaction.SaveNode(ctx, &node); err != nil {
+		return fmt.Errorf("save node: %w", err)
 	}
 
 	return nil

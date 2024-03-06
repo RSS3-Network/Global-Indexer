@@ -53,7 +53,7 @@ func (s *server) Run(ctx context.Context) error {
 func (s *server) updateNodeActivity(ctx context.Context) error {
 	timeout := time.Now().Add(-5 * time.Minute)
 
-	if err := s.databaseClient.UpdateNodesStatus(ctx, timeout.Unix()); err != nil {
+	if err := s.databaseClient.UpdateNodesStatusOffline(ctx, timeout.Unix()); err != nil {
 		zap.L().Error("update node activity error", zap.Error(err), zap.String("timeout", timeout.String()))
 
 		return fmt.Errorf("update node activity: %w", err)

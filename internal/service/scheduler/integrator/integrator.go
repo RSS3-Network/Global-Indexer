@@ -170,7 +170,7 @@ func (s *server) updateNodePoints(stat *schema.Stat) error {
 		return fmt.Errorf("find node: %s, %w", stat.Address.String(), err)
 	}
 
-	if node.Status == schema.StatusOffline {
+	if node.Status == schema.NodeStatusOffline {
 		stat.ResetAt = time.Now()
 		stat.EpochInvalidRequest = int64(model.DefaultSlashCount)
 

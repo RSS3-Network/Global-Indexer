@@ -75,6 +75,31 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	})
 }
 
+func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
+	var request NodeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	transactions, err := h.getNodeEvents(c.Request().Context(), request.Address)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data: transactions,
+	})
+}
+
 func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 	var request NodeRequest
 
