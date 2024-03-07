@@ -3,6 +3,7 @@ package l2
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -414,6 +415,26 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		TaxRateBasisPoints: event.TaxRateBasisPoints,
 		IsPublicGood:       event.PublicGood,
 		Status:             schema.NodeStatusRegistered,
+	}
+
+	// save node avatar
+	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	if err != nil {
+		return fmt.Errorf("get node avatar: %w", err)
+	}
+
+	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
+	if !ok {
+		return fmt.Errorf("invalid avatar: %s", avatar)
+	}
+
+	metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+	if err != nil {
+		return fmt.Errorf("decode avatar metadata: %w", err)
+	}
+
+	if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
+		return fmt.Errorf("unmarshal avatar metadata: %w", err)
 	}
 
 	if err := databaseTransaction.SaveNode(ctx, node); err != nil {
