@@ -3,40 +3,42 @@ package table
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 )
 
 type NodeEvent struct {
-	TransactionHash  common.Hash          `gorm:"transaction_hash"`
+	TransactionHash  string               `gorm:"transaction_hash"`
 	TransactionIndex uint                 `gorm:"transaction_index"`
 	AddressFrom      common.Address       `gorm:"address_from"`
 	AddressTo        common.Address       `gorm:"address_to"`
 	Type             schema.NodeEventType `gorm:"type"`
 	LogIndex         uint                 `gorm:"log_index"`
 	ChainID          uint64               `gorm:"chain_id"`
-	BlockHash        common.Hash          `gorm:"block_hash"`
+	BlockHash        string               `gorm:"block_hash"`
 	BlockNumber      uint64               `gorm:"block_number"`
-	BlockTimestamp   int64                `gorm:"block_timestamp"`
+	BlockTimestamp   time.Time            `gorm:"block_timestamp"`
 	Metadata         json.RawMessage      `gorm:"metadata"`
 }
 
 func (*NodeEvent) TableName() string {
-	return "node.event"
+	return "node.events"
 }
 
 func (n *NodeEvent) Import(nodeEvent schema.NodeEvent) (err error) {
-	n.TransactionHash = nodeEvent.TransactionHash
+	n.TransactionHash = nodeEvent.TransactionHash.String()
 	n.TransactionIndex = nodeEvent.TransactionIndex
 	n.AddressFrom = nodeEvent.AddressFrom
 	n.AddressTo = nodeEvent.AddressTo
 	n.Type = nodeEvent.Type
 	n.LogIndex = nodeEvent.LogIndex
 	n.ChainID = nodeEvent.ChainID
-	n.BlockHash = nodeEvent.BlockHash
-	n.BlockNumber = nodeEvent.BlockNumber
-	n.BlockTimestamp = nodeEvent.BlockTimestamp
+	n.BlockHash = nodeEvent.BlockHash.String()
+	n.BlockNumber = nodeEvent.BlockNumber.Uint64()
+	n.BlockTimestamp = time.Unix(nodeEvent.BlockTimestamp, 0)
 
 	n.Metadata, err = json.Marshal(nodeEvent.Metadata)
 	if err != nil {
@@ -48,16 +50,16 @@ func (n *NodeEvent) Import(nodeEvent schema.NodeEvent) (err error) {
 
 func (n *NodeEvent) Export() (*schema.NodeEvent, error) {
 	nodeEvent := schema.NodeEvent{
-		TransactionHash:  n.TransactionHash,
+		TransactionHash:  common.HexToHash(n.TransactionHash),
 		TransactionIndex: n.TransactionIndex,
 		AddressFrom:      n.AddressFrom,
 		AddressTo:        n.AddressTo,
 		Type:             n.Type,
 		LogIndex:         n.LogIndex,
 		ChainID:          n.ChainID,
-		BlockHash:        n.BlockHash,
-		BlockNumber:      n.BlockNumber,
-		BlockTimestamp:   n.BlockTimestamp,
+		BlockHash:        common.HexToHash(n.BlockHash),
+		BlockNumber:      big.NewInt(int64(n.BlockNumber)),
+		BlockTimestamp:   n.BlockTimestamp.Unix(),
 	}
 
 	if err := json.Unmarshal(n.Metadata, &nodeEvent.Metadata); len(n.Metadata) > 0 && err != nil {

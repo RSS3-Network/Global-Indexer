@@ -382,10 +382,34 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&event).Error
 }
 
-func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address) ([]*schema.NodeEvent, error) {
+func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error) {
+	databaseStatement := c.database.WithContext(ctx)
+
+	if cursor != nil {
+		key := strings.Split(*cursor, ":")
+		if len(key) != 3 {
+			return nil, fmt.Errorf("invalid cursor: %s", *cursor)
+		}
+
+		var nodeEvent *table.NodeEvent
+
+		if err := c.database.WithContext(ctx).Where("transaction_hash = ?", key[0]).
+			Where("transaction_index = ?", key[1]).
+			Where("log_index = ?", key[2]).
+			First(&nodeEvent).Error; err != nil {
+			return nil, fmt.Errorf("get node cursor: %w", err)
+		}
+
+		databaseStatement = databaseStatement.Where("block_number < ?", nodeEvent.BlockNumber).
+			Or("block_number = ? AND transaction_index < ?", nodeEvent.BlockNumber, nodeEvent.TransactionIndex).
+			Or("block_number = ? AND transaction_index < ? AND log_index < ?", nodeEvent.BlockNumber, nodeEvent.TransactionIndex, nodeEvent.LogIndex)
+	}
+
 	var events table.NodeEvents
 
-	if err := c.database.WithContext(ctx).Where("address = ?", nodeAddress).Find(&events).Error; err != nil {
+	if err := databaseStatement.Where("address_from = ?", nodeAddress).
+		Order("block_number DESC, transaction_index DESC, log_index DESC").
+		Limit(limit).Find(&events).Error; err != nil {
 		return nil, err
 	}
 

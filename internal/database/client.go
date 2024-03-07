@@ -32,7 +32,7 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
-	FindNodeEvents(ctx context.Context, nodeAddress common.Address) ([]*schema.NodeEvent, error)
+	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)

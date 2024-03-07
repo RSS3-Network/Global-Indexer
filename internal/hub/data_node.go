@@ -101,15 +101,6 @@ func (h *Hub) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 	return base64.StdEncoding.DecodeString(data)
 }
 
-func (h *Hub) getNodeEvents(ctx context.Context, address common.Address) ([]*schema.NodeEvent, error) {
-	events, err := h.databaseClient.FindNodeEvents(ctx, address)
-	if err != nil {
-		return nil, fmt.Errorf("get node events %s: %w", address, err)
-	}
-
-	return events, nil
-}
-
 func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, requestIP string) error {
 	// Check signature.
 	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {

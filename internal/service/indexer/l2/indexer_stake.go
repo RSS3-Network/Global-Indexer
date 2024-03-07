@@ -15,6 +15,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
@@ -364,17 +365,22 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("parse NodeCreated event: %w", err)
 	}
 
+	addressTo := transaction.To()
+	if addressTo == nil {
+		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
+	}
+
 	// save createdNode event
 	nodeEvent := schema.NodeEvent{
 		TransactionHash:  transaction.Hash(),
 		TransactionIndex: receipt.TransactionIndex,
 		AddressFrom:      event.NodeAddr,
-		AddressTo:        receipt.ContractAddress,
+		AddressTo:        lo.FromPtr(addressTo),
 		Type:             schema.NodeEventNodeCreated,
 		LogIndex:         log.Index,
 		ChainID:          s.chainID.Uint64(),
 		BlockHash:        header.Hash(),
-		BlockNumber:      header.Number.Uint64(),
+		BlockNumber:      header.Number,
 		BlockTimestamp:   int64(header.Time),
 		Metadata: schema.NodeEventMetadata{
 			NodeCreatedMetadata: &schema.NodeCreatedMetadata{
@@ -391,8 +397,14 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("save node event: %w", err)
 	}
 
+	// find node
+	node, _ := databaseTransaction.FindNode(ctx, event.NodeAddr)
+	if node != nil {
+		return nil
+	}
+
 	// save node
-	node := schema.Node{
+	node = &schema.Node{
 		Address:            event.NodeAddr,
 		Name:               event.Name,
 		Endpoint:           event.NodeAddr.String(), // initial endpoint
@@ -404,7 +416,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		Config:             json.RawMessage{},
 	}
 
-	if err := databaseTransaction.SaveNode(ctx, &node); err != nil {
+	if err := databaseTransaction.SaveNode(ctx, node); err != nil {
 		return fmt.Errorf("save node: %w", err)
 	}
 

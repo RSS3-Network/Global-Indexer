@@ -1,6 +1,10 @@
 package schema
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type NodeEventType string
 
@@ -17,7 +21,7 @@ type NodeEvent struct {
 	LogIndex         uint              `json:"logIndex"`
 	ChainID          uint64            `json:"chainID"`
 	BlockHash        common.Hash       `json:"blockHash"`
-	BlockNumber      uint64            `json:"blockNumber"`
+	BlockNumber      *big.Int          `json:"blockNumber"`
 	BlockTimestamp   int64             `json:"blockTimestamp"`
 	Metadata         NodeEventMetadata `json:"metadata"`
 }
