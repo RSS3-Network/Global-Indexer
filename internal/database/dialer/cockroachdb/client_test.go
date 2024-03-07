@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -29,6 +30,7 @@ func TestClient(t *testing.T) {
 			name:   "cockroach",
 			driver: database.DriverCockroachDB,
 			nodeCreated: &schema.Node{
+				ID:      big.NewInt(1),
 				Address: common.HexToAddress("0xc98D64DA73a6616c42117b582e832812e7B8D57F"),
 				Stream: json.RawMessage(`
 				{
