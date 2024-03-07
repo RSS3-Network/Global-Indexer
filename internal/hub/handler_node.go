@@ -222,7 +222,7 @@ type NodeRequest struct {
 type NodeEventsRequest struct {
 	Address common.Address `param:"id" validate:"required"`
 	Cursor  *string        `query:"cursor"`
-	Limit   int            `query:"limit" validate:"min=1,max=50" default:"10"`
+	Limit   int            `query:"limit" validate:"min=1,max=100" default:"20"`
 }
 
 type RegisterNodeRequest struct {
