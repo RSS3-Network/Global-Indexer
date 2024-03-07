@@ -128,9 +128,10 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
+	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.StatusOnline
+	node.Status = schema.NodeStatusOnline
 
 	// get node's avatar from the chain
 	avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, request.Address)
@@ -328,7 +329,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.StatusOnline
+	node.Status = schema.NodeStatusOnline
 
 	// Save node to database.
 	return h.databaseClient.SaveNode(ctx, node)

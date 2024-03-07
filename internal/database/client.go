@@ -27,10 +27,12 @@ type Client interface {
 	SaveCheckpoint(ctx context.Context, checkpoint *schema.Checkpoint) error
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
-	FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.Status, cursor *string, limit int) ([]*schema.Node, error)
+	FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.NodeStatus, cursor *string, limit int) ([]*schema.Node, error)
 	FindNodeAvatar(ctx context.Context, nodeAddress common.Address) (*l2.ChipsTokenMetadata, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
-	UpdateNodesStatus(ctx context.Context, lastHeartbeatTimestamp int64) error
+	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
+	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
+	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
