@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/samber/lo"
 )
 
 func (h *Hub) GetNodesHandler(c echo.Context) error {
@@ -72,6 +73,43 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, Response{
 		Data: model.NewNode(node, baseURL(c)),
+	})
+}
+
+func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
+	var request NodeEventsRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := defaults.Set(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	events, err := h.databaseClient.FindNodeEvents(c.Request().Context(), request.Address, request.Cursor, request.Limit)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+	}
+
+	var cursor string
+
+	if len(events) > 0 && len(events) == request.Limit {
+		last, _ := lo.Last(events)
+		cursor = fmt.Sprintf("%s:%d:%d", last.TransactionHash, last.TransactionIndex, last.LogIndex)
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data:   model.NewNodeEvents(events),
+		Cursor: cursor,
 	})
 }
 
@@ -179,6 +217,12 @@ func (h *Hub) parseRequestIP(c echo.Context) (net.IP, error) {
 
 type NodeRequest struct {
 	Address common.Address `param:"id" validate:"required"`
+}
+
+type NodeEventsRequest struct {
+	Address common.Address `param:"id" validate:"required"`
+	Cursor  *string        `query:"cursor"`
+	Limit   int            `query:"limit" validate:"min=1,max=100" default:"20"`
 }
 
 type RegisterNodeRequest struct {

@@ -5,11 +5,12 @@
 -- public.nodes
 CREATE TABLE IF NOT EXISTS "node_info"
 (
+    "id"                       bigint      NOT NULL,
     "address"                  bytea       NOT NULL,
     "endpoint"                 text        NOT NULL,
     "is_public_good"           bool        NOT NULL,
-    "stream"                   json        NOT NULL,
-    "config"                   json        NOT NULL,
+    "stream"                   json,
+    "config"                   json,
     "status"                   TEXT        NOT NULL DEFAULT 'offline',
     "local"                    json        NOT NULL DEFAULT '[]',
     "last_heartbeat_timestamp" timestamptz,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS "node_info"
     CONSTRAINT "pk_indexes" PRIMARY KEY ("address")
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_id" ON "node_info" ("id");
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_endpoint_unique" ON "node_info" ("endpoint");
 CREATE INDEX IF NOT EXISTS "idx_is_public" ON "node_info" ("is_public_good", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "idx_created_at" ON "node_info" ("address", "created_at" DESC);

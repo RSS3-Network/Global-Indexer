@@ -13,6 +13,7 @@ tags:
   - name: Stake
   - name: Chips
   - name: Snapshots
+  - name: Node
 paths:
   /bridge/transactions:
     get:
@@ -416,6 +417,131 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
+  /nodes:
+    get:
+      description: "Get all nodes"
+      tags:
+        - Node
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: "The number of nodes to return, default is 10, maximum is 50"
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+        - name: nodeAddress
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            default: []
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                 $ref: "#/components/schemas/Node"
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+  /nodes/{address}:
+    get:
+      description: "Get node by address"
+      tags:
+        - Node
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Node"
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+  /nodes/{address}/avatar.svg:
+    get:
+      description: "Get avatar by node address"
+      tags:
+        - Node
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+  /nodes/{address}/events:
+    get:
+      description: "Get transaction events by node address"
+      tags:
+        - Node
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NodeEvent"
+                  cursor:
+                    type: string
+
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+
 components:
   schemas:
     BridgeTransaction:
@@ -665,3 +791,142 @@ components:
           name: "Chip #474"
           description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
           image: "https://gi.rss3.dev/chips/474/image.svg"
+    Node:
+      type: object
+      properties:
+        id:
+          type: integer
+        address:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        taxRateBasisPoints:
+          type: integer
+        isPublicGood:
+          type: boolean
+        operationPoolTokens:
+          type: string
+        stakingPoolTokens:
+          type: string
+        totalShares:
+          type: string
+        slashedTokens:
+          type: string
+        status:
+          type: string
+          enum:
+            - registered
+            - online
+            - offline
+            - exited
+        lastHeartbeat:
+          type: integer
+          description: "The timestamp of the last heartbeat"
+        local:
+          type: array
+          items:
+            type: object
+            properties:
+              country:
+                type: string
+              region:
+                type: string
+              city:
+                type: string
+              latitude:
+                type: number
+              longitude:
+                type: number
+        avatar:
+          type: object
+          properties:
+            name:
+              type: string
+            image:
+              type: string
+            description:
+              type: string
+        minTokensToStake:
+          type: string
+        createAt:
+          type: integer
+          description: "The timestamp of the node creation"
+      example:
+        id: 1
+        address: "0xc5999271b01afc77ed7a6738b40c34677c2a581c"
+        name: "RSS3 Node"
+        description: "Get started with RSS3 Node with symphonia"
+        taxRateBasisPoints: 1000
+        isPublicGood: false
+        operationPoolTokens: "10000000000000000000000"
+        stakingPoolTokens: "0"
+        totalShares: "0"
+        slashedTokens: "0"
+        status: "online"
+        lastHeartbeat: 1709117916
+        local:
+          - country: "CN"
+            region: "GD"
+            city: "SZ"
+            latitude: 22.5431
+            longitude: 114.0579
+        avatar:
+          - name: "Node Avatar"
+            description: ""
+            image: "http://127.0.0.1/nodes/0xC5999271b01AfC77ED7a6738b40C34677C2A581c/avatar.svg"
+        minTokensToStake: "0"
+        createdAt: 1709087910
+    NodeEvent:
+      type: object
+      properties:
+        addressFrom:
+          type: string
+        addressTo:
+          type: string
+        nodeID:
+          type: integer
+        type:
+          type: string
+          enum:
+              - nodeCreated
+        logIndex:
+          type: integer
+        chainID:
+          type: integer
+        block:
+          type: object
+          properties:
+            hash:
+              type: string
+            number:
+              type: integer
+            timestamp:
+              type: integer
+        transaction:
+          type: object
+          properties:
+            hash:
+              type: string
+            index:
+              type: integer
+        metadata:
+          type: object
+          properties:
+            nodeCreated:
+              type: object
+              properties:
+                nodeID:
+                  type: integer
+                address:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                taxRateBasisPoints:
+                  type: integer
+                isPublicGood:
+                  type: boolean
+

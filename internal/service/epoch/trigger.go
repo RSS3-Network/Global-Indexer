@@ -74,7 +74,7 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 }
 
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
-	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.StatusOnline), cursor, BatchSize+1)
+	nodes, err := s.databaseClient.FindNodes(ctx, nil, lo.ToPtr(schema.NodeStatusOnline), cursor, BatchSize+1)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return nil, nil
