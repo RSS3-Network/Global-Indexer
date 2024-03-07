@@ -3,6 +3,7 @@ package table
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +14,7 @@ import (
 
 type Node struct {
 	Address                common.Address    `gorm:"column:address;primaryKey"`
+	NodeID                 uint64            `gorm:"column:id"`
 	Endpoint               string            `gorm:"column:endpoint"`
 	IsPublicGood           bool              `gorm:"column:is_public_good"`
 	Stream                 json.RawMessage   `gorm:"column:stream"`
@@ -32,6 +34,7 @@ func (*Node) TableName() string {
 
 func (n *Node) Import(node *schema.Node) (err error) {
 	n.Address = node.Address
+	n.NodeID = node.ID.Uint64()
 	n.Endpoint = node.Endpoint
 	n.IsPublicGood = node.IsPublicGood
 	n.Status = node.Status
@@ -68,6 +71,7 @@ func (n *Node) Export() (*schema.Node, error) {
 
 	return &schema.Node{
 		Address:                n.Address,
+		ID:                     big.NewInt(int64(n.NodeID)),
 		Endpoint:               n.Endpoint,
 		IsPublicGood:           n.IsPublicGood,
 		Status:                 n.Status,

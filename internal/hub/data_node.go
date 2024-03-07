@@ -128,6 +128,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
+	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.NodeStatusOnline

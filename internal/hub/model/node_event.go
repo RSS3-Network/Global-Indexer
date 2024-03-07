@@ -10,6 +10,7 @@ type NodeEvent struct {
 	Block       TransactionEventBlock       `json:"block"`
 	AddressFrom common.Address              `json:"addressFrom"`
 	AddressTo   common.Address              `json:"addressTo"`
+	NodeID      uint64                      `json:"nodeID"`
 	Type        schema.NodeEventType        `json:"type"`
 	LogIndex    uint                        `json:"logIndex"`
 	ChainID     uint64                      `json:"chainID"`
@@ -29,6 +30,7 @@ func NewNodeEvent(event *schema.NodeEvent) *NodeEvent {
 		},
 		AddressFrom: event.AddressFrom,
 		AddressTo:   event.AddressTo,
+		NodeID:      event.NodeID.Uint64(),
 		Type:        event.Type,
 		LogIndex:    event.LogIndex,
 		ChainID:     event.ChainID,

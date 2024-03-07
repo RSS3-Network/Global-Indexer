@@ -3,7 +3,6 @@ package l2
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -374,6 +373,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	nodeEvent := schema.NodeEvent{
 		TransactionHash:  transaction.Hash(),
 		TransactionIndex: receipt.TransactionIndex,
+		NodeID:           event.NodeId,
 		AddressFrom:      event.NodeAddr,
 		AddressTo:        lo.FromPtr(addressTo),
 		Type:             schema.NodeEventNodeCreated,
@@ -384,6 +384,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		BlockTimestamp:   int64(header.Time),
 		Metadata: schema.NodeEventMetadata{
 			NodeCreatedMetadata: &schema.NodeCreatedMetadata{
+				NodeID:             event.NodeId,
 				Address:            event.NodeAddr,
 				Name:               event.Name,
 				Description:        event.Description,
@@ -406,14 +407,13 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	// save node
 	node = &schema.Node{
 		Address:            event.NodeAddr,
+		ID:                 event.NodeId,
 		Name:               event.Name,
 		Endpoint:           event.NodeAddr.String(), // initial endpoint
 		Description:        event.Description,
 		TaxRateBasisPoints: event.TaxRateBasisPoints,
 		IsPublicGood:       event.PublicGood,
 		Status:             schema.NodeStatusRegistered,
-		Stream:             json.RawMessage{},
-		Config:             json.RawMessage{},
 	}
 
 	if err := databaseTransaction.SaveNode(ctx, node); err != nil {

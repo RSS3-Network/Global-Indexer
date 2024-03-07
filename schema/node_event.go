@@ -15,6 +15,7 @@ const (
 type NodeEvent struct {
 	TransactionHash  common.Hash       `json:"transactionHash"`
 	TransactionIndex uint              `json:"transactionIndex"`
+	NodeID           *big.Int          `json:"nodeID"`
 	AddressFrom      common.Address    `json:"addressFrom"`
 	AddressTo        common.Address    `json:"addressTo"`
 	Type             NodeEventType     `json:"type"`
@@ -31,6 +32,7 @@ type NodeEventMetadata struct {
 }
 
 type NodeCreatedMetadata struct {
+	NodeID             *big.Int       `json:"nodeID"`
 	Address            common.Address `json:"address"`
 	Name               string         `json:"name"`
 	Description        string         `json:"description"`

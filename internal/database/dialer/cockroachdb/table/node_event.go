@@ -13,6 +13,7 @@ import (
 type NodeEvent struct {
 	TransactionHash  string               `gorm:"transaction_hash"`
 	TransactionIndex uint                 `gorm:"transaction_index"`
+	NodeID           uint64               `gorm:"node_id"`
 	AddressFrom      common.Address       `gorm:"address_from"`
 	AddressTo        common.Address       `gorm:"address_to"`
 	Type             schema.NodeEventType `gorm:"type"`
@@ -31,6 +32,7 @@ func (*NodeEvent) TableName() string {
 func (n *NodeEvent) Import(nodeEvent schema.NodeEvent) (err error) {
 	n.TransactionHash = nodeEvent.TransactionHash.String()
 	n.TransactionIndex = nodeEvent.TransactionIndex
+	n.NodeID = nodeEvent.NodeID.Uint64()
 	n.AddressFrom = nodeEvent.AddressFrom
 	n.AddressTo = nodeEvent.AddressTo
 	n.Type = nodeEvent.Type
@@ -52,6 +54,7 @@ func (n *NodeEvent) Export() (*schema.NodeEvent, error) {
 	nodeEvent := schema.NodeEvent{
 		TransactionHash:  common.HexToHash(n.TransactionHash),
 		TransactionIndex: n.TransactionIndex,
+		NodeID:           big.NewInt(int64(n.NodeID)),
 		AddressFrom:      n.AddressFrom,
 		AddressTo:        n.AddressTo,
 		Type:             n.Type,

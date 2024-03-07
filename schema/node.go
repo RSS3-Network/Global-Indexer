@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,6 +11,7 @@ import (
 )
 
 type Node struct {
+	ID                     *big.Int               `json:"id"`
 	Address                common.Address         `json:"address"`
 	Name                   string                 `json:"name"`
 	Description            string                 `json:"description"`

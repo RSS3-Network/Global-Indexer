@@ -794,6 +794,8 @@ components:
     Node:
       type: object
       properties:
+        id:
+          type: integer
         address:
           type: string
         name:
@@ -852,6 +854,7 @@ components:
           type: integer
           description: "The timestamp of the node creation"
       example:
+        id: 1
         address: "0xc5999271b01afc77ed7a6738b40c34677c2a581c"
         name: "RSS3 Node"
         description: "Get started with RSS3 Node with symphonia"
@@ -882,6 +885,8 @@ components:
           type: string
         addressTo:
           type: string
+        nodeID:
+          type: integer
         type:
           type: string
           enum:
@@ -912,6 +917,8 @@ components:
             nodeCreated:
               type: object
               properties:
+                nodeID:
+                  type: integer
                 address:
                   type: string
                 name:
