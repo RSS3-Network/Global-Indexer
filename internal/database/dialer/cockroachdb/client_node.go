@@ -144,6 +144,15 @@ func (c *client) UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTime
 	})
 }
 
+func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error {
+	return c.database.
+		WithContext(ctx).
+		Model((*table.Node)(nil)).
+		Where("address = ?", nodeAddress).
+		Update("hideTaxRate", hideTaxRate).
+		Error
+}
+
 func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {
 	var stat table.Stat
 

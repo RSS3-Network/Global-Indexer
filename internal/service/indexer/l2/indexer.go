@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -25,6 +26,7 @@ var _ service.Server = (*server)(nil)
 type server struct {
 	databaseClient                 database.Client
 	ethereumClient                 *ethclient.Client
+	cacheClient                    cache.Client
 	chainID                        *big.Int
 	contractGovernanceToken        *bindings.GovernanceToken
 	contractL2CrossDomainMessenger *bindings.L2CrossDomainMessenger
@@ -172,10 +174,11 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
 			databaseClient: databaseClient,
+			cacheClient:    cacheClient,
 		}
 		err error
 	)

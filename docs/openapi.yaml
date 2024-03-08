@@ -804,6 +804,7 @@ components:
           type: string
         taxRateBasisPoints:
           type: integer
+          nullable: true
         isPublicGood:
           type: boolean
         operationPoolTokens:

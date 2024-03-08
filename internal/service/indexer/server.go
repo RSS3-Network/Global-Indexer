@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"
@@ -13,6 +14,7 @@ import (
 type Server struct {
 	config         config.RSS3Chain
 	databaseClient database.Client
+	cacheClient    cache.Client
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -39,7 +41,7 @@ func (s *Server) Run(ctx context.Context) error {
 			Endpoint: s.config.EndpointL2,
 		}
 
-		serverL2, err := l2.NewServer(ctx, s.databaseClient, l2Config)
+		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.cacheClient, l2Config)
 		if err != nil {
 			return err
 		}
@@ -58,10 +60,11 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-func New(databaseClient database.Client, config config.RSS3Chain) (*Server, error) {
+func New(databaseClient database.Client, cacheClient cache.Client, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
 		config:         config,
 		databaseClient: databaseClient,
+		cacheClient:    cacheClient,
 	}
 
 	return &instance, nil

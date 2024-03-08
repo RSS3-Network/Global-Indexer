@@ -12,6 +12,10 @@ func NewNode(node *schema.Node, baseURL url.URL) *schema.Node {
 		node.Avatar.Image = baseURL.JoinPath(fmt.Sprintf("/nodes/%s/avatar.svg", node.Address)).String()
 	}
 
+	if node.HideTaxRate {
+		node.TaxRateBasisPoints = nil
+	}
+
 	return node
 }
 

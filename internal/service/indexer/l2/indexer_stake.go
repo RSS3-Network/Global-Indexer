@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -412,9 +414,14 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		Name:               event.Name,
 		Endpoint:           event.NodeAddr.String(), // initial endpoint
 		Description:        event.Description,
-		TaxRateBasisPoints: event.TaxRateBasisPoints,
+		TaxRateBasisPoints: &event.TaxRateBasisPoints,
 		IsPublicGood:       event.PublicGood,
 		Status:             schema.NodeStatusRegistered,
+	}
+
+	// Get from redis if the tax rate of the node needs to be hidden.
+	if err := s.cacheClient.Get(ctx, s.buildNodeHideTaxRateKey(node.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
 	// save node avatar
@@ -442,4 +449,8 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	return nil
+}
+
+func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
+	return fmt.Sprintf("node::%s::hideTaxRate", strings.ToLower(address.String()))
 }
