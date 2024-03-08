@@ -31,6 +31,7 @@ type Client interface {
 	FindNodeAvatar(ctx context.Context, nodeAddress common.Address) (*l2.ChipsTokenMetadata, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
+	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
 

@@ -161,6 +161,10 @@ func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
 		return response.InternalError(c, fmt.Errorf("update whether to hide tax rate: %w", err))
 	}
 
+	if err := h.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, request.Hide); err != nil {
+		return response.InternalError(c, fmt.Errorf("set whether to hide tax rate: %w", err))
+	}
+
 	return c.NoContent(http.StatusOK)
 }
 
