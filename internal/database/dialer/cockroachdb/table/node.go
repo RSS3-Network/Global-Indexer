@@ -16,6 +16,7 @@ type Node struct {
 	Address                common.Address    `gorm:"column:address;primaryKey"`
 	NodeID                 uint64            `gorm:"column:id"`
 	Endpoint               string            `gorm:"column:endpoint"`
+	HideTaxRate            bool              `gorm:"column:hide_tax_rate"`
 	IsPublicGood           bool              `gorm:"column:is_public_good"`
 	Stream                 json.RawMessage   `gorm:"column:stream"`
 	Config                 json.RawMessage   `gorm:"column:config;type:jsonb"`
@@ -36,6 +37,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Address = node.Address
 	n.NodeID = node.ID.Uint64()
 	n.Endpoint = node.Endpoint
+	n.HideTaxRate = node.HideTaxRate
 	n.IsPublicGood = node.IsPublicGood
 	n.Status = node.Status
 	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
@@ -73,6 +75,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Address:                n.Address,
 		ID:                     big.NewInt(int64(n.NodeID)),
 		Endpoint:               n.Endpoint,
+		HideTaxRate:            n.HideTaxRate,
 		IsPublicGood:           n.IsPublicGood,
 		Status:                 n.Status,
 		LastHeartbeatTimestamp: n.LastHeartbeatTimestamp.Unix(),

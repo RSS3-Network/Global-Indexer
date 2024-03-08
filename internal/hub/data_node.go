@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -19,13 +20,17 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
-var message = "I, %s, am signing this message for registering my intention to operate an RSS3 Node."
+var (
+	registerMessage    = "I, %s, am signing this message for registering my intention to operate an RSS3 Node."
+	hideTaxRateMessage = "I, %s, am signing this message for registering my intention to hide the tax rate on Explorer for my RSS3 Node."
+)
 
 func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := h.databaseClient.FindNode(ctx, address)
@@ -103,7 +108,9 @@ func (h *Hub) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 
 func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, requestIP string) error {
 	// Check signature.
-	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
+	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+
+	if err := h.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
 		return err
 	}
 
@@ -112,6 +119,11 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		Endpoint: h.parseEndpoint(ctx, request.Endpoint),
 		Stream:   request.Stream,
 		Config:   request.Config,
+	}
+
+	// Get from redis if the tax rate of the node needs to be hidden.
+	if err := h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
 	// Check node from the chain.
@@ -279,7 +291,9 @@ func (h *Hub) updateNodeIndexers(_ context.Context, address common.Address, node
 
 func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requestIP string) error {
 	// Check signature.
-	if err := h.checkSignature(ctx, request.Address, hexutil.MustDecode(request.Signature)); err != nil {
+	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+
+	if err := h.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
 		return fmt.Errorf("check signature: %w", err)
 	}
 
@@ -291,6 +305,11 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 
 	if node == nil {
 		return fmt.Errorf("node %s not found", request.Address)
+	}
+
+	// Get from redis if the tax rate of the node needs to be hidden.
+	if err := h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
 	if len(node.Local) == 0 {
@@ -372,8 +391,7 @@ func (h *Hub) verifyFullNode(indexers []*Module) (bool, error) {
 	return true, nil
 }
 
-func (h *Hub) checkSignature(_ context.Context, address common.Address, signature []byte) error {
-	message := fmt.Sprintf(message, strings.ToLower(address.Hex()))
+func (h *Hub) checkSignature(_ context.Context, address common.Address, message string, signature []byte) error {
 	data := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
 	hash := crypto.Keccak256Hash([]byte(data)).Bytes()
 

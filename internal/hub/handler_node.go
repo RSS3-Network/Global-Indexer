@@ -10,9 +10,11 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 	"github.com/samber/lo"
 )
 
@@ -114,7 +116,7 @@ func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
 }
 
 func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
-	var request NodeRequest
+	var request NodeChallengeRequest
 
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
@@ -124,9 +126,42 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
 	}
 
-	return c.JSON(http.StatusOK, Response{
-		Data: fmt.Sprintf(message, strings.ToLower(request.Address.String())),
-	})
+	switch request.Type {
+	case "":
+		return c.JSON(http.StatusOK, Response{
+			Data: fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String())),
+		})
+	case "hideTaxRate":
+		return c.JSON(http.StatusOK, Response{
+			Data: fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String())),
+		})
+	default:
+		return response.BadParamsError(c, fmt.Errorf("invalid type %s", request.Type))
+	}
+}
+
+func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
+	var request NodeHideTaxRateRequest
+
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+	}
+
+	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String()))
+
+	if err := h.checkSignature(c.Request().Context(), request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
+		return fmt.Errorf("check signature: %w", err)
+	}
+
+	if err := h.cacheClient.Set(c.Request().Context(), h.buildNodeHideTaxRateKey(request.Address), request.Hide); err != nil {
+		return response.InternalError(c, fmt.Errorf("update whether to hide tax rate: %w", err))
+	}
+
+	return c.NoContent(http.StatusOK)
 }
 
 func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
@@ -215,6 +250,10 @@ func (h *Hub) parseRequestIP(c echo.Context) (net.IP, error) {
 	return net.ParseIP(ip), nil
 }
 
+func (h *Hub) buildNodeHideTaxRateKey(address common.Address) string {
+	return fmt.Sprintf("node::%s::hideTaxRate", strings.ToLower(address.String()))
+}
+
 type NodeRequest struct {
 	Address common.Address `param:"id" validate:"required"`
 }
@@ -223,6 +262,17 @@ type NodeEventsRequest struct {
 	Address common.Address `param:"id" validate:"required"`
 	Cursor  *string        `query:"cursor"`
 	Limit   int            `query:"limit" validate:"min=1,max=100" default:"20"`
+}
+
+type NodeChallengeRequest struct {
+	Address common.Address `param:"id" validate:"required"`
+	Type    string         `param:"type"`
+}
+
+type NodeHideTaxRateRequest struct {
+	Address   common.Address `json:"address"`
+	Hide      bool           `json:"hide"`
+	Signature string         `json:"signature"`
 }
 
 type RegisterNodeRequest struct {
