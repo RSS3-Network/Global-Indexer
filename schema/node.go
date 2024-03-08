@@ -16,7 +16,7 @@ type Node struct {
 	Name                   string                 `json:"name"`
 	Description            string                 `json:"description"`
 	TaxRateBasisPoints     uint64                 `json:"taxRateBasisPoints,omitempty"`
-	HideTaxRate            bool                   `json:"-"`
+	HideTaxRate            bool                   `json:"hideTaxRate"`
 	IsPublicGood           bool                   `json:"isPublicGood"`
 	OperationPoolTokens    string                 `json:"operationPoolTokens"`
 	StakingPoolTokens      string                 `json:"stakingPoolTokens"`
