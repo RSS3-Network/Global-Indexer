@@ -270,13 +270,13 @@ type NodeEventsRequest struct {
 
 type NodeChallengeRequest struct {
 	Address common.Address `param:"id" validate:"required"`
-	Type    string         `param:"type"`
+	Type    string         `query:"type"`
 }
 
 type NodeHideTaxRateRequest struct {
-	Address   common.Address `json:"address"`
-	Hide      bool           `json:"hide"`
-	Signature string         `json:"signature"`
+	Address   common.Address `json:"address" validate:"required"`
+	Hide      bool           `json:"hide" validate:"required"`
+	Signature string         `json:"signature" validate:"required"`
 }
 
 type RegisterNodeRequest struct {
