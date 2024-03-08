@@ -414,7 +414,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		Name:               event.Name,
 		Endpoint:           event.NodeAddr.String(), // initial endpoint
 		Description:        event.Description,
-		TaxRateBasisPoints: event.TaxRateBasisPoints,
+		TaxRateBasisPoints: &event.TaxRateBasisPoints,
 		IsPublicGood:       event.PublicGood,
 		Status:             schema.NodeStatusRegistered,
 	}

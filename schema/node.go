@@ -15,8 +15,8 @@ type Node struct {
 	Address                common.Address         `json:"address"`
 	Name                   string                 `json:"name"`
 	Description            string                 `json:"description"`
-	TaxRateBasisPoints     uint64                 `json:"taxRateBasisPoints,omitempty"`
-	HideTaxRate            bool                   `json:"hideTaxRate"`
+	TaxRateBasisPoints     *uint64                `json:"taxRateBasisPoints"`
+	HideTaxRate            bool                   `json:"-"`
 	IsPublicGood           bool                   `json:"isPublicGood"`
 	OperationPoolTokens    string                 `json:"operationPoolTokens"`
 	StakingPoolTokens      string                 `json:"stakingPoolTokens"`

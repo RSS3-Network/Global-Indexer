@@ -49,7 +49,7 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
-	node.TaxRateBasisPoints = nodeInfo.TaxRateBasisPoints
+	node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
 	node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 	node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 	node.TotalShares = nodeInfo.TotalShares.String()
@@ -81,7 +81,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
 			node.Name = nodeInfo.Name
 			node.Description = nodeInfo.Description
-			node.TaxRateBasisPoints = nodeInfo.TaxRateBasisPoints
+			node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
 			node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			node.TotalShares = nodeInfo.TotalShares.String()

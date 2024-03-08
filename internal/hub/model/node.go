@@ -13,7 +13,7 @@ func NewNode(node *schema.Node, baseURL url.URL) *schema.Node {
 	}
 
 	if node.HideTaxRate {
-		node.TaxRateBasisPoints = 0
+		node.TaxRateBasisPoints = nil
 	}
 
 	return node
