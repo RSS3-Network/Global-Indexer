@@ -274,7 +274,7 @@ type NodeChallengeRequest struct {
 }
 
 type NodeHideTaxRateRequest struct {
-	Address   common.Address `param:"address" validate:"required"`
+	Address   common.Address `param:"id" validate:"required"`
 	Signature string         `json:"signature" validate:"required"`
 }
 
