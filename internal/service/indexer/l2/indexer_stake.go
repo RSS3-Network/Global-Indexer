@@ -425,7 +425,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	// save node avatar
-	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
 		return fmt.Errorf("get node avatar: %w", err)
 	}

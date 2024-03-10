@@ -22,6 +22,7 @@ type Node struct {
 	StakingPoolTokens      string                 `json:"stakingPoolTokens"`
 	TotalShares            string                 `json:"totalShares"`
 	SlashedTokens          string                 `json:"slashedTokens"`
+	Alpha                  bool                   `json:"alpha"`
 	Endpoint               string                 `json:"-"`
 	Stream                 json.RawMessage        `json:"-"`
 	Config                 json.RawMessage        `json:"-"`
