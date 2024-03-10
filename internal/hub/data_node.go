@@ -54,6 +54,7 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 	node.TotalShares = nodeInfo.TotalShares.String()
 	node.SlashedTokens = nodeInfo.SlashedTokens.String()
+	node.Alpha = nodeInfo.Alpha
 
 	return node, nil
 }
@@ -86,6 +87,7 @@ func (h *Hub) getNodes(ctx context.Context, request *BatchNodeRequest) ([]*schem
 			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			node.TotalShares = nodeInfo.TotalShares.String()
 			node.SlashedTokens = nodeInfo.SlashedTokens.String()
+			node.Alpha = nodeInfo.Alpha
 		}
 	}
 
