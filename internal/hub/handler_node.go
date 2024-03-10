@@ -157,12 +157,12 @@ func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
 		return fmt.Errorf("check signature: %w", err)
 	}
 
-	if err := h.cacheClient.Set(c.Request().Context(), h.buildNodeHideTaxRateKey(request.Address), request.Hide); err != nil {
-		return response.InternalError(c, fmt.Errorf("update whether to hide tax rate: %w", err))
+	if err := h.cacheClient.Set(c.Request().Context(), h.buildNodeHideTaxRateKey(request.Address), true); err != nil {
+		return response.InternalError(c, fmt.Errorf("cache hide tax value: %w", err))
 	}
 
-	if err := h.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, request.Hide); err != nil {
-		return response.InternalError(c, fmt.Errorf("set whether to hide tax rate: %w", err))
+	if err := h.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
+		return response.InternalError(c, fmt.Errorf("confirmation to hide tax rate: %w", err))
 	}
 
 	return c.NoContent(http.StatusOK)
@@ -274,8 +274,7 @@ type NodeChallengeRequest struct {
 }
 
 type NodeHideTaxRateRequest struct {
-	Address   common.Address `json:"address" validate:"required"`
-	Hide      bool           `json:"hide" validate:"required"`
+	Address   common.Address `param:"id" validate:"required"`
 	Signature string         `json:"signature" validate:"required"`
 }
 
