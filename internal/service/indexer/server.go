@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
@@ -49,15 +50,13 @@ func (s *Server) Run(ctx context.Context) error {
 		return serverL2.Run(ctx)
 	})
 
-	errorChan := make(chan error)
-	go func() { errorChan <- errorPool.Wait() }()
-
-	select {
-	case err := <-errorChan:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
+	if err := errorPool.Wait(); err != nil {
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func New(databaseClient database.Client, cacheClient cache.Client, config config.RSS3Chain) (*Server, error) {
