@@ -11,12 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
@@ -135,8 +132,6 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 				return err
 			}
-
-			<-time.NewTimer(1 * time.Second).C
 		} else if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) < intervalEpoch {
 			// Wait for epoch event indexer
 			zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
