@@ -19,6 +19,12 @@ var ContractMap = map[uint64]*struct {
 		AddressOptimismPortalProxy:         common.HexToAddress("0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57"), // https://sepolia.etherscan.io/address/0xcBD77E8E1E7F06B25baDe67142cdE82652Da7b57
 		AddressGovernanceTokenProxy:        common.HexToAddress("0x3Ef1D5be1E2Ce46c583a0c8e511f015706A0ab23"), // https://sepolia.etherscan.io/address/0x3Ef1D5be1E2Ce46c583a0c8e511f015706A0ab23
 	},
+	1: {
+		AddressL1CrossDomainMessengerProxy: common.HexToAddress("0x892CAa506c86C5101f5eC11C6f09589c9dC8A85C"), // https://etherscan.io/address/0x892CAa506c86C5101f5eC11C6f09589c9dC8A85C
+		AddressL1StandardBridgeProxy:       common.HexToAddress("0x4cbab69108Aa72151EDa5A3c164eA86845f18438"), // https://etherscan.io/address/0x4cbab69108Aa72151EDa5A3c164eA86845f18438
+		AddressOptimismPortalProxy:         common.HexToAddress("0x6A12432491bbbE8d3babf75F759766774C778Db4"), // https://etherscan.io/address/0x6A12432491bbbE8d3babf75F759766774C778Db4
+		AddressGovernanceTokenProxy:        common.HexToAddress("0xc98D64DA73a6616c42117b582e832812e7B8D57F"), // https://etherscan.io/address/0xc98D64DA73a6616c42117b582e832812e7B8D57F
+	},
 }
 
 var (
