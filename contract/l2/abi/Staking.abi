@@ -449,6 +449,12 @@
                 "internalType": "bool",
                 "name": "publicGood",
                 "type": "bool"
+            },
+            {
+                "indexed": false,
+                "internalType": "bool",
+                "name": "alpha",
+                "type": "bool"
             }
         ],
         "name": "NodeCreated",
@@ -1181,6 +1187,11 @@
                         "type": "bool"
                     },
                     {
+                        "internalType": "bool",
+                        "name": "alpha",
+                        "type": "bool"
+                    },
+                    {
                         "internalType": "string",
                         "name": "name",
                         "type": "string"
@@ -1284,6 +1295,11 @@
                         "type": "bool"
                     },
                     {
+                        "internalType": "bool",
+                        "name": "alpha",
+                        "type": "bool"
+                    },
+                    {
                         "internalType": "string",
                         "name": "name",
                         "type": "string"
@@ -1357,6 +1373,11 @@
                     {
                         "internalType": "bool",
                         "name": "publicGood",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "alpha",
                         "type": "bool"
                     },
                     {
@@ -1517,6 +1538,11 @@
                     {
                         "internalType": "bool",
                         "name": "publicGood",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "alpha",
                         "type": "bool"
                     },
                     {
