@@ -50,14 +50,12 @@ func (s *server) Run(ctx context.Context) (err error) {
 	}
 
 	onRetry := retry.OnRetry(func(n uint, err error) {
-		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+		}
 	})
 
-	retryIf := retry.RetryIf(func(err error) bool {
-		return !errors.Is(err, context.Canceled)
-	})
-
-	return retry.Do(func() error { return s.run(ctx) }, retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
+	return retry.Do(func() error { return s.run(ctx) }, retry.Context(ctx), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -84,7 +82,14 @@ func (s *server) run(ctx context.Context) (err error) {
 				zap.Duration("block.confirmationTime", blockConfirmationTime),
 			)
 
-			time.Sleep(blockConfirmationTime)
+			timer := time.NewTimer(blockConfirmationTime)
+
+			select {
+			case <-ctx.Done():
+				break
+			case <-timer.C:
+				continue
+			}
 
 			continue
 		}
