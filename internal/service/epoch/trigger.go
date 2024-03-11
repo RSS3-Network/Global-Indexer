@@ -157,6 +157,13 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		return fmt.Errorf("distribute rewards: %w", err)
 	}
 
+	// Wait for transaction receipt.
+	if err = s.transactionReceipt(ctx, signedTX.Hash()); err != nil {
+		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.Any("data", data))
+
+		return fmt.Errorf("wait for transaction receipt: %w", err)
+	}
+
 	// Save epoch trigger to database.
 	if err = s.databaseClient.SaveEpochTrigger(ctx, &schema.EpochTrigger{
 		TransactionHash: signedTX.Hash(),
@@ -164,13 +171,6 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 		Data:            data,
 	}); err != nil {
 		return fmt.Errorf("save epoch trigger: %w", err)
-	}
-
-	// Wait for transaction receipt.
-	if err = s.transactionReceipt(ctx, signedTX.Hash()); err != nil {
-		zap.L().Error("wait for transaction receipt", zap.Error(err), zap.Any("data", data))
-
-		return fmt.Errorf("wait for transaction receipt: %w", err)
 	}
 
 	zap.L().Info("distribute rewards successfully", zap.String("tx", signedTX.Hash().String()), zap.Any("data", data))
