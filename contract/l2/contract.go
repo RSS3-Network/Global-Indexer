@@ -34,6 +34,10 @@ var ContractMap = map[uint64]*struct {
 	},
 }
 
+var GenesisEpochMap = map[uint64]int64{
+	12553: 1710208800, // 2024-03-12 02:00:00 UTC
+}
+
 var (
 	EventHashL2StandardBridgeWithdrawalInitiated = crypto.Keccak256Hash([]byte("WithdrawalInitiated(address,address,address,address,uint256,bytes)"))
 	EventHashL2StandardBridgeDepositFinalized    = crypto.Keccak256Hash([]byte("DepositFinalized(address,address,address,address,uint256,bytes)"))
