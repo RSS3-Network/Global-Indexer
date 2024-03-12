@@ -401,14 +401,13 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("save node event: %w", err)
 	}
 
-	// find node
-	node, _ := databaseTransaction.FindNode(ctx, event.NodeAddr)
-	if node != nil {
+	// if node already exists, skip
+	if node, _ := databaseTransaction.FindNode(ctx, event.NodeAddr); node != nil {
 		return nil
 	}
 
 	// save node
-	node = &schema.Node{
+	node := &schema.Node{
 		Address:            event.NodeAddr,
 		ID:                 event.NodeId,
 		Name:               event.Name,

@@ -116,16 +116,8 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return err
 	}
 
-	node := &schema.Node{
-		Address:  request.Address,
-		Endpoint: h.parseEndpoint(ctx, request.Endpoint),
-		Stream:   request.Stream,
-		Config:   request.Config,
-	}
-
-	// Get from redis if the tax rate of the node needs to be hidden.
-	if err := h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
-		return fmt.Errorf("get hide tax rate: %w", err)
+	if err := h.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
+		return err
 	}
 
 	// Check node from the chain.
@@ -142,30 +134,31 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
+	// Find node from the database.
+	node, err := h.databaseClient.FindNode(ctx, request.Address)
+	if errors.Is(err, database.ErrorRowNotFound) {
+		node = &schema.Node{
+			Address: request.Address,
+		}
+
+		// Get node's avatar from the chain
+		if node.Avatar, err = h.buildNodeAvatar(ctx, request.Address); err != nil {
+			return fmt.Errorf("build node avatar: %w", err)
+		}
+
+		// Get from redis if the tax rate of the node needs to be hidden.
+		if err = h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+			return fmt.Errorf("get hide tax rate: %w", err)
+		}
+	}
+
+	node.Endpoint = h.parseEndpoint(ctx, request.Endpoint)
+	node.Stream = request.Stream
+	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.NodeStatusOnline
-
-	// get node's avatar from the chain
-	avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get node avatar from chain: %w", err)
-	}
-
-	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
-	if !ok {
-		return fmt.Errorf("invalid avatar: %s", avatar)
-	}
-
-	metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
-	if err != nil {
-		return fmt.Errorf("decode avatar metadata: %w", err)
-	}
-
-	if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
-		return fmt.Errorf("unmarshal avatar metadata: %w", err)
-	}
 
 	minTokensToStake, err := h.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
 	if err != nil {
@@ -309,11 +302,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	// Get from redis if the tax rate of the node needs to be hidden.
-	if err := h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
-		return fmt.Errorf("get hide tax rate: %w", err)
-	}
-
+	// Get node local info.
 	if len(node.Local) == 0 {
 		node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
 		if err != nil {
@@ -321,24 +310,11 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 		}
 	}
 
+	// Get node's avatar from the chain.
 	if node.Avatar == nil || node.Avatar.Name == "" {
-		avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, request.Address)
+		node.Avatar, err = h.buildNodeAvatar(ctx, request.Address)
 		if err != nil {
-			return fmt.Errorf("get node avatar from chain: %w", err)
-		}
-
-		encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
-		if !ok {
-			return fmt.Errorf("invalid avatar: %s", avatar)
-		}
-
-		metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
-		if err != nil {
-			return fmt.Errorf("decode avatar metadata: %w", err)
-		}
-
-		if err = json.Unmarshal(metadata, &node.Avatar); err != nil {
-			return fmt.Errorf("unmarshal avatar metadata: %w", err)
+			return fmt.Errorf("build node avatar: %w", err)
 		}
 	}
 
@@ -425,6 +401,31 @@ func (h *Hub) parseEndpoint(_ context.Context, endpoint string) string {
 	}
 
 	return endpoint
+}
+
+func (h *Hub) buildNodeAvatar(_ context.Context, address common.Address) (*l2.ChipsTokenMetadata, error) {
+	avatar, err := h.stakingContract.GetNodeAvatar(&bind.CallOpts{}, address)
+	if err != nil {
+		return nil, fmt.Errorf("get node avatar from chain: %w", err)
+	}
+
+	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
+	if !ok {
+		return nil, fmt.Errorf("invalid avatar: %s", avatar)
+	}
+
+	metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("decode avatar metadata: %w", err)
+	}
+
+	var avatarMetadata l2.ChipsTokenMetadata
+
+	if err = json.Unmarshal(metadata, &avatarMetadata); err != nil {
+		return nil, fmt.Errorf("unmarshal avatar metadata: %w", err)
+	}
+
+	return &avatarMetadata, nil
 }
 
 type NodeConfig struct {
