@@ -116,10 +116,6 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 		return err
 	}
 
-	if err := h.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
-		return err
-	}
-
 	// Check node from the chain.
 	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
 	if err != nil {
@@ -136,7 +132,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 
 	// Find node from the database.
 	node, err := h.databaseClient.FindNode(ctx, request.Address)
-	if errors.Is(err, database.ErrorRowNotFound) {
+	if err != nil {
 		node = &schema.Node{
 			Address: request.Address,
 		}
