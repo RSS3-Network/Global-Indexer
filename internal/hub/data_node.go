@@ -38,10 +38,6 @@ func (h *Hub) getNode(ctx context.Context, address common.Address) (*schema.Node
 		return nil, fmt.Errorf("get node %s: %w", address, err)
 	}
 
-	if node == nil {
-		return nil, nil
-	}
-
 	nodeInfo, err := h.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
 		return nil, fmt.Errorf("get node from chain: %w", err)
