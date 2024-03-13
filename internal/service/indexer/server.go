@@ -39,7 +39,8 @@ func (s *Server) Run(ctx context.Context) error {
 	// Run L2 indexer.
 	errorPool.Go(func(ctx context.Context) error {
 		l2Config := l2.Config{
-			Endpoint: s.config.EndpointL2,
+			Endpoint:     s.config.EndpointL2,
+			BlockThreads: s.config.BlockThreadsL2,
 		}
 
 		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.cacheClient, l2Config)
