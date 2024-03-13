@@ -350,6 +350,8 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 
 	var totalOperationRewards, totalStakingRewards big.Int
 
+	var nodeApy = make(map[common.Address]decimal.Decimal)
+
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
@@ -363,6 +365,18 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 
 		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
 		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
+
+		// Calculate the apy of a node
+		node, err := s.contractStaking.GetNode(&bind.CallOpts{}, event.NodeAddrs[i])
+		if err != nil {
+			zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", event.NodeAddrs[i].String()))
+
+			return fmt.Errorf("get node: %w", err)
+		}
+
+		// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
+		nodeApy[event.NodeAddrs[i]] = decimal.NewFromBigInt(event.OperationRewards[i], 0).Add(decimal.NewFromBigInt(event.StakingRewards[i], 0)).
+			Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
 	}
 
 	epoch.TotalOperationRewards = totalOperationRewards.String()
@@ -372,6 +386,13 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch: %w", err)
+	}
+
+	// Save the APY of the nodes
+	if err := databaseTransaction.BatchUpdateNodesApy(ctx, nodeApy); err != nil {
+		zap.L().Error("indexRewardDistributedLog: batch update nodes apy", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
+
+		return fmt.Errorf("batch update nodes apy: %w", err)
 	}
 
 	return nil
