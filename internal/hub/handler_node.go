@@ -157,12 +157,16 @@ func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
 		return fmt.Errorf("check signature: %w", err)
 	}
 
+	// Cache the hide tax rate status
 	if err := h.cacheClient.Set(c.Request().Context(), h.buildNodeHideTaxRateKey(request.Address), true); err != nil {
 		return response.InternalError(c, fmt.Errorf("cache hide tax value: %w", err))
 	}
 
-	if err := h.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
-		return response.InternalError(c, fmt.Errorf("confirmation to hide tax rate: %w", err))
+	// If the node exists, update the hide tax rate status
+	if _, err := h.getNode(c.Request().Context(), request.Address); err == nil {
+		if err := h.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
+			return response.InternalError(c, fmt.Errorf("confirmation to hide tax rate: %w", err))
+		}
 	}
 
 	return c.NoContent(http.StatusOK)
