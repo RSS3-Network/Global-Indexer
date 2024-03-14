@@ -310,13 +310,6 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 		}
 	}
 
-	minTokensToStake, err := h.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get min token to stake from chain: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
-
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Status = schema.NodeStatusOnline
 

@@ -339,7 +339,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		BlockTimestamp:   int64(header.Time),
 		TransactionIndex: receipt.TransactionIndex,
 		TotalRewardItems: len(event.NodeAddrs),
-		RewardItems:      make([]*schema.EpochItem, 0, len(event.NodeAddrs)),
+		RewardItems:      make([]*schema.EpochItem, len(event.NodeAddrs)),
 	}
 
 	if epoch.TotalRewardItems != len(event.StakingRewards) || epoch.TotalRewardItems != len(event.OperationRewards) || epoch.TotalRewardItems != len(event.TaxAmounts) {
@@ -348,53 +348,38 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		return fmt.Errorf("length not match")
 	}
 
-	var totalOperationRewards, totalStakingRewards big.Int
-
-	var nodeApy = make(map[common.Address]decimal.Decimal)
+	var totalOperationRewards, totalStakingRewards decimal.Decimal
 
 	for i := 0; i < epoch.TotalRewardItems; i++ {
-		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
+		epoch.RewardItems[i] = &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
 			TransactionHash:  transaction.Hash(),
 			NodeAddress:      event.NodeAddrs[i],
-			OperationRewards: event.OperationRewards[i].String(),
-			StakingRewards:   event.StakingRewards[i].String(),
-			TaxAmounts:       event.TaxAmounts[i].String(),
-		})
-
-		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
-		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
-
-		// Calculate the apy of a node
-		node, err := s.contractStaking.GetNode(&bind.CallOpts{}, event.NodeAddrs[i])
-		if err != nil {
-			zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", event.NodeAddrs[i].String()))
-
-			return fmt.Errorf("get node: %w", err)
+			OperationRewards: decimal.NewFromBigInt(event.OperationRewards[i], 0),
+			StakingRewards:   decimal.NewFromBigInt(event.StakingRewards[i], 0),
+			TaxAmounts:       decimal.NewFromBigInt(event.TaxAmounts[i], 0),
 		}
 
-		// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
-		if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
-			nodeApy[event.NodeAddrs[i]] = decimal.NewFromBigInt(event.OperationRewards[i], 0).Add(decimal.NewFromBigInt(event.StakingRewards[i], 0)).
-				Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
-		}
+		totalOperationRewards = totalOperationRewards.Add(epoch.RewardItems[i].OperationRewards)
+		totalStakingRewards = totalStakingRewards.Add(epoch.RewardItems[i].StakingRewards)
 	}
 
-	epoch.TotalOperationRewards = totalOperationRewards.String()
-	epoch.TotalStakingRewards = totalStakingRewards.String()
+	epoch.TotalOperationRewards = totalOperationRewards
+	epoch.TotalStakingRewards = totalStakingRewards
 
+	// Save epoch
 	if err := databaseTransaction.SaveEpoch(ctx, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch: %w", err)
 	}
 
-	// Save the APY of the nodes
-	if err := databaseTransaction.BatchUpdateNodesApy(ctx, nodeApy); err != nil {
-		zap.L().Error("indexRewardDistributedLog: batch update nodes apy", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
+	// Save nodes
+	if err := s.saveEpochRelatedNodes(ctx, databaseTransaction, &epoch); err != nil {
+		zap.L().Error("indexRewardDistributedLog: save epoch related nodes", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
-		return fmt.Errorf("batch update nodes apy: %w", err)
+		return fmt.Errorf("save epoch related nodes: %w", err)
 	}
 
 	return nil
@@ -491,4 +476,67 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 
 func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
 	return fmt.Sprintf("node::%s::hideTaxRate", strings.ToLower(address.String()))
+}
+
+func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction database.Client, epoch *schema.Epoch) error {
+	var (
+		data      = make([]*schema.BatchUpdateNode, len(epoch.RewardItems))
+		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
+	)
+
+	for i := 0; i < epoch.TotalRewardItems; i++ {
+		i := i
+
+		errorPool.Go(func(ctx context.Context) error {
+			var (
+				apy, minTokensToStake decimal.Decimal
+				address               = epoch.RewardItems[i].NodeAddress
+			)
+
+			// Calculate the apy of the node
+			node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
+			if err != nil {
+				zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", address.String()))
+
+				return fmt.Errorf("get node: %w", err)
+			}
+
+			// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
+			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
+				apy = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
+					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
+			}
+
+			// Query the minTokensToStake of the node
+			minTokens, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
+			if err != nil {
+				zap.L().Error("indexRewardDistributedLog: get min tokens to stake", zap.Error(err), zap.String("address", address.String()))
+
+				return fmt.Errorf("get min tokens to stake: %w", err)
+			}
+
+			minTokensToStake = decimal.NewFromBigInt(minTokens, 0)
+
+			data[i] = &schema.BatchUpdateNode{
+				Address:          address,
+				Apy:              apy,
+				MinTokensToStake: minTokensToStake,
+			}
+
+			return nil
+		})
+	}
+
+	if err := errorPool.Wait(); err != nil {
+		return fmt.Errorf("wait error pool: %w", err)
+	}
+
+	// Save nodes
+	if err := databaseTransaction.BatchUpdateNodes(ctx, data); err != nil {
+		zap.L().Error("batch update epoch-related nodes", zap.Error(err), zap.Any("epoch", epoch), zap.Any("data", data))
+
+		return fmt.Errorf("batch update epoch-related nodes: %w", err)
+	}
+
+	return nil
 }
