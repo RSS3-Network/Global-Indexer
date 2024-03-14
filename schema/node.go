@@ -87,3 +87,9 @@ type Indexer struct {
 	Network string         `json:"network"`
 	Worker  string         `json:"worker"`
 }
+
+type BatchUpdateNode struct {
+	Address          common.Address
+	Apy              decimal.Decimal
+	MinTokensToStake decimal.Decimal
+}

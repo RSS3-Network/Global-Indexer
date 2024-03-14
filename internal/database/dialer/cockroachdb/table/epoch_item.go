@@ -3,7 +3,6 @@ package table
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -26,9 +25,9 @@ func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
 	e.Index = epochRewardItem.Index
 	e.TransactionHash = epochRewardItem.TransactionHash.String()
 	e.NodeAddress = epochRewardItem.NodeAddress.String()
-	e.OperationRewards = lo.Must(decimal.NewFromString(epochRewardItem.OperationRewards))
-	e.StakingRewards = lo.Must(decimal.NewFromString(epochRewardItem.StakingRewards))
-	e.TaxAmounts = lo.Must(decimal.NewFromString(epochRewardItem.TaxAmounts))
+	e.OperationRewards = epochRewardItem.OperationRewards
+	e.StakingRewards = epochRewardItem.StakingRewards
+	e.TaxAmounts = epochRewardItem.TaxAmounts
 
 	return nil
 }
@@ -39,9 +38,9 @@ func (e *EpochItem) Export() (*schema.EpochItem, error) {
 		Index:            e.Index,
 		TransactionHash:  common.HexToHash(e.TransactionHash),
 		NodeAddress:      common.HexToAddress(e.NodeAddress),
-		OperationRewards: e.OperationRewards.String(),
-		StakingRewards:   e.StakingRewards.String(),
-		TaxAmounts:       e.TaxAmounts.String(),
+		OperationRewards: e.OperationRewards,
+		StakingRewards:   e.StakingRewards,
+		TaxAmounts:       e.TaxAmounts,
 	}, nil
 }
 
