@@ -27,6 +27,15 @@ var ContractMap = map[uint64]*struct {
 		AddressChipsProxy:      common.HexToAddress("0x305A3cD2E972ceE48C362ABca02DfA699161edd6"), // https://scan.testnet.rss3.io/token/0x305A3cD2E972ceE48C362ABca02DfA699161edd6
 		AddressSettlementProxy: common.HexToAddress("0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b"), // https://scan.testnet.rss3.io/address/0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b
 	},
+	12553: {
+		AddressStakingProxy:    common.HexToAddress("0x28F14d917fddbA0c1f2923C406952478DfDA5578"), // https://scan.rss3.io/address/0x28F14d917fddbA0c1f2923C406952478DfDA5578
+		AddressChipsProxy:      common.HexToAddress("0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE"), // https://scan.rss3.io/token/0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE
+		AddressSettlementProxy: common.HexToAddress("0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B"), // https://scan.rss3.io/address/0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B
+	},
+}
+
+var GenesisEpochMap = map[uint64]int64{
+	12553: 1710208800, // 2024-03-12 02:00:00 UTC
 }
 
 var (
@@ -45,7 +54,7 @@ var (
 	EventHashStakingWithdrawRequested = crypto.Keccak256Hash([]byte("WithdrawRequested(address,uint256,uint256)"))
 	EventHashStakingWithdrawalClaimed = crypto.Keccak256Hash([]byte("WithdrawalClaimed(uint256 indexed requestId)"))
 	EventHashStakingRewardDistributed = crypto.Keccak256Hash([]byte("RewardDistributed(uint256,uint256,uint256,address[],uint256[],uint256[],uint256[])"))
-	EventHashStakingNodeCreated       = crypto.Keccak256Hash([]byte("NodeCreated(uint256,address,string,string,uint64,bool)"))
+	EventHashStakingNodeCreated       = crypto.Keccak256Hash([]byte("NodeCreated(uint256,address,string,string,uint64,bool,bool)"))
 
 	EventHashChipsTransfer = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )

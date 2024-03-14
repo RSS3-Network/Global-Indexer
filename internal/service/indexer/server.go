@@ -2,7 +2,9 @@ package indexer
 
 import (
 	"context"
+	"errors"
 
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer/l1"
@@ -13,6 +15,7 @@ import (
 type Server struct {
 	config         config.RSS3Chain
 	databaseClient database.Client
+	cacheClient    cache.Client
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -36,10 +39,11 @@ func (s *Server) Run(ctx context.Context) error {
 	// Run L2 indexer.
 	errorPool.Go(func(ctx context.Context) error {
 		l2Config := l2.Config{
-			Endpoint: s.config.EndpointL2,
+			Endpoint:     s.config.EndpointL2,
+			BlockThreads: s.config.BlockThreadsL2,
 		}
 
-		serverL2, err := l2.NewServer(ctx, s.databaseClient, l2Config)
+		serverL2, err := l2.NewServer(ctx, s.databaseClient, s.cacheClient, l2Config)
 		if err != nil {
 			return err
 		}
@@ -47,21 +51,20 @@ func (s *Server) Run(ctx context.Context) error {
 		return serverL2.Run(ctx)
 	})
 
-	errorChan := make(chan error)
-	go func() { errorChan <- errorPool.Wait() }()
-
-	select {
-	case err := <-errorChan:
-		return err
-	case <-ctx.Done():
-		return ctx.Err()
+	if err := errorPool.Wait(); err != nil {
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func New(databaseClient database.Client, config config.RSS3Chain) (*Server, error) {
+func New(databaseClient database.Client, cacheClient cache.Client, config config.RSS3Chain) (*Server, error) {
 	instance := Server{
 		config:         config,
 		databaseClient: databaseClient,
+		cacheClient:    cacheClient,
 	}
 
 	return &instance, nil

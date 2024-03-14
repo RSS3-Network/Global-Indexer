@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
@@ -94,11 +95,18 @@ var indexCommand = &cobra.Command{
 			return err
 		}
 
+		options, err := redis.ParseURL(config.Redis.URI)
+		if err != nil {
+			return fmt.Errorf("parse redis uri: %w", err)
+		}
+
+		cacheClient := cache.New(redis.NewClient(options))
+
 		if err := databaseClient.Migrate(cmd.Context()); err != nil {
 			return fmt.Errorf("migrate database: %w", err)
 		}
 
-		instance, err := indexer.New(databaseClient, *config.RSS3Chain)
+		instance, err := indexer.New(databaseClient, cacheClient, *config.RSS3Chain)
 		if err != nil {
 			return err
 		}

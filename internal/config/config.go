@@ -39,6 +39,7 @@ type RSS3Chain struct {
 	EndpointL1     string `yaml:"endpoint_l1" validate:"required"`
 	EndpointL2     string `yaml:"endpoint_l2" validate:"required"`
 	BlockThreadsL1 uint64 `yaml:"block_threads_l1" default:"1"`
+	BlockThreadsL2 uint64 `yaml:"block_threads_l2" default:"1"`
 }
 
 type Epoch struct {

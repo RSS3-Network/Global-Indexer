@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
+	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -13,10 +15,12 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -25,6 +29,7 @@ var _ service.Server = (*server)(nil)
 type server struct {
 	databaseClient                 database.Client
 	ethereumClient                 *ethclient.Client
+	cacheClient                    cache.Client
 	chainID                        *big.Int
 	contractGovernanceToken        *bindings.GovernanceToken
 	contractL2CrossDomainMessenger *bindings.L2CrossDomainMessenger
@@ -34,6 +39,7 @@ type server struct {
 	contractChips                  *l2.Chips
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
+	blockThreads                   uint64
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -48,14 +54,12 @@ func (s *server) Run(ctx context.Context) (err error) {
 	}
 
 	onRetry := retry.OnRetry(func(n uint, err error) {
-		zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
+		}
 	})
 
-	retryIf := retry.RetryIf(func(err error) bool {
-		return !errors.Is(err, context.Canceled)
-	})
-
-	return retry.Do(func() error { return s.run(ctx) }, retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry, retryIf)
+	return retry.Do(func() error { return s.run(ctx) }, retry.Context(ctx), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry)
 }
 
 func (s *server) run(ctx context.Context) (err error) {
@@ -82,27 +86,87 @@ func (s *server) run(ctx context.Context) (err error) {
 				zap.Duration("block.confirmationTime", blockConfirmationTime),
 			)
 
-			time.Sleep(blockConfirmationTime)
+			timer := time.NewTimer(blockConfirmationTime)
+
+			select {
+			case <-ctx.Done():
+				break
+			case <-timer.C:
+				continue
+			}
 
 			continue
 		}
 
-		blockNumberCurrent := s.checkpoint.BlockNumber + 1
+		// Get blocks from RPC.
+		blockResultPool := pool.NewWithResults[*types.Block]().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
 
-		// Get current block (header and transactions).
-		block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumberCurrent))
-		if err != nil {
-			return fmt.Errorf("get block %d: %w", blockNumberCurrent, err)
+		for offset := uint64(1); offset <= s.blockThreads; offset++ {
+			blockNumber := s.checkpoint.BlockNumber + offset
+
+			if blockNumber > s.blockNumberLatest {
+				continue
+			}
+
+			blockResultPool.Go(func(ctx context.Context) (*types.Block, error) {
+				// Get current block (header and transactions).
+				block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+				if err != nil {
+					return nil, fmt.Errorf("get block %d: %w", blockNumber, err)
+				}
+
+				return block, nil
+			})
 		}
 
-		// Get all receipts of the current block.
-		receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumberCurrent)))
+		blocks, err := blockResultPool.Wait()
 		if err != nil {
-			return fmt.Errorf("get receipts for block %d: %w", block.NumberU64(), err)
+			return fmt.Errorf("wait block result pool: %w", err)
 		}
 
-		if err := s.index(ctx, block, receipts); err != nil {
-			return fmt.Errorf("index block %d: %w", blockNumberCurrent, err)
+		// Get receipts from RPC.
+		var (
+			receiptsMap       = make(map[uint64][]*types.Receipt)
+			receiptsMapLocker sync.Mutex
+		)
+
+		receiptsPool := pool.New().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
+
+		for _, block := range blocks {
+			block := block
+
+			receiptsPool.Go(func(ctx context.Context) error {
+				receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(block.NumberU64())))
+				if err != nil {
+					return fmt.Errorf("get receipts for block %d: %w", block.NumberU64(), err)
+				}
+
+				receiptsMapLocker.Lock()
+				defer receiptsMapLocker.Unlock()
+				receiptsMap[block.NumberU64()] = receipts
+
+				return nil
+			})
+		}
+
+		if err := receiptsPool.Wait(); err != nil {
+			return fmt.Errorf("wait receipts pool: %w", err)
+		}
+
+		sort.SliceStable(blocks, func(i, j int) bool {
+			return blocks[i].Number().Cmp(blocks[j].Number()) < 0
+		})
+
+		for _, block := range blocks {
+			if err := s.index(ctx, block, receiptsMap[block.NumberU64()]); err != nil {
+				return fmt.Errorf("index block %d: %w", block.NumberU64(), err)
+			}
 		}
 	}
 }
@@ -172,10 +236,12 @@ func (s *server) index(ctx context.Context, block *types.Block, receipts types.R
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
 			databaseClient: databaseClient,
+			cacheClient:    cacheClient,
+			blockThreads:   config.BlockThreads,
 		}
 		err error
 	)

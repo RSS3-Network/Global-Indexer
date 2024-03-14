@@ -15,12 +15,14 @@ type Node struct {
 	Address                common.Address         `json:"address"`
 	Name                   string                 `json:"name"`
 	Description            string                 `json:"description"`
-	TaxRateBasisPoints     uint64                 `json:"taxRateBasisPoints"`
+	TaxRateBasisPoints     *uint64                `json:"taxRateBasisPoints"`
+	HideTaxRate            bool                   `json:"-"`
 	IsPublicGood           bool                   `json:"isPublicGood"`
 	OperationPoolTokens    string                 `json:"operationPoolTokens"`
 	StakingPoolTokens      string                 `json:"stakingPoolTokens"`
 	TotalShares            string                 `json:"totalShares"`
 	SlashedTokens          string                 `json:"slashedTokens"`
+	Alpha                  bool                   `json:"alpha"`
 	Endpoint               string                 `json:"-"`
 	Stream                 json.RawMessage        `json:"-"`
 	Config                 json.RawMessage        `json:"-"`
@@ -29,6 +31,7 @@ type Node struct {
 	Local                  []*NodeLocal           `json:"local"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
+	APY                    decimal.Decimal        `json:"apy"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 

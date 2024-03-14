@@ -13,11 +13,16 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
+)
+
+const (
+	intervalEpoch = 18 * time.Hour
 )
 
 type Server struct {
@@ -39,17 +44,6 @@ func (s *Server) Run(ctx context.Context) error {
 	errorPool.Go(func(ctx context.Context) error {
 		if err := s.listenEpochEvent(ctx); err != nil {
 			zap.L().Error("listen epoch event", zap.Error(err))
-
-			return err
-		}
-
-		return nil
-	})
-
-	// Listen timer
-	errorPool.Go(func(ctx context.Context) error {
-		if err := s.listenTimer(ctx); err != nil {
-			zap.L().Error("listen timer", zap.Error(err))
 
 			return err
 		}
@@ -84,7 +78,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			zap.L().Info("indexer doesn't work or catch up the latest block", zap.Uint64("checkpoint", checkpoint),
 				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
 
-			time.Sleep(5 * time.Second)
+			<-time.NewTimer(5 * time.Second).C
 
 			continue
 		}
@@ -120,47 +114,43 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		now := time.Now()
 
-		if now.Sub(lastEpochEventTime) >= 18*time.Hour && now.Sub(lastEpochTriggerTime) >= 18*time.Hour {
+		if genesisEpoch, exist := l2.GenesisEpochMap[s.chainID.Uint64()]; exist {
+			genesisEpochTime := time.Unix(genesisEpoch, 0)
+
+			// Wait for genesis epoch
+			if now.Sub(genesisEpochTime) < intervalEpoch-1*time.Hour {
+				zap.L().Info("wait for genesis epoch start", zap.Time("genesis_epoch_time", genesisEpochTime),
+					zap.Time("estimated_epoch_start_time", now.Add(intervalEpoch-1*time.Hour-now.Sub(genesisEpochTime))))
+
+				<-time.NewTimer(intervalEpoch - 1*time.Hour - now.Sub(genesisEpochTime)).C
+
+				zap.L().Info("genesis epoch start", zap.Time("start_time", time.Now()))
+			}
+		}
+
+		if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) >= intervalEpoch {
 			// Trigger new epoch
 			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
 				zap.L().Error("trigger new epoch", zap.Error(err))
 
 				return err
 			}
-		} else if now.Sub(lastEpochEventTime) >= 18*time.Hour && now.Sub(lastEpochTriggerTime) < 18*time.Hour {
+		} else if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) < intervalEpoch {
 			// Wait for epoch event indexer
 			zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
 				zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
 
-			time.Sleep(5 * time.Second)
-		} else if now.Sub(lastEpochEventTime) < 18*time.Hour {
-			// Set timer
-			s.timer = time.NewTimer(18*time.Hour - now.Sub(lastEpochEventTime))
-			time.Sleep(time.Minute)
-		}
-	}
-}
+			<-time.NewTimer(5 * time.Second).C
+		} else if now.Sub(lastEpochEventTime) < intervalEpoch {
+			// Set timer to trigger next epoch
+			<-time.NewTimer(intervalEpoch - now.Sub(lastEpochEventTime)).C
 
-func (s *Server) listenTimer(ctx context.Context) error {
-	for {
-		if s.timer == nil {
-			continue
-		}
-
-		select {
-		case <-s.timer.C:
-			// Timer expired, trigger new epoch
 			err := s.trigger(ctx, s.currentEpoch+1)
 			if err != nil {
 				zap.L().Error("trigger new epoch", zap.Error(err))
 
 				return err
 			}
-
-			s.timer = nil
-		case <-ctx.Done():
-			// Context cancelled, stop the goroutine
-			return nil
 		}
 	}
 }

@@ -3,10 +3,12 @@ info:
   title: Global Indexer
   version: 0.1.0
 servers:
-  - url: https://gi.rss3.dev
+  - url: https://gi.rss3.io
     description: Production
-  - url: http://localhost
+  - url: https://gi.rss3.dev
     description: Development
+  - url: http://localhost
+    description: Localhost
 tags:
   - name: Default
   - name: Bridge
@@ -804,6 +806,7 @@ components:
           type: string
         taxRateBasisPoints:
           type: integer
+          nullable: true
         isPublicGood:
           type: boolean
         operationPoolTokens:

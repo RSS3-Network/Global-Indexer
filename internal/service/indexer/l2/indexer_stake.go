@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -15,8 +16,10 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -195,43 +198,58 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
-	stakeChips := make([]*schema.StakeChip, len(stakeTransaction.Chips))
-
 	callOptions := bind.CallOpts{
 		Context:     ctx,
 		BlockNumber: header.Number,
 	}
 
-	for index, chipID := range stakeTransaction.Chips {
-		tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
-		if err != nil {
-			return fmt.Errorf("get #%d token uri", chipID)
-		}
+	resultPool := pool.
+		NewWithResults[*schema.StakeChip]().
+		WithContext(ctx).
+		WithCancelOnError().
+		WithFirstError()
 
-		encodedMetadata, found := strings.CutPrefix(tokenURI, "data:application/json;base64,")
-		if !found {
-			return fmt.Errorf("invalid #%d token uri", chipID)
-		}
+	for _, chipID := range stakeTransaction.Chips {
+		chipID := chipID
 
-		metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
-		if err != nil {
-			return fmt.Errorf("decode #%d token metadata", chipID)
-		}
+		resultPool.Go(func(ctx context.Context) (*schema.StakeChip, error) {
+			tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
+			if err != nil {
+				return nil, fmt.Errorf("get #%d token uri", chipID)
+			}
 
-		value, err := s.contractStaking.MinTokensToStake(&callOptions, stakeTransaction.Node)
-		if err != nil {
-			return fmt.Errorf("get the minimum stake requirement for node %s", stakeTransaction.Node)
-		}
+			encodedMetadata, found := strings.CutPrefix(tokenURI, "data:application/json;base64,")
+			if !found {
+				return nil, fmt.Errorf("invalid #%d token uri", chipID)
+			}
 
-		stakeChips[index] = &schema.StakeChip{
-			ID:             chipID,
-			Owner:          event.User,
-			Node:           event.NodeAddr,
-			Value:          decimal.NewFromBigInt(value, 0),
-			Metadata:       metadata,
-			BlockNumber:    header.Number,
-			BlockTimestamp: header.Time,
-		}
+			metadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+			if err != nil {
+				return nil, fmt.Errorf("decode #%d token metadata", chipID)
+			}
+
+			value, err := s.contractStaking.MinTokensToStake(&callOptions, stakeTransaction.Node)
+			if err != nil {
+				return nil, fmt.Errorf("get the minimum stake requirement for node %s", stakeTransaction.Node)
+			}
+
+			stakeChip := schema.StakeChip{
+				ID:             chipID,
+				Owner:          event.User,
+				Node:           event.NodeAddr,
+				Value:          decimal.NewFromBigInt(value, 0),
+				Metadata:       metadata,
+				BlockNumber:    header.Number,
+				BlockTimestamp: header.Time,
+			}
+
+			return &stakeChip, nil
+		})
+	}
+
+	stakeChips, err := resultPool.Wait()
+	if err != nil {
+		return fmt.Errorf("get chips: %w", err)
 	}
 
 	if err := databaseTransaction.SaveStakeChips(ctx, stakeChips...); err != nil {
@@ -332,6 +350,8 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 
 	var totalOperationRewards, totalStakingRewards big.Int
 
+	var nodeApy = make(map[common.Address]decimal.Decimal)
+
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		epoch.RewardItems = append(epoch.RewardItems, &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
@@ -345,6 +365,18 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 
 		totalOperationRewards.Add(&totalOperationRewards, event.OperationRewards[i])
 		totalStakingRewards.Add(&totalStakingRewards, event.StakingRewards[i])
+
+		// Calculate the apy of a node
+		node, err := s.contractStaking.GetNode(&bind.CallOpts{}, event.NodeAddrs[i])
+		if err != nil {
+			zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", event.NodeAddrs[i].String()))
+
+			return fmt.Errorf("get node: %w", err)
+		}
+
+		// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
+		nodeApy[event.NodeAddrs[i]] = decimal.NewFromBigInt(event.OperationRewards[i], 0).Add(decimal.NewFromBigInt(event.StakingRewards[i], 0)).
+			Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
 	}
 
 	epoch.TotalOperationRewards = totalOperationRewards.String()
@@ -354,6 +386,13 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch: %w", err)
+	}
+
+	// Save the APY of the nodes
+	if err := databaseTransaction.BatchUpdateNodesApy(ctx, nodeApy); err != nil {
+		zap.L().Error("indexRewardDistributedLog: batch update nodes apy", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
+
+		return fmt.Errorf("batch update nodes apy: %w", err)
 	}
 
 	return nil
@@ -399,26 +438,30 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("save node event: %w", err)
 	}
 
-	// find node
-	node, _ := databaseTransaction.FindNode(ctx, event.NodeAddr)
-	if node != nil {
+	// if node already exists, skip
+	if node, _ := databaseTransaction.FindNode(ctx, event.NodeAddr); node != nil {
 		return nil
 	}
 
 	// save node
-	node = &schema.Node{
+	node := &schema.Node{
 		Address:            event.NodeAddr,
 		ID:                 event.NodeId,
 		Name:               event.Name,
 		Endpoint:           event.NodeAddr.String(), // initial endpoint
 		Description:        event.Description,
-		TaxRateBasisPoints: event.TaxRateBasisPoints,
+		TaxRateBasisPoints: &event.TaxRateBasisPoints,
 		IsPublicGood:       event.PublicGood,
 		Status:             schema.NodeStatusRegistered,
 	}
 
+	// Get from redis if the tax rate of the node needs to be hidden.
+	if err := s.cacheClient.Get(ctx, s.buildNodeHideTaxRateKey(node.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+		return fmt.Errorf("get hide tax rate: %w", err)
+	}
+
 	// save node avatar
-	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
 		return fmt.Errorf("get node avatar: %w", err)
 	}
@@ -442,4 +485,8 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	return nil
+}
+
+func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
+	return fmt.Sprintf("node::%s::hideTaxRate", strings.ToLower(address.String()))
 }
