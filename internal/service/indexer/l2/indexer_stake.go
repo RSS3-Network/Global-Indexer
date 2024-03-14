@@ -375,8 +375,10 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		}
 
 		// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
-		nodeApy[event.NodeAddrs[i]] = decimal.NewFromBigInt(event.OperationRewards[i], 0).Add(decimal.NewFromBigInt(event.StakingRewards[i], 0)).
-			Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
+		if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
+			nodeApy[event.NodeAddrs[i]] = decimal.NewFromBigInt(event.OperationRewards[i], 0).Add(decimal.NewFromBigInt(event.StakingRewards[i], 0)).
+				Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
+		}
 	}
 
 	epoch.TotalOperationRewards = totalOperationRewards.String()
