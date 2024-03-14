@@ -15,6 +15,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -151,6 +152,25 @@ func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.
 		Where("address = ?", nodeAddress).
 		Update("hideTaxRate", hideTaxRate).
 		Error
+}
+
+func (c *client) BatchUpdateNodesApy(ctx context.Context, nodesApy map[common.Address]decimal.Decimal) error {
+	rawSQL := "UPDATE node_info SET apy = CASE address"
+	value := make([]interface{}, 0)
+
+	for address, apy := range nodesApy {
+		rawSQL += " WHEN ? THEN ?"
+
+		value = append(value, address, apy.String())
+	}
+
+	rawSQL += " END WHERE address IN (?)"
+
+	value = append(value, lo.MapToSlice(nodesApy, func(address common.Address, _ decimal.Decimal) common.Address {
+		return address
+	}))
+
+	return c.database.WithContext(ctx).Exec(rawSQL, value...).Error
 }
 
 func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {

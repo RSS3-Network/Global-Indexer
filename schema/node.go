@@ -31,6 +31,7 @@ type Node struct {
 	Local                  []*NodeLocal           `json:"local"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
+	APY                    decimal.Decimal        `json:"apy"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 

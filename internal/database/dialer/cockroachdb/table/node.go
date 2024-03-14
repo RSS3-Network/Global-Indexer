@@ -25,6 +25,7 @@ type Node struct {
 	Local                  json.RawMessage   `gorm:"column:local;type:jsonb"`
 	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
 	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
+	APY                    decimal.Decimal   `gorm:"column:apy"`
 	CreatedAt              time.Time         `gorm:"column:created_at"`
 	UpdatedAt              time.Time         `gorm:"column:updated_at"`
 }
@@ -43,6 +44,8 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
 	n.Stream = node.Stream
 	n.Config = node.Config
+	n.MinTokensToStake = node.MinTokensToStake
+	n.APY = node.APY
 
 	n.Local, err = json.Marshal(node.Local)
 	if err != nil {
@@ -53,8 +56,6 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	if err != nil {
 		return fmt.Errorf("marshal node avatar: %w", err)
 	}
-
-	n.MinTokensToStake = node.MinTokensToStake
 
 	return nil
 }
@@ -84,6 +85,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Local:                  local,
 		Avatar:                 avatar,
 		MinTokensToStake:       n.MinTokensToStake,
+		APY:                    n.APY,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }
