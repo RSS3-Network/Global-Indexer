@@ -10,7 +10,6 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +32,7 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
-	BatchUpdateNodesApy(ctx context.Context, nodesApy map[common.Address]decimal.Decimal) error
+	BatchUpdateNodes(ctx context.Context, data map[string]map[common.Address]interface{}) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
 

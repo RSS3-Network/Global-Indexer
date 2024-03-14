@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -40,8 +39,8 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	e.BlockHash = epoch.BlockHash.String()
 	e.BlockNumber = epoch.BlockNumber.Uint64()
 	e.BlockTimestamp = time.Unix(epoch.BlockTimestamp, 0)
-	e.TotalOperationRewards = lo.Must(decimal.NewFromString(epoch.TotalOperationRewards))
-	e.TotalStakingRewards = lo.Must(decimal.NewFromString(epoch.TotalStakingRewards))
+	e.TotalOperationRewards = epoch.TotalOperationRewards
+	e.TotalStakingRewards = epoch.TotalStakingRewards
 	e.TotalRewardItems = epoch.TotalRewardItems
 
 	return nil
@@ -57,8 +56,8 @@ func (e *Epoch) Export(epochItems []*schema.EpochItem) (*schema.Epoch, error) {
 		BlockTimestamp:        e.BlockTimestamp.Unix(),
 		BlockHash:             common.HexToHash(e.BlockHash),
 		BlockNumber:           new(big.Int).SetUint64(e.BlockNumber),
-		TotalOperationRewards: e.TotalOperationRewards.String(),
-		TotalStakingRewards:   e.TotalStakingRewards.String(),
+		TotalOperationRewards: e.TotalOperationRewards,
+		TotalStakingRewards:   e.TotalStakingRewards,
 		TotalRewardItems:      e.TotalRewardItems,
 		RewardItems:           epochItems,
 	}

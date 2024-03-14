@@ -4,7 +4,6 @@ import (
 	"sort"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -12,8 +11,8 @@ type Epoch struct {
 	ID                    uint64              `json:"id"`
 	StartTimestamp        int64               `json:"startTimestamp"`
 	EndTimestamp          int64               `json:"endTimestamp"`
-	TotalOperationRewards string              `json:"totalOperationRewards"`
-	TotalStakingRewards   string              `json:"totalStakingRewards"`
+	TotalOperationRewards decimal.Decimal     `json:"totalOperationRewards"`
+	TotalStakingRewards   decimal.Decimal     `json:"totalStakingRewards"`
 	TotalRewardItems      int                 `json:"totalRewardItems"`
 	Distributions         []*EpochTransaction `json:"distributions"`
 }
@@ -24,8 +23,8 @@ type EpochTransaction struct {
 	EndTimestamp          int64                       `json:"endTimestamp"`
 	Transaction           TransactionEventTransaction `json:"transaction"`
 	Block                 TransactionEventBlock       `json:"block"`
-	TotalOperationRewards string                      `json:"totalOperationRewards"`
-	TotalStakingRewards   string                      `json:"totalStakingRewards"`
+	TotalOperationRewards decimal.Decimal             `json:"totalOperationRewards"`
+	TotalStakingRewards   decimal.Decimal             `json:"totalStakingRewards"`
 	TotalRewardItems      int                         `json:"totalRewardItems"`
 	RewardItems           []*schema.EpochItem         `json:"rewardItems,omitempty"`
 	CreatedAt             int64                       `json:"-"`
@@ -41,16 +40,14 @@ func NewEpochs(epochs []*schema.Epoch) []*Epoch {
 				ID:                    epoch.ID,
 				StartTimestamp:        epoch.StartTimestamp,
 				EndTimestamp:          epoch.EndTimestamp,
-				TotalOperationRewards: "0",
-				TotalStakingRewards:   "0",
+				TotalOperationRewards: decimal.NewFromInt(0),
+				TotalStakingRewards:   decimal.NewFromInt(0),
 				Distributions:         make([]*EpochTransaction, 0),
 			}
 		}
 
-		epochMap[epoch.ID].TotalOperationRewards = lo.Must(decimal.NewFromString(epochMap[epoch.ID].TotalOperationRewards)).
-			Add(lo.Must(decimal.NewFromString(epoch.TotalOperationRewards))).String()
-		epochMap[epoch.ID].TotalStakingRewards = lo.Must(decimal.NewFromString(epochMap[epoch.ID].TotalStakingRewards)).
-			Add(lo.Must(decimal.NewFromString(epoch.TotalStakingRewards))).String()
+		epochMap[epoch.ID].TotalOperationRewards = epochMap[epoch.ID].TotalOperationRewards.Add(epoch.TotalOperationRewards)
+		epochMap[epoch.ID].TotalStakingRewards = epochMap[epoch.ID].TotalStakingRewards.Add(epoch.TotalStakingRewards)
 		epochMap[epoch.ID].TotalRewardItems += epoch.TotalRewardItems
 		epochMap[epoch.ID].Distributions = append(epochMap[epoch.ID].Distributions, NewEpochTransaction(epoch))
 	}
@@ -73,16 +70,14 @@ func NewEpoch(id uint64, epochs []*schema.Epoch) *Epoch {
 		ID:                    id,
 		StartTimestamp:        epochs[0].StartTimestamp,
 		EndTimestamp:          epochs[0].EndTimestamp,
-		TotalOperationRewards: "0",
-		TotalStakingRewards:   "0",
+		TotalOperationRewards: decimal.NewFromInt(0),
+		TotalStakingRewards:   decimal.NewFromInt(0),
 		Distributions:         make([]*EpochTransaction, 0),
 	}
 
 	for _, distributions := range epochs {
-		epoch.TotalOperationRewards = lo.Must(decimal.NewFromString(epoch.TotalOperationRewards)).
-			Add(lo.Must(decimal.NewFromString(distributions.TotalOperationRewards))).String()
-		epoch.TotalStakingRewards = lo.Must(decimal.NewFromString(epoch.TotalStakingRewards)).
-			Add(lo.Must(decimal.NewFromString(distributions.TotalStakingRewards))).String()
+		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(distributions.TotalOperationRewards)
+		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(distributions.TotalStakingRewards)
 		epoch.TotalRewardItems += distributions.TotalRewardItems
 		epoch.Distributions = append(epoch.Distributions, NewEpochTransaction(distributions))
 	}

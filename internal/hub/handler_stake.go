@@ -259,7 +259,7 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		return model.NewStakeChip(stakeChip, baseURL(c))
 	})
 
-	if length := len(stakeChips); length > 0 {
+	if length := len(stakeChips); length > 0 && length == request.Limit {
 		response.Cursor = stakeChips[length-1].ID.String()
 	}
 
