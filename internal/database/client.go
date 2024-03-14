@@ -32,7 +32,7 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
-	BatchUpdateNodes(ctx context.Context, data map[string]map[common.Address]interface{}) error
+	BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
 

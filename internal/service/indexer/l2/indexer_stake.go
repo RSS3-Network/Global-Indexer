@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -481,17 +480,18 @@ func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
 
 func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction database.Client, epoch *schema.Epoch) error {
 	var (
-		mutex                 sync.RWMutex
-		nodesApy              = make(map[common.Address]interface{})
-		nodesMinTokensToStake = make(map[common.Address]interface{})
-		errorPool             = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
+		data      = make([]*schema.BatchUpdateNode, len(epoch.RewardItems))
+		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 	)
 
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		i := i
 
 		errorPool.Go(func(ctx context.Context) error {
-			address := epoch.RewardItems[i].NodeAddress
+			var (
+				apy, minTokensToStake decimal.Decimal
+				address               = epoch.RewardItems[i].NodeAddress
+			)
 
 			// Calculate the apy of the node
 			node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
@@ -502,25 +502,26 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 			}
 
 			// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
-			mutex.Lock()
-			nodesApy[address] = decimal.NewFromInt(0)
 			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
-				nodesApy[address] = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
+				apy = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
 					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
 			}
-			mutex.Unlock()
 
 			// Query the minTokensToStake of the node
-			minTokensToStake, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
+			minTokens, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
 			if err != nil {
 				zap.L().Error("indexRewardDistributedLog: get min tokens to stake", zap.Error(err), zap.String("address", address.String()))
 
 				return fmt.Errorf("get min tokens to stake: %w", err)
 			}
 
-			mutex.Lock()
-			nodesMinTokensToStake[address] = minTokensToStake
-			mutex.Unlock()
+			minTokensToStake = decimal.NewFromBigInt(minTokens, 0)
+
+			data[i] = &schema.BatchUpdateNode{
+				Address:          address,
+				Apy:              apy,
+				MinTokensToStake: minTokensToStake,
+			}
 
 			return nil
 		})
@@ -531,11 +532,6 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 	}
 
 	// Save nodes
-	data := map[string]map[common.Address]interface{}{
-		"apy":                 nodesApy,
-		"min_tokens_to_stake": nodesMinTokensToStake,
-	}
-
 	if err := databaseTransaction.BatchUpdateNodes(ctx, data); err != nil {
 		zap.L().Error("batch update epoch-related nodes", zap.Error(err), zap.Any("epoch", epoch), zap.Any("data", data))
 

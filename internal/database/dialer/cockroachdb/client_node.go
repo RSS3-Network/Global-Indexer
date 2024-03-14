@@ -153,31 +153,26 @@ func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.
 		Error
 }
 
-func (c *client) BatchUpdateNodes(ctx context.Context, data map[string]map[common.Address]interface{}) error {
-	var (
-		rawSQL    string
-		values    = make([]interface{}, 0)
-		addresses = make([]common.Address, 0)
-	)
+func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error {
+	rawSQL := "UPDATE node_info SET apy = CASE address"
+	values := make([]interface{}, 0)
 
-	for column, nodes := range data {
-		if len(rawSQL) == 0 {
-			rawSQL = fmt.Sprintf("UPDATE node_info SET %s = CASE address", column)
-		} else {
-			rawSQL += fmt.Sprintf(" END, %s = CASE address", column)
-		}
+	for _, value := range data {
+		rawSQL += " WHEN ? THEN ?"
 
-		for address, value := range nodes {
-			rawSQL += " WHEN ? THEN ?"
+		values = append(values, value.Address, value.Apy)
+	}
 
-			values = append(values, address, value)
-		}
+	rawSQL += " END, min_tokens_to_stake = CASE address"
+	for _, value := range data {
+		rawSQL += " WHEN ? THEN ?"
 
-		if len(addresses) == 0 || len(addresses) < len(nodes) {
-			addresses = lo.MapToSlice(nodes, func(address common.Address, _ interface{}) common.Address {
-				return address
-			})
-		}
+		values = append(values, value.Address, value.MinTokensToStake)
+	}
+
+	addresses := make([]common.Address, len(data))
+	for i, value := range data {
+		addresses[i] = value.Address
 	}
 
 	rawSQL += " END WHERE address IN (?)"
