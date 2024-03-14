@@ -29,7 +29,6 @@ type Server struct {
 	txManager      txmgr.TxManager
 	checkpoint     uint64
 	chainID        *big.Int
-	timer          *time.Timer
 	mutex          *redsync.Mutex
 	currentEpoch   uint64
 	gasLimit       uint64
