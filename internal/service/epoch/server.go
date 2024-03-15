@@ -198,7 +198,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	}
 
 	defaultTxConfig := txmgr.Config{
-		ResubmissionTimeout:       10 * time.Second,
+		ResubmissionTimeout:       20 * time.Second,
 		FeeLimitMultiplier:        5,
 		TxSendTimeout:             5 * time.Minute,
 		TxNotInMempoolTimeout:     1 * time.Hour,

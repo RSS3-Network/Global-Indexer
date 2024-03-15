@@ -73,6 +73,12 @@ func (m *SimpleTxManager) resetNonce() {
 
 // send performs the actual transaction creation and sending.
 func (m *SimpleTxManager) send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error) {
+	if m.cfg.TxSendTimeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, m.cfg.TxSendTimeout)
+		defer cancel()
+	}
+
 	var (
 		tx *types.Transaction
 
