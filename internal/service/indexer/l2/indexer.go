@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -21,6 +20,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -53,125 +54,178 @@ func (s *server) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("rollback block: %w", err)
 	}
 
+	retryableFunc := func() error {
+		for {
+			if err := s.index(ctx); err != nil {
+				return err
+			}
+		}
+	}
+
 	onRetry := retry.OnRetry(func(n uint, err error) {
 		if !errors.Is(ctx.Err(), context.Canceled) {
 			zap.L().Error("run indexer", zap.Error(err), zap.Uint("attempts", n))
 		}
 	})
 
-	return retry.Do(func() error { return s.run(ctx) }, retry.Context(ctx), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry)
+	return retry.Do(retryableFunc, retry.Context(ctx), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry)
 }
 
-func (s *server) run(ctx context.Context) (err error) {
-	for {
-		// Refresh the latest block number.
-		if s.blockNumberLatest, err = s.ethereumClient.BlockNumber(ctx); err != nil {
-			return fmt.Errorf("get latest block number: %w", err)
-		}
+func (s *server) refreshLatestBlockNumber(ctx context.Context) (err error) {
+	ctx, span := otel.Tracer("").Start(ctx, "refreshLatestBlockNumber")
+	defer span.End()
 
-		zap.L().Info(
-			"refreshed the latest block number",
-			zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
-			zap.Uint64("block.number.latest", s.blockNumberLatest),
-		)
+	if s.blockNumberLatest, err = s.ethereumClient.BlockNumber(ctx); err != nil {
+		return fmt.Errorf("get latest block number: %w", err)
+	}
 
-		// Waiting for a new block to be minted.
-		if s.checkpoint.BlockNumber >= s.blockNumberLatest {
-			blockConfirmationTime := time.Second // TODO Redefine it.
+	span.SetAttributes(attribute.Int64("block.number", int64(s.blockNumberLatest)))
 
-			zap.L().Info(
-				"waiting for a new block to be minted",
-				zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
-				zap.Uint64("block.number.latest", s.blockNumberLatest),
-				zap.Duration("block.confirmationTime", blockConfirmationTime),
-			)
+	return nil
+}
 
-			timer := time.NewTimer(blockConfirmationTime)
+func (s *server) fetchBlocks(ctx context.Context) ([]*types.Block, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "fetchBlocks")
+	defer span.End()
 
-			select {
-			case <-ctx.Done():
-				break
-			case <-timer.C:
-				continue
-			}
+	var blockNumbers []int64
 
+	for offset := uint64(1); offset <= s.blockThreads; offset++ {
+		blockNumber := s.checkpoint.BlockNumber + offset
+
+		if blockNumber > s.blockNumberLatest {
 			continue
 		}
 
-		// Get blocks from RPC.
-		blockResultPool := pool.NewWithResults[*types.Block]().
-			WithContext(ctx).
-			WithCancelOnError().
-			WithFirstError()
-
-		for offset := uint64(1); offset <= s.blockThreads; offset++ {
-			blockNumber := s.checkpoint.BlockNumber + offset
-
-			if blockNumber > s.blockNumberLatest {
-				continue
-			}
-
-			blockResultPool.Go(func(ctx context.Context) (*types.Block, error) {
-				// Get current block (header and transactions).
-				block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
-				if err != nil {
-					return nil, fmt.Errorf("get block %d: %w", blockNumber, err)
-				}
-
-				return block, nil
-			})
-		}
-
-		blocks, err := blockResultPool.Wait()
-		if err != nil {
-			return fmt.Errorf("wait block result pool: %w", err)
-		}
-
-		// Get receipts from RPC.
-		var (
-			receiptsMap       = make(map[uint64][]*types.Receipt)
-			receiptsMapLocker sync.Mutex
-		)
-
-		receiptsPool := pool.New().
-			WithContext(ctx).
-			WithCancelOnError().
-			WithFirstError()
-
-		for _, block := range blocks {
-			block := block
-
-			receiptsPool.Go(func(ctx context.Context) error {
-				receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(block.NumberU64())))
-				if err != nil {
-					return fmt.Errorf("get receipts for block %d: %w", block.NumberU64(), err)
-				}
-
-				receiptsMapLocker.Lock()
-				defer receiptsMapLocker.Unlock()
-				receiptsMap[block.NumberU64()] = receipts
-
-				return nil
-			})
-		}
-
-		if err := receiptsPool.Wait(); err != nil {
-			return fmt.Errorf("wait receipts pool: %w", err)
-		}
-
-		sort.SliceStable(blocks, func(i, j int) bool {
-			return blocks[i].Number().Cmp(blocks[j].Number()) < 0
-		})
-
-		for _, block := range blocks {
-			if err := s.index(ctx, block, receiptsMap[block.NumberU64()]); err != nil {
-				return fmt.Errorf("index block %d: %w", block.NumberU64(), err)
-			}
-		}
+		blockNumbers = append(blockNumbers, int64(blockNumber))
 	}
+
+	span.SetAttributes(
+		attribute.Int64Slice("block.numbers", blockNumbers),
+	)
+
+	resultPool := pool.NewWithResults[*types.Block]().
+		WithContext(ctx).
+		WithCancelOnError().
+		WithFirstError()
+
+	for _, blockNumber := range blockNumbers {
+		resultPool.Go(func(ctx context.Context) (*types.Block, error) {
+			block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetInt64(blockNumber))
+			if err != nil {
+				return nil, fmt.Errorf("get block %d: %w", blockNumber, err)
+			}
+
+			return block, nil
+		})
+	}
+
+	return resultPool.Wait()
 }
 
-func (s *server) index(ctx context.Context, block *types.Block, receipts types.Receipts) error {
+func (s *server) fetchReceipts(ctx context.Context, blockNumbers []int64) ([]*types.Receipt, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "fetchReceipts")
+	defer span.End()
+
+	span.SetAttributes(attribute.Int64Slice("block.numbers", blockNumbers))
+
+	resultPool := pool.NewWithResults[[]*types.Receipt]().
+		WithContext(ctx).
+		WithCancelOnError().
+		WithFirstError()
+
+	for _, blockNumber := range blockNumbers {
+		blockNumber := blockNumber
+
+		resultPool.Go(func(ctx context.Context) ([]*types.Receipt, error) {
+			receipts, err := s.ethereumClient.BlockReceipts(ctx, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumber)))
+			if err != nil {
+				return nil, fmt.Errorf("get receipts for block %d: %w", blockNumber, err)
+			}
+
+			return receipts, nil
+		})
+	}
+
+	results, err := resultPool.Wait()
+	if err != nil {
+		return nil, fmt.Errorf("wait result pool: %w", err)
+	}
+
+	return lo.Flatten(results), nil
+}
+
+func (s *server) index(ctx context.Context) (err error) {
+	ctx, span := otel.Tracer("").Start(ctx, "index")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("chain.id", s.chainID.Int64()),
+		attribute.Int64("block.number.local", int64(s.checkpoint.BlockNumber)),
+		attribute.Int64("block.number.latest", int64(s.blockNumberLatest)),
+	)
+
+	if err := s.refreshLatestBlockNumber(ctx); err != nil {
+		return fmt.Errorf("get latest block number: %w", err)
+	}
+
+	zap.L().Info(
+		"refreshed the latest block number",
+		zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
+		zap.Uint64("block.number.latest", s.blockNumberLatest),
+	)
+
+	// Waiting for a new block to be minted.
+	if s.checkpoint.BlockNumber >= s.blockNumberLatest {
+		blockConfirmationTime := time.Second // TODO Redefine it.
+
+		zap.L().Info(
+			"waiting for a new block to be minted",
+			zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
+			zap.Uint64("block.number.latest", s.blockNumberLatest),
+			zap.Duration("block.confirmationTime", blockConfirmationTime),
+		)
+
+		timer := time.NewTimer(blockConfirmationTime)
+
+		select {
+		case <-ctx.Done():
+			break
+		case <-timer.C:
+			return nil
+		}
+
+		return nil
+	}
+
+	blocks, err := s.fetchBlocks(ctx)
+	if err != nil {
+		return fmt.Errorf("fetch blocks: %w", err)
+	}
+
+	receipts, err := s.fetchReceipts(ctx, lo.Map(blocks, func(block *types.Block, _ int) int64 { return block.Number().Int64() }))
+	if err != nil {
+		return fmt.Errorf("fetch receipts: %w", err)
+	}
+
+	receiptsMap := lo.GroupBy(receipts, func(receipt *types.Receipt) int64 {
+		return receipt.BlockNumber.Int64()
+	})
+
+	sort.SliceStable(blocks, func(i, j int) bool {
+		return blocks[i].Number().Cmp(blocks[j].Number()) < 0
+	})
+
+	for _, block := range blocks {
+		if err := s.indexBlock(ctx, block, receiptsMap[block.Number().Int64()]); err != nil {
+			return fmt.Errorf("index block %d: %w", block.NumberU64(), err)
+		}
+	}
+
+	return nil
+}
+
+func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts types.Receipts) error {
 	// Begin a database transaction for the block.
 	databaseTransaction, err := s.databaseClient.Begin(ctx)
 	if err != nil {

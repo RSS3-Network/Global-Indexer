@@ -24,6 +24,7 @@ type File struct {
 	Epoch       *Epoch     `yaml:"epoch"`
 	GeoIP       *GeoIP     `yaml:"geo_ip"`
 	RPC         *RPC       `yaml:"rpc"`
+	Telemetry   *Telemetry `json:"telemetry"`
 }
 
 type Database struct {
@@ -68,6 +69,11 @@ type RPCNetwork struct {
 type RPCEndpoint struct {
 	Endpoint string `yaml:"endpoint" validate:"required"`
 	APIkey   string `yaml:"api_key"`
+}
+
+type Telemetry struct {
+	Endpoint string `yaml:"endpoint" validate:"required"`
+	Insecure bool   `yaml:"insecure"`
 }
 
 func Setup(configFilePath string) (*File, error) {
