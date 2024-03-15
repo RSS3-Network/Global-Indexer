@@ -76,6 +76,7 @@ func (m *SimpleTxManager) send(ctx context.Context, candidate TxCandidate) (*typ
 	if m.cfg.TxSendTimeout != 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, m.cfg.TxSendTimeout)
+
 		defer cancel()
 	}
 
