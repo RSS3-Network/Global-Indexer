@@ -106,6 +106,8 @@ func (s *server) fetchBlocks(ctx context.Context) ([]*types.Block, error) {
 		WithFirstError()
 
 	for _, blockNumber := range blockNumbers {
+		blockNumber := blockNumber
+
 		resultPool.Go(func(ctx context.Context) (*types.Block, error) {
 			block, err := s.ethereumClient.BlockByNumber(ctx, new(big.Int).SetInt64(blockNumber))
 			if err != nil {
