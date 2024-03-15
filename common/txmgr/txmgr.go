@@ -478,28 +478,7 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 
 	zap.L().Info("re-estimate gas", zap.String("hash", tx.Hash().String()), zap.Uint64("gasTipCap", bumpedTip.Uint64()), zap.Uint64("gasFeeCap", bumpedFee.Uint64()))
 
-	// Re-estimate gaslimit in case things have changed or a previous gaslimit estimate was wrong
-	gas, err := m.ethereumClient.EstimateGas(ctx, ethereum.CallMsg{
-		From:      m.from,
-		To:        rawTx.To,
-		GasFeeCap: bumpedFee,
-		GasTipCap: bumpedTip,
-		Data:      rawTx.Data,
-	})
-	if err != nil {
-		// If this is a transaction resubmission, we sometimes see this outcome because the
-		// original tx can get included in a block just before the above call. In this case the
-		// error is due to the tx reverting with message "block number must be equal to next
-		// expected block number"
-		zap.L().Error("failed to re-estimate gas", zap.Error(err), zap.Uint64("gaslimit", tx.Gas()))
-		return nil, err
-	}
-
-	if tx.Gas() != gas {
-		zap.L().Warn("re-estimated gas differs", zap.Uint64("oldgas", tx.Gas()), zap.Uint64("newgas", gas))
-	}
-
-	rawTx.Gas = gas
+	rawTx.Gas = tx.Gas()
 
 	ctx, cancel := context.WithTimeout(ctx, m.cfg.NetworkTimeout)
 	defer cancel()
@@ -514,7 +493,7 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 	return newTx, nil
 }
 
-func NewSimpleTxManager(conf Config, chainID *big.Int, nonce uint64, ethereumClient *ethclient.Client, from common.Address, singer gicrypto.SignerFn) (*SimpleTxManager, error) {
+func NewSimpleTxManager(conf Config, chainID *big.Int, nonce *uint64, ethereumClient *ethclient.Client, from common.Address, singer gicrypto.SignerFn) (*SimpleTxManager, error) {
 	if err := conf.Check(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
@@ -525,7 +504,7 @@ func NewSimpleTxManager(conf Config, chainID *big.Int, nonce uint64, ethereumCli
 		chainID:        chainID,
 		ethereumClient: ethereumClient,
 		from:           from,
-		nonce:          &nonce,
+		nonce:          nonce,
 
 		signer: singer,
 	}, nil

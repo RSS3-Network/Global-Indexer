@@ -11,6 +11,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -129,6 +130,12 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 
 	if err != nil {
 		return fmt.Errorf("send tx failed %w", err)
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		zap.L().Error("tx internal error", zap.String("tx", receipt.TxHash.String()))
+
+		select {}
 	}
 
 	// Save epoch trigger to database.

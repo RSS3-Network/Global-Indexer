@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
@@ -187,11 +186,6 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("dial ethereum client: %w", err)
 	}
 
-	nonce, err := ethereumClient.PendingNonceAt(ctx, common.HexToAddress(config.Epoch.WalletAddress))
-	if err != nil {
-		return nil, fmt.Errorf("get pending nonce: %w", err)
-	}
-
 	chainID, err := ethereumClient.ChainID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get chain ID: %w", err)
@@ -204,17 +198,17 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	}
 
 	defaultTxConfig := txmgr.Config{
-		ResubmissionTimeout:       1 * time.Second,
+		ResubmissionTimeout:       10 * time.Second,
 		FeeLimitMultiplier:        5,
 		TxSendTimeout:             5 * time.Minute,
 		TxNotInMempoolTimeout:     1 * time.Hour,
 		NetworkTimeout:            5 * time.Minute,
-		ReceiptQueryInterval:      100 * time.Millisecond,
-		NumConfirmations:          10,
+		ReceiptQueryInterval:      500 * time.Millisecond,
+		NumConfirmations:          5,
 		SafeAbortNonceTooLowCount: 3,
 	}
 
-	txManager, err := txmgr.NewSimpleTxManager(defaultTxConfig, chainID, nonce, ethereumClient, from, signerFactory(chainID))
+	txManager, err := txmgr.NewSimpleTxManager(defaultTxConfig, chainID, nil, ethereumClient, from, signerFactory(chainID))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tx manager")
