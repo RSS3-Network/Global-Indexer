@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -26,13 +25,12 @@ const (
 )
 
 type Server struct {
-	chainID        *big.Int
+	txManager      txmgr.TxManager
 	checkpoint     uint64
+	chainID        *big.Int
 	mutex          *redsync.Mutex
 	currentEpoch   uint64
 	gasLimit       uint64
-	fromAddress    common.Address
-	rpcClient      *rpc.Client
 	ethereumClient *ethclient.Client
 	databaseClient database.Client
 }
@@ -75,7 +73,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		// If indexer doesn't work or catch up the latest block, wait for 5 seconds.
 		if int(blockNumberLatest-checkpoint) > 5 {
-			zap.L().Info("indexer doesn't work or catch up the latest block", zap.Uint64("checkpoint", checkpoint),
+			zap.L().Info("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", checkpoint),
 				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
 
 			<-time.NewTimer(5 * time.Second).C
@@ -179,21 +177,10 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return checkpoint.BlockNumber, blockNumberLatest, nil
 }
 
-func (s *Server) ping() (string, error) {
-	var v string
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-
-	defer cancel()
-
-	if err := s.rpcClient.CallContext(ctx, &v, "health_status"); err != nil {
-		return "", err
-	}
-
-	return v, nil
-}
-
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
+	redisPool := goredis.NewPool(redisClient)
+	rs := redsync.New(redisPool)
+
 	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
 	if err != nil {
 		return nil, fmt.Errorf("dial ethereum client: %w", err)
@@ -204,32 +191,36 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("get chain ID: %w", err)
 	}
 
-	rpcClient, err := rpc.DialOptions(ctx, config.Epoch.SignerEndpoint, rpc.WithHTTPClient(http.DefaultClient))
+	signerFactory, from, err := gicrypto.NewSignerFactory(config.Epoch.PrivateKey, config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
+
 	if err != nil {
-		return nil, fmt.Errorf("dial rpc client: %w", err)
+		return nil, fmt.Errorf("failed to create signer")
 	}
 
-	redisPool := goredis.NewPool(redisClient)
-	rs := redsync.New(redisPool)
+	defaultTxConfig := txmgr.Config{
+		ResubmissionTimeout:       20 * time.Second,
+		FeeLimitMultiplier:        5,
+		TxSendTimeout:             5 * time.Minute,
+		TxNotInMempoolTimeout:     1 * time.Hour,
+		NetworkTimeout:            5 * time.Minute,
+		ReceiptQueryInterval:      500 * time.Millisecond,
+		NumConfirmations:          5,
+		SafeAbortNonceTooLowCount: 3,
+	}
+
+	txManager, err := txmgr.NewSimpleTxManager(defaultTxConfig, chainID, nil, ethereumClient, from, signerFactory(chainID))
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tx manager")
+	}
 
 	server := &Server{
 		chainID:        chainID,
 		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
 		gasLimit:       config.Epoch.GasLimit,
-		fromAddress:    common.HexToAddress(config.Epoch.WalletAddress),
-		rpcClient:      rpcClient,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
-	}
-
-	// Check signer if reachable
-	status, err := server.ping()
-	if err != nil {
-		return nil, err
-	}
-
-	if status != "ok" {
-		return nil, fmt.Errorf("signer service unreachable")
+		txManager:      txManager,
 	}
 
 	return server, nil
