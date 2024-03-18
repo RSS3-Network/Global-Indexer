@@ -168,7 +168,7 @@ func (m *SimpleTxManager) sendTx(ctx context.Context, tx *types.Transaction) (*t
 		return tx
 	}
 
-	// Immediately publish a transaction before starting the resumbission loop
+	// Immediately publish a transaction before starting the resubmission loop
 	tx = publishAndWait(tx, false)
 
 	ticker := time.NewTicker(m.cfg.ResubmissionTimeout)
@@ -183,7 +183,8 @@ func (m *SimpleTxManager) sendTx(ctx context.Context, tx *types.Transaction) (*t
 			}
 			// If we see lots of unrecoverable errors (and no pending transactions) abort sending the transaction.
 			if sendState.ShouldAbortImmediately() {
-				zap.L().Warn("Aborting transaction submission")
+				zap.L().Error("aborting transaction submission")
+
 				return nil, errors.New("aborted transaction sending")
 			}
 
@@ -296,6 +297,8 @@ func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, 
 			return tx, true
 		}
 
+		zap.L().Error("sending transaction error", zap.Error(err), zap.String("hash", tx.Hash().String()))
+
 		switch {
 		case errStringMatch(err, core.ErrNonceTooLow):
 			zap.L().Warn("nonce too low", zap.Error(err))
@@ -334,7 +337,7 @@ func (m *SimpleTxManager) waitForTx(ctx context.Context, tx *types.Transaction, 
 	receipt, err := m.waitMined(ctx, tx, sendState)
 	if err != nil {
 		// this will happen if the tx was successfully replaced by a tx with bumped fees
-		zap.L().Info("Transaction receipt not found", zap.Error(err))
+		zap.L().Info("Transaction receipt not found", zap.Error(err), zap.String("hash", tx.Hash().String()))
 		return
 	}
 	select {

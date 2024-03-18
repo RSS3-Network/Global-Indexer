@@ -133,7 +133,7 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		zap.L().Error("tx internal error", zap.String("tx", receipt.TxHash.String()))
+		zap.L().Error("erroneous transaction receipt", zap.String("tx", receipt.TxHash.String()))
 
 		select {}
 	}
