@@ -14,6 +14,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -31,6 +33,16 @@ func (s *server) indexBridgingLog(ctx context.Context, header *types.Header, tra
 }
 
 func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexL1StandardBridgeERC20DepositInitiatedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	erc20DepositInitiatedEvent, err := s.contractL1StandardBridge.ParseERC20DepositInitiated(*log)
 	if err != nil {
 		return fmt.Errorf("parse ERC20DepositInitiated event: %w", err)
@@ -91,6 +103,16 @@ func (s *server) indexL1StandardBridgeERC20DepositInitiatedLog(ctx context.Conte
 }
 
 func (s *server) indexL1StandardBridgeERC20WithdrawalFinalizedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) (err error) {
+	ctx, span := otel.Tracer("").Start(ctx, "indexL1StandardBridgeERC20WithdrawalFinalizedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	withdrawalFinalizedEvent, err := s.contractL1StandardBridge.ParseERC20WithdrawalFinalized(*log)
 	if err != nil {
 		return fmt.Errorf("parse ERC20DepositInitiated event: %w", err)
@@ -126,6 +148,16 @@ func (s *server) indexL1StandardBridgeERC20WithdrawalFinalizedLog(ctx context.Co
 }
 
 func (s *server) indexOptimismPortalWithdrawalProvenLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, _ int, databaseTransaction database.Client) (err error) {
+	ctx, span := otel.Tracer("").Start(ctx, "indexOptimismPortalWithdrawalProvenLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	withdrawalProvenEvent, err := s.contractOptimismPortal.ParseWithdrawalProven(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalProven event: %w", err)

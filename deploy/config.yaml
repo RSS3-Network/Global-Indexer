@@ -34,3 +34,7 @@ rpc:
     farcaster:
       endpoint: https://nemes.farcaster.xyz:2281
       api_key:
+
+telemetry:
+  endpoint: localhost:4318
+  insecure: true

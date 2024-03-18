@@ -12,6 +12,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +29,16 @@ func (s *server) indexBridgingLog(ctx context.Context, header *types.Header, tra
 }
 
 func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexL2StandardBridgeDepositFinalizedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	depositFinalizedEvent, err := s.contractL2StandardBridge.ParseDepositFinalized(*log)
 	if err != nil {
 		return fmt.Errorf("parse DepositFinalized event: %w", err)
@@ -62,6 +74,16 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 }
 
 func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexL2StandardWithdrawalInitiatedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	withdrawalInitiatedEvent, err := s.contractL2StandardBridge.ParseWithdrawalInitiated(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalInitiated event: %w", err)
