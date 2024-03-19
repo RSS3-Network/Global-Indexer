@@ -256,25 +256,21 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 	}
 
 	// Get current chip values
-	nodeAddresses := make([]common.Address, 0, len(stakeChips))
-	for _, chip := range stakeChips {
-		nodeAddresses = append(nodeAddresses, chip.Node)
-	}
+	nodeAddresses := lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) common.Address {
+		return stakeChip.Node
+	})
 
 	node, err := h.databaseClient.FindNodes(c.Request().Context(), nodeAddresses, nil, nil, len(nodeAddresses))
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
 	}
 
-	values := make(map[common.Address]decimal.Decimal, len(node))
-	for _, n := range node {
-		values[n.Address] = n.MinTokensToStake
-	}
+	values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
+		return node.Address, node.MinTokensToStake
+	})
 
 	for _, chip := range stakeChips {
-		if value, ok := values[chip.Node]; ok {
-			chip.LatestValue = value
-		}
+		chip.LatestValue = values[chip.Node]
 	}
 
 	var response Response
