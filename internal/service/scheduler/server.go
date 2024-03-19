@@ -19,7 +19,7 @@ func New(server string, databaseClient database.Client, redis *redis.Client, eth
 	case integrator.Name:
 		return integrator.New(databaseClient, redis, ethereumClient)
 	case snapshot.Name:
-		return snapshot.New(databaseClient, redis)
+		return snapshot.New(databaseClient, redis, ethereumClient)
 	default:
 		return nil, fmt.Errorf("unknown scheduler server: %s", server)
 	}

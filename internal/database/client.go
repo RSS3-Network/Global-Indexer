@@ -32,6 +32,7 @@ type Client interface {
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
+
 	BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
@@ -39,12 +40,15 @@ type Client interface {
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
 	FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error)
-	FindNodeSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
 	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
-	SaveNodeSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
 	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
+
+	FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
+	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
+	FindNodeMinTokensToStakeSnapshots(ctx context.Context, nodeAddress []*common.Address, onlyStartAndEnd bool, limit *int) ([]*schema.NodeMinTokensToStakeSnapshot, error)
+	SaveNodeMinTokensToStakeSnapshots(ctx context.Context, nodeMinTokensToStakeSnapshot []*schema.NodeMinTokensToStakeSnapshot) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
