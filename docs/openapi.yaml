@@ -820,6 +820,12 @@ components:
               type: string
             image:
               type: string
+        value:
+          type: string
+          description: "the value at time of minting"
+        latestValue:
+          type: string
+          description: "The latest value of the chip"
       example:
         id: 474
         node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
@@ -828,6 +834,8 @@ components:
           name: "Chip #474"
           description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
           image: "https://gi.rss3.dev/chips/474/image.svg"
+        value: "5000000000000000000000"
+        latestValue: "5500000000000000000000"
     Node:
       type: object
       properties:
