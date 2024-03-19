@@ -20,6 +20,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"github.com/sourcegraph/conc/pool"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )
 
@@ -47,6 +49,16 @@ func (s *server) indexStakingLog(ctx context.Context, header *types.Header, tran
 }
 
 func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingDepositedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseDeposited(*log)
 	if err != nil {
 		return fmt.Errorf("parse Deposited event: %w", err)
@@ -91,6 +103,16 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 }
 
 func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingWithdrawRequestedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseWithdrawRequested(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawRequested event: %w", err)
@@ -135,6 +157,16 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 }
 
 func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingWithdrawalClaimedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseWithdrawalClaimed(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalClaimed event: %w", err)
@@ -159,6 +191,16 @@ func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *t
 }
 
 func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingStakedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseStaked(*log)
 	if err != nil {
 		return fmt.Errorf("parse Staked event: %w", err)
@@ -260,6 +302,16 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 }
 
 func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingUnstakeRequestedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseUnstakeRequested(*log)
 	if err != nil {
 		return fmt.Errorf("parse UnstakeRequested event: %w", err)
@@ -300,6 +352,16 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 }
 
 func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingUnstakeClaimedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseUnstakeClaimed(*log)
 	if err != nil {
 		return fmt.Errorf("parse UnstakeClaimed event: %w", err)
@@ -324,6 +386,16 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 }
 
 func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingRewardDistributedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseRewardDistributed(*log)
 	if err != nil {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
@@ -386,6 +458,16 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 }
 
 func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeCreated")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
 	event, err := s.contractStaking.ParseNodeCreated(*log)
 	if err != nil {
 		return fmt.Errorf("parse NodeCreated event: %w", err)
@@ -487,6 +569,16 @@ func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
 }
 
 func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction database.Client, epoch *schema.Epoch) error {
+	ctx, span := otel.Tracer("").Start(ctx, "saveEpochRelatedNodes")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", epoch.BlockNumber.Int64()),
+		attribute.Stringer("block.hash", epoch.BlockHash),
+		attribute.Stringer("transaction.hash", epoch.TransactionHash),
+		attribute.Int64("epoch.id", int64(epoch.ID)),
+	)
+
 	var (
 		data      = make([]*schema.BatchUpdateNode, len(epoch.RewardItems))
 		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()

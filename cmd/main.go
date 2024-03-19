@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/constant"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
@@ -21,6 +22,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/zap"
 )
 
@@ -88,6 +95,12 @@ var indexCommand = &cobra.Command{
 		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
 		if err != nil {
 			return fmt.Errorf("setup config file: %w", err)
+		}
+
+		if config.Telemetry != nil {
+			if err := setupOpenTelemetry("indexer", config.Telemetry); err != nil {
+				return fmt.Errorf("setup opentelemetry tracer")
+			}
 		}
 
 		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
@@ -189,6 +202,34 @@ var epochCommand = &cobra.Command{
 
 		return instance.Run(cmd.Context())
 	},
+}
+
+func setupOpenTelemetry(serviceName string, config *config.Telemetry) error {
+	options := []otlptracehttp.Option{
+		otlptracehttp.WithEndpoint(config.Endpoint),
+	}
+
+	if config.Insecure {
+		options = append(options, otlptracehttp.WithInsecure())
+	}
+
+	exporter, err := otlptrace.New(context.Background(), otlptracehttp.NewClient(options...))
+	if err != nil {
+		return err
+	}
+
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(constant.BuildServiceName(serviceName)),
+			semconv.ServiceVersionKey.String(constant.BuildServiceVersion()),
+		)),
+	)
+
+	otel.SetTracerProvider(tracerProvider)
+
+	return nil
 }
 
 func initializeLogger() {
