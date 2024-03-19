@@ -26,6 +26,7 @@ type StakeChip struct {
 	Owner          common.Address  `json:"owner"`
 	Node           common.Address  `json:"node"`
 	Value          decimal.Decimal `json:"value"`
+	LatestValue    decimal.Decimal `json:"latestValue"`
 	Metadata       json.RawMessage `json:"metadata"`
 	BlockNumber    *big.Int        `json:"blockNumber"`
 	BlockTimestamp uint64          `json:"blockTimestamp"`
