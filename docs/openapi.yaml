@@ -367,7 +367,7 @@ paths:
                 type: string
         404:
           description: "Not found"
-  /snapshots/nodes:
+  /snapshots/nodes/count:
     get:
       description: "Get snapshots of the number of nodes"
       tags:
@@ -393,6 +393,41 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
+  /snapshots/nodes/minTokensToStake:
+    post:
+        description: "Get snapshots of the minimum number of tokens to stake"
+        tags:
+            - Snapshots
+        requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    nodeAddresses:
+                      type: array
+                      items:
+                          type: string
+                    onlyStartAndEnd:
+                      type: boolean
+                      description: "If true, only return the start and end minTokensToStake"
+                  example:
+                    nodeAddresses:
+                      - "0x9c29e25d7e475caee73d4b7006f3b10e977773ac"
+                      - "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
+                    onlyStartAndEnd: true
+        responses:
+            200:
+              description: "OK"
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/NodeMinTokensToStakeSnapshot"
   /snapshots/stakers:
     get:
       description: "Get snapshots of the number of stakers"
@@ -932,4 +967,27 @@ components:
                   type: integer
                 isPublicGood:
                   type: boolean
+    NodeMinTokensToStakeSnapshot:
+      type: object
+      properties:
+        nodeAddress:
+          type: string
+        snapshots:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                example: "2024-03-13T00:08:38+08:00"
+              epochID:
+                type: integer
+              nodeAddress:
+                type: string
+              minTokensToStake:
+                type: string
+              createdAt:
+                type: string
+              updatedAt:
+                type: string
 
