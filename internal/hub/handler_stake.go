@@ -19,6 +19,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -251,7 +252,25 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 
 	stakeChips, err := h.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
-		return err
+		return fmt.Errorf("find stake chips: %w", err)
+	}
+
+	// Get current chip values
+	nodeAddresses := lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) common.Address {
+		return stakeChip.Node
+	})
+
+	node, err := h.databaseClient.FindNodes(c.Request().Context(), nodeAddresses, nil, nil, len(nodeAddresses))
+	if err != nil {
+		return fmt.Errorf("find nodes: %w", err)
+	}
+
+	values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
+		return node.Address, node.MinTokensToStake
+	})
+
+	for _, chip := range stakeChips {
+		chip.LatestValue = values[chip.Node]
 	}
 
 	var response Response
@@ -296,6 +315,13 @@ func (h *Hub) GetStakeChip(c echo.Context) error {
 
 		return err
 	}
+
+	node, err := h.databaseClient.FindNode(c.Request().Context(), stakeChip.Node)
+	if err != nil {
+		return fmt.Errorf("find node: %w", err)
+	}
+
+	stakeChip.LatestValue = node.MinTokensToStake
 
 	var response Response
 	response.Data = model.NewStakeChip(stakeChip, baseURL(c))
