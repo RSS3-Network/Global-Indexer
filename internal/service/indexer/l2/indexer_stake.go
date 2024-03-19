@@ -529,7 +529,15 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
-	// save node avatar
+	// Get node minTokensToStake
+	minTokensToStake, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	if err != nil {
+		return fmt.Errorf("get min tokens to stake: %w", err)
+	}
+
+	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
+
+	// Save node avatar
 	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
 		return fmt.Errorf("get node avatar: %w", err)
