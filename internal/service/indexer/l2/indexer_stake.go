@@ -603,8 +603,9 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 
 			// APY = (operationRewards + stakingRewards) / (stakingPoolTokens) * (1 - tax) * number of epochs in a year
 			// number of epochs in a year = 365 * 24 / 18 = 486.6666666666667
-			tax := 1 - float64(node.TaxRateBasisPoints)/100
 			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
+				tax := 1 - float64(node.TaxRateBasisPoints)/10000
+
 				apy = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
 					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).
 					Mul(decimal.NewFromFloat(tax)).
