@@ -52,7 +52,7 @@ func (h *Hub) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetStakeSnapshots(c echo.Context) error {
+func (h *Hub) GetStakersCountSnapshots(c echo.Context) error {
 	stakeSnapshots, err := h.databaseClient.FindStakeSnapshots(c.Request().Context())
 	if err != nil {
 		zap.L().Error("find stake snapshots", zap.Error(err))
