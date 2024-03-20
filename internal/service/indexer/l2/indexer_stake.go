@@ -593,7 +593,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 				address               = epoch.RewardItems[i].NodeAddress
 			)
 
-			// Calculate the apy of the node
+			// Calculate node APY
 			node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
 			if err != nil {
 				zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", address.String()))
@@ -601,10 +601,14 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 				return fmt.Errorf("get node: %w", err)
 			}
 
-			// APY = (operationRewards + stakingRewards) / stakingPoolTokens * 486.6666666666667
+			// APY = (operationRewards + stakingRewards) / (stakingPoolTokens) * (1 - tax) * number of epochs in a year
+			// number of epochs in a year = 365 * 24 / 18 = 486.6666666666667
+			tax := 1 - float64(node.TaxRateBasisPoints)/100
 			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
 				apy = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
-					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).Mul(decimal.NewFromFloat(486.6666666666667))
+					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).
+					Mul(decimal.NewFromFloat(tax)).
+					Mul(decimal.NewFromFloat(486.6666666666667))
 			}
 
 			// Query the minTokensToStake of the node
