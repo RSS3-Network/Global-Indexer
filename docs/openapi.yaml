@@ -428,7 +428,7 @@ paths:
                         type: array
                         items:
                           $ref: "#/components/schemas/NodeMinTokensToStakeSnapshot"
-  /snapshots/stakers:
+  /snapshots/stakers/count:
     get:
       description: "Get snapshots of the number of stakers"
       tags:
