@@ -2,7 +2,10 @@ module github.com/naturalselectionlabs/rss3-global-indexer
 
 go 1.21.4
 
-replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101305.0
+replace (
+	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101305.0
+	github.com/kataras/iris/v12 => github.com/kataras/iris/v12 v12.2.10
+)
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
