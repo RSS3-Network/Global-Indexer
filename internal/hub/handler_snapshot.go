@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 	"go.uber.org/zap"
 )
 
@@ -29,22 +30,18 @@ func (h *Hub) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 	var request BatchNodeMinTokensToStakeRequest
 
 	if err := c.Bind(&request); err != nil {
-		zap.L().Error("bind request", zap.Error(err))
-
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		zap.L().Error("validate request", zap.Error(err))
-
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	nodeMinTokensToStakeSnapshots, err := h.databaseClient.FindNodeMinTokensToStakeSnapshots(c.Request().Context(), request.NodeAddresses, request.OnlyStartAndEnd, nil)
 	if err != nil {
 		zap.L().Error("find node min tokens to stake snapshots", zap.Error(err))
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("find node min tokens to stake snapshots: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, Response{
