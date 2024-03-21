@@ -10,21 +10,22 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 )
 
 func (h *Hub) GetEpochsHandler(c echo.Context) error {
 	var request GetEpochsRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bad request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	epochs, err := h.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
@@ -33,7 +34,7 @@ func (h *Hub) GetEpochsHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get failed: %w", err))
 	}
 
 	data := model.NewEpochs(epochs)
@@ -53,15 +54,15 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 	var request GetEpochRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bad request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	epoch, err := h.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.ItemsLimit, request.Cursor)
@@ -70,7 +71,7 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 	}
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get failed: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, Response{
@@ -82,15 +83,15 @@ func (h *Hub) GetEpochDistributionHandler(c echo.Context) error {
 	var request GetEpochDistributionRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bad request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	epoch, err := h.databaseClient.FindEpochTransaction(c.Request().Context(), request.TransactionHash, request.ItemsLimit, request.Cursor)
@@ -99,7 +100,7 @@ func (h *Hub) GetEpochDistributionHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get failed: %w", err))
 	}
 
 	var cursor string
@@ -117,15 +118,15 @@ func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
 	var request GetEpochNodeRewardsRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bad request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	epochs, err := h.databaseClient.FindEpochNodeRewards(c.Request().Context(), request.NodeAddress, request.Limit, request.Cursor)
@@ -134,7 +135,7 @@ func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get failed: %w", err))
 	}
 
 	var cursor string
