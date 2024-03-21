@@ -28,6 +28,29 @@ var _ service.Server = (*server)(nil)
 
 var Name = "sort"
 
+const (
+	stakingToPointsRate           float64 = 100000
+	stakingLogBase                        = 2
+	stakingMaxPoints                      = 0.2
+	hoursPerEpoch                         = 18
+	activeTimeToPointsRate                = 120
+	activeTimeMaxPoints                   = 0.3
+	totalReqToPointsRate                  = 100000
+	totalReqLogBase                       = 100
+	totalReqMaxPoints                     = 0.3
+	totalEpochReqToPointsRate             = 1000000
+	totalEpochReqLogBase                  = 5000
+	totalEpochReqMaxPoints                = 1
+	perDecentralizedNetworkPoints         = 0.1
+	perRssNetworkPoints                   = 0.3
+	perFederatedNetworkPoints             = 0.1
+	perIndexerPoints                      = 0.05
+	indexerMaxPoints                      = 0.2
+	perSlashPoints                        = 0.5
+	nonExistPoints                float64 = 0
+	existPoints                           = 1
+)
+
 type server struct {
 	cronJob            *cronjob.CronJob
 	stakingContract    *l2.Staking
@@ -54,10 +77,10 @@ func (s *server) Run(ctx context.Context) error {
 	s.cronJob.Start()
 	defer s.cronJob.Stop()
 
-	stopchan := make(chan os.Signal, 1)
+	stopChan := make(chan os.Signal, 1)
 
-	signal.Notify(stopchan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
-	<-stopchan
+	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	<-stopChan
 
 	return nil
 }
@@ -196,28 +219,28 @@ func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.S
 
 func (s *server) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
-	stat.Points = math.Min(math.Log2(stat.Staking/100000+1), 0.2)
+	stat.Points = math.Min(math.Log(stat.Staking/stakingToPointsRate+1)/math.Log(stakingLogBase), stakingMaxPoints)
 
-	// public good
-	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
+	// public good node
+	stat.Points += lo.Ternary(stat.IsPublicGood, nonExistPoints, existPoints)
 
-	// running time
-	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/18)/120, 0.3)
+	// node active time
+	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/hoursPerEpoch)/activeTimeToPointsRate, activeTimeMaxPoints)
 
 	// total requests
-	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/100000+1)/math.Log(100), 0.3)
+	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/totalReqToPointsRate+1)/math.Log(totalReqLogBase), totalReqMaxPoints)
 
 	// epoch requests
-	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/1000000+1)/math.Log(5000), 1)
+	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToPointsRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxPoints)
 
 	// network count
-	stat.Points += 0.1*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + 0.3*float64(lo.Ternary(stat.IsRssNode, 1, 0))
+	stat.Points += perDecentralizedNetworkPoints*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + perRssNetworkPoints*lo.Ternary(stat.IsRssNode, existPoints, nonExistPoints)
 
 	// indexer count
-	stat.Points += math.Min(float64(stat.Indexer)*0.05, 0.2)
+	stat.Points += math.Min(float64(stat.Indexer)*perIndexerPoints, indexerMaxPoints)
 
 	// epoch failure requests
-	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
+	stat.Points -= perSlashPoints * float64(stat.EpochInvalidRequest)
 }
 
 func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
