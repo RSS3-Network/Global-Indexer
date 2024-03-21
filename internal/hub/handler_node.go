@@ -22,15 +22,15 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 	var request BatchNodeRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	nodes, err := h.getNodes(c.Request().Context(), &request)
@@ -39,7 +39,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get nodes: %w", err))
 	}
 
 	var cursor string
@@ -57,11 +57,11 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	var request NodeRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	node, err := h.getNode(c.Request().Context(), request.Address)
@@ -70,7 +70,7 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get node: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, Response{
@@ -82,15 +82,15 @@ func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
 	var request NodeEventsRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("set default failed: %v", err))
+		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	events, err := h.databaseClient.FindNodeEvents(c.Request().Context(), request.Address, request.Cursor, request.Limit)
@@ -99,7 +99,7 @@ func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get node events: %w", err))
 	}
 
 	var cursor string
@@ -119,11 +119,11 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 	var request NodeChallengeRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	switch request.Type {
@@ -136,7 +136,7 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 			Data: fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String())),
 		})
 	default:
-		return response.BadParamsError(c, fmt.Errorf("invalid type %s", request.Type))
+		return response.BadRequestError(c, fmt.Errorf("invalid challenge type: %s", request.Type))
 	}
 }
 
@@ -144,17 +144,17 @@ func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
 	var request NodeHideTaxRateRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String()))
 
 	if err := h.checkSignature(c.Request().Context(), request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
-		return fmt.Errorf("check signature: %w", err)
+		return response.BadRequestError(c, fmt.Errorf("check signature: %w", err))
 	}
 
 	// Cache the hide tax rate status
@@ -176,11 +176,11 @@ func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
 	var request NodeRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	avatar, err := h.getNodeAvatar(c.Request().Context(), request.Address)
@@ -189,7 +189,7 @@ func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("get failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("get node avatar: %w", err))
 	}
 
 	return c.Blob(http.StatusOK, "image/svg+xml", avatar)
@@ -199,20 +199,20 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 	var request RegisterNodeRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	ip, err := h.parseRequestIP(c)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("parse request ip failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("parse request ip: %w", err))
 	}
 
 	if err := h.register(c.Request().Context(), &request, ip.String()); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("register node failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("register failed: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, Response{
@@ -224,20 +224,20 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 	var request NodeHeartbeatRequest
 
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("bad request: %v", err))
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Sprintf("validate failed: %v", err))
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	ip, err := h.parseRequestIP(c)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("parse request ip failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("parse request ip: %w", err))
 	}
 
 	if err := h.heartbeat(c.Request().Context(), &request, ip.String()); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("heartbeat failed: %v", err))
+		return response.InternalError(c, fmt.Errorf("heartbeat failed: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, Response{
@@ -301,9 +301,4 @@ type BatchNodeRequest struct {
 	Cursor      *string          `query:"cursor"`
 	Limit       int              `query:"limit" validate:"min=1,max=50" default:"10"`
 	NodeAddress []common.Address `query:"nodeAddress"`
-}
-
-type Response struct {
-	Data   any    `json:"data"`
-	Cursor string `json:"cursor,omitempty"`
 }
