@@ -26,22 +26,16 @@ type Cache struct {
 }
 
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
-// https://github.com/NaturalSelectionLabs/RSS3-Node/blob/develop/deploy/config.development.yaml
+// https://github.com/RSS3-Network/Node/blob/develop/deploy/config.yaml
 var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Fallback: {
 		filter.NetworkEthereum.String(),
 	},
-	filter.Mirror: {
-		filter.NetworkArweave.String(),
-	},
-	filter.Farcaster: {
-		filter.NetworkFarcaster.String(),
-	},
 	filter.RSS3: {
 		filter.NetworkEthereum.String(),
 	},
-	filter.Paragraph: {
-		filter.NetworkArweave.String(),
+	filter.Lens: {
+		filter.NetworkPolygon.String(),
 	},
 	filter.OpenSea: {
 		filter.NetworkEthereum.String(),
@@ -55,8 +49,20 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Aavegotchi: {
 		filter.NetworkPolygon.String(),
 	},
-	filter.Lens: {
-		filter.NetworkPolygon.String(),
+	filter.Highlight: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.Crossbell: {
+		filter.NetworkCrossbell.String(),
+	},
+	filter.Farcaster: {
+		filter.NetworkFarcaster.String(),
+	},
+	filter.Mirror: {
+		filter.NetworkArweave.String(),
+	},
+	filter.Paragraph: {
+		filter.NetworkArweave.String(),
 	},
 	filter.Looksrare: {
 		filter.NetworkEthereum.String(),
@@ -66,9 +72,6 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	},
 	filter.Momoka: {
 		filter.NetworkArweave.String(),
-	},
-	filter.Highlight: {
-		filter.NetworkEthereum.String(),
 	},
 	filter.Aave: {
 		filter.NetworkPolygon.String(),
@@ -85,11 +88,14 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Lido: {
 		filter.NetworkEthereum.String(),
 	},
-	filter.Crossbell: {
-		filter.NetworkCrossbell.String(),
-	},
 	filter.ENS: {
 		filter.NetworkEthereum.String(),
+	},
+	filter.Oneinch: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.KiwiStand: {
+		filter.NetworkOptimism.String(),
 	},
 }
 
@@ -105,6 +111,7 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 		filter.Aave.String(),
 		filter.Lido.String(),
 		filter.ENS.String(),
+		filter.Oneinch.String(),
 	},
 	filter.NetworkArweave: {
 		filter.Mirror.String(),
@@ -132,6 +139,7 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 	},
 	filter.NetworkOptimism: {
 		filter.Aave.String(),
+		filter.KiwiStand.String(),
 	},
 	filter.NetworkArbitrum: {
 		filter.Aave.String(),
@@ -160,11 +168,14 @@ var PlatformToWorkerMap = map[filter.Platform]string{
 	filter.PlatformLido:       filter.Lido.String(),
 	filter.PlatformCrossbell:  filter.Crossbell.String(),
 	filter.PlatformENS:        filter.ENS.String(),
+	filter.Platform1inch:      filter.Oneinch.String(),
+	filter.PlatformKiwiStand:  filter.KiwiStand.String(),
 }
 
 var TagToWorkersMap = map[filter.Tag][]string{
 	filter.TagTransaction: {
 		filter.Optimism.String(),
+		filter.KiwiStand.String(),
 	},
 	filter.TagCollectible: {
 		filter.OpenSea.String(),
@@ -172,12 +183,14 @@ var TagToWorkersMap = map[filter.Tag][]string{
 		filter.Highlight.String(),
 		filter.Lido.String(),
 		filter.Looksrare.String(),
+		filter.KiwiStand.String(),
 	},
 	filter.TagExchange: {
 		filter.RSS3.String(),
 		filter.Uniswap.String(),
 		filter.Aave.String(),
 		filter.Lido.String(),
+		filter.Oneinch.String(),
 	},
 	filter.TagSocial: {
 		filter.Farcaster.String(),
@@ -189,6 +202,7 @@ var TagToWorkersMap = map[filter.Tag][]string{
 		filter.IQWiki.String(),
 		filter.Matters.String(),
 		filter.Momoka.String(),
+		filter.KiwiStand.String(),
 	},
 	filter.TagMetaverse: {
 		filter.Aavegotchi.String(),

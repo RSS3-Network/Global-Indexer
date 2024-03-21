@@ -115,26 +115,29 @@ func (h *Hub) parseParams(params url.Values, tags []string) ([]string, error) {
 
 	types := make([]string, 0)
 
-	for _, typex := range params["type"] {
+	for _, typeX := range params["type"] {
 		var (
-			value filter.Type
-			err   error
+			value   filter.Type
+			errType error
 		)
 
 		for _, tag := range tags {
-			t, err := filter.TagString(tag)
-			if err == nil {
-				value, err = filter.TypeString(t, typex)
-				if err == nil {
-					types = append(types, value.Name())
+			t, errTag := filter.TagString(tag)
 
-					break
-				}
+			if errTag != nil {
+				return nil, fmt.Errorf("invalid tag: %s", tag)
+			}
+
+			value, errType = filter.TypeString(t, typeX)
+			if errType == nil {
+				types = append(types, value.Name())
+
+				break
 			}
 		}
 
-		if err != nil {
-			return nil, fmt.Errorf("invalid type: %s", typex)
+		if errType != nil {
+			return nil, fmt.Errorf("invalid type: %s", typeX)
 		}
 	}
 
