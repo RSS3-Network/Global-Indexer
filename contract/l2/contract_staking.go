@@ -1589,21 +1589,21 @@ func (_Staking *StakingTransactorSession) SlashNodes(nodeAddrs []common.Address)
 
 // Stake is a paid mutator transaction binding the contract method 0x26476204.
 //
-// Solidity: function staker_count(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
+// Solidity: function stake(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
 func (_Staking *StakingTransactor) Stake(opts *bind.TransactOpts, nodeAddr common.Address) (*types.Transaction, error) {
-	return _Staking.contract.Transact(opts, "staker_count", nodeAddr)
+	return _Staking.contract.Transact(opts, "stake", nodeAddr)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0x26476204.
 //
-// Solidity: function staker_count(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
+// Solidity: function stake(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
 func (_Staking *StakingSession) Stake(nodeAddr common.Address) (*types.Transaction, error) {
 	return _Staking.Contract.Stake(&_Staking.TransactOpts, nodeAddr)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0x26476204.
 //
-// Solidity: function staker_count(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
+// Solidity: function stake(address nodeAddr) payable returns(uint256 startTokenId, uint256 endTokenId)
 func (_Staking *StakingTransactorSession) Stake(nodeAddr common.Address) (*types.Transaction, error) {
 	return _Staking.Contract.Stake(&_Staking.TransactOpts, nodeAddr)
 }
