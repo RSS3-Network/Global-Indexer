@@ -1,4 +1,4 @@
-package stake
+package stakercount
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	Name    = "stake"
+	Name    = "staker_count"
 	Timeout = 10 * time.Second
 )
 
@@ -30,7 +30,7 @@ type server struct {
 }
 
 func (s *server) Spec() string {
-	return "0 0 * * * *"
+	return "0 0 0 * * *"
 }
 
 func (s *server) Run(ctx context.Context) error {
@@ -38,18 +38,18 @@ func (s *server) Run(ctx context.Context) error {
 		year, month, day := time.Now().UTC().Date()
 		date := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 
-		stakeSnapshot := schema.StakeSnapshot{
+		stakeSnapshot := schema.StakerCountSnapshot{
 			Date: date,
 		}
 
-		if err := s.databaseClient.SaveStakeSnapshot(ctx, &stakeSnapshot); err != nil {
-			zap.L().Error("save stake snapshot error", zap.Error(err))
+		if err := s.databaseClient.SaveStakerCountSnapshot(ctx, &stakeSnapshot); err != nil {
+			zap.L().Error("save staker_count snapshot error", zap.Error(err))
 
 			return
 		}
 	})
 	if err != nil {
-		return fmt.Errorf("add stake cron job: %w", err)
+		return fmt.Errorf("add staker_count cron job: %w", err)
 	}
 
 	s.cronJob.Start()

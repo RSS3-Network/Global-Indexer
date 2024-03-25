@@ -24,8 +24,8 @@ func NewNodeSnapshots(nodeSnapshots []*schema.NodeSnapshot) []*NodeSnapshot {
 
 type StakeSnapshot NodeSnapshot
 
-func NewStakeSnapshots(stakeSnapshots []*schema.StakeSnapshot) []*StakeSnapshot {
-	return lo.Map(stakeSnapshots, func(stakeSnapshot *schema.StakeSnapshot, _ int) *StakeSnapshot {
+func NewStakeSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) []*StakeSnapshot {
+	return lo.Map(stakeSnapshots, func(stakeSnapshot *schema.StakerCountSnapshot, _ int) *StakeSnapshot {
 		return &StakeSnapshot{
 			Date:  stakeSnapshot.Date.Format(time.DateOnly),
 			Count: uint64(stakeSnapshot.Count),
