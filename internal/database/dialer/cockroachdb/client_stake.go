@@ -192,7 +192,7 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	if query.DistinctOwner {
 		subQuery := databaseClient
 
-		databaseClient = c.database.WithContext(ctx).Debug().Table((*table.StakeChip).TableName(nil)).
+		databaseClient = c.database.WithContext(ctx).Table((*table.StakeChip).TableName(nil)).
 			Select("DISTINCT ON (owner) *").Order("owner, id DESC").Where("id IN (?)", subQuery.Select("id"))
 	}
 

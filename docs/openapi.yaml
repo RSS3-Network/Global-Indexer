@@ -454,6 +454,43 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
+  /snapshots/stakers/profit:
+    get:
+        description: "Get snapshots of the profit of stakers"
+        tags:
+            - Snapshots
+        parameters:
+          - name: ownerAddress
+            in: query
+            required: true
+            schema:
+              type: string
+          - name: cursor
+            in: query
+            schema:
+              type: string
+          - name: limit
+            in: query
+            schema:
+              type: integer
+              default: 100
+              minimum: 1
+              maximum: 100
+        responses:
+          200:
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/StakerProfitSnapshot"
+                    cursor:
+                      type: string
+
   /nodes:
     get:
       description: "Get all nodes"
@@ -998,4 +1035,17 @@ components:
                 type: string
               updatedAt:
                 type: string
-
+    StakerProfitSnapshot:
+      type: object
+      properties:
+        ownerAddress:
+          type: string
+        date:
+          type: string
+          example: "2024-03-13T00:08:38+08:00"
+        epochID:
+          type: integer
+        totalChipAmounts:
+          type: string
+        totalChipValues:
+          type: string
