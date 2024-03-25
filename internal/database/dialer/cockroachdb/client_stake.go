@@ -16,6 +16,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (c *client) FindStakeTransaction(ctx context.Context, query schema.StakeTransactionQuery) (*schema.StakeTransaction, error) {
@@ -160,7 +161,11 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 }
 
 func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error) {
-	databaseClient := c.database.WithContext(ctx)
+	databaseClient := c.database.WithContext(ctx).Table((*table.StakeChip).TableName(nil))
+
+	if query.BlockNumber != nil {
+		databaseClient = databaseClient.Where(`"block_number" <= ?`, query.BlockNumber)
+	}
 
 	if query.Cursor != nil {
 		databaseClient = databaseClient.Where(`"id" > ?`, query.Cursor.String())
@@ -182,8 +187,17 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 		databaseClient = databaseClient.Limit(*query.Limit)
 	}
 
+	databaseClient = databaseClient.Order("id ASC")
+
+	if query.DistinctOwner {
+		subQuery := databaseClient
+
+		databaseClient = c.database.WithContext(ctx).Debug().Table((*table.StakeChip).TableName(nil)).
+			Select("DISTINCT ON (owner) *").Order("owner, id DESC").Where("id IN (?)", subQuery.Select("id"))
+	}
+
 	var rows []*table.StakeChip
-	if err := databaseClient.Order(`"id" ASC`).Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := databaseClient.Find(&rows).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("find rows: %w", err)
 	}
 
@@ -308,10 +322,10 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 	return results, nil
 }
 
-func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error) {
+func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error) {
 	databaseClient := c.database.WithContext(ctx)
 
-	var stakeSnapshots []*table.StakeSnapshot
+	var stakeSnapshots []*table.StakerCountSnapshot
 
 	if err := databaseClient.
 		Order(`"date" DESC`).
@@ -320,12 +334,12 @@ func (c *client) FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapsho
 		return nil, err
 	}
 
-	values := make([]*schema.StakeSnapshot, 0, len(stakeSnapshots))
+	values := make([]*schema.StakerCountSnapshot, 0, len(stakeSnapshots))
 
 	for _, stakeSnapshot := range stakeSnapshots {
 		value, err := stakeSnapshot.Export()
 		if err != nil {
-			return nil, fmt.Errorf("export stake snapshot: %w", err)
+			return nil, fmt.Errorf("export staker count snapshots: %w", err)
 		}
 
 		values = append(values, value)
@@ -376,7 +390,7 @@ func (c *client) UpdateStakeChipsOwner(ctx context.Context, owner common.Address
 	return c.database.WithContext(ctx).Model((*table.StakeChip)(nil)).Where(`"id" IN ?`, ids).UpdateColumn("owner", owner.String()).Error
 }
 
-func (c *client) SaveStakeSnapshot(ctx context.Context, stakeSnapshot *schema.StakeSnapshot) error {
+func (c *client) SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error {
 	databaseClient := c.database.WithContext(ctx)
 
 	if err := databaseClient.
@@ -388,13 +402,74 @@ func (c *client) SaveStakeSnapshot(ctx context.Context, stakeSnapshot *schema.St
 		return fmt.Errorf("query count: %w", err)
 	}
 
-	var value table.StakeSnapshot
+	var value table.StakerCountSnapshot
 	if err := value.Import(*stakeSnapshot); err != nil {
-		return fmt.Errorf("import stake snapshot: %w", err)
+		return fmt.Errorf("import stakers_count snapshot: %w", err)
 	}
 
 	return databaseClient.
-		Table((*table.StakeSnapshot).TableName(nil)).
+		Table((*table.StakerCountSnapshot).TableName(nil)).
 		Create(stakeSnapshot).
 		Error
+}
+
+func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" < ?`, query.Cursor)
+	}
+
+	if query.OwnerAddress != nil {
+		databaseClient = databaseClient.Where(`"owner_address" = ?`, query.OwnerAddress)
+	}
+
+	if query.EpochID != nil {
+		databaseClient = databaseClient.Where(`"epoch_id" = ?`, query.EpochID)
+	}
+
+	var rows []*table.StakerProfitSnapshot
+
+	if err := databaseClient.Order("epoch_id DESC, id DESC").Limit(query.Limit).Find(&rows).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		return nil, fmt.Errorf("find rows: %w", err)
+	}
+
+	results := make([]*schema.StakerProfitSnapshot, 0, len(rows))
+
+	for _, row := range rows {
+		result, err := row.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export row: %w", err)
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+func (c *client) SaveStakerProfitSnapshots(ctx context.Context, snapshots []*schema.StakerProfitSnapshot) error {
+	var value table.StakerProfitSnapshots
+
+	if err := value.Import(snapshots); err != nil {
+		return fmt.Errorf("import staker profit snapshots: %w", err)
+	}
+
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "owner_address",
+			},
+			{
+				Name: "epoch_id",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
 }
