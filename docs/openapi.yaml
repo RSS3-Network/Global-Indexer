@@ -283,7 +283,7 @@ paths:
                             description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
-  /stake/:owner/profits:
+  /stake/{owner}/profits:
     get:
       description: "Get the profit of the staker"
       tags:
