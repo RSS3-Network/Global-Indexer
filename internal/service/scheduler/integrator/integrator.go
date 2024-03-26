@@ -36,6 +36,10 @@ type server struct {
 	cacheClient        cache.Client
 }
 
+func (s *server) Name() string {
+	return Name
+}
+
 func (s *server) Spec() string {
 	return "0 */10 * * * *"
 }

@@ -16,6 +16,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const Name = "hub"
+
 const (
 	DefaultHost = "0.0.0.0"
 	DefaultPort = "80"
@@ -24,6 +26,10 @@ const (
 type Server struct {
 	httpServer *echo.Echo
 	hub        *Hub
+}
+
+func (s *Server) Name() string {
+	return Name
 }
 
 func (s *Server) Run(_ context.Context) error {

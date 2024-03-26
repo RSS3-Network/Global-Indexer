@@ -6,10 +6,8 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/constant"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/epoch"
@@ -21,12 +19,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -58,41 +50,18 @@ var command = cobra.Command{
 var indexCommand = &cobra.Command{
 	Use: "index",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flags = cmd.PersistentFlags()
+		server := service.NewServer(
+			indexer.Module,
+			fx.Provide(indexer.NewServer),
+		)
 
-		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
-		if err != nil {
-			return fmt.Errorf("setup config file: %w", err)
+		if err := server.Start(cmd.Context()); err != nil {
+			return fmt.Errorf("start server: %w", err)
 		}
 
-		if config.Telemetry != nil {
-			if err := setupOpenTelemetry("indexer", config.Telemetry); err != nil {
-				return fmt.Errorf("setup opentelemetry tracer")
-			}
-		}
+		server.Wait()
 
-		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
-		if err != nil {
-			return err
-		}
-
-		options, err := redis.ParseURL(config.Redis.URI)
-		if err != nil {
-			return fmt.Errorf("parse redis uri: %w", err)
-		}
-
-		cacheClient := cache.New(redis.NewClient(options))
-
-		if err := databaseClient.Migrate(cmd.Context()); err != nil {
-			return fmt.Errorf("migrate database: %w", err)
-		}
-
-		instance, err := indexer.New(databaseClient, cacheClient, *config.RSS3Chain)
-		if err != nil {
-			return err
-		}
-
-		return instance.Run(cmd.Context())
+		return nil
 	},
 }
 
@@ -170,34 +139,6 @@ var epochCommand = &cobra.Command{
 
 		return instance.Run(cmd.Context())
 	},
-}
-
-func setupOpenTelemetry(serviceName string, config *config.Telemetry) error {
-	options := []otlptracehttp.Option{
-		otlptracehttp.WithEndpoint(config.Endpoint),
-	}
-
-	if config.Insecure {
-		options = append(options, otlptracehttp.WithInsecure())
-	}
-
-	exporter, err := otlptrace.New(context.Background(), otlptracehttp.NewClient(options...))
-	if err != nil {
-		return err
-	}
-
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(constant.BuildServiceName(serviceName)),
-			semconv.ServiceVersionKey.String(constant.BuildServiceVersion()),
-		)),
-	)
-
-	otel.SetTracerProvider(tracerProvider)
-
-	return nil
 }
 
 func initializeLogger() {

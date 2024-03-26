@@ -39,6 +39,10 @@ type server struct {
 	stakingContract *l2.Staking
 }
 
+func (s *server) Name() string {
+	return Name
+}
+
 func (s *server) Spec() string {
 	return "0 */1 * * * *" // every minute
 }

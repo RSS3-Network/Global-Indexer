@@ -29,6 +29,10 @@ type server struct {
 	redisClient    *redis.Client
 }
 
+func (s *server) Name() string {
+	return Name
+}
+
 func (s *server) Spec() string {
 	return "0 0 0 * * *"
 }
