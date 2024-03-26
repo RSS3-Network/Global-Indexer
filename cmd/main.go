@@ -109,35 +109,18 @@ var schedulerCommand = &cobra.Command{
 var epochCommand = &cobra.Command{
 	Use: "epoch",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flags = cmd.PersistentFlags()
+		server := service.NewServer(
+			epoch.Module,
+			fx.Provide(epoch.NewServer),
+		)
 
-		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
-		if err != nil {
-			return fmt.Errorf("setup config file: %w", err)
+		if err := server.Start(cmd.Context()); err != nil {
+			return fmt.Errorf("start server: %w", err)
 		}
 
-		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
-		if err != nil {
-			return err
-		}
+		server.Wait()
 
-		if err := databaseClient.Migrate(cmd.Context()); err != nil {
-			return fmt.Errorf("migrate database: %w", err)
-		}
-
-		options, err := redis.ParseURL(config.Redis.URI)
-		if err != nil {
-			return fmt.Errorf("parse redis uri: %w", err)
-		}
-
-		redisClient := redis.NewClient(options)
-
-		instance, err := epoch.New(cmd.Context(), databaseClient, redisClient, *config)
-		if err != nil {
-			return err
-		}
-
-		return instance.Run(cmd.Context())
+		return nil
 	},
 }
 
