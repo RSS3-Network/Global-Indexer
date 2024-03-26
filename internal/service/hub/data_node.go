@@ -241,7 +241,7 @@ func (h *Hub) updateNodeStat(ctx context.Context, request *RegisterNodeRequest, 
 			ResetAt:      time.Now(),
 			IsFullNode:   fullNode,
 			IsRssNode:    len(nodeConfig.RSS) > 0,
-			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *Module) filter.Network {
+			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
 				return module.Network
 			})),
 			FederatedNetwork: len(nodeConfig.Federated),
@@ -252,7 +252,7 @@ func (h *Hub) updateNodeStat(ctx context.Context, request *RegisterNodeRequest, 
 		stat.IsPublicGood = publicNode
 		stat.IsFullNode = fullNode
 		stat.IsRssNode = len(nodeConfig.RSS) > 0
-		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *Module) filter.Network {
+		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
 			return module.Network
 		}))
 		stat.FederatedNetwork = len(nodeConfig.Federated)
@@ -317,7 +317,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 	return h.databaseClient.SaveNode(ctx, node)
 }
 
-func (h *Hub) verifyFullNode(indexers []*Module) (bool, error) {
+func (h *Hub) verifyFullNode(indexers []*NodeConfigModule) (bool, error) {
 	if len(indexers) < len(model.WorkerToNetworksMap) {
 		return false, nil
 	}
@@ -414,12 +414,12 @@ func (h *Hub) buildNodeAvatar(_ context.Context, address common.Address) (*l2.Ch
 }
 
 type NodeConfig struct {
-	RSS           []*Module `json:"rss"`
-	Federated     []*Module `json:"federated"`
-	Decentralized []*Module `json:"decentralized"`
+	RSS           []*NodeConfigModule `json:"rss"`
+	Federated     []*NodeConfigModule `json:"federated"`
+	Decentralized []*NodeConfigModule `json:"decentralized"`
 }
 
-type Module struct {
+type NodeConfigModule struct {
 	Network  filter.Network `json:"network"`
 	Endpoint string         `json:"endpoint"`
 	Worker   filter.Name    `json:"worker"`

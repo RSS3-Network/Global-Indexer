@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -31,8 +32,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Server, error) {
-	hub, err := NewHub(ctx, databaseClient, ethereumClient, redisClient, geoLite2, nameService)
+func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver) (service.Server, error) {
+	hub, err := NewHub(databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
