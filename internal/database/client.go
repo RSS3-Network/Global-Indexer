@@ -49,6 +49,10 @@ type Client interface {
 	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
 	FindNodeMinTokensToStakeSnapshots(ctx context.Context, nodeAddress []*common.Address, onlyStartAndEnd bool, limit *int) ([]*schema.NodeMinTokensToStakeSnapshot, error)
 	SaveNodeMinTokensToStakeSnapshots(ctx context.Context, nodeMinTokensToStakeSnapshot []*schema.NodeMinTokensToStakeSnapshot) error
+	FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error)
+	SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error
+	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)
+	SaveStakerProfitSnapshots(ctx context.Context, stakerProfitSnapshots []*schema.StakerProfitSnapshot) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
@@ -62,11 +66,9 @@ type Client interface {
 	FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
 	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
-	FindStakeSnapshots(ctx context.Context) ([]*schema.StakeSnapshot, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
-	SaveStakeSnapshot(ctx context.Context, stakeSnapshot *schema.StakeSnapshot) error
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error

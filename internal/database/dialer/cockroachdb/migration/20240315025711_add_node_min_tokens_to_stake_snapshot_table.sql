@@ -23,7 +23,7 @@ CREATE INDEX "min_tokens_to_stake_snapshots_epoch_id_idx" ON "node"."min_tokens_
 
 -- +goose Down
 -- +goose StatementBegin
-ALTER TABLE "node".snapshots
+ALTER TABLE "node"."count_snapshots"
     rename to "snapshots";
 
 DROP TABLE "node"."min_tokens_to_stake_snapshots";

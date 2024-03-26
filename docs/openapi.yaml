@@ -283,6 +283,34 @@ paths:
                             description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
+  /stake/{owner}/profits:
+    get:
+      description: "Get the profit of the staker"
+      tags:
+        - Stake
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      owner:
+                        type: string
+                      totalChipAmounts:
+                        type: string
+                      totalChipValues:
+                        type: string
   /chips:
     get:
       description: "Get all chips by chips id"
@@ -454,6 +482,43 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
+  /snapshots/stakers/profits:
+    get:
+        description: "Get snapshots of the profit of stakers"
+        tags:
+            - Snapshots
+        parameters:
+          - name: ownerAddress
+            in: query
+            required: true
+            schema:
+              type: string
+          - name: cursor
+            in: query
+            schema:
+              type: string
+          - name: limit
+            in: query
+            schema:
+              type: integer
+              default: 100
+              minimum: 1
+              maximum: 100
+        responses:
+          200:
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/StakerProfitSnapshot"
+                    cursor:
+                      type: string
+
   /nodes:
     get:
       description: "Get all nodes"
@@ -998,4 +1063,17 @@ components:
                 type: string
               updatedAt:
                 type: string
-
+    StakerProfitSnapshot:
+      type: object
+      properties:
+        ownerAddress:
+          type: string
+        date:
+          type: string
+          example: "2024-03-13T00:08:38+08:00"
+        epochID:
+          type: integer
+        totalChipAmounts:
+          type: string
+        totalChipValues:
+          type: string

@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	nodecount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_count"
 	nodemintokenstostake "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/stake"
+	stakercount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_count"
+	stakerprofit "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
 )
@@ -41,16 +43,27 @@ func (s *server) Run(ctx context.Context) error {
 }
 
 func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
-	nodeMinTokensToStakeSnapshot, err := nodemintokenstostake.New(databaseClient, redis, ethereumClient)
+	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("new node min tokens to stake snapshot: %w", err)
+		return nil, fmt.Errorf("get chain id: %w", err)
+	}
+
+	contractAddresses := l2.ContractMap[chainID.Uint64()]
+	if contractAddresses == nil {
+		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
+	}
+
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
 	return &server{
 		snapshots: []service.Server{
 			nodecount.New(databaseClient, redis),
-			stake.New(databaseClient, redis),
-			nodeMinTokensToStakeSnapshot,
+			stakercount.New(databaseClient, redis),
+			nodemintokenstostake.New(databaseClient, redis, stakingContract),
+			stakerprofit.New(databaseClient, redis, stakingContract),
 		},
 	}, nil
 }

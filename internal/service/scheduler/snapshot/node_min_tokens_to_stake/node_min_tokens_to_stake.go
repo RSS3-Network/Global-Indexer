@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
@@ -37,7 +36,7 @@ type server struct {
 }
 
 func (s *server) Spec() string {
-	return "*/5 * * * * *" // every 5 second
+	return "0 */1 * * * *" // every minute
 }
 
 func (s *server) Run(ctx context.Context) error {
@@ -158,26 +157,11 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 	return nil
 }
 
-func New(databaseClient database.Client, redisClient *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
-	chainID, err := ethereumClient.ChainID(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("get chain id: %w", err)
-	}
-
-	contractAddresses := l2.ContractMap[chainID.Uint64()]
-	if contractAddresses == nil {
-		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
-	}
-
-	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
-	if err != nil {
-		return nil, fmt.Errorf("new staking contract: %w", err)
-	}
-
+func New(databaseClient database.Client, redisClient *redis.Client, stakingContract *l2.Staking) service.Server {
 	return &server{
 		cronJob:         cronjob.New(redisClient, Name, Timeout),
 		databaseClient:  databaseClient,
 		redisClient:     redisClient,
 		stakingContract: stakingContract,
-	}, nil
+	}
 }

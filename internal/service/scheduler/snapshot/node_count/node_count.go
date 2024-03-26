@@ -30,7 +30,7 @@ type server struct {
 }
 
 func (s *server) Spec() string {
-	return "0 0 * * * *"
+	return "0 0 0 * * *"
 }
 
 func (s *server) Run(ctx context.Context) error {

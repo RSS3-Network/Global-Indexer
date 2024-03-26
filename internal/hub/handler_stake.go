@@ -417,3 +417,68 @@ func (h *Hub) GetStakeStakings(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
+
+type GetStakeOwnerProfitRequest struct {
+	Owner common.Address `param:"owner" validate:"required"`
+}
+
+type GetStakeOwnerProfitResponse struct {
+	Owner            common.Address  `json:"owner"`
+	TotalChipAmounts decimal.Decimal `json:"totalChipAmounts"`
+	TotalChipValues  decimal.Decimal `json:"totalChipValues"`
+}
+
+func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
+	var request GetStakeOwnerProfitRequest
+
+	if err := c.Bind(&request); err != nil {
+		return response.BadParamsError(c, err)
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return response.ValidateFailedError(c, err)
+	}
+
+	var (
+		cursor *big.Int
+		data   = GetStakeOwnerProfitResponse{Owner: request.Owner}
+	)
+
+	for {
+		chips, err := h.databaseClient.FindStakeChips(c.Request().Context(), schema.StakeChipsQuery{
+			Owner:  &request.Owner,
+			Cursor: cursor,
+			Limit:  lo.ToPtr(500),
+		})
+		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+			return response.InternalError(c, fmt.Errorf("find stake chips: %w", err))
+		}
+
+		if len(chips) == 0 {
+			break
+		}
+
+		nodes := make(map[common.Address]int)
+
+		for _, chip := range chips {
+			chip := chip
+			nodes[chip.Node]++
+		}
+
+		for node, count := range nodes {
+			minTokensToStake, err := h.stakingContract.MinTokensToStake(nil, node)
+			if err != nil {
+				return response.InternalError(c, fmt.Errorf("get min tokens from rpc: %w", err))
+			}
+
+			data.TotalChipAmounts = data.TotalChipAmounts.Add(decimal.NewFromInt(int64(count)))
+			data.TotalChipValues = data.TotalChipValues.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+		}
+
+		cursor = chips[len(chips)-1].ID
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data: data,
+	})
+}
