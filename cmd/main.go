@@ -5,25 +5,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/epoch"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
-	"github.com/redis/go-redis/v9"
-	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
-
-var flags *pflag.FlagSet
 
 var command = cobra.Command{
 	SilenceUsage:  true,
@@ -68,41 +61,18 @@ var indexCommand = &cobra.Command{
 var schedulerCommand = &cobra.Command{
 	Use: "scheduler",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flags = cmd.PersistentFlags()
+		server := service.NewServer(
+			scheduler.Module,
+			fx.Provide(scheduler.NewServer),
+		)
 
-		config, err := config.Setup(lo.Must(flags.GetString(flag.KeyConfig)))
-		if err != nil {
-			return fmt.Errorf("setup config file: %w", err)
+		if err := server.Start(cmd.Context()); err != nil {
+			return fmt.Errorf("start server: %w", err)
 		}
 
-		databaseClient, err := dialer.Dial(cmd.Context(), config.Database)
-		if err != nil {
-			return err
-		}
+		server.Wait()
 
-		if err := databaseClient.Migrate(cmd.Context()); err != nil {
-			return fmt.Errorf("migrate database: %w", err)
-		}
-
-		options, err := redis.ParseURL(config.Redis.URI)
-		if err != nil {
-			return fmt.Errorf("parse redis uri: %w", err)
-		}
-
-		redisClient := redis.NewClient(options)
-
-		// Dial rss3 ethereum client.
-		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.EndpointL2)
-		if err != nil {
-			return fmt.Errorf("dial rss3 ethereum client: %w", err)
-		}
-
-		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient, ethereumClient)
-		if err != nil {
-			return err
-		}
-
-		return instance.Run(cmd.Context())
+		return nil
 	},
 }
 
