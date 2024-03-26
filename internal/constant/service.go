@@ -2,6 +2,8 @@ package constant
 
 import "fmt"
 
-func BuildServiceName(service string) string {
-	return fmt.Sprintf("global-indexer.%s", service)
+var ServiceName string
+
+func BuildServiceName() string {
+	return fmt.Sprintf("global-indexer.%s", ServiceName)
 }

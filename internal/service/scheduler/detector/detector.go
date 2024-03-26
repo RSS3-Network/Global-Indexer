@@ -24,6 +24,10 @@ type server struct {
 	databaseClient database.Client
 }
 
+func (s *server) Name() string {
+	return Name
+}
+
 func (s *server) Spec() string {
 	return "*/5 * * * * *"
 }

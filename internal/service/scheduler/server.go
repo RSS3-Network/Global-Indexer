@@ -3,17 +3,24 @@ package scheduler
 import (
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot"
 	"github.com/redis/go-redis/v9"
+	"github.com/spf13/viper"
 )
 
-func New(server string, databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
-	switch server {
+func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient) (service.Server, error) {
+	ethereumClient, err := ethereumMultiChainClient.Get(viper.GetUint64(flag.KeyChainIDL2))
+	if err != nil {
+		return nil, fmt.Errorf("get ethereum client: %w", err)
+	}
+
+	switch server := viper.GetString(flag.KeyServer); server {
 	case detector.Name:
 		return detector.New(databaseClient, redis)
 	case integrator.Name:

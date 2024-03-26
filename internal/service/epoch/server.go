@@ -13,12 +13,18 @@ import (
 	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
+
+const Name = "epoch"
 
 const (
 	intervalEpoch = 18 * time.Hour
@@ -33,6 +39,10 @@ type Server struct {
 	gasLimit       uint64
 	ethereumClient *ethclient.Client
 	databaseClient database.Client
+}
+
+func (s *Server) Name() string {
+	return Name
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -177,24 +187,24 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return checkpoint.BlockNumber, blockNumberLatest, nil
 }
 
-func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
+func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, configFile *config.File) (service.Server, error) {
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
-	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
+	ethereumClient, err := ethereumMultiChainClient.Get(viper.GetUint64(flag.KeyChainIDL2))
 	if err != nil {
-		return nil, fmt.Errorf("dial ethereum client: %w", err)
+		return nil, fmt.Errorf("get ethereum client: %w", err)
 	}
 
-	chainID, err := ethereumClient.ChainID(ctx)
+	chainID, err := ethereumClient.ChainID(context.TODO())
 	if err != nil {
-		return nil, fmt.Errorf("get chain ID: %w", err)
+		return nil, fmt.Errorf("get chain id: %w", err)
 	}
 
-	signerFactory, from, err := gicrypto.NewSignerFactory(config.Epoch.PrivateKey, config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
+	signerFactory, from, err := gicrypto.NewSignerFactory(configFile.Epoch.PrivateKey, configFile.Epoch.SignerEndpoint, configFile.Epoch.WalletAddress)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create signer")
+		return nil, fmt.Errorf("failed to create signer: %w", err)
 	}
 
 	defaultTxConfig := txmgr.Config{
@@ -217,7 +227,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	server := &Server{
 		chainID:        chainID,
 		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
-		gasLimit:       config.Epoch.GasLimit,
+		gasLimit:       configFile.Epoch.GasLimit,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
 		txManager:      txManager,
