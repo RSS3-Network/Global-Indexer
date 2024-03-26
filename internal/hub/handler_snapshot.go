@@ -67,7 +67,7 @@ func (h *Hub) GetStakerCountSnapshots(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (h *Hub) GetStakerProfitSnapshots(c echo.Context) error {
+func (h *Hub) GetStakerProfitsSnapshots(c echo.Context) error {
 	var request GetStakerProfitSnapshotsRequest
 
 	if err := c.Bind(&request); err != nil {

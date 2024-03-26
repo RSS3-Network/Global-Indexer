@@ -283,6 +283,34 @@ paths:
                             description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
+  /stake/{owner}/profits:
+    get:
+      description: "Get the profit of the staker"
+      tags:
+        - Stake
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      owner:
+                        type: string
+                      totalChipAmounts:
+                        type: string
+                      totalChipValues:
+                        type: string
   /chips:
     get:
       description: "Get all chips by chips id"
@@ -454,7 +482,7 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-  /snapshots/stakers/profit:
+  /snapshots/stakers/profits:
     get:
         description: "Get snapshots of the profit of stakers"
         tags:
