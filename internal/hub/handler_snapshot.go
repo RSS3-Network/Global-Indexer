@@ -84,7 +84,7 @@ func (h *Hub) GetStakerProfitsSnapshots(c echo.Context) error {
 
 	query := schema.StakerProfitSnapshotsQuery{
 		OwnerAddress: lo.ToPtr(request.OwnerAddress),
-		Limit:        request.Limit,
+		Limit:        lo.ToPtr(request.Limit),
 		Cursor:       request.Cursor,
 	}
 

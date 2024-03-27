@@ -414,7 +414,7 @@ func (c *client) SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *sch
 }
 
 func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error) {
-	databaseClient := c.database.WithContext(ctx)
+	databaseClient := c.database.WithContext(ctx).Table((*table.StakerProfitSnapshot).TableName(nil))
 
 	if query.Cursor != nil {
 		databaseClient = databaseClient.Where(`"id" < ?`, query.Cursor)
@@ -430,12 +430,40 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 
 	var rows []*table.StakerProfitSnapshot
 
-	if err := databaseClient.Order("epoch_id DESC, id DESC").Limit(query.Limit).Find(&rows).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
+	if len(query.Dates) > 0 {
+		var (
+			queries []string
+			values  []interface{}
+		)
+
+		for _, date := range query.Dates {
+			queries = append(queries, `(SELECT * FROM "stake"."profit_snapshots" WHERE "date" > ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date)
 		}
 
-		return nil, fmt.Errorf("find rows: %w", err)
+		// Combine all queries with UNION ALL
+		fullQuery := strings.Join(queries, " UNION ALL ")
+
+		// Execute the combined query
+		if err := databaseClient.Raw(fullQuery, values...).Scan(&rows).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	} else {
+		if query.Limit != nil {
+			databaseClient = databaseClient.Limit(*query.Limit)
+		}
+
+		if err := databaseClient.Order("epoch_id DESC, id DESC").Find(&rows).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
 	}
 
 	results := make([]*schema.StakerProfitSnapshot, 0, len(rows))
