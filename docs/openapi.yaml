@@ -311,6 +311,39 @@ paths:
                         type: string
                       totalChipValues:
                         type: string
+                      oneDay:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                          totalChipAmounts:
+                            type: string
+                          totalChipValues:
+                            type: string
+                          pnl:
+                            type: string
+                      oneWeek:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                          totalChipAmounts:
+                            type: string
+                          totalChipValues:
+                            type: string
+                          pnl:
+                            type: string
+                      oneMonth:
+                        type: object
+                        properties:
+                          date:
+                            type: string
+                          totalChipAmounts:
+                            type: string
+                          totalChipValues:
+                            type: string
+                          pnl:
+                            type: string
   /chips:
     get:
       description: "Get all chips by chips id"

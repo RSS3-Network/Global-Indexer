@@ -46,7 +46,7 @@ func (s *server) Spec() string {
 func (s *server) Run(ctx context.Context) error {
 	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
 		// Query the latest epoch of the staker profit snapshots.
-		snapshot, err := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{Limit: 1})
+		snapshot, err := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{Limit: lo.ToPtr(1)})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("find staker profit snapshots", zap.Error(err))
 
@@ -139,7 +139,7 @@ func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnaps
 				exist, _ := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{
 					OwnerAddress: lo.ToPtr(staker.Owner),
 					EpochID:      lo.ToPtr(epochID),
-					Limit:        1,
+					Limit:        lo.ToPtr(1),
 				})
 				if len(exist) > 0 {
 					continue
