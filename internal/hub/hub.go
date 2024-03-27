@@ -64,8 +64,10 @@ func NewHub(ctx context.Context, databaseClient database.Client, ethereumClient 
 		return nil, fmt.Errorf("new http client: %w", err)
 	}
 
+	cacheClient := cache.New(redisClient)
+
 	// Initialize Enforcer.
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(databaseClient, httpClient)
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(databaseClient, httpClient, cacheClient, nil)
 	if err != nil {
 		return nil, fmt.Errorf("new enforcer: %w", err)
 	}
@@ -79,7 +81,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, ethereumClient 
 	return &Hub{
 		databaseClient:  databaseClient,
 		geoLite2:        geoLite2,
-		cacheClient:     cache.New(redisClient),
+		cacheClient:     cacheClient,
 		stakingContract: stakingContract,
 		nameService:     nameService,
 		simpleEnforcer:  simpleEnforcer,

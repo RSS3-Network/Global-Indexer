@@ -7,7 +7,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/score"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot"
 	"github.com/redis/go-redis/v9"
 )
@@ -16,8 +16,8 @@ func New(server string, databaseClient database.Client, redis *redis.Client, eth
 	switch server {
 	case detector.Name:
 		return detector.New(databaseClient, redis)
-	case integrator.Name:
-		return integrator.New(databaseClient, redis, ethereumClient)
+	case score.Name:
+		return score.New(databaseClient, redis, ethereumClient)
 	case snapshot.Name:
 		return snapshot.New(databaseClient, redis, ethereumClient)
 	default:

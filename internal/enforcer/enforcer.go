@@ -4,19 +4,51 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/url"
 	"sort"
+	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/httpx"
+	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
+)
+
+const (
+	stakingToPointsRate           float64 = 100000
+	stakingLogBase                        = 2
+	stakingMaxPoints                      = 0.2
+	hoursPerEpoch                         = 18
+	activeTimeToPointsRate                = 120
+	activeTimeMaxPoints                   = 0.3
+	totalReqToPointsRate                  = 100000
+	totalReqLogBase                       = 100
+	totalReqMaxPoints                     = 0.3
+	totalEpochReqToPointsRate             = 1000000
+	totalEpochReqLogBase                  = 5000
+	totalEpochReqMaxPoints                = 1
+	perDecentralizedNetworkPoints         = 0.1
+	perRssNetworkPoints                   = 0.3
+	perFederatedNetworkPoints             = 0.1
+	perIndexerPoints                      = 0.05
+	indexerMaxPoints                      = 0.2
+	perSlashPoints                        = 0.5
+	nonExistPoints                float64 = 0
+	existPoints                           = 1
+
+	defaultLimit = 100
 )
 
 type Enforcer interface {
@@ -27,8 +59,10 @@ type Enforcer interface {
 }
 
 type SimpleEnforcer struct {
-	databaseClient database.Client
-	httpClient     httpx.Client
+	databaseClient  database.Client
+	cacheClient     cache.Client
+	httpClient      httpx.Client
+	stakingContract *l2.Staking
 }
 
 func (e *SimpleEnforcer) Verify(ctx context.Context, results []model.DataResponse) error {
@@ -379,17 +413,177 @@ func (e *SimpleEnforcer) compareFeeds(src, des *model.Feed) bool {
 	return flag
 }
 
-func (e *SimpleEnforcer) MaintainScore(_ context.Context) error {
+func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
+	var currentEpoch int64
+
+	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		zap.L().Error("get latest epoch event from database", zap.Error(err))
+
+		return err
+	}
+
+	if len(epochEvent) > 0 {
+		currentEpoch = int64(epochEvent[0].ID)
+	}
+
+	query := &schema.StatQuery{
+		Limit: lo.ToPtr(defaultLimit),
+	}
+
+	for first := true; query.Cursor != nil || first; first = false {
+		stats, err := e.databaseClient.FindNodeStats(ctx, query)
+
+		if err != nil {
+			return err
+		}
+
+		statsPool := pool.New().
+			WithContext(ctx).
+			WithCancelOnError().
+			WithFirstError()
+
+		for _, stat := range stats {
+			stat := stat
+
+			statsPool.Go(func(ctx context.Context) error {
+				if err = e.updateNodeEpochStats(stat, currentEpoch); err != nil {
+					return err
+				}
+
+				return e.updateNodePoints(stat)
+			})
+		}
+
+		if err := statsPool.Wait(); err != nil {
+			return fmt.Errorf("wait stats pool: %w", err)
+		}
+
+		if err = e.databaseClient.SaveNodeStats(ctx, stats); err != nil {
+			return err
+		}
+
+		if len(stats) == 0 {
+			break
+		}
+
+		lastStat, _ := lo.Last(stats)
+		query.Cursor = lo.ToPtr(lastStat.Address.String())
+	}
+
+	return e.updateNodeCache(ctx)
+}
+
+func (e *SimpleEnforcer) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
+	nodeInfo, err := e.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
+
+	if err != nil {
+		return fmt.Errorf("get node info: %s,%w", stat.Address.String(), err)
+	}
+
+	stat.Staking = float64(nodeInfo.StakingPoolTokens.Uint64())
+	if epoch != stat.Epoch {
+		stat.EpochRequest = 0
+		stat.EpochInvalidRequest = 0
+		stat.Epoch = epoch
+	}
+
 	return nil
+}
+
+func (e *SimpleEnforcer) updateNodePoints(stat *schema.Stat) error {
+	node, err := e.databaseClient.FindNode(context.Background(), stat.Address)
+
+	if err != nil {
+		return fmt.Errorf("find node: %s, %w", stat.Address.String(), err)
+	}
+
+	if node.Status == schema.NodeStatusOffline {
+		stat.ResetAt = time.Now()
+		stat.EpochInvalidRequest = int64(model.DefaultSlashCount)
+
+		return nil
+	}
+
+	e.calcPoints(stat)
+
+	return nil
+}
+
+func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
+	rssNodes, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		IsRssNode:    lo.ToPtr(true),
+		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+		Limit:        lo.ToPtr(model.DefaultNodeCount),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err = e.setNodeCache(ctx, model.RssNodeCacheKey, rssNodes); err != nil {
+		return err
+	}
+
+	fullNodes, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		IsFullNode:   lo.ToPtr(true),
+		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+		Limit:        lo.ToPtr(model.DefaultNodeCount),
+	})
+	if err != nil {
+		return err
+	}
+
+	return e.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes)
+}
+
+func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.Cache {
+		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	})
+
+	if err := e.cacheClient.Set(ctx, key, nodesCache); err != nil {
+		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
+	}
+
+	return nil
+}
+
+func (e *SimpleEnforcer) calcPoints(stat *schema.Stat) {
+	// staking pool tokens
+	stat.Points = math.Min(math.Log(stat.Staking/stakingToPointsRate+1)/math.Log(stakingLogBase), stakingMaxPoints)
+
+	// public good node
+	stat.Points += lo.Ternary(stat.IsPublicGood, nonExistPoints, existPoints)
+
+	// node active time
+	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/hoursPerEpoch)/activeTimeToPointsRate, activeTimeMaxPoints)
+
+	// total requests
+	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/totalReqToPointsRate+1)/math.Log(totalReqLogBase), totalReqMaxPoints)
+
+	// epoch requests
+	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToPointsRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxPoints)
+
+	// network count
+	stat.Points += perDecentralizedNetworkPoints*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + perRssNetworkPoints*lo.Ternary(stat.IsRssNode, existPoints, nonExistPoints)
+
+	// indexer count
+	stat.Points += math.Min(float64(stat.Indexer)*perIndexerPoints, indexerMaxPoints)
+
+	// epoch failure requests
+	stat.Points -= perSlashPoints * float64(stat.EpochInvalidRequest)
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
 
-func NewSimpleEnforcer(databaseClient database.Client, httpClient httpx.Client) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(databaseClient database.Client, httpClient httpx.Client, cacheClient cache.Client, stakingContract *l2.Staking) (*SimpleEnforcer, error) {
 	return &SimpleEnforcer{
-		databaseClient: databaseClient,
-		httpClient:     httpClient,
+		databaseClient:  databaseClient,
+		httpClient:      httpClient,
+		cacheClient:     cacheClient,
+		stakingContract: stakingContract,
 	}, nil
 }
