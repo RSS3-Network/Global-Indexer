@@ -5,22 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/shopspring/decimal"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 )
 
 func (h *Hub) GetNodes(c echo.Context) error {
