@@ -34,7 +34,7 @@ func (*Stat) TableName() string {
 func (s *Stat) Import(stat *schema.Stat) (err error) {
 	s.Address = stat.Address
 	s.Endpoint = stat.Endpoint
-	s.Points = stat.Points
+	s.Points = stat.Score
 	s.IsPublicGood = stat.IsPublicGood
 	s.IsFullNode = stat.IsFullNode
 	s.IsRssNode = stat.IsRssNode
@@ -55,7 +55,7 @@ func (s *Stat) Export() (*schema.Stat, error) {
 	stat := schema.Stat{
 		Address:              s.Address,
 		Endpoint:             s.Endpoint,
-		Points:               s.Points,
+		Score:                s.Points,
 		IsPublicGood:         s.IsPublicGood,
 		IsFullNode:           s.IsFullNode,
 		IsRssNode:            s.IsRssNode,

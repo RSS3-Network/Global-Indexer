@@ -27,26 +27,26 @@ import (
 )
 
 const (
-	stakingToPointsRate           float64 = 100000
-	stakingLogBase                        = 2
-	stakingMaxPoints                      = 0.2
-	hoursPerEpoch                         = 18
-	activeTimeToPointsRate                = 120
-	activeTimeMaxPoints                   = 0.3
-	totalReqToPointsRate                  = 100000
-	totalReqLogBase                       = 100
-	totalReqMaxPoints                     = 0.3
-	totalEpochReqToPointsRate             = 1000000
-	totalEpochReqLogBase                  = 5000
-	totalEpochReqMaxPoints                = 1
-	perDecentralizedNetworkPoints         = 0.1
-	perRssNetworkPoints                   = 0.3
-	perFederatedNetworkPoints             = 0.1
-	perIndexerPoints                      = 0.05
-	indexerMaxPoints                      = 0.2
-	perSlashPoints                        = 0.5
-	nonExistPoints                float64 = 0
-	existPoints                           = 1
+	stakingToScoreRate           float64 = 100000
+	stakingLogBase                       = 2
+	stakingMaxScore                      = 0.2
+	hoursPerEpoch                        = 18
+	activeTimeToScoreRate                = 120
+	activeTimeMaxScore                   = 0.3
+	totalReqToScoreRate                  = 100000
+	totalReqLogBase                      = 100
+	totalReqMaxScore                     = 0.3
+	totalEpochReqToScoreRate             = 1000000
+	totalEpochReqLogBase                 = 5000
+	totalEpochReqMaxScore                = 1
+	perDecentralizedNetworkScore         = 0.1
+	perRssNetworkScore                   = 0.3
+	perFederatedNetworkScore             = 0.1
+	perIndexerScore                      = 0.05
+	indexerMaxScore                      = 0.2
+	perSlashScore                        = 0.5
+	nonExistScore                float64 = 0
+	existScore                           = 1
 
 	defaultLimit = 100
 )
@@ -447,11 +447,7 @@ func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
 			stat := stat
 
 			statsPool.Go(func(ctx context.Context) error {
-				if err = e.updateNodeEpochStats(stat, currentEpoch); err != nil {
-					return err
-				}
-
-				return e.updateNodePoints(stat)
+				return e.updateNodeStats(stat, currentEpoch)
 			})
 		}
 
@@ -474,48 +470,48 @@ func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
 	return e.updateNodeCache(ctx)
 }
 
-func (e *SimpleEnforcer) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
+func (e *SimpleEnforcer) updateNodeStats(stat *schema.Stat, epoch int64) error {
 	nodeInfo, err := e.stakingContract.GetNode(&bind.CallOpts{}, stat.Address)
 
 	if err != nil {
-		return fmt.Errorf("get node info: %s,%w", stat.Address.String(), err)
+		return fmt.Errorf("get node info from blockchain: %s,%w", stat.Address.String(), err)
 	}
 
 	stat.Staking = float64(nodeInfo.StakingPoolTokens.Uint64())
-	if epoch != stat.Epoch {
+
+	node, err := e.databaseClient.FindNode(context.Background(), stat.Address)
+
+	if err != nil {
+		return fmt.Errorf("get node info from database: %s,%w", stat.Address.String(), err)
+	}
+
+	// update node's epoch if node's status is online
+	if node.Status == schema.NodeStatusOnline && epoch != stat.Epoch {
 		stat.EpochRequest = 0
 		stat.EpochInvalidRequest = 0
 		stat.Epoch = epoch
 	}
 
-	return nil
-}
-
-func (e *SimpleEnforcer) updateNodePoints(stat *schema.Stat) error {
-	node, err := e.databaseClient.FindNode(context.Background(), stat.Address)
-
-	if err != nil {
-		return fmt.Errorf("find node: %s, %w", stat.Address.String(), err)
-	}
-
-	if node.Status == schema.NodeStatusOffline {
+	// If node's status is not online, then reset the start time.
+	if node.Status != schema.NodeStatusOnline {
 		stat.ResetAt = time.Now()
-		stat.EpochInvalidRequest = int64(model.DefaultSlashCount)
-
-		return nil
 	}
 
-	e.calcPoints(stat)
-
-	return nil
+	// calculate score
+	return e.calcScore(stat)
 }
 
 func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
 	rssNodes, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		IsRssNode:    lo.ToPtr(true),
-		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		IsRssNode:   lo.ToPtr(true),
+		PointsOrder: lo.ToPtr("DESC"),
 	})
+
+	if err != nil {
+		return err
+	}
+
+	rssNodes, err = e.filterNodes(ctx, rssNodes)
 
 	if err != nil {
 		return err
@@ -526,15 +522,47 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
 	}
 
 	fullNodes, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		IsFullNode:   lo.ToPtr(true),
-		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		IsFullNode:  lo.ToPtr(true),
+		PointsOrder: lo.ToPtr("DESC"),
 	})
+
+	fullNodes, err = e.filterNodes(ctx, fullNodes)
+
 	if err != nil {
 		return err
 	}
 
 	return e.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes)
+}
+
+func (e *SimpleEnforcer) filterNodes(ctx context.Context, stats []*schema.Stat) ([]*schema.Stat, error) {
+	nodeAddresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
+		return stat.Address
+	})
+
+	nodes, err := e.databaseClient.FindNodes(ctx, nodeAddresses, lo.ToPtr(schema.NodeStatusOnline), nil, len(nodeAddresses))
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeMap := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
+		return node.Address, struct{}{}
+	})
+
+	var statsRes []*schema.Stat
+
+	for _, stat := range stats {
+		if _, exists := nodeMap[stat.Address]; exists {
+			statsRes = append(statsRes, stat)
+		}
+
+		if len(statsRes) >= model.DefaultNodeCount {
+			break
+		}
+	}
+
+	return statsRes, nil
 }
 
 func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
@@ -549,30 +577,32 @@ func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*
 	return nil
 }
 
-func (e *SimpleEnforcer) calcPoints(stat *schema.Stat) {
+func (e *SimpleEnforcer) calcScore(stat *schema.Stat) error {
 	// staking pool tokens
-	stat.Points = math.Min(math.Log(stat.Staking/stakingToPointsRate+1)/math.Log(stakingLogBase), stakingMaxPoints)
+	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
 
 	// public good node
-	stat.Points += lo.Ternary(stat.IsPublicGood, nonExistPoints, existPoints)
+	stat.Score += lo.Ternary(stat.IsPublicGood, nonExistScore, existScore)
 
 	// node active time
-	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/hoursPerEpoch)/activeTimeToPointsRate, activeTimeMaxPoints)
+	stat.Score += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/hoursPerEpoch)/activeTimeToScoreRate, activeTimeMaxScore)
 
 	// total requests
-	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/totalReqToPointsRate+1)/math.Log(totalReqLogBase), totalReqMaxPoints)
+	stat.Score += math.Min(math.Log(float64(stat.TotalRequest)/totalReqToScoreRate+1)/math.Log(totalReqLogBase), totalReqMaxScore)
 
 	// epoch requests
-	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToPointsRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxPoints)
+	stat.Score += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToScoreRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxScore)
 
 	// network count
-	stat.Points += perDecentralizedNetworkPoints*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + perRssNetworkPoints*lo.Ternary(stat.IsRssNode, existPoints, nonExistPoints)
+	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore)
 
 	// indexer count
-	stat.Points += math.Min(float64(stat.Indexer)*perIndexerPoints, indexerMaxPoints)
+	stat.Score += math.Min(float64(stat.Indexer)*perIndexerScore, indexerMaxScore)
 
 	// epoch failure requests
-	stat.Points -= perSlashPoints * float64(stat.EpochInvalidRequest)
+	stat.Score -= perSlashScore * float64(stat.EpochInvalidRequest)
+
+	return nil
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
