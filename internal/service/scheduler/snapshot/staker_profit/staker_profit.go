@@ -208,7 +208,7 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 
 			errorPool.Go(func(ctx context.Context) error {
 				// Query the chip value from the staking contract.
-				minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{BlockNumber: currentEpoch.BlockNumber}, chip.Node)
+				minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{Context: ctx, BlockNumber: currentEpoch.BlockNumber}, chip.Node)
 				if err != nil {
 					zap.L().Error("fetch min tokens to stake", zap.Error(err), zap.String("node", chip.Node.String()), zap.Uint64("block_number", currentEpoch.BlockNumber.Uint64()))
 

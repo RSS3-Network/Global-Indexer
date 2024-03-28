@@ -262,7 +262,9 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		return stakeChip.Node
 	})
 
-	node, err := h.databaseClient.FindNodes(c.Request().Context(), nodeAddresses, nil, nil, len(nodeAddresses))
+	node, err := h.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
+		NodeAddresses: nodeAddresses,
+	})
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
 	}

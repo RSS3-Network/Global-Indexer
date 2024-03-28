@@ -10,6 +10,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	nodecount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_count"
 	nodemintokenstostake "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
+	operatorprofit "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/operator_profit"
 	stakercount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_count"
 	stakerprofit "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/redis/go-redis/v9"
@@ -64,6 +65,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 			stakercount.New(databaseClient, redis),
 			nodemintokenstostake.New(databaseClient, redis, stakingContract),
 			stakerprofit.New(databaseClient, redis, stakingContract),
+			operatorprofit.New(databaseClient, redis, stakingContract),
 		},
 	}, nil
 }
