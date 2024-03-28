@@ -118,9 +118,11 @@ func (h *Hub) GetOperatorProfitsSnapshots(c echo.Context) error {
 	}
 
 	query := schema.OperatorProfitSnapshotsQuery{
-		Operator: lo.ToPtr(request.Operator),
-		Limit:    request.Limit,
-		Cursor:   request.Cursor,
+		Operator:   lo.ToPtr(request.Operator),
+		Limit:      request.Limit,
+		Cursor:     request.Cursor,
+		BeforeDate: request.BeforeDate,
+		AfterDate:  request.AfterDate,
 	}
 
 	operatorProfitSnapshots, err := h.databaseClient.FindOperatorProfitSnapshots(c.Request().Context(), query)

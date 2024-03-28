@@ -429,11 +429,11 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 	}
 
 	if query.BeforeDate != nil {
-		databaseClient = databaseClient.Where(`"date" < ?`, query.BeforeDate)
+		databaseClient = databaseClient.Where(`"date" <= ?`, query.BeforeDate)
 	}
 
 	if query.AfterDate != nil {
-		databaseClient = databaseClient.Where(`"date" > ?`, query.AfterDate)
+		databaseClient = databaseClient.Where(`"date" >= ?`, query.AfterDate)
 	}
 
 	if query.Limit != nil {

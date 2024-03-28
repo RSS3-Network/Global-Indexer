@@ -542,11 +542,11 @@ func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.O
 	}
 
 	if query.BeforeDate != nil {
-		databaseClient = databaseClient.Where("date < ?", query.BeforeDate)
+		databaseClient = databaseClient.Where("date <= ?", query.BeforeDate)
 	}
 
 	if query.AfterDate != nil {
-		databaseClient = databaseClient.Where("date > ?", query.AfterDate)
+		databaseClient = databaseClient.Where("date >= ?", query.AfterDate)
 	}
 
 	if query.Limit != nil {
