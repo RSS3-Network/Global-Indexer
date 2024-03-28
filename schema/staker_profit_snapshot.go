@@ -24,4 +24,6 @@ type StakerProfitSnapshotsQuery struct {
 	OwnerAddress *common.Address `json:"ownerAddress"`
 	EpochID      *uint64         `json:"epochID"`
 	Dates        []time.Time     `json:"dates"`
+	BeforeDate   *time.Time      `json:"beforeDate"`
+	AfterDate    *time.Time      `json:"afterDate"`
 }

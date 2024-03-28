@@ -428,6 +428,18 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 		databaseClient = databaseClient.Where(`"epoch_id" = ?`, query.EpochID)
 	}
 
+	if query.BeforeDate != nil {
+		databaseClient = databaseClient.Where(`"date" < ?`, query.BeforeDate)
+	}
+
+	if query.AfterDate != nil {
+		databaseClient = databaseClient.Where(`"date" > ?`, query.AfterDate)
+	}
+
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
+
 	var rows []*table.StakerProfitSnapshot
 
 	if len(query.Dates) > 0 {
@@ -437,7 +449,7 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 		)
 
 		for _, date := range query.Dates {
-			queries = append(queries, `(SELECT * FROM "stake"."profit_snapshots" WHERE "date" > ? ORDER BY "date" LIMIT 1)`)
+			queries = append(queries, `(SELECT * FROM "stake"."profit_snapshots" WHERE "date" >= ? ORDER BY "date" LIMIT 1)`)
 			values = append(values, date)
 		}
 
@@ -453,10 +465,6 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 			return nil, fmt.Errorf("find rows: %w", err)
 		}
 	} else {
-		if query.Limit != nil {
-			databaseClient = databaseClient.Limit(*query.Limit)
-		}
-
 		if err := databaseClient.Order("epoch_id DESC, id DESC").Find(&rows).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, database.ErrorRowNotFound

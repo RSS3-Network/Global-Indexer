@@ -82,6 +82,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.POST("/snapshots/nodes/minTokensToStake", instance.hub.BatchGetNodeMinTokensToStakeSnapshots)
 	instance.httpServer.GET("/snapshots/stakers/count", instance.hub.GetStakerCountSnapshots)
 	instance.httpServer.GET("/snapshots/stakers/profits", instance.hub.GetStakerProfitsSnapshots)
+	instance.httpServer.GET("/snapshots/operators/profits", instance.hub.GetOperatorProfitsSnapshots)
 
 	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHubHandler)
 	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivityHandler)

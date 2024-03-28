@@ -107,7 +107,10 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 		var cursor *string
 
 		for {
-			nodes, err := s.databaseClient.FindNodes(ctx, nil, nil, cursor, 1000)
+			nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
+				Cursor: cursor,
+				Limit:  lo.ToPtr(1000),
+			})
 			if errors.Is(err, database.ErrorRowNotFound) || len(nodes) == 0 {
 				break
 			}

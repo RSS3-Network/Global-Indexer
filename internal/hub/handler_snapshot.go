@@ -3,8 +3,8 @@ package hub
 import (
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
@@ -74,18 +74,16 @@ func (h *Hub) GetStakerProfitsSnapshots(c echo.Context) error {
 		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
-	if err := defaults.Set(&request); err != nil {
-		return response.BadRequestError(c, fmt.Errorf("set default failed: %w", err))
-	}
-
 	if err := c.Validate(&request); err != nil {
 		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	query := schema.StakerProfitSnapshotsQuery{
 		OwnerAddress: lo.ToPtr(request.OwnerAddress),
-		Limit:        lo.ToPtr(request.Limit),
+		Limit:        request.Limit,
 		Cursor:       request.Cursor,
+		BeforeDate:   request.BeforeDate,
+		AfterDate:    request.AfterDate,
 	}
 
 	stakerProfitSnapshots, err := h.databaseClient.FindStakerProfitSnapshots(c.Request().Context(), query)
@@ -97,13 +95,50 @@ func (h *Hub) GetStakerProfitsSnapshots(c echo.Context) error {
 
 	var cursor string
 
-	if len(stakerProfitSnapshots) > 0 && len(stakerProfitSnapshots) == request.Limit {
+	if request.Limit != nil && len(stakerProfitSnapshots) > 0 && len(stakerProfitSnapshots) == lo.FromPtr(request.Limit) {
 		last, _ := lo.Last(stakerProfitSnapshots)
 		cursor = fmt.Sprintf("%d", last.ID)
 	}
 
 	return c.JSON(http.StatusOK, Response{
 		Data:   stakerProfitSnapshots,
+		Cursor: cursor,
+	})
+}
+
+func (h *Hub) GetOperatorProfitsSnapshots(c echo.Context) error {
+	var request GetOperatorProfitSnapshotsRequest
+
+	if err := c.Bind(&request); err != nil {
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+	}
+
+	query := schema.OperatorProfitSnapshotsQuery{
+		Operator: lo.ToPtr(request.Operator),
+		Limit:    request.Limit,
+		Cursor:   request.Cursor,
+	}
+
+	operatorProfitSnapshots, err := h.databaseClient.FindOperatorProfitSnapshots(c.Request().Context(), query)
+	if err != nil {
+		zap.L().Error("find operator profit snapshots", zap.Error(err))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	var cursor string
+
+	if request.Limit != nil && len(operatorProfitSnapshots) > 0 && len(operatorProfitSnapshots) == lo.FromPtr(request.Limit) {
+		last, _ := lo.Last(operatorProfitSnapshots)
+		cursor = fmt.Sprintf("%d", last.ID)
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data:   operatorProfitSnapshots,
 		Cursor: cursor,
 	})
 }
@@ -115,6 +150,16 @@ type BatchNodeMinTokensToStakeRequest struct {
 
 type GetStakerProfitSnapshotsRequest struct {
 	OwnerAddress common.Address `query:"ownerAddress" validate:"required"`
-	Limit        int            `query:"limit" validate:"min=1,max=100" default:"100"`
+	Limit        *int           `query:"limit"`
 	Cursor       *string        `query:"cursor"`
+	BeforeDate   *time.Time     `query:"beforeDate"`
+	AfterDate    *time.Time     `query:"afterDate"`
+}
+
+type GetOperatorProfitSnapshotsRequest struct {
+	Operator   common.Address `query:"operator" validate:"required"`
+	Limit      *int           `query:"limit"`
+	Cursor     *string        `query:"cursor"`
+	BeforeDate *time.Time     `query:"beforeDate"`
+	AfterDate  *time.Time     `query:"afterDate"`
 }
