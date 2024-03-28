@@ -1,12 +1,17 @@
 package hub
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/shopspring/decimal"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +23,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (h *Hub) GetNodesHandler(c echo.Context) error {
+func (h *Hub) GetNodes(c echo.Context) error {
 	var request BatchNodeRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -53,7 +58,7 @@ func (h *Hub) GetNodesHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetNodeHandler(c echo.Context) error {
+func (h *Hub) GetNode(c echo.Context) error {
 	var request NodeRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -78,7 +83,7 @@ func (h *Hub) GetNodeHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
+func (h *Hub) GetNodeEvents(c echo.Context) error {
 	var request NodeEventsRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -115,7 +120,7 @@ func (h *Hub) GetNodeEventsHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
+func (h *Hub) GetNodeChallenge(c echo.Context) error {
 	var request NodeChallengeRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -140,7 +145,7 @@ func (h *Hub) GetNodeChallengeHandler(c echo.Context) error {
 	}
 }
 
-func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
+func (h *Hub) PostNodeHideTaxRate(c echo.Context) error {
 	var request NodeHideTaxRateRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -172,7 +177,7 @@ func (h *Hub) PostNodeHideTaxRateHandler(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
+func (h *Hub) GetNodeAvatar(c echo.Context) error {
 	var request NodeRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -195,7 +200,7 @@ func (h *Hub) GetNodeAvatarHandler(c echo.Context) error {
 	return c.Blob(http.StatusOK, "image/svg+xml", avatar)
 }
 
-func (h *Hub) RegisterNodeHandler(c echo.Context) error {
+func (h *Hub) RegisterNode(c echo.Context) error {
 	var request RegisterNodeRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -220,7 +225,7 @@ func (h *Hub) RegisterNodeHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
+func (h *Hub) NodeHeartbeat(c echo.Context) error {
 	var request NodeHeartbeatRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -243,6 +248,84 @@ func (h *Hub) NodeHeartbeatHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, Response{
 		Data: fmt.Sprintf("node heartbeat: %v", request.Address),
 	})
+}
+
+func (h *Hub) GetOperatorProfit(c echo.Context) error {
+	var request GetOperatorProfitRequest
+
+	if err := c.Bind(&request); err != nil {
+		return response.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return response.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+	}
+
+	node, err := h.stakingContract.GetNode(&bind.CallOpts{}, request.Operator)
+	if err != nil {
+		return response.InternalError(c, fmt.Errorf("get node from rpc: %w", err))
+	}
+
+	data := GetOperatorProfitRepsonse{
+		Operator:      request.Operator,
+		OperationPool: decimal.NewFromBigInt(node.OperationPoolTokens, 0),
+	}
+
+	changes, err := h.findOperatorHistoryProfitSnapshots(c.Request().Context(), request.Operator, &data)
+	if err != nil {
+		return response.InternalError(c, fmt.Errorf("find operator history profit snapshots: %w", err))
+	}
+
+	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
+
+	return c.JSON(http.StatusOK, Response{
+		Data: data,
+	})
+}
+
+func (h *Hub) findOperatorHistoryProfitSnapshots(ctx context.Context, operator common.Address, profit *GetOperatorProfitRepsonse) ([]*GetOperatorProfitChangesSinceResponse, error) {
+	if profit == nil {
+		return nil, nil
+	}
+
+	now := time.Now()
+	query := schema.OperatorProfitSnapshotsQuery{
+		Operator: lo.ToPtr(operator),
+		Dates: []time.Time{
+			now.Add(-24 * time.Hour),      // 1 day
+			now.Add(-7 * 24 * time.Hour),  // 1 week
+			now.Add(-30 * 24 * time.Hour), // 1 month
+		},
+	}
+
+	snapshots, err := h.databaseClient.FindOperatorProfitSnapshots(ctx, query)
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		return nil, fmt.Errorf("find operator profit snapshots: %w", err)
+	}
+
+	data := make([]*GetOperatorProfitChangesSinceResponse, len(query.Dates))
+
+	for _, snapshot := range snapshots {
+		if snapshot.OperationPool.IsZero() {
+			continue
+		}
+
+		var index int
+
+		if snapshot.Date.After(query.Dates[2]) && snapshot.Date.Before(query.Dates[1]) {
+			index = 2
+		} else if snapshot.Date.After(query.Dates[1]) && snapshot.Date.Before(query.Dates[0]) {
+			index = 1
+		}
+
+		data[index] = &GetOperatorProfitChangesSinceResponse{
+			Date:          snapshot.Date,
+			OperationPool: snapshot.OperationPool,
+			PNL:           profit.OperationPool.Sub(snapshot.OperationPool).Div(snapshot.OperationPool),
+		}
+	}
+
+	return data, nil
 }
 
 func (h *Hub) parseRequestIP(c echo.Context) (net.IP, error) {
@@ -301,4 +384,22 @@ type BatchNodeRequest struct {
 	Cursor      *string          `query:"cursor"`
 	Limit       int              `query:"limit" validate:"min=1,max=50" default:"10"`
 	NodeAddress []common.Address `query:"nodeAddress"`
+}
+
+type GetOperatorProfitRequest struct {
+	Operator common.Address `param:"operator" validate:"required"`
+}
+
+type GetOperatorProfitRepsonse struct {
+	Operator      common.Address                         `json:"operator"`
+	OperationPool decimal.Decimal                        `json:"operationPool"`
+	OneDay        *GetOperatorProfitChangesSinceResponse `json:"oneDay"`
+	OneWeek       *GetOperatorProfitChangesSinceResponse `json:"oneWeek"`
+	OneMonth      *GetOperatorProfitChangesSinceResponse `json:"oneMonth"`
+}
+
+type GetOperatorProfitChangesSinceResponse struct {
+	Date          time.Time       `json:"date"`
+	OperationPool decimal.Decimal `json:"operationPool"`
+	PNL           decimal.Decimal `json:"pnl"`
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/rss3-network/protocol-go/schema/filter"
 )
 
-func (h *Hub) GetRSSHubHandler(c echo.Context) error {
+func (h *Hub) GetRSSHub(c echo.Context) error {
 	path := c.Param("*")
 	query := c.Request().URL.RawQuery
 
@@ -31,7 +31,7 @@ type ActivityRequest struct {
 	ActionPage  int    `query:"action_page" default:"1" min:"1"`
 }
 
-func (h *Hub) GetActivityHandler(c echo.Context) (err error) {
+func (h *Hub) GetActivity(c echo.Context) (err error) {
 	var request ActivityRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -69,7 +69,7 @@ type AccountActivitiesRequest struct {
 	Platform       []string `query:"platform"`
 }
 
-func (h *Hub) GetAccountActivitiesHandler(c echo.Context) (err error) {
+func (h *Hub) GetAccountActivities(c echo.Context) (err error) {
 	var request AccountActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {

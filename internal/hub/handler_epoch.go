@@ -13,7 +13,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model/response"
 )
 
-func (h *Hub) GetEpochsHandler(c echo.Context) error {
+func (h *Hub) GetEpochs(c echo.Context) error {
 	var request GetEpochsRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -50,7 +50,7 @@ func (h *Hub) GetEpochsHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetEpochHandler(c echo.Context) error {
+func (h *Hub) GetEpoch(c echo.Context) error {
 	var request GetEpochRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -79,7 +79,7 @@ func (h *Hub) GetEpochHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetEpochDistributionHandler(c echo.Context) error {
+func (h *Hub) GetEpochDistribution(c echo.Context) error {
 	var request GetEpochDistributionRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -114,7 +114,7 @@ func (h *Hub) GetEpochDistributionHandler(c echo.Context) error {
 	})
 }
 
-func (h *Hub) GetEpochNodeRewardsHandler(c echo.Context) error {
+func (h *Hub) GetEpochNodeRewards(c echo.Context) error {
 	var request GetEpochNodeRewardsRequest
 
 	if err := c.Bind(&request); err != nil {

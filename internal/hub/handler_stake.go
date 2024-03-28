@@ -465,9 +465,7 @@ func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
 		return response.InternalError(c, err)
 	}
 
-	data.OneDay = changes[0]
-	data.OneWeek = changes[1]
-	data.OneMonth = changes[2]
+	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
 
 	return c.JSON(http.StatusOK, Response{
 		Data: data,
