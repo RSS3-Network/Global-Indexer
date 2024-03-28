@@ -39,6 +39,8 @@ func (err *NodeStatusTransitionError) Error() string {
 	return fmt.Sprintf("invalid status transition from %s to %s", err.From, err.To)
 }
 
+// See https://www.figma.com/file/2PCGRBkIRuQ7VmttXyT6gB/Epoch-workflow?type=whiteboard&node-id=0-1&t=uiVv3wIktG5NAHCz-0
+// for the state machine diagram.
 var transitions = map[schema.NodeStatus][]schema.NodeStatus{
 	schema.NodeStatusRegistered: {schema.NodeStatusOnline, schema.NodeStatusExited},
 	schema.NodeStatusOnline:     {schema.NodeStatusExiting, schema.NodeStatusExited, schema.NodeStatusSlashed, schema.NodeStatusOffline},
