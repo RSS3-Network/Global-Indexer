@@ -18,8 +18,8 @@ var (
 )
 
 type StakeTransaction struct {
-	ID               string          `gorm:"column:id"`
-	Type             string          `gorm:"column:type"`
+	ID               string          `gorm:"column:id;primaryKey"`
+	Type             string          `gorm:"column:type;primaryKey"`
 	User             string          `gorm:"column:user"`
 	Node             string          `gorm:"column:node"`
 	Value            decimal.Decimal `gorm:"column:value"`
