@@ -133,7 +133,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		Data: stakeTransactionModels,
 	}
 
-	if length := len(stakeTransactionModels); length > 0 {
+	if length := len(stakeTransactionModels); length > 0 && length == request.Limit {
 		response.Cursor = stakeTransactionModels[length-1].ID.String()
 	}
 
@@ -415,7 +415,7 @@ func (h *Hub) GetStakeStakings(c echo.Context) error {
 		Data: model.NewStakeStaking(stakeStakings, baseURL(c)),
 	}
 
-	if length := len(stakeStakings); length > 0 {
+	if length := len(stakeStakings); length > 0 && length == request.Limit {
 		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
 	}
 
