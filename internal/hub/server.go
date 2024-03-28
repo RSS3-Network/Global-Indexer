@@ -60,6 +60,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.GET("/nodes/:id/avatar.svg", instance.hub.GetNodeAvatar)
 	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNode)
 	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeat)
+	instance.httpServer.GET("/operation/:operator/profits", instance.hub.GetOperatorProfit)
 
 	instance.httpServer.GET("/bridge/transactions", instance.hub.GetBridgeTransactions)
 	instance.httpServer.GET("/bridge/transactions/:id", instance.hub.GetBridgeTransaction)
@@ -68,8 +69,6 @@ func NewServer(ctx context.Context, databaseClient database.Client, ethereumClie
 	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
 	instance.httpServer.GET("/stake/stakings", instance.hub.GetStakeStakings)
 	instance.httpServer.GET("/stake/:owner/profits", instance.hub.GetStakeOwnerProfit)
-
-	instance.httpServer.GET("/operate/:operator/profits", instance.hub.GetOperatorProfit)
 
 	instance.httpServer.GET("/chips", instance.hub.GetStakeChips)
 	instance.httpServer.GET("/chips/:id", instance.hub.GetStakeChip)
