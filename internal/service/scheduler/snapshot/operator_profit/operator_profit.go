@@ -128,7 +128,7 @@ func (s *server) saveOperatorProfitSnapshots(ctx context.Context, latestEpochSna
 
 			errorPool.Go(func(ctx context.Context) error {
 				// Query the node info from the staking contract.
-				nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{BlockNumber: epochItems[0].BlockNumber}, node.Address)
+				nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{Context: ctx, BlockNumber: epochItems[0].BlockNumber}, node.Address)
 				if err != nil {
 					zap.L().Error("get node from rpc", zap.Error(err))
 
