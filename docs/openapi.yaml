@@ -1190,7 +1190,7 @@ components:
     OperationProfit:
       type: object
       properties:
-        address:
+        operator:
           type: string
         date:
           type: string
