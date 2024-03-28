@@ -46,6 +46,11 @@ paths:
             enum:
               - deposit
               - withdraw
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
       responses:
         200:
           description: "OK"
