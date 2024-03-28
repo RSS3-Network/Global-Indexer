@@ -555,12 +555,36 @@ func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.O
 
 	var snapshots table.OperatorProfitSnapshots
 
-	if err := databaseClient.Order("epoch_id DESC").Find(&snapshots).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
+	if len(query.Dates) > 0 {
+		var (
+			queries []string
+			values  []interface{}
+		)
+
+		for _, date := range query.Dates {
+			queries = append(queries, `(SELECT * FROM "node"."operator_profit_snapshots" WHERE "date" >= ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date)
 		}
 
-		return nil, err
+		// Combine all queries with UNION ALL
+		fullQuery := strings.Join(queries, " UNION ALL ")
+
+		// Execute the combined query
+		if err := databaseClient.Raw(fullQuery, values...).Scan(&snapshots).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	} else {
+		if err := databaseClient.Order("epoch_id DESC, id DESC").Find(&snapshots).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
 	}
 
 	return snapshots.Export()

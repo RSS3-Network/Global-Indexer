@@ -23,4 +23,5 @@ type OperatorProfitSnapshotsQuery struct {
 	Cursor     *string         `json:"cursor"`
 	BeforeDate *time.Time      `json:"BeforeDate"`
 	AfterDate  *time.Time      `json:"AfterDate"`
+	Dates      []time.Time     `json:"dates"`
 }

@@ -710,6 +710,38 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
+  /operation/{operator}/profits:
+    get:
+      description: "Get the operation profit of the node"
+      tags:
+        - Node
+      parameters:
+        - name: operator
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                      operationPool:
+                        type: string
+                      oneDay:
+                        $ref: "#/components/schemas/OperationProfitPNL"
+                      oneWeek:
+                       $ref: "#/components/schemas/OperationProfitPNL"
+                      oneMonth:
+                        $ref: "#/components/schemas/OperationProfitPNL"
 
 components:
   schemas:
@@ -1155,7 +1187,7 @@ components:
           type: string
         pnl:
           type: string
-    OperatorProfitSnapshot:
+    OperationProfit:
       type: object
       properties:
         operator:
@@ -1166,4 +1198,13 @@ components:
         epochID:
           type: integer
         operationPool:
+          type: string
+    OperationProfitPNL:
+      type: object
+      properties:
+        date:
+          type: string
+        operationPool:
+          type: string
+        pnl:
           type: string
