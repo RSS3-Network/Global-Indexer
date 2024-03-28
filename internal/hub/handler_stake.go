@@ -133,7 +133,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		Data: stakeTransactionModels,
 	}
 
-	if length := len(stakeTransactionModels); length > 0 {
+	if length := len(stakeTransactionModels); length > 0 && length == request.Limit {
 		response.Cursor = stakeTransactionModels[length-1].ID.String()
 	}
 
@@ -262,7 +262,9 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		return stakeChip.Node
 	})
 
-	node, err := h.databaseClient.FindNodes(c.Request().Context(), nodeAddresses, nil, nil, len(nodeAddresses))
+	node, err := h.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
+		NodeAddresses: nodeAddresses,
+	})
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
 	}
@@ -413,7 +415,7 @@ func (h *Hub) GetStakeStakings(c echo.Context) error {
 		Data: model.NewStakeStaking(stakeStakings, baseURL(c)),
 	}
 
-	if length := len(stakeStakings); length > 0 {
+	if length := len(stakeStakings); length > 0 && length == request.Limit {
 		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
 	}
 
@@ -463,9 +465,7 @@ func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
 		return response.InternalError(c, err)
 	}
 
-	data.OneDay = changes[0]
-	data.OneWeek = changes[1]
-	data.OneMonth = changes[2]
+	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
 
 	return c.JSON(http.StatusOK, Response{
 		Data: data,

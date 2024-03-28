@@ -46,6 +46,11 @@ paths:
             enum:
               - deposit
               - withdraw
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
       responses:
         200:
           description: "OK"
@@ -312,38 +317,11 @@ paths:
                       totalChipValues:
                         type: string
                       oneDay:
-                        type: object
-                        properties:
-                          date:
-                            type: string
-                          totalChipAmounts:
-                            type: string
-                          totalChipValues:
-                            type: string
-                          pnl:
-                            type: string
+                        $ref: "#/components/schemas/ChipPNL"
                       oneWeek:
-                        type: object
-                        properties:
-                          date:
-                            type: string
-                          totalChipAmounts:
-                            type: string
-                          totalChipValues:
-                            type: string
-                          pnl:
-                            type: string
+                        $ref: "#/components/schemas/ChipPNL"
                       oneMonth:
-                        type: object
-                        properties:
-                          date:
-                            type: string
-                          totalChipAmounts:
-                            type: string
-                          totalChipValues:
-                            type: string
-                          pnl:
-                            type: string
+                        $ref: "#/components/schemas/ChipPNL"
   /chips:
     get:
       description: "Get all chips by chips id"
@@ -534,9 +512,19 @@ paths:
             in: query
             schema:
               type: integer
-              default: 100
-              minimum: 1
-              maximum: 100
+            description: "The number of snapshots to return, if not provided, return all snapshots"
+          - name: beforeDate
+            in: query
+            schema:
+              type: string
+              format: date
+            description: "The date before which the snapshots are returned"
+          - name: afterDate
+            in: query
+            schema:
+              type: string
+              format: date
+            description: "The date after which the snapshots are returned"
         responses:
           200:
             description: "OK"
@@ -549,6 +537,52 @@ paths:
                       type: array
                       items:
                         $ref: "#/components/schemas/StakerProfitSnapshot"
+                    cursor:
+                      type: string
+  /snapshots/operators/profits:
+    get:
+        description: "Get snapshots of the profit of operators"
+        tags:
+            - Snapshots
+        parameters:
+          - name: operator
+            in: query
+            required: true
+            schema:
+              type: string
+          - name: cursor
+            in: query
+            schema:
+              type: string
+          - name: limit
+            in: query
+            schema:
+              type: integer
+            description: "The number of snapshots to return, if not provided, return all snapshots"
+          - name: beforeDate
+            in: query
+            schema:
+              type: string
+              format: date
+            description: "The date before which the snapshots are returned"
+          - name: afterDate
+            in: query
+            schema:
+              type: string
+              format: date
+            description: "The date after which the snapshots are returned"
+        responses:
+          200:
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/OperatorProfitSnapshot"
                     cursor:
                       type: string
 
@@ -676,6 +710,38 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
+  /operation/{operator}/profits:
+    get:
+      description: "Get the operation profit of the node"
+      tags:
+        - Node
+      parameters:
+        - name: operator
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                      operationPool:
+                        type: string
+                      oneDay:
+                        $ref: "#/components/schemas/OperationProfitPNL"
+                      oneWeek:
+                       $ref: "#/components/schemas/OperationProfitPNL"
+                      oneMonth:
+                        $ref: "#/components/schemas/OperationProfitPNL"
 
 components:
   schemas:
@@ -1109,4 +1175,36 @@ components:
         totalChipAmounts:
           type: string
         totalChipValues:
+          type: string
+    ChipPNL:
+      type: object
+      properties:
+        date:
+          type: string
+        totalChipAmounts:
+          type: string
+        totalChipValues:
+          type: string
+        pnl:
+          type: string
+    OperationProfit:
+      type: object
+      properties:
+        operator:
+          type: string
+        date:
+          type: string
+          example: "2024-03-13T00:08:38+08:00"
+        epochID:
+          type: integer
+        operationPool:
+          type: string
+    OperationProfitPNL:
+      type: object
+      properties:
+        date:
+          type: string
+        operationPool:
+          type: string
+        pnl:
           type: string

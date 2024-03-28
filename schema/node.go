@@ -122,3 +122,10 @@ type BatchUpdateNode struct {
 	Apy              decimal.Decimal
 	MinTokensToStake decimal.Decimal
 }
+
+type FindNodesQuery struct {
+	NodeAddresses []common.Address
+	Status        *NodeStatus
+	Cursor        *string
+	Limit         *int
+}
