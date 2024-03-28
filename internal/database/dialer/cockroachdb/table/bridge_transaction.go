@@ -16,8 +16,8 @@ var (
 )
 
 type BridgeTransaction struct {
-	ID               string          `gorm:"column:id"`
-	Type             string          `gorm:"column:type"`
+	ID               string          `gorm:"column:id;primaryKey"`
+	Type             string          `gorm:"column:type;primaryKey"`
 	Sender           string          `gorm:"column:sender"`
 	Receiver         string          `gorm:"column:receiver"`
 	TokenAddressL1   *string         `gorm:"column:token_address_l1"`

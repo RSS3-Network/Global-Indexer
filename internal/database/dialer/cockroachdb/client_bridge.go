@@ -11,6 +11,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (c *client) FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error) {
@@ -161,7 +162,13 @@ func (c *client) SaveBridgeTransaction(ctx context.Context, bridgeTransaction *s
 		return fmt.Errorf("import bridge transaction: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }
 
 func (c *client) SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error {
@@ -170,5 +177,11 @@ func (c *client) SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.Bridge
 		return fmt.Errorf("import bridge event: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }

@@ -17,11 +17,11 @@ var (
 type BridgeEvent struct {
 	ID                string    `gorm:"column:id"`
 	Type              string    `gorm:"column:type"`
-	TransactionHash   string    `gorm:"column:transaction_hash"`
+	TransactionHash   string    `gorm:"column:transaction_hash;primaryKey"`
 	TransactionIndex  uint      `gorm:"column:transaction_index"`
 	TransactionStatus uint64    `gorm:"column:transaction_status"`
 	ChainID           uint64    `gorm:"column:chain_id"`
-	BlockHash         string    `gorm:"column:block_hash"`
+	BlockHash         string    `gorm:"column:block_hash;primaryKey"`
 	BlockNumber       uint64    `gorm:"column:block_number"`
 	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
 }
