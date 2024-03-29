@@ -449,8 +449,8 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 		)
 
 		for _, date := range query.Dates {
-			queries = append(queries, `(SELECT * FROM "stake"."profit_snapshots" WHERE "date" >= ? ORDER BY "date" LIMIT 1)`)
-			values = append(values, date)
+			queries = append(queries, `(SELECT * FROM "stake"."profit_snapshots" WHERE "date" >= ? AND "owner_address" = ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date, query.OwnerAddress)
 		}
 
 		// Combine all queries with UNION ALL
