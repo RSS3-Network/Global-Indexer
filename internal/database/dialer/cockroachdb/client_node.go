@@ -562,8 +562,8 @@ func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.O
 		)
 
 		for _, date := range query.Dates {
-			queries = append(queries, `(SELECT * FROM "node"."operator_profit_snapshots" WHERE "date" >= ? ORDER BY "date" LIMIT 1)`)
-			values = append(values, date)
+			queries = append(queries, `(SELECT * FROM "node"."operator_profit_snapshots" WHERE "date" >= ? and "operator" = ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date, query.Operator)
 		}
 
 		// Combine all queries with UNION ALL
