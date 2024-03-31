@@ -65,25 +65,25 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) listenEpochEvent(ctx context.Context) error {
 	for {
 		// Load checkpoint and latest block number.
-		checkpoint, blockNumberLatest, err := s.loadCheckpoint(ctx)
+		indexedBlock, latestBlock, err := s.loadCheckpoint(ctx)
 		if err != nil {
 			zap.L().Error("get checkpoint and latest block number", zap.Error(err), zap.Any("chain_id", s.chainID),
-				zap.Any("checkpoint", checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
+				zap.Any("checkpoint", indexedBlock), zap.Uint64("block_number_latest", latestBlock))
 
 			return err
 		}
 
 		// If indexer doesn't work or catch up the latest block, wait for 5 seconds.
-		if int(blockNumberLatest-checkpoint) > 5 {
-			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", checkpoint),
-				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
+		if int(latestBlock-indexedBlock) > 5 {
+			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", indexedBlock),
+				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", latestBlock))
 
 			<-time.NewTimer(5 * time.Second).C
 
 			continue
 		}
 
-		s.checkpoint = checkpoint
+		s.checkpoint = indexedBlock
 
 		// Find the latest epoch event from database.
 		epochEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
@@ -170,7 +170,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	// Load checkpoint from database.
-	checkpoint, err := s.databaseClient.FindCheckpoint(ctx, s.chainID.Uint64())
+	// A checkpoint is basically the last indexed block
+	indexedBlock, err := s.databaseClient.FindCheckpoint(ctx, s.chainID.Uint64())
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return 0, 0, nil
@@ -180,16 +181,16 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	}
 
 	// Load latest block number from RPC.
-	blockNumberLatest, err := s.ethereumClient.BlockNumber(ctx)
+	latestBlock, err := s.ethereumClient.BlockNumber(ctx)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return 0, 0, nil
 		}
 
-		return 0, 0, fmt.Errorf("get latest block number from rpc: %w", err)
+		return 0, 0, fmt.Errorf("get latest block from rpc: %w", err)
 	}
 
-	return checkpoint.BlockNumber, blockNumberLatest, nil
+	return indexedBlock.BlockNumber, latestBlock, nil
 }
 
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
