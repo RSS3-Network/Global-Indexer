@@ -21,7 +21,9 @@ import (
 )
 
 const (
-	intervalEpoch = 18 * time.Hour
+	// epochInterval is the interval between epochs.
+	// The epoch interval is set to be 18 hours.
+	epochInterval = 18 * time.Hour
 )
 
 type Server struct {
@@ -112,41 +114,54 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		now := time.Now()
 
+		// The time elapsed since the last epoch event was included on the VSL
+		timeSinceLastEpoch := now.Sub(lastEpochEventTime)
+		// The time elapsed since the last epoch trigger was sent
+		timeSinceLastTrigger := now.Sub(lastEpochTriggerTime)
+
+		// Special case for genesis epoch
+		// No longer applicable for the subsequent epochs
 		if genesisEpoch, exist := l2.GenesisEpochMap[s.chainID.Uint64()]; exist {
 			genesisEpochTime := time.Unix(genesisEpoch, 0)
 
 			// Wait for genesis epoch
-			if now.Sub(genesisEpochTime) < intervalEpoch-1*time.Hour {
+			if now.Sub(genesisEpochTime) < epochInterval-1*time.Hour {
 				zap.L().Info("wait for genesis epoch start", zap.Time("genesis_epoch_time", genesisEpochTime),
-					zap.Time("estimated_epoch_start_time", now.Add(intervalEpoch-1*time.Hour-now.Sub(genesisEpochTime))))
+					zap.Time("estimated_epoch_start_time", now.Add(epochInterval-1*time.Hour-now.Sub(genesisEpochTime))))
 
-				<-time.NewTimer(intervalEpoch - 1*time.Hour - now.Sub(genesisEpochTime)).C
+				<-time.NewTimer(epochInterval - 1*time.Hour - now.Sub(genesisEpochTime)).C
 
 				zap.L().Info("genesis epoch start", zap.Time("start_time", time.Now()))
 			}
 		}
 
-		if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) >= intervalEpoch {
-			// Trigger new epoch
+		// Check if epochInterval has passed since the last epoch event
+		if timeSinceLastEpoch >= epochInterval {
+			// Check if the epochInterval has passed since the last epoch trigger
+			if timeSinceLastTrigger >= epochInterval {
+				// Trigger new epoch
+				if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
+					zap.L().Error("trigger new epoch", zap.Error(err))
+
+					return err
+				}
+			} else if timeSinceLastTrigger < epochInterval {
+				// Check if epochInterval has NOT passed since the last epoch trigger
+				// If so, delay the trigger by 5 seconds
+				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
+					zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
+
+				<-time.NewTimer(5 * time.Second).C
+			}
+		} else if timeSinceLastEpoch < epochInterval {
+			// If epochInterval has NOT passed since the last epoch event
+			// Wait for the remaining time until the next epoch event
+
+			remainingTime := epochInterval - now.Sub(lastEpochEventTime)
+			<-time.NewTimer(remainingTime).C
+
 			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
 				zap.L().Error("trigger new epoch", zap.Error(err))
-
-				return err
-			}
-		} else if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) < intervalEpoch {
-			// Wait for epoch event indexer
-			zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
-				zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
-
-			<-time.NewTimer(5 * time.Second).C
-		} else if now.Sub(lastEpochEventTime) < intervalEpoch {
-			// Set timer to trigger next epoch
-			<-time.NewTimer(intervalEpoch - now.Sub(lastEpochEventTime)).C
-
-			err := s.trigger(ctx, s.currentEpoch+1)
-			if err != nil {
-				zap.L().Error("trigger new epoch", zap.Error(err))
-
 				return err
 			}
 		}
