@@ -20,6 +20,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// BatchSize is the number of Nodes to process in each batch.
+// This is to prevent the contract call from running out of gas.
 const BatchSize = 200
 
 func (s *Server) trigger(ctx context.Context, epoch uint64) error {
@@ -74,6 +76,7 @@ func (s *Server) trigger(ctx context.Context, epoch uint64) error {
 	return nil
 }
 
+// buildDistributeRewards builds the distribute rewards data struct
 func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, cursor *string) (*schema.DistributeRewardsData, error) {
 	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
 		Status: lo.ToPtr(schema.NodeStatusOnline),
@@ -81,6 +84,7 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 		Limit:  lo.ToPtr(BatchSize + 1),
 	})
 	if err != nil {
+		// No Nodes in the database.
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return nil, nil
 		}
@@ -90,31 +94,40 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 		return nil, err
 	}
 
-	var isFinal = true
-
-	if len(nodes) > BatchSize {
+	// isFinal is true if it's the last batch of Nodes
+	isFinal := len(nodes) <= BatchSize
+	if !isFinal {
 		nodes = nodes[:BatchSize]
-		isFinal = false
 	}
 
-	nodeAddress := make([]common.Address, 0, len(nodes))
-
+	// nodeAddresses is a slice of Node addresses.
+	nodeAddresses := make([]common.Address, 0, len(nodes))
 	for _, node := range nodes {
-		nodeAddress = append(nodeAddress, node.Address)
+		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	zeroRewards := make([]*big.Int, len(nodes))
-
-	for i := range zeroRewards {
-		zeroRewards[i] = big.NewInt(0)
-	}
+	operationRewards := calculateOperationRewards(nodeAddresses)
 
 	return &schema.DistributeRewardsData{
 		Epoch:            big.NewInt(int64(epoch)),
-		NodeAddress:      nodeAddress,
-		OperationRewards: zeroRewards,
+		NodeAddress:      nodeAddresses,
+		OperationRewards: operationRewards,
 		IsFinal:          isFinal,
 	}, nil
+}
+
+// calculateOperationRewards calculates the operation rewards for Nodes
+// For Alpha, there is no actual calculation logic.
+// TODO: Implement the actual calculation logic
+func calculateOperationRewards(nodes []common.Address) []*big.Int {
+	slice := make([]*big.Int, len(nodes))
+
+	// For Alpha, set the rewards to 0
+	for i := range slice {
+		slice[i] = big.NewInt(0)
+	}
+
+	return slice
 }
 
 func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.DistributeRewardsData) error {
