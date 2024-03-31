@@ -131,11 +131,38 @@ func calculateOperationRewards(nodes []common.Address) []*big.Int {
 }
 
 func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.DistributeRewardsData) error {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
+	input, err := s.prepareInputData(data)
 	if err != nil {
-		return fmt.Errorf("encode input: %w", err)
+		return err
 	}
 
+	receipt, err := s.sendTransaction(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	// Save epoch trigger to database.
+	if err := s.handleReceipt(ctx, receipt, data); err != nil {
+		return err
+	}
+
+	zap.L().Info("rewards distributed successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", data))
+
+	return nil
+}
+
+// prepareInputData encodes input data for the transaction.
+func (s *Server) prepareInputData(data schema.DistributeRewardsData) ([]byte, error) {
+	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
+	if err != nil {
+		return nil, fmt.Errorf("encode input: %w", err)
+	}
+
+	return input, nil
+}
+
+// sendTransaction sends the transaction and returns the receipt.
+func (s *Server) sendTransaction(ctx context.Context, input []byte) (*types.Receipt, error) {
 	txCandidate := txmgr.TxCandidate{
 		TxData:   input,
 		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
@@ -144,27 +171,31 @@ func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.Distr
 	}
 
 	receipt, err := s.txManager.Send(ctx, txCandidate)
-
 	if err != nil {
-		return fmt.Errorf("send tx failed %w", err)
+		return nil, fmt.Errorf("failed to send tx: %w", err)
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		zap.L().Error("erroneous transaction receipt", zap.String("tx", receipt.TxHash.String()))
+		zap.L().Error("invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
 
+		// select {} purposely block the process as it is a critical error and meaningless to continue
+		// if panic() is called, the process will be restarted by the supervisor
+		// we do not want that as it will be stuck in the same state
 		select {}
 	}
 
-	// Save epoch trigger to database.
-	if err = s.databaseClient.SaveEpochTrigger(ctx, &schema.EpochTrigger{
+	return receipt, nil
+}
+
+// handleReceipt processes the transaction receipt and updates the database
+func (s *Server) handleReceipt(ctx context.Context, receipt *types.Receipt, data schema.DistributeRewardsData) error {
+	if err := s.databaseClient.SaveEpochTrigger(ctx, &schema.EpochTrigger{
 		TransactionHash: receipt.TxHash,
 		EpochID:         data.Epoch.Uint64(),
 		Data:            data,
 	}); err != nil {
 		return fmt.Errorf("save epoch trigger: %w", err)
 	}
-
-	zap.L().Info("distribute rewards successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", data))
 
 	return nil
 }
