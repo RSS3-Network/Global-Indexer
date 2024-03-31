@@ -91,10 +91,10 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			return err
 		}
 
-		// Find the latest epoch trigger from database.
+		// Find the latest epoch submitEpochProof from database.
 		epochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-			zap.L().Error("get latest epoch trigger from database", zap.Error(err))
+			zap.L().Error("get latest epoch submitEpochProof from database", zap.Error(err))
 
 			return err
 		}
@@ -128,8 +128,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) >= intervalEpoch {
 			// Trigger new epoch
-			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
-				zap.L().Error("trigger new epoch", zap.Error(err))
+			if err := s.submitEpochProof(ctx, s.currentEpoch+1); err != nil {
+				zap.L().Error("submitEpochProof new epoch", zap.Error(err))
 
 				return err
 			}
@@ -140,12 +140,12 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 			<-time.NewTimer(5 * time.Second).C
 		} else if now.Sub(lastEpochEventTime) < intervalEpoch {
-			// Set timer to trigger next epoch
+			// Set timer to submitEpochProof next epoch
 			<-time.NewTimer(intervalEpoch - now.Sub(lastEpochEventTime)).C
 
-			err := s.trigger(ctx, s.currentEpoch+1)
+			err := s.submitEpochProof(ctx, s.currentEpoch+1)
 			if err != nil {
-				zap.L().Error("trigger new epoch", zap.Error(err))
+				zap.L().Error("submitEpochProof new epoch", zap.Error(err))
 
 				return err
 			}
