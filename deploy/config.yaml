@@ -14,7 +14,7 @@ rss3_chain:
   block_threads_l1: 20
   block_threads_l2: 100
 
-epoch:
+settler:
   private_key:
   wallet_address:
   signer_endpoint: http://localhost:3000

@@ -216,7 +216,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 		return nil, fmt.Errorf("get chain ID: %w", err)
 	}
 
-	signerFactory, from, err := gicrypto.NewSignerFactory(config.Epoch.PrivateKey, config.Epoch.SignerEndpoint, config.Epoch.WalletAddress)
+	signerFactory, from, err := gicrypto.NewSignerFactory(config.Settler.PrivateKey, config.Settler.SignerEndpoint, config.Settler.WalletAddress)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signer")
@@ -242,7 +242,7 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	server := &Server{
 		chainID:        chainID,
 		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
-		gasLimit:       config.Epoch.GasLimit,
+		gasLimit:       config.Settler.GasLimit,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
 		txManager:      txManager,
