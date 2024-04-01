@@ -73,7 +73,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			return err
 		}
 
-		// If indexer doesn't work or catch up the latest block, wait for 5 seconds.
+		// If indexer is lagging behind the latest block by more than 5 blocks
+		// impose a 5-second delay to allow the indexer to catch up
 		if int(latestBlock-indexedBlock) > 5 {
 			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", indexedBlock),
 				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", latestBlock))
