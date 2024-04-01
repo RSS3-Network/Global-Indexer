@@ -32,7 +32,7 @@ func (e *EpochTrigger) Import(epochTrigger *schema.EpochTrigger) (err error) {
 }
 
 func (e *EpochTrigger) Export() (*schema.EpochTrigger, error) {
-	var data schema.DistributeRewardsData
+	var data schema.SettlementData
 	if err := json.Unmarshal(e.Data, &data); err != nil {
 		return nil, err
 	}
