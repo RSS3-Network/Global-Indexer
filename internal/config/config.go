@@ -21,7 +21,7 @@ type File struct {
 	Database    *Database  `yaml:"database"`
 	Redis       *Redis     `yaml:"redis"`
 	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
-	Epoch       *Epoch     `yaml:"epoch"`
+	Settler     *Settler   `yaml:"settler"`
 	GeoIP       *GeoIP     `yaml:"geo_ip"`
 	RPC         *RPC       `yaml:"rpc"`
 	Telemetry   *Telemetry `json:"telemetry"`
@@ -43,7 +43,7 @@ type RSS3Chain struct {
 	BlockThreadsL2 uint64 `yaml:"block_threads_l2" default:"1"`
 }
 
-type Epoch struct {
+type Settler struct {
 	PrivateKey     string `yaml:"private_key"`
 	WalletAddress  string `yaml:"wallet_address"`
 	SignerEndpoint string `yaml:"signer_endpoint"`
