@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 	"time"
@@ -23,6 +24,28 @@ import (
 // BatchSize is the number of Nodes to process in each batch.
 // This is to prevent the contract call from running out of gas.
 const BatchSize = 200
+
+// some constants for Alpha Special Rewards calculation
+var (
+	// giniCoefficient balances rewards in favor of Nodes with smaller P_s
+	// higher values will favor smaller P_s
+	giniCoefficient = big.NewFloat(0.0003)
+
+	// cliffFactor, used in conjunction with cliffPoint for reduction of P_s beyond the cliff point
+	// higher values will favor larger P_s
+	cliffFactor = big.NewFloat(0.5)
+
+	// cliffPoint, P_s beyond this point will have the rewards reduced
+	// higher values will favor smaller P_s
+	cliffPoint = big.NewInt(500)
+
+	// epochLimit, the number of epochs to consider for recent stakers
+	epochLimit = 5
+
+	// stakerFactor, calculates the rewards based on the number of recent stakers
+	// higher values will favor Nodes with more recent stakers
+	stakerFactor = big.NewFloat(0.05)
+)
 
 // submitEpochProof submits proof of this epoch on chain
 // which calculates the Operation Rewards for the Nodes
@@ -76,7 +99,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 		}
 	}
 
-	zap.L().Info("Epoch Proof submitted successfully", zap.Uint64("epoch", epoch))
+	zap.L().Info("Epoch Proof submitted successfully", zap.Uint64("settler", epoch))
 
 	return nil
 }
@@ -113,7 +136,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the operation rewards for the Nodes
-	operationRewards := calculateOperationRewards(nodeAddresses)
+	operationRewards := calculateOperationRewards(nodes)
 
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
@@ -124,17 +147,130 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 }
 
 // calculateOperationRewards calculates the Operation Rewards for all Nodes
-// For Alpha, there is no actual calculation logic, the rewards are set to 0
+// For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
 // TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []common.Address) []*big.Int {
-	slice := make([]*big.Int, len(nodes))
+func calculateOperationRewards(nodes []*schema.Node) []*big.Int {
+	operationRewards := calculateAlphaSpecialRewards(nodes)
 
 	// For Alpha, set the rewards to 0
-	for i := range slice {
-		slice[i] = big.NewInt(0)
+	//for i := range operationRewards {
+	//	operationRewards[i] = big.NewInt(0)
+	//}
+
+	return operationRewards
+}
+
+// calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
+// the Special Rewards are used to incentivize staking in smaller Nodes
+func calculateAlphaSpecialRewards(nodes []*schema.Node) []*big.Int {
+	// TODO: retrieve the number of stakers from the last 5 epochs for all qualified Nodes
+	// assuming the number of stakers fro all qualified Nodes is acquired here
+
+	rewards := make([]*big.Int, len(nodes))
+
+	var totalEffectiveStakers uint64
+
+	maxPoolSize := big.NewInt(0)
+
+	for _, node := range nodes {
+		poolSize := new(big.Int)
+
+		if _, ok := poolSize.SetString(node.StakingPoolTokens, 10); !ok {
+			fmt.Errorf("failed to parse staking pool tokens: %s", node.StakingPoolTokens)
+		}
+
+		// TODO: retrieve the number of stakers from the last 5 epochs for all qualified Nodes
+		// calculate the number of effective stakers
+		// which is the number of stakers for poolSize <= cliffPoint
+		// in the past epochLimit epochs
+		cliffCmp := poolSize.Cmp(cliffPoint)
+		if cliffCmp != 1 {
+			// TODO: assuming the number of stakers is acquired here
+			var stakers uint64
+			totalEffectiveStakers += stakers
+		}
+
+		// calculate the max pool size
+		// possible to use another SQL to get it faster
+		maxSizeCmp := poolSize.Cmp(maxPoolSize)
+		if maxSizeCmp == 1 {
+			maxPoolSize = poolSize
+		}
 	}
 
-	return slice
+	for i, node := range nodes {
+		// TODO: assuming the number of stakers is acquired here
+		var stakers uint64
+		// no stakers, no rewards
+		if stakers == 0 {
+			rewards[i] = big.NewInt(0)
+			continue
+		}
+
+		poolSize := new(big.Int)
+
+		if _, ok := poolSize.SetString(node.StakingPoolTokens, 10); !ok {
+			fmt.Errorf("failed to parse staking pool tokens: %s", node.StakingPoolTokens)
+		}
+		// apply the Gini Coefficient
+		score := applyGiniCoefficient(poolSize)
+
+		// apply the Cliff Factor only when poolSize > cliffPoint
+		cliffCmp := poolSize.Cmp(cliffPoint)
+		if cliffCmp == 1 {
+			applyCliffFactor(poolSize, maxPoolSize, score)
+		}
+
+		applyStakerFactor(uint64(stakers), totalEffectiveStakers, score)
+		//rewards = append(rewards, score.Int(in))
+	}
+	return rewards
+}
+
+// applyGiniCoefficient applies the Gini Coefficient to the score
+func applyGiniCoefficient(poolSize *big.Int) *big.Float {
+	// Convert poolSize to *big.Float
+	poolSizeFloat := new(big.Float).SetInt(poolSize)
+
+	// Perform calculation: score = 1 / (1 + giniCoefficient * poolSize)
+	one := big.NewFloat(1)
+	giniTimesPool := new(big.Float).Mul(giniCoefficient, poolSizeFloat)
+	denominator := new(big.Float).Add(one, giniTimesPool)
+	score := new(big.Float).Quo(one, denominator)
+
+	return score
+}
+
+// applyCliffFactor applies the Cliff Factor to the score
+func applyCliffFactor(poolSize *big.Int, maxPoolSize *big.Int, score *big.Float) {
+	// Convert poolSize and maxPoolSize to *big.Float
+	poolSizeFloat := new(big.Float).SetInt(poolSize)
+	maxPoolSizeFloat := new(big.Float).SetInt(maxPoolSize)
+
+	// Calculate poolSize / maxPoolSize
+	poolSizeRatio := new(big.Float).Quo(poolSizeFloat, maxPoolSizeFloat)
+
+	// Calculate cliffFactor ** poolSizeRatio
+	// As big.Float does not support exponentiation directly, using math.Pow after converting to float64 for demonstration
+	// For the precision loss here is negligible
+	poolSizeRatioFloat64, _ := poolSizeRatio.Float64()
+	cliffFactorFloat64, _ := cliffFactor.Float64()
+
+	// Perform calculation: score *= cliffFactor ** poolSize / maxPoolSize
+	score.Mul(score, big.NewFloat(math.Pow(cliffFactorFloat64, poolSizeRatioFloat64)))
+}
+
+// applyStakerFactor applies the Staker Factor to the score
+func applyStakerFactor(stakers uint64, totalEffectiveStakers uint64, score *big.Float) {
+	// Convert uint64 to *big.Float
+	stakersFloat := new(big.Float).SetUint64(stakers)
+	totalEffectiveStakersFloat := new(big.Float).SetUint64(totalEffectiveStakers)
+
+	// Perform calculation: score += (score * stakers * staker_factor) / total_stakers
+	multiplier := new(big.Float).Mul(stakersFloat, stakerFactor)
+	multiplier.Quo(multiplier, totalEffectiveStakersFloat)
+	addition := new(big.Float).Mul(score, multiplier)
+	score.Add(score, addition)
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
@@ -204,7 +340,7 @@ func (s *Server) saveSettlement(ctx context.Context, receipt *types.Receipt, dat
 		EpochID:         data.Epoch.Uint64(),
 		Data:            data,
 	}); err != nil {
-		return fmt.Errorf("save epoch submitEpochProof: %w", err)
+		return fmt.Errorf("save settler submitEpochProof: %w", err)
 	}
 
 	return nil
