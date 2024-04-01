@@ -180,7 +180,7 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 
 // prepareInputData encodes input data for the transaction
 func (s *Server) prepareInputData(data schema.SettlementData) ([]byte, error) {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
+	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
 	if err != nil {
 		return nil, fmt.Errorf("encode input: %w", err)
 	}
