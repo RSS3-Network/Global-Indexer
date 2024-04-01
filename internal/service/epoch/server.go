@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	// epochInterval is the interval between epochs.
-	// The epoch interval is set to be 18 hours.
+	// epochInterval is the interval between epochs
+	// The epoch interval is set to be 18 hours
 	epochInterval = 18 * time.Hour
 )
 
@@ -90,37 +90,39 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 		s.checkpoint = indexedBlock
 
-		// Find the latest epoch event from database.
-		epochEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+		// Find the latest epoch event from database
+		lastEpoch, err := s.databaseClient.FindEpochs(ctx, 1, nil)
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch event from database", zap.Error(err))
 
 			return err
 		}
 
-		// Find the latest epoch trigger from database.
-		epochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
+		// Find the latest epoch trigger from database
+		lastEpochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch trigger from database", zap.Error(err))
 
 			return err
 		}
 
-		var lastEpochEventTime, lastEpochTriggerTime time.Time
+		var lastEpochTime, lastEpochTriggerTime time.Time
 
-		if len(epochEvent) > 0 {
-			lastEpochEventTime = time.Unix(epochEvent[0].BlockTimestamp, 0)
-			s.currentEpoch = epochEvent[0].ID
+		// Make sure the lastEpoch exists
+		if len(lastEpoch) > 0 {
+			lastEpochTime = time.Unix(lastEpoch[0].BlockTimestamp, 0)
+			s.currentEpoch = lastEpoch[0].ID
 		}
 
-		if epochTrigger != nil {
-			lastEpochTriggerTime = epochTrigger.CreatedAt
+		// Set lastEpochTriggerTime time
+		if lastEpochTrigger != nil {
+			lastEpochTriggerTime = lastEpochTrigger.CreatedAt
 		}
 
 		now := time.Now()
 
 		// The time elapsed since the last epoch event was included on the VSL
-		timeSinceLastEpoch := now.Sub(lastEpochEventTime)
+		timeSinceLastEpoch := now.Sub(lastEpochTime)
 		// The time elapsed since the last epoch trigger was sent
 		timeSinceLastTrigger := now.Sub(lastEpochTriggerTime)
 
@@ -154,7 +156,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			} else if timeSinceLastTrigger < epochInterval {
 				// Check if epochInterval has NOT passed since the last epoch trigger
 				// If so, delay the trigger by 5 seconds
-				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
+				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochTime),
 					zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
 
 				timer.Reset(5 * time.Second)
@@ -163,7 +165,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 		} else if timeSinceLastEpoch < epochInterval {
 			// If epochInterval has NOT passed since the last epoch event
 			// Wait for the remaining time until the next epoch event
-			remainingTime := epochInterval - now.Sub(lastEpochEventTime)
+			remainingTime := epochInterval - now.Sub(lastEpochTime)
 			timer.Reset(remainingTime)
 			<-timer.C
 
