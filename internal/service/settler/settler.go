@@ -115,10 +115,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	// Calculate the operation rewards for the Nodes
 	operationRewards := calculateOperationRewards(nodeAddresses)
 
+	// Calculate the operation rewards for the Nodes
+	requestCounts := prepareRequestCounts(nodeAddresses)
+
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
 		NodeAddress:      nodeAddresses,
 		OperationRewards: operationRewards,
+		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
 	}, nil
 }
@@ -130,6 +134,20 @@ func calculateOperationRewards(nodes []common.Address) []*big.Int {
 	slice := make([]*big.Int, len(nodes))
 
 	// For Alpha, set the rewards to 0
+	for i := range slice {
+		slice[i] = big.NewInt(0)
+	}
+
+	return slice
+}
+
+// prepareRequestCounts prepares the Request Counts for all Nodes
+// For Alpha, there is no actual calculation logic, the counts are set to 0
+// TODO: Implement the actual logic to retrieve the counts from the database
+func prepareRequestCounts(nodes []common.Address) []*big.Int {
+	slice := make([]*big.Int, len(nodes))
+
+	// For Alpha, set the counts to 0
 	for i := range slice {
 		slice[i] = big.NewInt(0)
 	}
@@ -162,7 +180,7 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 
 // prepareInputData encodes input data for the transaction
 func (s *Server) prepareInputData(data schema.SettlementData) ([]byte, error) {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
+	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
 	if err != nil {
 		return nil, fmt.Errorf("encode input: %w", err)
 	}
