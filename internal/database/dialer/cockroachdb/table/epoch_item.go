@@ -14,6 +14,7 @@ type EpochItem struct {
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
 	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
 	TaxAmounts       decimal.Decimal `gorm:"column:tax_amounts"`
+	RequestCounts    decimal.Decimal `gorm:"column:request_counts"`
 }
 
 func (e *EpochItem) TableName() string {
@@ -28,6 +29,7 @@ func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
 	e.OperationRewards = epochRewardItem.OperationRewards
 	e.StakingRewards = epochRewardItem.StakingRewards
 	e.TaxAmounts = epochRewardItem.TaxAmounts
+	e.RequestCounts = epochRewardItem.RequestCounts
 
 	return nil
 }
@@ -41,6 +43,7 @@ func (e *EpochItem) Export() (*schema.EpochItem, error) {
 		OperationRewards: e.OperationRewards,
 		StakingRewards:   e.StakingRewards,
 		TaxAmounts:       e.TaxAmounts,
+		RequestCounts:    e.RequestCounts,
 	}, nil
 }
 

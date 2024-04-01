@@ -420,8 +420,6 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		return fmt.Errorf("length not match")
 	}
 
-	var totalOperationRewards, totalStakingRewards decimal.Decimal
-
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		epoch.RewardItems[i] = &schema.EpochItem{
 			EpochID:          event.Epoch.Uint64(),
@@ -431,14 +429,13 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 			OperationRewards: decimal.NewFromBigInt(event.OperationRewards[i], 0),
 			StakingRewards:   decimal.NewFromBigInt(event.StakingRewards[i], 0),
 			TaxAmounts:       decimal.NewFromBigInt(event.TaxAmounts[i], 0),
+			RequestCounts:    decimal.NewFromBigInt(event.RequestCounts[i], 0),
 		}
 
-		totalOperationRewards = totalOperationRewards.Add(epoch.RewardItems[i].OperationRewards)
-		totalStakingRewards = totalStakingRewards.Add(epoch.RewardItems[i].StakingRewards)
+		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(epoch.RewardItems[i].OperationRewards)
+		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(epoch.RewardItems[i].StakingRewards)
+		epoch.TotalRequestCounts = epoch.TotalRequestCounts.Add(epoch.RewardItems[i].RequestCounts)
 	}
-
-	epoch.TotalOperationRewards = totalOperationRewards
-	epoch.TotalStakingRewards = totalStakingRewards
 
 	// Save epoch
 	if err := databaseTransaction.SaveEpoch(ctx, &epoch); err != nil {
