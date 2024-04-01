@@ -67,7 +67,6 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 	defer timer.Stop()
 
 	for {
-
 		// Load checkpoint and latest block number.
 		indexedBlock, latestBlock, err := s.loadCheckpoint(ctx)
 		if err != nil {
@@ -164,7 +163,6 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 		} else if timeSinceLastEpoch < epochInterval {
 			// If epochInterval has NOT passed since the last epoch event
 			// Wait for the remaining time until the next epoch event
-
 			remainingTime := epochInterval - now.Sub(lastEpochEventTime)
 			timer.Reset(remainingTime)
 			<-timer.C
