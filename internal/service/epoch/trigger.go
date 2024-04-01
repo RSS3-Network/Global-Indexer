@@ -118,7 +118,7 @@ func (s *Server) buildDistributeRewards(ctx context.Context, epoch uint64, curso
 }
 
 func (s *Server) triggerDistributeRewards(ctx context.Context, data schema.DistributeRewardsData) error {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.IsFinal)
+	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
 	if err != nil {
 		return fmt.Errorf("encode input: %w", err)
 	}
