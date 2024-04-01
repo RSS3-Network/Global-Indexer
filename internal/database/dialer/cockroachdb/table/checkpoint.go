@@ -5,15 +5,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	gorm "gorm.io/gorm/schema"
+	"gorm.io/gorm"
+	gormSchema "gorm.io/gorm/schema"
 )
 
 var (
-	_ gorm.Tabler                  = (*Checkpoint)(nil)
+	_ gormSchema.Tabler            = (*Checkpoint)(nil)
 	_ schema.CheckpointTransformer = (*Checkpoint)(nil)
 )
 
 type Checkpoint struct {
+	gorm.Model
 	ChainID     uint64    `gorm:"column:chain_id"`
 	BlockNumber uint64    `gorm:"column:block_number"`
 	BlockHash   string    `gorm:"column:block_hash"`

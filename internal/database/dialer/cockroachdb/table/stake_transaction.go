@@ -9,15 +9,17 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	gorm "gorm.io/gorm/schema"
+	"gorm.io/gorm"
+	gormSchema "gorm.io/gorm/schema"
 )
 
 var (
-	_ gorm.Tabler                        = (*StakeTransaction)(nil)
+	_ gormSchema.Tabler                  = (*StakeTransaction)(nil)
 	_ schema.StakeTransactionTransformer = (*StakeTransaction)(nil)
 )
 
 type StakeTransaction struct {
+	gorm.Model
 	ID               string          `gorm:"column:id"`
 	Type             string          `gorm:"column:type"`
 	User             string          `gorm:"column:user"`
@@ -30,7 +32,7 @@ type StakeTransaction struct {
 }
 
 func (s *StakeTransaction) TableName() string {
-	return "stake.transactions"
+	return "transactions"
 }
 
 func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {

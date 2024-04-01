@@ -13,6 +13,17 @@ services:
       - start-single-node
       - --cluster-name=rss3-global-indexer
       - --insecure
+  cockroach2:
+    container_name: cockroach_for_atlas
+    image: cockroachdb/cockroach:v23.1.8
+    networks:
+      - default
+    ports:
+      - "26258:26257"
+    command:
+      - start-single-node
+      - --cluster-name=rss3-global-indexer
+      - --insecure
   redis:
     container_name: redis
     image: redis:7.2.4

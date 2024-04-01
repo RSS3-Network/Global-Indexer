@@ -6,9 +6,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"gorm.io/gorm"
 )
 
 type EpochTrigger struct {
+	gorm.Model
 	TransactionHash string          `gorm:"column:transaction_hash"`
 	EpochID         uint64          `gorm:"column:epoch_id"`
 	Data            json.RawMessage `gorm:"column:data"`

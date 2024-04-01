@@ -7,15 +7,17 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	gorm "gorm.io/gorm/schema"
+	"gorm.io/gorm"
+	gormSchema "gorm.io/gorm/schema"
 )
 
 var (
-	_ gorm.Tabler                         = (*BridgeTransaction)(nil)
+	_ gormSchema.Tabler                   = (*BridgeTransaction)(nil)
 	_ schema.BridgeTransactionTransformer = (*BridgeTransaction)(nil)
 )
 
 type BridgeTransaction struct {
+	gorm.Model
 	ID               string          `gorm:"column:id"`
 	Type             string          `gorm:"column:type"`
 	Sender           string          `gorm:"column:sender"`
@@ -31,7 +33,7 @@ type BridgeTransaction struct {
 }
 
 func (b *BridgeTransaction) TableName() string {
-	return "bridge.transactions"
+	return "transactions"
 }
 
 func (b *BridgeTransaction) Import(bridgeTransaction schema.BridgeTransaction) error {

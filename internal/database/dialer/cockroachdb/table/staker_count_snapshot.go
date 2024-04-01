@@ -4,21 +4,23 @@ import (
 	"time"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	gorm "gorm.io/gorm/schema"
+	"gorm.io/gorm"
+	gormSchema "gorm.io/gorm/schema"
 )
 
 var (
-	_ gorm.Tabler                     = (*StakerCountSnapshot)(nil)
+	_ gormSchema.Tabler               = (*StakerCountSnapshot)(nil)
 	_ schema.StakeSnapshotTransformer = (*StakerCountSnapshot)(nil)
 )
 
 type StakerCountSnapshot struct {
+	gorm.Model
 	Date  time.Time `gorm:"column:date"`
 	Count uint64    `gorm:"column:count"`
 }
 
 func (s *StakerCountSnapshot) TableName() string {
-	return "stake.count_snapshots"
+	return "count_snapshots"
 }
 
 func (s *StakerCountSnapshot) Import(stakeSnapshot schema.StakerCountSnapshot) error {
