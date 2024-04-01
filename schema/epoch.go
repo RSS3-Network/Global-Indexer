@@ -19,6 +19,7 @@ type Epoch struct {
 	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
 	TotalRewardItems      int             `json:"totalRewardItems"`
+	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
 	RewardItems           []*EpochItem    `json:"rewardItems,omitempty"`
 	CreatedAt             int64           `json:"-"`
 	UpdatedAt             int64           `json:"-"`
@@ -32,4 +33,5 @@ type EpochItem struct {
 	OperationRewards decimal.Decimal `json:"operationRewards"`
 	StakingRewards   decimal.Decimal `json:"stakingRewards"`
 	TaxAmounts       decimal.Decimal `json:"taxAmounts"`
+	RequestCounts    decimal.Decimal `json:"requestCounts"`
 }
