@@ -63,7 +63,11 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) listenEpochEvent(ctx context.Context) error {
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+
 	for {
+
 		// Load checkpoint and latest block number.
 		indexedBlock, latestBlock, err := s.loadCheckpoint(ctx)
 		if err != nil {
@@ -79,7 +83,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", indexedBlock),
 				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", latestBlock))
 
-			<-time.NewTimer(5 * time.Second).C
+			timer.Reset(5 * time.Second)
+			<-timer.C
 
 			continue
 		}
@@ -130,7 +135,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 				zap.L().Info("wait for genesis epoch start", zap.Time("genesis_epoch_time", genesisEpochTime),
 					zap.Time("estimated_epoch_start_time", now.Add(epochInterval-1*time.Hour-now.Sub(genesisEpochTime))))
 
-				<-time.NewTimer(epochInterval - 1*time.Hour - now.Sub(genesisEpochTime)).C
+				timer.Reset(epochInterval - 1*time.Hour - now.Sub(genesisEpochTime))
+				<-timer.C
 
 				zap.L().Info("genesis epoch start", zap.Time("start_time", time.Now()))
 			}
@@ -152,14 +158,16 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
 					zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
 
-				<-time.NewTimer(5 * time.Second).C
+				timer.Reset(5 * time.Second)
+				<-timer.C
 			}
 		} else if timeSinceLastEpoch < epochInterval {
 			// If epochInterval has NOT passed since the last epoch event
 			// Wait for the remaining time until the next epoch event
 
 			remainingTime := epochInterval - now.Sub(lastEpochEventTime)
-			<-time.NewTimer(remainingTime).C
+			timer.Reset(remainingTime)
+			<-timer.C
 
 			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
 				zap.L().Error("trigger new epoch", zap.Error(err))
