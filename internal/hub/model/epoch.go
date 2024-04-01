@@ -8,13 +8,15 @@ import (
 )
 
 type Epoch struct {
-	ID                    uint64              `json:"id"`
-	StartTimestamp        int64               `json:"startTimestamp"`
-	EndTimestamp          int64               `json:"endTimestamp"`
-	TotalOperationRewards decimal.Decimal     `json:"totalOperationRewards"`
-	TotalStakingRewards   decimal.Decimal     `json:"totalStakingRewards"`
-	TotalRewardItems      int                 `json:"totalRewardItems"`
-	Distributions         []*EpochTransaction `json:"distributions"`
+	ID                    uint64          `json:"id"`
+	StartTimestamp        int64           `json:"startTimestamp"`
+	EndTimestamp          int64           `json:"endTimestamp"`
+	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
+	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
+	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
+	TotalRewardItems      int             `json:"totalRewardItems"`
+
+	Distributions []*EpochTransaction `json:"distributions"`
 }
 
 type EpochTransaction struct {
@@ -25,6 +27,7 @@ type EpochTransaction struct {
 	Block                 TransactionEventBlock       `json:"block"`
 	TotalOperationRewards decimal.Decimal             `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal             `json:"totalStakingRewards"`
+	TotalRequestCounts    decimal.Decimal             `json:"totalRequestCounts"`
 	TotalRewardItems      int                         `json:"totalRewardItems"`
 	RewardItems           []*schema.EpochItem         `json:"rewardItems,omitempty"`
 	CreatedAt             int64                       `json:"-"`
@@ -42,12 +45,14 @@ func NewEpochs(epochs []*schema.Epoch) []*Epoch {
 				EndTimestamp:          epoch.EndTimestamp,
 				TotalOperationRewards: decimal.NewFromInt(0),
 				TotalStakingRewards:   decimal.NewFromInt(0),
+				TotalRequestCounts:    decimal.NewFromInt(0),
 				Distributions:         make([]*EpochTransaction, 0),
 			}
 		}
 
 		epochMap[epoch.ID].TotalOperationRewards = epochMap[epoch.ID].TotalOperationRewards.Add(epoch.TotalOperationRewards)
 		epochMap[epoch.ID].TotalStakingRewards = epochMap[epoch.ID].TotalStakingRewards.Add(epoch.TotalStakingRewards)
+		epochMap[epoch.ID].TotalRequestCounts = epochMap[epoch.ID].TotalRequestCounts.Add(epoch.TotalRequestCounts)
 		epochMap[epoch.ID].TotalRewardItems += epoch.TotalRewardItems
 		epochMap[epoch.ID].Distributions = append(epochMap[epoch.ID].Distributions, NewEpochTransaction(epoch))
 	}
@@ -72,12 +77,14 @@ func NewEpoch(id uint64, epochs []*schema.Epoch) *Epoch {
 		EndTimestamp:          epochs[0].EndTimestamp,
 		TotalOperationRewards: decimal.NewFromInt(0),
 		TotalStakingRewards:   decimal.NewFromInt(0),
+		TotalRequestCounts:    decimal.NewFromInt(0),
 		Distributions:         make([]*EpochTransaction, 0),
 	}
 
 	for _, distributions := range epochs {
 		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(distributions.TotalOperationRewards)
 		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(distributions.TotalStakingRewards)
+		epoch.TotalRequestCounts = epoch.TotalRequestCounts.Add(distributions.TotalRequestCounts)
 		epoch.TotalRewardItems += distributions.TotalRewardItems
 		epoch.Distributions = append(epoch.Distributions, NewEpochTransaction(distributions))
 	}
@@ -102,6 +109,7 @@ func NewEpochTransaction(epoch *schema.Epoch) *EpochTransaction {
 		TotalOperationRewards: epoch.TotalOperationRewards,
 		TotalStakingRewards:   epoch.TotalStakingRewards,
 		TotalRewardItems:      epoch.TotalRewardItems,
+		TotalRequestCounts:    epoch.TotalRequestCounts,
 		RewardItems:           epoch.RewardItems,
 		CreatedAt:             epoch.CreatedAt,
 		UpdatedAt:             epoch.UpdatedAt,

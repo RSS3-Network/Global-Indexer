@@ -21,7 +21,9 @@ import (
 )
 
 const (
-	intervalEpoch = 18 * time.Hour
+	// epochInterval is the interval between epochs
+	// The epoch interval is set to be 18 hours
+	epochInterval = 18 * time.Hour
 )
 
 type Server struct {
@@ -61,92 +63,114 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) listenEpochEvent(ctx context.Context) error {
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+
 	for {
 		// Load checkpoint and latest block number.
-		checkpoint, blockNumberLatest, err := s.loadCheckpoint(ctx)
+		indexedBlock, latestBlock, err := s.loadCheckpoint(ctx)
 		if err != nil {
 			zap.L().Error("get checkpoint and latest block number", zap.Error(err), zap.Any("chain_id", s.chainID),
-				zap.Any("checkpoint", checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
+				zap.Any("checkpoint", indexedBlock), zap.Uint64("block_number_latest", latestBlock))
 
 			return err
 		}
 
-		// If indexer doesn't work or catch up the latest block, wait for 5 seconds.
-		if int(blockNumberLatest-checkpoint) > 5 {
-			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", checkpoint),
-				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", blockNumberLatest))
+		// If indexer is lagging behind the latest block by more than 5 blocks
+		// impose a 5-second delay to allow the indexer to catch up
+		if int(latestBlock-indexedBlock) > 5 {
+			zap.L().Error("indexer encountered errors or is still catching up with the latest block", zap.Uint64("checkpoint", indexedBlock),
+				zap.Uint64("last checkpoint", s.checkpoint), zap.Uint64("block_number_latest", latestBlock))
 
-			<-time.NewTimer(5 * time.Second).C
+			timer.Reset(5 * time.Second)
+			<-timer.C
 
 			continue
 		}
 
-		s.checkpoint = checkpoint
+		s.checkpoint = indexedBlock
 
-		// Find the latest epoch event from database.
-		epochEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+		// Find the latest epoch event from database
+		lastEpoch, err := s.databaseClient.FindEpochs(ctx, 1, nil)
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch event from database", zap.Error(err))
 
 			return err
 		}
 
-		// Find the latest epoch trigger from database.
-		epochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
+		// Find the latest epoch trigger from database
+		lastEpochTrigger, err := s.databaseClient.FindLatestEpochTrigger(ctx)
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch trigger from database", zap.Error(err))
 
 			return err
 		}
 
-		var lastEpochEventTime, lastEpochTriggerTime time.Time
+		var lastEpochTime, lastEpochTriggerTime time.Time
 
-		if len(epochEvent) > 0 {
-			lastEpochEventTime = time.Unix(epochEvent[0].BlockTimestamp, 0)
-			s.currentEpoch = epochEvent[0].ID
+		// Make sure the lastEpoch exists
+		if len(lastEpoch) > 0 {
+			lastEpochTime = time.Unix(lastEpoch[0].BlockTimestamp, 0)
+			s.currentEpoch = lastEpoch[0].ID
 		}
 
-		if epochTrigger != nil {
-			lastEpochTriggerTime = epochTrigger.CreatedAt
+		// Set lastEpochTriggerTime time
+		if lastEpochTrigger != nil {
+			lastEpochTriggerTime = lastEpochTrigger.CreatedAt
 		}
 
 		now := time.Now()
 
+		// The time elapsed since the last epoch event was included on the VSL
+		timeSinceLastEpoch := now.Sub(lastEpochTime)
+		// The time elapsed since the last epoch trigger was sent
+		timeSinceLastTrigger := now.Sub(lastEpochTriggerTime)
+
+		// Special case for genesis epoch
+		// No longer applicable for the subsequent epochs
 		if genesisEpoch, exist := l2.GenesisEpochMap[s.chainID.Uint64()]; exist {
 			genesisEpochTime := time.Unix(genesisEpoch, 0)
 
 			// Wait for genesis epoch
-			if now.Sub(genesisEpochTime) < intervalEpoch-1*time.Hour {
+			if now.Sub(genesisEpochTime) < epochInterval-1*time.Hour {
 				zap.L().Info("wait for genesis epoch start", zap.Time("genesis_epoch_time", genesisEpochTime),
-					zap.Time("estimated_epoch_start_time", now.Add(intervalEpoch-1*time.Hour-now.Sub(genesisEpochTime))))
+					zap.Time("estimated_epoch_start_time", now.Add(epochInterval-1*time.Hour-now.Sub(genesisEpochTime))))
 
-				<-time.NewTimer(intervalEpoch - 1*time.Hour - now.Sub(genesisEpochTime)).C
+				timer.Reset(epochInterval - 1*time.Hour - now.Sub(genesisEpochTime))
+				<-timer.C
 
 				zap.L().Info("genesis epoch start", zap.Time("start_time", time.Now()))
 			}
 		}
 
-		if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) >= intervalEpoch {
-			// Trigger new epoch
+		// Check if epochInterval has passed since the last epoch event
+		if timeSinceLastEpoch >= epochInterval {
+			// Check if the epochInterval has passed since the last epoch trigger
+			if timeSinceLastTrigger >= epochInterval {
+				// Trigger new epoch
+				if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
+					zap.L().Error("trigger new epoch", zap.Error(err))
+
+					return err
+				}
+			} else if timeSinceLastTrigger < epochInterval {
+				// Check if epochInterval has NOT passed since the last epoch trigger
+				// If so, delay the trigger by 5 seconds
+				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochTime),
+					zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
+
+				timer.Reset(5 * time.Second)
+				<-timer.C
+			}
+		} else if timeSinceLastEpoch < epochInterval {
+			// If epochInterval has NOT passed since the last epoch event
+			// Wait for the remaining time until the next epoch event
+			remainingTime := epochInterval - now.Sub(lastEpochTime)
+			timer.Reset(remainingTime)
+			<-timer.C
+
 			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
 				zap.L().Error("trigger new epoch", zap.Error(err))
-
-				return err
-			}
-		} else if now.Sub(lastEpochEventTime) >= intervalEpoch && now.Sub(lastEpochTriggerTime) < intervalEpoch {
-			// Wait for epoch event indexer
-			zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochEventTime),
-				zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
-
-			<-time.NewTimer(5 * time.Second).C
-		} else if now.Sub(lastEpochEventTime) < intervalEpoch {
-			// Set timer to trigger next epoch
-			<-time.NewTimer(intervalEpoch - now.Sub(lastEpochEventTime)).C
-
-			err := s.trigger(ctx, s.currentEpoch+1)
-			if err != nil {
-				zap.L().Error("trigger new epoch", zap.Error(err))
-
 				return err
 			}
 		}
@@ -155,7 +179,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	// Load checkpoint from database.
-	checkpoint, err := s.databaseClient.FindCheckpoint(ctx, s.chainID.Uint64())
+	// A checkpoint is basically the last indexed block
+	indexedBlock, err := s.databaseClient.FindCheckpoint(ctx, s.chainID.Uint64())
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return 0, 0, nil
@@ -165,16 +190,16 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	}
 
 	// Load latest block number from RPC.
-	blockNumberLatest, err := s.ethereumClient.BlockNumber(ctx)
+	latestBlock, err := s.ethereumClient.BlockNumber(ctx)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return 0, 0, nil
 		}
 
-		return 0, 0, fmt.Errorf("get latest block number from rpc: %w", err)
+		return 0, 0, fmt.Errorf("get latest block from rpc: %w", err)
 	}
 
-	return checkpoint.BlockNumber, blockNumberLatest, nil
+	return indexedBlock.BlockNumber, latestBlock, nil
 }
 
 func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {

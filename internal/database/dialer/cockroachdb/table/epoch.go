@@ -21,6 +21,7 @@ type Epoch struct {
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
 	TotalRewardItems      int             `gorm:"column:total_reward_items"`
+	TotalRequestCounts    decimal.Decimal `gorm:"column:total_request_counts"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
@@ -42,6 +43,7 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	e.TotalOperationRewards = epoch.TotalOperationRewards
 	e.TotalStakingRewards = epoch.TotalStakingRewards
 	e.TotalRewardItems = epoch.TotalRewardItems
+	e.TotalRequestCounts = epoch.TotalRequestCounts
 
 	return nil
 }
@@ -59,6 +61,7 @@ func (e *Epoch) Export(epochItems []*schema.EpochItem) (*schema.Epoch, error) {
 		TotalOperationRewards: e.TotalOperationRewards,
 		TotalStakingRewards:   e.TotalStakingRewards,
 		TotalRewardItems:      e.TotalRewardItems,
+		TotalRequestCounts:    e.TotalRequestCounts,
 		RewardItems:           epochItems,
 	}
 
