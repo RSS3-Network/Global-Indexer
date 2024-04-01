@@ -147,8 +147,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 		if timeSinceLastEpoch >= epochInterval {
 			// Check if the epochInterval has passed since the last epoch trigger
 			if timeSinceLastTrigger >= epochInterval {
-				// Trigger new epoch
-				if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
+				// Submit proof of a new epoch
+				if err := s.submitEpochProof(ctx, s.currentEpoch+1); err != nil {
 					zap.L().Error("trigger new epoch", zap.Error(err))
 
 					return err
@@ -169,7 +169,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			timer.Reset(remainingTime)
 			<-timer.C
 
-			if err := s.trigger(ctx, s.currentEpoch+1); err != nil {
+			if err := s.submitEpochProof(ctx, s.currentEpoch+1); err != nil {
 				zap.L().Error("submitEpochProof new epoch", zap.Error(err))
 				return err
 			}
