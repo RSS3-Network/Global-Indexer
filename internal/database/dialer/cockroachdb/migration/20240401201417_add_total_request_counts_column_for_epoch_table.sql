@@ -7,5 +7,5 @@ ALTER TABLE "public"."epoch"
 -- +goose Down
 -- +goose StatementBegin
 ALTER TABLE "public"."epoch"
-DROP COLUMN "total_request_counts";
+    DROP COLUMN "total_request_counts";
 -- +goose StatementEnd
