@@ -82,6 +82,8 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
 func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, error) {
+	// batchSize is the number of Nodes to process in each batch.
+	// This is to prevent the contract call from running out of gas.
 	batchSize := s.settlerConfig.BatchSize
 
 	// Find qualified Nodes from the database
