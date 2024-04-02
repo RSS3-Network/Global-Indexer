@@ -23,14 +23,14 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 	// Preprocessing step to avoid repeated parsing and condition checking.
 	poolSizes, err := parsePoolSizes(nodes)
 	if err != nil {
-		return nil, err // Error handling early exit.
+		return nil, err
 	}
 
 	totalEffectiveStakers, maxPoolSize = computeEffectiveStakersAndMaxPoolSize(nodes, recentStackers, poolSizes, specialRewards)
 
 	scores, err := computeScores(nodes, recentStackers, poolSizes, totalEffectiveStakers, maxPoolSize, specialRewards)
 	if err != nil {
-		return nil, err // Centralized error handling.
+		return nil, err
 	}
 
 	for _, score := range scores {
@@ -80,7 +80,7 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 	for i, poolSize := range poolSizes {
 		stakers := recentStackers[nodes[i].Address]
 		if stakers == 0 {
-			continue // Skip computation for nodes with no stakers.
+			continue
 		}
 
 		score := applyGiniCoefficient(poolSize, specialRewards.GiniCoefficient)
@@ -106,13 +106,16 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 // calculateFinalRewards converts scores into reward amounts.
 func calculateFinalRewards(scores []float64, totalScore float64, specialRewards *config.SpecialRewards) []*big.Int {
 	rewards := make([]*big.Int, len(scores))
-	scale := new(big.Float).SetInt(big.NewInt(1e18)) // Move outside loop to avoid repeated allocation.
+	// scale is 10^18
+	scale := new(big.Float).SetInt(big.NewInt(1e18))
 
 	for i, score := range scores {
+		// Perform calculation: reward = score / totalScore * specialRewards.Rewards
+		// truncate the reward to an integer to avoid floating point errors
 		reward := math.Trunc(score / totalScore * specialRewards.Rewards)
 		rewardBigFloat := new(big.Float).SetFloat64(reward)
 		scaledF := new(big.Float).Mul(rewardBigFloat, scale)
-		rewardFinal, _ := scaledF.Int(nil) // Simplified conversion to big.Int.
+		rewardFinal, _ := scaledF.Int(nil)
 		rewards[i] = rewardFinal
 	}
 
