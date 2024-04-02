@@ -18,7 +18,17 @@ settler:
   private_key:
   wallet_address:
   signer_endpoint: http://localhost:3000
+  epoch_interval_in_hours: 18
   gas_limit: 3000000
+  batch_size: 200
+
+special_rewards:
+  gini_coefficient: 0.0003
+  cliff_factor: 0.5
+  cliff_point: 500
+  epoch_limit: 5
+  staker_factor: 0.05
+  rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
 
 geo_ip:
   account:
