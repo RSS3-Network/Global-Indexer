@@ -132,7 +132,7 @@ func (c *client) SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema
 }
 
 func (c *client) UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error {
-	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	return c.WithTransaction(ctx, func(ctx context.Context, _ database.Client) error {
 		for {
 			result := c.database.WithContext(ctx).Model(&table.Node{}).
 				Where("last_heartbeat_timestamp < ? and status = ?", time.Unix(lastHeartbeatTimestamp, 0), schema.NodeStatusOnline).
