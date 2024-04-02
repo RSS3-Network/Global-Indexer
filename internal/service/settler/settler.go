@@ -113,14 +113,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	// Get the number of stackers in the last 5 epochs for all nodes.
-	recentStackers, err := s.databaseClient.FindStackerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
+	// Get the number of stakers in the last 5 epochs for all nodes.
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
 	if err != nil {
-		return nil, fmt.Errorf("find recent stackers: %w", err)
+		return nil, fmt.Errorf("find recent stakers: %w", err)
 	}
 
 	// Calculate the operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes, recentStackers, s.specialRewards)
+	operationRewards, err := calculateOperationRewards(nodes, recentStakers, s.specialRewards)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 		// calculate the number of effective stakers
 		// which is the number of stakers for poolSize <= cliffPoint
 		if poolSize <= specialRewards.CliffPoint {
-			// If the node has no recent stackers, the map will return 0.
+			// If the node has no recent stakers, the map will return 0.
 			totalEffectiveStakers += recentStackers[node.Address]
 		}
 
@@ -185,10 +185,10 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 	}
 
 	for i, node := range nodes {
-		stackers := recentStackers[node.Address]
+		stakers := recentStackers[node.Address]
 
 		// no stakers, no rewards
-		if stackers == 0 {
+		if stakers == 0 {
 			rewards[i] = big.NewInt(0)
 			continue
 		}
@@ -212,7 +212,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 
 		if totalEffectiveStakers > 0 {
 			// apply the Staker Factor
-			applyStakerFactor(stackers, totalEffectiveStakers, specialRewards.StakerFactor, &score)
+			applyStakerFactor(stakers, totalEffectiveStakers, specialRewards.StakerFactor, &score)
 		}
 
 		if score < 0 || score >= 1 {

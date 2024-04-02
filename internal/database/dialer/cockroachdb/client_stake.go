@@ -348,7 +348,7 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 	return values, nil
 }
 
-func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]uint64, error) {
+func (c *client) FindStakerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]uint64, error) {
 	// Get the block number of the recent epoch.
 	subQuery := c.database.
 		WithContext(ctx).
@@ -358,7 +358,7 @@ func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs 
 		Offset(recentEpochs).
 		Limit(1)
 
-	// Gets the count of unique stackers for each node.
+	// Gets the count of unique stakers for each node.
 	databaseClient := c.database.
 		WithContext(ctx).
 		Table((*table.StakeTransaction).TableName(nil)).
@@ -383,7 +383,7 @@ func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs 
 		return nil, err
 	}
 
-	// Converts the rows into a map of node address to their stacker counts.
+	// Converts the rows into a map of node address to their staker counts.
 	result := lo.SliceToMap(rows, func(row row) (common.Address, uint64) {
 		return common.HexToAddress(row.Node), row.Count
 	})
