@@ -4,19 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
@@ -139,155 +134,6 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}, nil
 }
 
-// calculateOperationRewards calculates the Operation Rewards for all Nodes
-// For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
-// TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
-	operationRewards, err := calculateAlphaSpecialRewards(nodes, recentStackers, specialRewards)
-	if err != nil {
-		return nil, err
-	}
-
-	// For Alpha, set the rewards to 0
-	//for i := range operationRewards {
-	//	operationRewards[i] = big.NewInt(0)
-	//}
-
-	return operationRewards, nil
-}
-
-// prepareRequestCounts prepares the Request Counts for all Nodes
-// For Alpha, there is no actual calculation logic, the counts are set to 0
-// TODO: Implement the actual logic to retrieve the counts from the database
-func prepareRequestCounts(nodes []common.Address) []*big.Int {
-	slice := make([]*big.Int, len(nodes))
-
-	// For Alpha, set the counts to 0
-	for i := range slice {
-		slice[i] = big.NewInt(0)
-	}
-
-	return slice
-}
-
-// calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
-// the Special Rewards are used to incentivize staking in smaller Nodes
-// currently, the amount is set to 30,000,000 / 486.6666666666667 * 0.2 ~= 12328
-func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
-	var (
-		totalEffectiveStakers uint64
-		maxPoolSize           uint64
-		scores                []float64
-		rewards               []*big.Int
-		totalScore            float64
-	)
-
-	rewards = make([]*big.Int, len(nodes))
-	scores = make([]float64, len(nodes))
-
-	for _, node := range nodes {
-		poolSize, err := strconv.ParseUint(node.StakingPoolTokens, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse staking pool tokens: %s", node.StakingPoolTokens)
-		}
-
-		// calculate the number of effective stakers
-		// which is the number of stakers for poolSize <= cliffPoint
-		if poolSize <= specialRewards.CliffPoint {
-			// If the node has no recent stakers, the map will return 0.
-			totalEffectiveStakers += recentStackers[node.Address]
-		}
-
-		// store the max pool size
-		if maxPoolSize < poolSize {
-			maxPoolSize = poolSize
-		}
-	}
-
-	for i, node := range nodes {
-		stakers := recentStackers[node.Address]
-
-		// no stakers, no rewards
-		if stakers == 0 {
-			rewards[i] = big.NewInt(0)
-			continue
-		}
-
-		poolSize, err := strconv.ParseUint(node.StakingPoolTokens, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse staking pool tokens: %s", node.StakingPoolTokens)
-		}
-
-		// apply the Gini Coefficient
-		// giniCoefficient balances rewards in favor of Nodes with smaller P_s
-		// higher values will favor smaller P_s
-		score := applyGiniCoefficient(poolSize, specialRewards.GiniCoefficient)
-
-		// cliffPoint, P_s beyond this point will have the rewards reduced
-		// higher values will favor smaller P_s
-		if poolSize > specialRewards.CliffPoint {
-			// apply the Cliff Factor only when poolSize > cliffPoint
-			applyCliffFactor(poolSize, maxPoolSize, &score, specialRewards.CliffFactor)
-		}
-
-		if totalEffectiveStakers > 0 {
-			// apply the Staker Factor
-			applyStakerFactor(stakers, totalEffectiveStakers, specialRewards.StakerFactor, &score)
-		}
-
-		if score < 0 || score >= 1 {
-			return nil, fmt.Errorf("AlphaSpecialRewards: invalid score: %f", score)
-		}
-
-		totalScore += score
-		scores[i] = score
-	}
-
-	// final loop to calculate the rewards
-	for i := range nodes {
-		// Deliberately do it step-by-step to make it easier to understand
-		// Truncate the floating point number to an integer
-		reward := math.Trunc(scores[i] / totalScore * specialRewards.Rewards)
-
-		// Represent the float64 as big.Float
-		rewardBigFloat := new(big.Float).SetFloat64(reward)
-
-		// Create a big.Float representation of 10^18 for scaling
-		scale := new(big.Float).SetInt(big.NewInt(1e18))
-
-		// Multiply the original number by the scaling factor
-		scaledF := new(big.Float).Mul(rewardBigFloat, scale)
-
-		// Convert the scaled big.Float to big.Int
-		rewardFinal := new(big.Int)
-		scaledF.Int(rewardFinal)
-
-		rewards[i] = rewardFinal
-	}
-
-	return rewards, nil
-}
-
-// applyGiniCoefficient applies the Gini Coefficient to the score
-func applyGiniCoefficient(poolSize uint64, giniCoefficient float64) float64 {
-	// Perform calculation: score = 1 / (1 + giniCoefficient * poolSize)
-	score := 1 / (1 + giniCoefficient*float64(poolSize))
-
-	return score
-}
-
-// applyCliffFactor applies the Cliff Factor to the score
-func applyCliffFactor(poolSize uint64, maxPoolSize uint64, score *float64, cliffFactor float64) {
-	// Perform calculation: score *= cliffFactor ** poolSize / maxPoolSize
-	*score *= math.Pow(cliffFactor, float64(poolSize)/float64(maxPoolSize))
-}
-
-// applyStakerFactor applies the Staker Factor to the score
-func applyStakerFactor(stakers uint64, totalEffectiveStakers uint64, stakerFactor float64, score *float64) {
-	// Perform calculation: score += (score * stakers * staker_factor) / total_stakers
-	*score += (*score * float64(stakers) * stakerFactor) / float64(totalEffectiveStakers)
-}
-
 // invokeSettlementContract invokes the Settlement contract with prepared data
 // and saves the Settlement to the database
 func (s *Server) invokeSettlementContract(ctx context.Context, data schema.SettlementData) error {
@@ -309,16 +155,6 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 	zap.L().Info("Settlement contracted invoked successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", data))
 
 	return nil
-}
-
-// prepareInputData encodes input data for the transaction
-func (s *Server) prepareInputData(data schema.SettlementData) ([]byte, error) {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
-	if err != nil {
-		return nil, fmt.Errorf("encode input: %w", err)
-	}
-
-	return input, nil
 }
 
 // sendTransaction sends the transaction and returns the receipt if successful
@@ -359,19 +195,4 @@ func (s *Server) saveSettlement(ctx context.Context, receipt *types.Receipt, dat
 	}
 
 	return nil
-}
-
-// encodeInput encodes the input data according to the contract ABI
-func (s *Server) encodeInput(contractABI, methodName string, args ...interface{}) ([]byte, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
-	if err != nil {
-		return nil, err
-	}
-
-	encodedArgs, err := parsedABI.Pack(methodName, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return encodedArgs, nil
 }
