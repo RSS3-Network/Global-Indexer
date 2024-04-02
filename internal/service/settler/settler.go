@@ -125,10 +125,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		return nil, err
 	}
 
+	// Calculate the operation rewards for the Nodes
+	requestCounts := prepareRequestCounts(nodeAddresses)
+
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
 		NodeAddress:      nodeAddresses,
 		OperationRewards: operationRewards,
+		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
 	}, nil
 }
@@ -148,6 +152,20 @@ func calculateOperationRewards(nodes []*schema.Node, recentStackers map[common.A
 	//}
 
 	return operationRewards, nil
+}
+
+// prepareRequestCounts prepares the Request Counts for all Nodes
+// For Alpha, there is no actual calculation logic, the counts are set to 0
+// TODO: Implement the actual logic to retrieve the counts from the database
+func prepareRequestCounts(nodes []common.Address) []*big.Int {
+	slice := make([]*big.Int, len(nodes))
+
+	// For Alpha, set the counts to 0
+	for i := range slice {
+		slice[i] = big.NewInt(0)
+	}
+
+	return slice
 }
 
 // calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
