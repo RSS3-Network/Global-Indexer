@@ -17,14 +17,15 @@ const (
 )
 
 type File struct {
-	Environment string     `yaml:"environment" validate:"required" default:"development"`
-	Database    *Database  `yaml:"database"`
-	Redis       *Redis     `yaml:"redis"`
-	RSS3Chain   *RSS3Chain `yaml:"rss3_chain"`
-	Settler     *Settler   `yaml:"settler"`
-	GeoIP       *GeoIP     `yaml:"geo_ip"`
-	RPC         *RPC       `yaml:"rpc"`
-	Telemetry   *Telemetry `json:"telemetry"`
+	Environment    string          `yaml:"environment" validate:"required" default:"development"`
+	Database       *Database       `yaml:"database"`
+	Redis          *Redis          `yaml:"redis"`
+	RSS3Chain      *RSS3Chain      `yaml:"rss3_chain"`
+	Settler        *Settler        `yaml:"settler"`
+	SpecialRewards *SpecialRewards `yaml:"special_rewards"`
+	GeoIP          *GeoIP          `yaml:"geo_ip"`
+	RPC            *RPC            `yaml:"rpc"`
+	Telemetry      *Telemetry      `json:"telemetry"`
 }
 
 type Database struct {
@@ -47,7 +48,21 @@ type Settler struct {
 	PrivateKey     string `yaml:"private_key"`
 	WalletAddress  string `yaml:"wallet_address"`
 	SignerEndpoint string `yaml:"signer_endpoint"`
-	GasLimit       uint64 `yaml:"gas_limit" default:"2500000"`
+	// EpochIntervalInHours
+	EpochIntervalInHours int    `yaml:"epoch_interval_in_hours" default:"18"`
+	GasLimit             uint64 `yaml:"gas_limit" default:"2500000"`
+	// BatchSize is the number of Nodes to process in each batch.
+	// This is to prevent the contract call from running out of gas.
+	BatchSize int `yaml:"batch_size" default:"200"`
+}
+
+type SpecialRewards struct {
+	GiniCoefficient float64 `yaml:"gini_coefficient" validate:"required"`
+	CliffFactor     float64 `yaml:"cliff_factor" validate:"required"`
+	CliffPoint      uint64  `yaml:"cliff_point" validate:"required"`
+	EpochLimit      int     `yaml:"epoch_limit" validate:"required"`
+	StakerFactor    float64 `yaml:"staker_factor" validate:"required"`
+	Rewards         float64 `yaml:"rewards" validate:"required"`
 }
 
 type GeoIP struct {

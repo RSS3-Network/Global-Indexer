@@ -20,21 +20,18 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// epochInterval is the interval between epochs
-	// The epoch interval is set to be 18 hours
-	epochInterval = 18 * time.Hour
-)
-
 type Server struct {
 	txManager      txmgr.TxManager
 	checkpoint     uint64
 	chainID        *big.Int
 	mutex          *redsync.Mutex
 	currentEpoch   uint64
-	gasLimit       uint64
+	settlerConfig  *config.Settler
 	ethereumClient *ethclient.Client
 	databaseClient database.Client
+	// specialRewards is a temporary rewards available at Alpha stage
+	// it will be removed in the future
+	specialRewards *config.SpecialRewards
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -63,6 +60,8 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) listenEpochEvent(ctx context.Context) error {
+	epochInterval := time.Duration(s.settlerConfig.EpochIntervalInHours) * time.Hour
+
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 
@@ -242,10 +241,11 @@ func New(ctx context.Context, databaseClient database.Client, redisClient *redis
 	server := &Server{
 		chainID:        chainID,
 		mutex:          rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
-		gasLimit:       config.Settler.GasLimit,
+		settlerConfig:  config.Settler,
 		ethereumClient: ethereumClient,
 		databaseClient: databaseClient,
 		txManager:      txManager,
+		specialRewards: config.SpecialRewards,
 	}
 
 	return server, nil

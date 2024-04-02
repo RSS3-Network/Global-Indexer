@@ -348,14 +348,14 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 	return values, nil
 }
 
-func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs uint64) (map[common.Address]uint64, error) {
+func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]uint64, error) {
 	// Get the block number of the recent epoch.
 	subQuery := c.database.
 		WithContext(ctx).
 		Table((*table.Epoch).TableName(nil)).
 		Select(`"block_number"`).
 		Order(`"id" DESC`).
-		Offset(int(recentEpochs)).
+		Offset(recentEpochs).
 		Limit(1)
 
 	// Gets the count of unique stackers for each node.
