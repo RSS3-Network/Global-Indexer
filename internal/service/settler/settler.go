@@ -223,8 +223,9 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 		}
 
 		applyStakerFactor(stackers, totalEffectiveStakers, score)
-		//rewards = append(rewards, score.Int(in))
+		// rewards = append(rewards, score.Int(in))
 	}
+
 	return rewards
 }
 

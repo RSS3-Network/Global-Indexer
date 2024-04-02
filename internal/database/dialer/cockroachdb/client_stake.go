@@ -349,12 +349,6 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 }
 
 func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs uint64) (map[common.Address]uint64, error) {
-	// SELECT "node", count(DISTINCT "user")
-	// FROM "stake"."transactions"
-	// WHERE "block_number" >= coalesce((SELECT "block_number" FROM "epoch" ORDER BY "id" DESC LIMIT 1 OFFSET @recentEpochs), 0)
-	//   AND "type" = 'stake'
-	// GROUP BY "node"
-
 	// Get the block number of the recent epoch.
 	subQuery := c.database.
 		WithContext(ctx).
@@ -377,6 +371,12 @@ func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs 
 		Node  string `gorm:"column:node"`
 		Count uint64 `gorm:"column:count"`
 	}
+
+	// SELECT "node", count(DISTINCT "user")
+	// FROM "stake"."transactions"
+	// WHERE "block_number" >= coalesce((SELECT "block_number" FROM "epoch" ORDER BY "id" DESC LIMIT 1 OFFSET @recentEpochs), 0)
+	//   AND "type" = 'stake'
+	// GROUP BY "node"
 
 	var rows []row
 	if err := databaseClient.Find(&rows).Error; err != nil {
