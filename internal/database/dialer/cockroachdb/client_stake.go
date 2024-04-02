@@ -348,6 +348,49 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 	return values, nil
 }
 
+func (c *client) FindStackerCountRecentEpochs(ctx context.Context, recentEpochs uint64) (map[common.Address]uint64, error) {
+	// SELECT "node", count(DISTINCT "user")
+	// FROM "stake"."transactions"
+	// WHERE "block_number" >= coalesce((SELECT "block_number" FROM "epoch" ORDER BY "id" DESC LIMIT 1 OFFSET @recentEpochs), 0)
+	//   AND "type" = 'stake'
+	// GROUP BY "node"
+
+	// Get the block number of the recent epoch.
+	subQuery := c.database.
+		WithContext(ctx).
+		Table((*table.Epoch).TableName(nil)).
+		Select(`"block_number"`).
+		Order(`"id" DESC`).
+		Offset(int(recentEpochs)).
+		Limit(1)
+
+	// Gets the count of unique stackers for each node.
+	databaseClient := c.database.
+		WithContext(ctx).
+		Table((*table.StakeTransaction).TableName(nil)).
+		Select(`"node", count(DISTINCT "user")`).
+		Where(`"block_number" >= coalesce((?), 0) AND "type" = 'stake'`, subQuery).
+		Group(`"node"`)
+
+	// Define a row struct to store the result.
+	type row struct {
+		Node  string `gorm:"column:node"`
+		Count uint64 `gorm:"column:count"`
+	}
+
+	var rows []row
+	if err := databaseClient.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// Converts the rows into a map of node address to their stacker counts.
+	result := lo.SliceToMap(rows, func(row row) (common.Address, uint64) {
+		return common.HexToAddress(row.Node), row.Count
+	})
+
+	return result, nil
+}
+
 func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error {
 	var value table.StakeTransaction
 	if err := value.Import(*stakeTransaction); err != nil {

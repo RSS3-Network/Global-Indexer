@@ -40,7 +40,7 @@ var (
 	cliffPoint = big.NewInt(500)
 
 	// epochLimit, the number of epochs to consider for recent stakers
-	epochLimit = 5
+	epochLimit = uint64(5)
 
 	// stakerFactor, calculates the rewards based on the number of recent stakers
 	// higher values will favor Nodes with more recent stakers
@@ -135,8 +135,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
+	// Get the number of stackers in the last 5 epochs for all nodes.
+	recentStackers, err := s.databaseClient.FindStackerCountRecentEpochs(ctx, epochLimit)
+	if err != nil {
+		return nil, fmt.Errorf("find recent stackers: %w", err)
+	}
+
 	// Calculate the operation rewards for the Nodes
-	operationRewards := calculateOperationRewards(nodes)
+	operationRewards := calculateOperationRewards(nodes, recentStackers)
 
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
@@ -149,8 +155,8 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 // calculateOperationRewards calculates the Operation Rewards for all Nodes
 // For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
 // TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []*schema.Node) []*big.Int {
-	operationRewards := calculateAlphaSpecialRewards(nodes)
+func calculateOperationRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64) []*big.Int {
+	operationRewards := calculateAlphaSpecialRewards(nodes, recentStackers)
 
 	// For Alpha, set the rewards to 0
 	//for i := range operationRewards {
@@ -162,10 +168,7 @@ func calculateOperationRewards(nodes []*schema.Node) []*big.Int {
 
 // calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
 // the Special Rewards are used to incentivize staking in smaller Nodes
-func calculateAlphaSpecialRewards(nodes []*schema.Node) []*big.Int {
-	// TODO: retrieve the number of stakers from the last 5 epochs for all qualified Nodes
-	// assuming the number of stakers fro all qualified Nodes is acquired here
-
+func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64) []*big.Int {
 	rewards := make([]*big.Int, len(nodes))
 
 	var totalEffectiveStakers uint64
@@ -179,15 +182,13 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node) []*big.Int {
 			fmt.Errorf("failed to parse staking pool tokens: %s", node.StakingPoolTokens)
 		}
 
-		// TODO: retrieve the number of stakers from the last 5 epochs for all qualified Nodes
 		// calculate the number of effective stakers
 		// which is the number of stakers for poolSize <= cliffPoint
 		// in the past epochLimit epochs
 		cliffCmp := poolSize.Cmp(cliffPoint)
 		if cliffCmp != 1 {
-			// TODO: assuming the number of stakers is acquired here
-			var stakers uint64
-			totalEffectiveStakers += stakers
+			// If the node has no recent stackers, the map will return 0.
+			totalEffectiveStakers += recentStackers[node.Address]
 		}
 
 		// calculate the max pool size
@@ -199,10 +200,10 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node) []*big.Int {
 	}
 
 	for i, node := range nodes {
-		// TODO: assuming the number of stakers is acquired here
-		var stakers uint64
+		stackers := recentStackers[node.Address]
+
 		// no stakers, no rewards
-		if stakers == 0 {
+		if stackers == 0 {
 			rewards[i] = big.NewInt(0)
 			continue
 		}
@@ -221,7 +222,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node) []*big.Int {
 			applyCliffFactor(poolSize, maxPoolSize, score)
 		}
 
-		applyStakerFactor(uint64(stakers), totalEffectiveStakers, score)
+		applyStakerFactor(stackers, totalEffectiveStakers, score)
 		//rewards = append(rewards, score.Int(in))
 	}
 	return rewards

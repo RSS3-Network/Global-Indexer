@@ -53,6 +53,7 @@ type Client interface {
 	SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error
 	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)
 	SaveStakerProfitSnapshots(ctx context.Context, stakerProfitSnapshots []*schema.StakerProfitSnapshot) error
+	FindStackerCountRecentEpochs(ctx context.Context, recentEpochs uint64) (map[common.Address]uint64, error)
 	FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error)
 	SaveOperatorProfitSnapshots(ctx context.Context, operatorProfitSnapshots []*schema.OperatorProfitSnapshot) error
 
