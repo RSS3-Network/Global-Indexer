@@ -397,7 +397,13 @@ func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *sch
 		return fmt.Errorf("import stake transaction: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }
 
 func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error {
@@ -406,7 +412,13 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 		return fmt.Errorf("import stake event: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }
 
 func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error {

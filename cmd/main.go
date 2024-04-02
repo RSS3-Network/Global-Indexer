@@ -170,7 +170,7 @@ var schedulerCommand = &cobra.Command{
 }
 
 var settlerCommand = &cobra.Command{
-	Use: "epoch",
+	Use: "settler",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		flags = cmd.PersistentFlags()
 
