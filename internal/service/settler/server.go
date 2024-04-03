@@ -65,6 +65,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 	epochInterval := time.Duration(s.settlerConfig.EpochIntervalInHours) * time.Hour
 
 	timer := time.NewTimer(0)
+	<-timer.C
+
 	defer timer.Stop()
 
 	for {
