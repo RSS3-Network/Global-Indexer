@@ -182,13 +182,22 @@ func TestApplyStakerFactor(t *testing.T) {
 func TestCalculateOperationRewards(t *testing.T) {
 	t.Parallel()
 
+	//correctRewards := []string{
+	//	"908820928063146295296",
+	//	"1293616057212334505984",
+	//	"1636483513676843974656",
+	//	"3010321247805582082048",
+	//	"2468583836050489606144",
+	//	"3010174417191603011584",
+	//}
+
 	correctRewards := []string{
-		"908820928063146295296",
-		"1293616057212334505984",
-		"1636483513676843974656",
-		"3010321247805582082048",
-		"2468583836050489606144",
-		"3010174417191603011584",
+		"908000000000000000000",
+		"1293000000000000000000",
+		"1636000000000000000000",
+		"3010000000000000000000",
+		"2468000000000000000000",
+		"3010000000000000000000",
 	}
 
 	// Slice to hold pointers to big.Int
@@ -279,11 +288,11 @@ func TestCalculateOperationRewards(t *testing.T) {
 
 				// Convert specialRewards.Rewards to a *big.Int with 18 decimal places
 				specialRewardsBigInt := new(big.Int).SetUint64(specialRewards.Rewards)
-				scaledSpecialRewards := new(big.Int).Mul(specialRewardsBigInt, big.NewInt(1e18))
+				rewardCeiling := new(big.Int).Mul(specialRewardsBigInt, big.NewInt(1e18))
 
-				// totalRewards must be less than scaledSpecialRewards
-				if totalRewards.Cmp(scaledSpecialRewards) >= 0 {
-					t.Errorf("Total rewards is over the limit: %v, limit: %v", totalRewards, scaledSpecialRewards)
+				// totalRewards must be less than rewardCeiling
+				if totalRewards.Cmp(rewardCeiling) <= 0 {
+					t.Errorf("Total rewards is over the limit: %v, limit: %v", totalRewards, rewardCeiling)
 				}
 			} else {
 				t.Error("Rewards is nil")

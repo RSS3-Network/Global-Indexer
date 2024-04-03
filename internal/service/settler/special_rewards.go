@@ -137,17 +137,27 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 
 // calculateFinalRewards converts scores into reward amounts.
 func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
+	if totalScore.Cmp(big.NewFloat(0)) == 0 {
+		return nil, fmt.Errorf("totalScore cannot be zero")
+	}
+
 	rewards := make([]*big.Int, len(scores))
 	// scale is 10^18
-	scale := new(big.Float).SetInt(big.NewInt(1e18))
+	scale := big.NewInt(1e18)
 
 	for i, score := range scores {
-		// Perform calculation: reward = score / totalScore * specialRewards.Rewards
-		// truncate the reward to an integer to avoid floating point errors
+		// Calculate the ratio of score to totalScore
 		scoreRatio := new(big.Float).Quo(score, totalScore)
+
+		// Apply special rewards
 		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetUint64(specialRewards.Rewards))
-		scaledF := new(big.Float).Mul(reward, scale)
-		rewardFinal, _ := scaledF.Int(nil)
+
+		// Convert to integer to truncate before scaling
+		rewardTruncated, _ := reward.Int(nil)
+
+		// Apply scale after truncation
+		rewardFinal := new(big.Int).Mul(rewardTruncated, scale)
+
 		rewards[i] = rewardFinal
 	}
 
