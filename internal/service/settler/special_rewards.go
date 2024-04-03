@@ -102,6 +102,7 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 	for i, poolSize := range poolSizes {
 		stakers := recentStackers[nodes[i].Address]
 		if stakers == 0 {
+			scores[i] = big.NewFloat(0)
 			continue
 		}
 
