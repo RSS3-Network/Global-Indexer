@@ -42,7 +42,12 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 		totalScore.Add(totalScore, score)
 	}
 
-	return calculateFinalRewards(scores, totalScore, specialRewards), nil
+	rewards, err := calculateFinalRewards(scores, totalScore, specialRewards)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewards, nil
 }
 
 // parsePoolSizes extracts and parses staking pool sizes from nodes.
@@ -130,7 +135,7 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 }
 
 // calculateFinalRewards converts scores into reward amounts.
-func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards) []*big.Int {
+func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
 	rewards := make([]*big.Int, len(scores))
 	// scale is 10^18
 	scale := new(big.Float).SetInt(big.NewInt(1e18))
@@ -145,7 +150,28 @@ func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRe
 		rewards[i] = rewardFinal
 	}
 
-	return rewards
+	err := checkRewardsCeiling(rewards, specialRewards.Rewards)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewards, nil
+}
+
+// checkRewardsCeiling checks if the sum of rewards is less than or equal to specialRewards.Rewards.
+func checkRewardsCeiling(rewards []*big.Int, specialRewards uint64) error {
+	sum := big.NewInt(0)
+	for _, reward := range rewards {
+		sum.Add(sum, reward)
+	}
+	// Scale the specialRewards by 10^18 to match the rewards scale
+	scaledSpecialRewards := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(0).SetUint64(specialRewards))
+
+	if sum.Cmp(scaledSpecialRewards) > 0 {
+		return fmt.Errorf("total rewards exceed the ceiling: %v > %v", sum, scaledSpecialRewards)
+	}
+
+	return nil
 }
 
 // applyGiniCoefficient applies the Gini Coefficient to the score
