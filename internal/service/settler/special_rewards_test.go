@@ -191,22 +191,33 @@ func TestCalculateOperationRewards(t *testing.T) {
 	//	"3010174417191603011584",
 	//}
 
-	correctRewards := []string{
-		"908000000000000000000",
-		"1293000000000000000000",
-		"1636000000000000000000",
-		"3010000000000000000000",
-		"2468000000000000000000",
-		"3010000000000000000000",
+	correctRewards := [][]string{
+		{
+			"908000000000000000000",
+			"1293000000000000000000",
+			"1636000000000000000000",
+			"3010000000000000000000",
+			"2468000000000000000000",
+			"3010000000000000000000",
+		},
+		{
+			"1249000000000000000000",
+			"1249000000000000000000",
+			"1767000000000000000000",
+			"8062000000000000000000",
+		},
 	}
 
 	// Slice to hold pointers to big.Int
-	expectedRewards := make([]*big.Int, len(correctRewards))
+	expectedRewards := make([][]*big.Int, len(correctRewards))
 
 	// Convert strings to *big.Int
 	for i, numStr := range correctRewards {
-		expectedRewards[i] = new(big.Int)
-		expectedRewards[i], _ = expectedRewards[i].SetString(numStr, 10) // Base 10 for decimal
+		expectedRewards[i] = make([]*big.Int, len(numStr))
+		for j, str := range numStr {
+			expectedRewards[i][j] = new(big.Int)
+			expectedRewards[i][j], _ = expectedRewards[i][j].SetString(str, 10) // Base 10 for decimal
+		}
 	}
 
 	tests := []struct {
@@ -259,7 +270,35 @@ func TestCalculateOperationRewards(t *testing.T) {
 				common.Address{5}: 10,
 				common.Address{6}: 10,
 			},
-			expectedRewards: expectedRewards,
+			expectedRewards: expectedRewards[0],
+		},
+		{
+			name: "case 2",
+			nodes: []*schema.Node{
+				{
+					Address:           common.Address{1},
+					StakingPoolTokens: "162635585914488468907172",
+				},
+				{
+					Address:           common.Address{2},
+					StakingPoolTokens: "162635585914488468907172",
+				},
+				{
+					Address:           common.Address{3},
+					StakingPoolTokens: "62708439001668575801938",
+				},
+				{
+					Address:           common.Address{4},
+					StakingPoolTokens: "7560057787800988585151600",
+				},
+			},
+			recentStackers: map[common.Address]uint64{
+				common.Address{1}: 2,
+				common.Address{2}: 2,
+				common.Address{3}: 1,
+				common.Address{4}: 2,
+			},
+			expectedRewards: expectedRewards[1],
 		},
 	}
 
