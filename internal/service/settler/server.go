@@ -64,6 +64,8 @@ func (s *Server) Run(ctx context.Context) error {
 
 func (s *Server) listenEpochEvent(ctx context.Context) error {
 	timer := time.NewTimer(0)
+	<-timer.C
+
 	defer timer.Stop()
 
 	for {
