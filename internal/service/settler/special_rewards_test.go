@@ -291,7 +291,7 @@ func TestCalculateOperationRewards(t *testing.T) {
 				rewardCeiling := new(big.Int).Mul(specialRewardsBigInt, big.NewInt(1e18))
 
 				// totalRewards must be less than rewardCeiling
-				if totalRewards.Cmp(rewardCeiling) <= 0 {
+				if totalRewards.Cmp(rewardCeiling) >= 0 {
 					t.Errorf("Total rewards is over the limit: %v, limit: %v", totalRewards, rewardCeiling)
 				}
 			} else {
