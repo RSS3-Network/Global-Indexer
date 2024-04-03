@@ -13,7 +13,7 @@ import (
 // calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
 // the Special Rewards are used to incentivize staking in smaller Nodes
 // currently, the amount is set to 30,000,000 / 486.6666666666667 * 0.2 ~= 12328
-func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
+func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
 	var (
 		totalEffectiveStakers uint64
 		maxPoolSize           *big.Float
@@ -27,13 +27,13 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 	}
 
 	// Calculate total effective stakers and the maximum pool size.
-	totalEffectiveStakers, maxPoolSize, err = computeEffectiveStakersAndMaxPoolSize(nodes, recentStackers, poolSizes, specialRewards)
+	totalEffectiveStakers, maxPoolSize, err = computeEffectiveStakersAndMaxPoolSize(nodes, recentStakers, poolSizes, specialRewards)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate scores for each node.
-	scores, err := computeScores(nodes, recentStackers, poolSizes, totalEffectiveStakers, maxPoolSize, specialRewards)
+	scores, err := computeScores(nodes, recentStakers, poolSizes, totalEffectiveStakers, maxPoolSize, specialRewards)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Float, error) {
 }
 
 // computeEffectiveStakersAndMaxPoolSize calculates total effective stakers and the maximum pool size.
-func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []*big.Float, specialRewards *config.SpecialRewards) (uint64, *big.Float, error) {
+func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Float, specialRewards *config.SpecialRewards) (uint64, *big.Float, error) {
 	var (
 		totalEffectiveStakers uint64
 		maxPoolSize           = big.NewFloat(0)
@@ -84,7 +84,7 @@ func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStackers 
 
 	for i, node := range nodes {
 		if poolSizes[i].Cmp(cliffPoint) <= 0 {
-			totalEffectiveStakers += recentStackers[node.Address]
+			totalEffectiveStakers += recentStakers[node.Address]
 		}
 
 		if poolSizes[i].Cmp(maxPoolSize) == 1 {
@@ -96,11 +96,11 @@ func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStackers 
 }
 
 // computeScores calculates the scores for each node based on various factors.
-func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []*big.Float, totalEffectiveStakers uint64, maxPoolSize *big.Float, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
+func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Float, totalEffectiveStakers uint64, maxPoolSize *big.Float, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
 	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
-		stakers := recentStackers[nodes[i].Address]
+		stakers := recentStakers[nodes[i].Address]
 		if stakers == 0 {
 			scores[i] = big.NewFloat(0)
 			continue

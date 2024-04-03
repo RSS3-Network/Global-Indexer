@@ -11,8 +11,8 @@ import (
 // calculateOperationRewards calculates the Operation Rewards for all Nodes
 // For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
 // TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
-	operationRewards, err := calculateAlphaSpecialRewards(nodes, recentStackers, specialRewards)
+func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
+	operationRewards, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
 	if err != nil {
 		return nil, err
 	}
