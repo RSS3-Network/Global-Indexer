@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
@@ -110,6 +111,11 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
+	// Update the node staking data from the chain.
+	if err = s.updateNodeStakingData(nodeAddresses, nodes); err != nil {
+		return nil, err
+	}
+
 	// Get the number of stakers in the last 5 epochs for all nodes.
 	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
 	if err != nil {
@@ -132,6 +138,27 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
 	}, nil
+}
+
+// updateNodeStakingData retrieves node information from a staking contract
+// and updates the staking pool tokens for each node.
+func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*schema.Node) error {
+	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
+	if err != nil {
+		return fmt.Errorf("get nodes from chain: %w", err)
+	}
+
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
+		return node.Account, node
+	})
+
+	for _, node := range nodes {
+		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
+			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
+		}
+	}
+
+	return nil
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
