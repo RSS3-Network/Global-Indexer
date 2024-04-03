@@ -29,22 +29,22 @@ func TestApplyGiniCoefficient(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		poolSize      *big.Float
+		poolSize      *big.Int
 		expectedScore *big.Float
 	}{
 		{
 			name:          "poolSize 50",
-			poolSize:      big.NewFloat(50),
+			poolSize:      big.NewInt(50),
 			expectedScore: big.NewFloat(0.9975062344139651),
 		},
 		{
 			name:          "poolSize 500",
-			poolSize:      big.NewFloat(500),
+			poolSize:      big.NewInt(500),
 			expectedScore: big.NewFloat(0.9756097560975611),
 		},
 		{
 			name:          "poolSize 133667",
-			poolSize:      big.NewFloat(133667),
+			poolSize:      big.NewInt(133667),
 			expectedScore: big.NewFloat(0.13015156149335902),
 		},
 	}
@@ -72,26 +72,26 @@ func TestApplyCliffFactor(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		poolSize      *big.Float
-		maxPoolSize   *big.Float
+		poolSize      *big.Int
+		maxPoolSize   *big.Int
 		expectedScore *big.Float
 	}{
 		{
 			name:          "poolSize 5000, maxPoolSize 50000",
-			poolSize:      big.NewFloat(5000),
-			maxPoolSize:   big.NewFloat(50000),
+			poolSize:      big.NewInt(5000),
+			maxPoolSize:   big.NewInt(50000),
 			expectedScore: big.NewFloat(0.8),
 		},
 		{
 			name:          "poolSize 50000, maxPoolSize 50000",
-			poolSize:      big.NewFloat(50000),
-			maxPoolSize:   big.NewFloat(50000),
+			poolSize:      big.NewInt(50000),
+			maxPoolSize:   big.NewInt(50000),
 			expectedScore: big.NewFloat(0.2857142857142857),
 		},
 		{
 			name:          "poolSize 13756, maxPoolSize 50000",
-			poolSize:      big.NewFloat(13756),
-			maxPoolSize:   big.NewFloat(50000),
+			poolSize:      big.NewInt(13756),
+			maxPoolSize:   big.NewInt(50000),
 			expectedScore: big.NewFloat(0.5924872615238772),
 		},
 	}
@@ -108,7 +108,7 @@ func TestApplyCliffFactor(t *testing.T) {
 			cliffPoint := big.NewFloat(0)
 			cliffPoint.SetString(specialRewards.CliffPoint)
 
-			if tt.poolSize.Cmp(cliffPoint) == 1 {
+			if new(big.Float).SetInt(tt.poolSize).Cmp(cliffPoint) == 1 {
 				applyCliffFactor(tt.poolSize, tt.maxPoolSize, score, specialRewards.CliffFactor)
 			}
 
@@ -128,24 +128,24 @@ func TestApplyStakerFactor(t *testing.T) {
 
 	tests := []struct {
 		name                  string
-		poolSize              *big.Float
-		maxPoolSize           *big.Float
+		poolSize              *big.Int
+		maxPoolSize           *big.Int
 		stakers               uint64
 		totalEffectiveStakers uint64
 		expectedScore         *big.Float
 	}{
 		{
 			name:                  "5 stakers of 20 effective stakers",
-			poolSize:              big.NewFloat(50000),
-			maxPoolSize:           big.NewFloat(50000),
+			poolSize:              big.NewInt(50000),
+			maxPoolSize:           big.NewInt(50000),
 			stakers:               5,
 			totalEffectiveStakers: 20,
 			expectedScore:         big.NewFloat(2.071428571428571),
 		},
 		{
 			name:                  "15 stakers of 20 effective stakers",
-			poolSize:              big.NewFloat(500),
-			maxPoolSize:           big.NewFloat(50000),
+			poolSize:              big.NewInt(500),
+			maxPoolSize:           big.NewInt(50000),
 			stakers:               15,
 			totalEffectiveStakers: 20,
 			expectedScore:         big.NewFloat(19.26829268292683),
@@ -162,7 +162,7 @@ func TestApplyStakerFactor(t *testing.T) {
 			cliffPoint := big.NewFloat(0)
 			cliffPoint.SetString(specialRewards.CliffPoint)
 
-			if tt.poolSize.Cmp(cliffPoint) == 1 {
+			if new(big.Float).SetInt(tt.poolSize).Cmp(cliffPoint) == 1 {
 				applyCliffFactor(tt.poolSize, tt.maxPoolSize, score, specialRewards.CliffFactor)
 			}
 

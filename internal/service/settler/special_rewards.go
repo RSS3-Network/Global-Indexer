@@ -16,7 +16,7 @@ import (
 func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
 	var (
 		totalEffectiveStakers uint64
-		maxPoolSize           *big.Float
+		maxPoolSize           *big.Int
 		totalScore            = big.NewFloat(0)
 	)
 
@@ -51,12 +51,12 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 }
 
 // parsePoolSizes extracts and parses staking pool sizes from nodes.
-func parsePoolSizes(nodes []*schema.Node) ([]*big.Float, error) {
-	poolSizes := make([]*big.Float, len(nodes))
+func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, error) {
+	poolSizes := make([]*big.Int, len(nodes))
 
 	for i, node := range nodes {
-		poolSize := new(big.Float)
-		poolSize, ok := poolSize.SetString(node.StakingPoolTokens)
+		poolSize := new(big.Int)
+		poolSize, ok := poolSize.SetString(node.StakingPoolTokens, 10)
 
 		if !ok {
 			return nil, fmt.Errorf("failed to parse staking pool tokens for node %s: invalid number", node.Address)
@@ -69,10 +69,10 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Float, error) {
 }
 
 // computeEffectiveStakersAndMaxPoolSize calculates total effective stakers and the maximum pool size.
-func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Float, specialRewards *config.SpecialRewards) (uint64, *big.Float, error) {
+func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Int, specialRewards *config.SpecialRewards) (uint64, *big.Int, error) {
 	var (
 		totalEffectiveStakers uint64
-		maxPoolSize           = big.NewFloat(0)
+		maxPoolSize           = big.NewInt(0)
 	)
 
 	cliffPoint := big.NewFloat(0)
@@ -83,7 +83,7 @@ func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers m
 	}
 
 	for i, node := range nodes {
-		if poolSizes[i].Cmp(cliffPoint) <= 0 {
+		if new(big.Float).SetInt(poolSizes[i]).Cmp(cliffPoint) <= 0 {
 			totalEffectiveStakers += recentStakers[node.Address]
 		}
 
@@ -96,11 +96,13 @@ func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers m
 }
 
 // computeScores calculates the scores for each node based on various factors.
-func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Float, totalEffectiveStakers uint64, maxPoolSize *big.Float, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
+func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64, poolSizes []*big.Int, totalEffectiveStakers uint64, maxPoolSize *big.Int, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
 	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
+		poolSizeFloat := new(big.Float).SetInt(poolSize)
 		stakers := recentStakers[nodes[i].Address]
+
 		if stakers == 0 {
 			scores[i] = big.NewFloat(0)
 			continue
@@ -115,7 +117,7 @@ func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64
 			return nil, fmt.Errorf("CliffPoint conversion failed")
 		}
 
-		if poolSize.Cmp(cliffPoint) == 1 {
+		if poolSizeFloat.Cmp(cliffPoint) == 1 {
 			applyCliffFactor(poolSize, maxPoolSize, score, specialRewards.CliffFactor)
 		}
 
@@ -186,10 +188,10 @@ func checkRewardsCeiling(rewards []*big.Int, specialRewards uint64) error {
 }
 
 // applyGiniCoefficient applies the Gini Coefficient to the score
-func applyGiniCoefficient(poolSize *big.Float, giniCoefficient float64) *big.Float {
+func applyGiniCoefficient(poolSize *big.Int, giniCoefficient float64) *big.Float {
 	// Perform calculation: score = 1 / (1 + giniCoefficient * poolSize)
 	one := big.NewFloat(1)
-	giniTimesPool := new(big.Float).Mul(new(big.Float).SetFloat64(giniCoefficient), poolSize)
+	giniTimesPool := new(big.Float).Mul(new(big.Float).SetFloat64(giniCoefficient), new(big.Float).SetInt(poolSize))
 	denominator := new(big.Float).Add(one, giniTimesPool)
 	score := new(big.Float).Quo(one, denominator)
 
@@ -197,9 +199,9 @@ func applyGiniCoefficient(poolSize *big.Float, giniCoefficient float64) *big.Flo
 }
 
 // applyCliffFactor applies the Cliff Factor to the score
-func applyCliffFactor(poolSize *big.Float, maxPoolSize *big.Float, score *big.Float, cliffFactor float64) {
+func applyCliffFactor(poolSize *big.Int, maxPoolSize *big.Int, score *big.Float, cliffFactor float64) {
 	// Calculate poolSize / maxPoolSize
-	poolSizeRatio := new(big.Float).Quo(poolSize, maxPoolSize)
+	poolSizeRatio := new(big.Float).Quo(new(big.Float).SetInt(poolSize), new(big.Float).SetInt(maxPoolSize))
 
 	// Calculate cliffFactor ** poolSizeRatio
 	// As big.Float does not support exponentiation directly, using math.Pow after converting to float64
