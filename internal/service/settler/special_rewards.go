@@ -75,15 +75,16 @@ func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStakers m
 		maxPoolSize           = big.NewInt(0)
 	)
 
-	cliffPoint := big.NewFloat(0)
-	_, ok := cliffPoint.SetString(specialRewards.CliffPoint)
+	cliffPoint := big.NewInt(0)
+	_, ok := cliffPoint.SetString(specialRewards.CliffPoint, 10)
+	scaleGwei(cliffPoint)
 
 	if !ok {
 		return 0, nil, fmt.Errorf("CliffPoint conversion failed")
 	}
 
 	for i, node := range nodes {
-		if new(big.Float).SetInt(poolSizes[i]).Cmp(cliffPoint) <= 0 {
+		if poolSizes[i].Cmp(cliffPoint) <= 0 {
 			totalEffectiveStakers += recentStakers[node.Address]
 		}
 
@@ -100,7 +101,6 @@ func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64
 	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
-		poolSizeFloat := new(big.Float).SetInt(poolSize)
 		stakers := recentStakers[nodes[i].Address]
 
 		if stakers == 0 {
@@ -110,14 +110,15 @@ func computeScores(nodes []*schema.Node, recentStakers map[common.Address]uint64
 
 		score := applyGiniCoefficient(poolSize, specialRewards.GiniCoefficient)
 
-		cliffPoint := big.NewFloat(0)
-		_, ok := cliffPoint.SetString(specialRewards.CliffPoint)
+		cliffPoint := big.NewInt(0)
+		_, ok := cliffPoint.SetString(specialRewards.CliffPoint, 10)
+		scaleGwei(cliffPoint)
 
 		if !ok {
 			return nil, fmt.Errorf("CliffPoint conversion failed")
 		}
 
-		if poolSizeFloat.Cmp(cliffPoint) == 1 {
+		if poolSize.Cmp(cliffPoint) == 1 {
 			applyCliffFactor(poolSize, maxPoolSize, score, specialRewards.CliffFactor)
 		}
 
@@ -144,8 +145,6 @@ func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRe
 	}
 
 	rewards := make([]*big.Int, len(scores))
-	// scale is 10^18
-	scale := big.NewInt(1e18)
 
 	for i, score := range scores {
 		// Calculate the ratio of score to totalScore
@@ -155,10 +154,10 @@ func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRe
 		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetUint64(specialRewards.Rewards))
 
 		// Convert to integer to truncate before scaling
-		rewardTruncated, _ := reward.Int(nil)
+		rewardFinal, _ := reward.Int(nil)
 
-		// Apply scale after truncation
-		rewardFinal := new(big.Int).Mul(rewardTruncated, scale)
+		// Apply gwei after truncation
+		scaleGwei(rewardFinal)
 
 		rewards[i] = rewardFinal
 	}
@@ -178,10 +177,11 @@ func checkRewardsCeiling(rewards []*big.Int, specialRewards uint64) error {
 		sum.Add(sum, reward)
 	}
 	// Scale the specialRewards by 10^18 to match the rewards scale
-	scaledSpecialRewards := new(big.Int).Mul(big.NewInt(1e18), big.NewInt(0).SetUint64(specialRewards))
+	specialRewardsBigInt := big.NewInt(0).SetUint64(specialRewards)
+	scaleGwei(specialRewardsBigInt)
 
-	if sum.Cmp(scaledSpecialRewards) > 0 {
-		return fmt.Errorf("total rewards exceed the ceiling: %v > %v", sum, scaledSpecialRewards)
+	if sum.Cmp(specialRewardsBigInt) > 0 {
+		return fmt.Errorf("total rewards exceed the ceiling: %v > %v", sum, specialRewardsBigInt)
 	}
 
 	return nil

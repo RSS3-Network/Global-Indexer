@@ -2,6 +2,7 @@ package settler
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -32,4 +33,8 @@ func (s *Server) encodeInput(contractABI, methodName string, args ...interface{}
 	}
 
 	return encodedArgs, nil
+}
+
+func scaleGwei(in *big.Int) {
+	in.Mul(in, big.NewInt(1e18))
 }
