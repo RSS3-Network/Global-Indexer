@@ -155,8 +155,6 @@ func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*
 	for _, node := range nodes {
 		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
 			stakePoolTokens := nodeInfo.StakingPoolTokens
-			tokenDecimals := big.NewInt(1e18)
-			stakePoolTokens.Div(stakePoolTokens, tokenDecimals)
 			node.StakingPoolTokens = stakePoolTokens.String()
 		}
 	}
