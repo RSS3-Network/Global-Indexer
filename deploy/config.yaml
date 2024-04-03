@@ -23,7 +23,7 @@ settler:
   batch_size: 200
 
 special_rewards:
-  gini_coefficient: 0.0005
+  gini_coefficient: 0.00005
   cliff_factor: 300
   cliff_point: 5000000
   epoch_limit: 5
