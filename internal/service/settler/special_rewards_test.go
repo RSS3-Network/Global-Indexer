@@ -2,7 +2,6 @@ package settler
 
 import (
 	"fmt"
-	"math"
 	"math/big"
 	"testing"
 
@@ -13,13 +12,14 @@ import (
 
 var (
 	// epsilon is the acceptable error margin for floating point comparisons
-	epsilon        = 0.00000000001
+	epsilon        = big.NewFloat(0.00000000001)
+	epsilonInt     = big.NewInt(250000)
 	specialRewards = config.SpecialRewards{
-		GiniCoefficient: 0.0003,
-		CliffFactor:     0.5,
-		CliffPoint:      500,
+		GiniCoefficient: 0.00005,
+		CliffFactor:     300,
+		CliffPoint:      "5000000",
 		EpochLimit:      5,
-		StakerFactor:    0.05,
+		StakerFactor:    25,
 		Rewards:         12328,
 	}
 )
@@ -29,23 +29,23 @@ func TestApplyGiniCoefficient(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		poolSize      uint64
-		expectedScore float64
+		poolSize      *big.Float
+		expectedScore *big.Float
 	}{
 		{
 			name:          "poolSize 50",
-			poolSize:      50,
-			expectedScore: 0.9852216748768474,
+			poolSize:      big.NewFloat(50),
+			expectedScore: big.NewFloat(0.9975062344139651),
 		},
 		{
 			name:          "poolSize 500",
-			poolSize:      500,
-			expectedScore: 0.8695652173913044,
+			poolSize:      big.NewFloat(500),
+			expectedScore: big.NewFloat(0.9756097560975611),
 		},
 		{
 			name:          "poolSize 133667",
-			poolSize:      133667,
-			expectedScore: 0.024330841044182375,
+			poolSize:      big.NewFloat(133667),
+			expectedScore: big.NewFloat(0.13015156149335902),
 		},
 	}
 
@@ -58,9 +58,9 @@ func TestApplyGiniCoefficient(t *testing.T) {
 
 			fmt.Println(score, tt.expectedScore)
 
-			diff := math.Abs(score - tt.expectedScore)
+			diff := new(big.Float).Sub(score, tt.expectedScore)
 
-			if diff > epsilon {
+			if diff.Abs(diff).Cmp(epsilon) > 0 {
 				t.Errorf("Score got = %v, want %v, difference %v exceeds epsilon %v", score, tt.expectedScore, diff, epsilon)
 			}
 		})
@@ -72,27 +72,27 @@ func TestApplyCliffFactor(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		poolSize      uint64
-		maxPoolSize   uint64
-		expectedScore float64
+		poolSize      *big.Float
+		maxPoolSize   *big.Float
+		expectedScore *big.Float
 	}{
 		{
 			name:          "poolSize 5000, maxPoolSize 50000",
-			poolSize:      5000,
-			maxPoolSize:   50000,
-			expectedScore: 0.37321319661472296,
+			poolSize:      big.NewFloat(5000),
+			maxPoolSize:   big.NewFloat(50000),
+			expectedScore: big.NewFloat(0.8),
 		},
 		{
 			name:          "poolSize 50000, maxPoolSize 50000",
-			poolSize:      50000,
-			maxPoolSize:   50000,
-			expectedScore: 0.03125000000000001,
+			poolSize:      big.NewFloat(50000),
+			maxPoolSize:   big.NewFloat(50000),
+			expectedScore: big.NewFloat(0.2857142857142857),
 		},
 		{
 			name:          "poolSize 13756, maxPoolSize 50000",
-			poolSize:      13756,
-			maxPoolSize:   50000,
-			expectedScore: 0.16118857353672705,
+			poolSize:      big.NewFloat(13756),
+			maxPoolSize:   big.NewFloat(50000),
+			expectedScore: big.NewFloat(0.5924872615238772),
 		},
 	}
 
@@ -105,15 +105,18 @@ func TestApplyCliffFactor(t *testing.T) {
 
 			fmt.Println(score)
 
-			if tt.poolSize > specialRewards.CliffPoint {
-				applyCliffFactor(tt.poolSize, tt.maxPoolSize, &score, specialRewards.CliffFactor)
+			cliffPoint := big.NewFloat(0)
+			cliffPoint.SetString(specialRewards.CliffPoint)
+
+			if tt.poolSize.Cmp(cliffPoint) == 1 {
+				applyCliffFactor(tt.poolSize, tt.maxPoolSize, score, specialRewards.CliffFactor)
 			}
 
 			fmt.Println(score, tt.expectedScore)
 
-			diff := math.Abs(score - tt.expectedScore)
+			diff := new(big.Float).Sub(score, tt.expectedScore)
 
-			if diff > epsilon {
+			if diff.Abs(diff).Cmp(epsilon) > 0 {
 				t.Errorf("Score got = %v, want %v, difference %v exceeds epsilon %v", score, tt.expectedScore, diff, epsilon)
 			}
 		})
@@ -125,27 +128,27 @@ func TestApplyStakerFactor(t *testing.T) {
 
 	tests := []struct {
 		name                  string
-		poolSize              uint64
-		maxPoolSize           uint64
+		poolSize              *big.Float
+		maxPoolSize           *big.Float
 		stakers               uint64
 		totalEffectiveStakers uint64
-		expectedScore         float64
+		expectedScore         *big.Float
 	}{
 		{
-			name:                  "10 stakers of 5 effective stakers",
-			poolSize:              50000,
-			maxPoolSize:           50000,
-			stakers:               10,
-			totalEffectiveStakers: 5,
-			expectedScore:         0.03437500000000001,
+			name:                  "5 stakers of 20 effective stakers",
+			poolSize:              big.NewFloat(50000),
+			maxPoolSize:           big.NewFloat(50000),
+			stakers:               5,
+			totalEffectiveStakers: 20,
+			expectedScore:         big.NewFloat(2.071428571428571),
 		},
 		{
-			name:                  "15 stakers of 30 effective stakers",
-			poolSize:              500,
-			maxPoolSize:           50000,
+			name:                  "15 stakers of 20 effective stakers",
+			poolSize:              big.NewFloat(500),
+			maxPoolSize:           big.NewFloat(50000),
 			stakers:               15,
-			totalEffectiveStakers: 30,
-			expectedScore:         0.891304347826087,
+			totalEffectiveStakers: 20,
+			expectedScore:         big.NewFloat(19.26829268292683),
 		},
 	}
 
@@ -156,17 +159,20 @@ func TestApplyStakerFactor(t *testing.T) {
 
 			score := applyGiniCoefficient(tt.poolSize, specialRewards.GiniCoefficient)
 
-			if tt.poolSize > specialRewards.CliffPoint {
-				applyCliffFactor(tt.poolSize, tt.maxPoolSize, &score, specialRewards.CliffFactor)
+			cliffPoint := big.NewFloat(0)
+			cliffPoint.SetString(specialRewards.CliffPoint)
+
+			if tt.poolSize.Cmp(cliffPoint) == 1 {
+				applyCliffFactor(tt.poolSize, tt.maxPoolSize, score, specialRewards.CliffFactor)
 			}
 
-			applyStakerFactor(tt.stakers, tt.totalEffectiveStakers, specialRewards.StakerFactor, &score)
+			applyStakerFactor(tt.stakers, tt.totalEffectiveStakers, specialRewards.StakerFactor, score)
 
 			fmt.Println(score, tt.expectedScore)
 
-			diff := math.Abs(score - tt.expectedScore)
+			diff := new(big.Float).Sub(score, tt.expectedScore)
 
-			if diff > epsilon {
+			if diff.Abs(diff).Cmp(epsilon) > 0 {
 				t.Errorf("Score got = %v, want %v, difference %v exceeds epsilon %v", score, tt.expectedScore, diff, epsilon)
 			}
 		})
@@ -177,12 +183,12 @@ func TestCalculateOperationRewards(t *testing.T) {
 	t.Parallel()
 
 	correctRewards := []string{
-		"644000000000000000000",
-		"1530000000000000000000",
-		"2386000000000000000000",
-		"3379000000000000000000",
-		"1008000000000000000000",
-		"3378000000000000000000",
+		"908820928063146295296",
+		"1293616057212334505984",
+		"1636483513676843974656",
+		"3010321247805582082048",
+		"2468583836050489606144",
+		"3010174417191603011584",
 	}
 
 	// Slice to hold pointers to big.Int
@@ -263,8 +269,10 @@ func TestCalculateOperationRewards(t *testing.T) {
 				fmt.Print(rewards)
 
 				for i, reward := range rewards {
-					if reward.Cmp(tt.expectedRewards[i]) != 0 {
-						t.Errorf("Reward got = %v, want %v", reward, tt.expectedRewards[i])
+					diff := new(big.Int).Sub(reward, tt.expectedRewards[i])
+
+					if diff.Abs(diff).Cmp(epsilonInt) > 0 {
+						t.Errorf("Reward got = %v, want %v , diff is %v > %v", reward, tt.expectedRewards[i], diff, epsilonInt)
 					}
 				}
 			} else {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
@@ -16,8 +15,9 @@ import (
 // currently, the amount is set to 30,000,000 / 486.6666666666667 * 0.2 ~= 12328
 func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[common.Address]uint64, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
 	var (
-		totalEffectiveStakers, maxPoolSize uint64
-		totalScore                         float64
+		totalEffectiveStakers uint64
+		maxPoolSize           *big.Float
+		totalScore            = big.NewFloat(0)
 	)
 
 	// Preprocessing step to avoid repeated parsing and condition checking.
@@ -26,28 +26,35 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStackers map[commo
 		return nil, err
 	}
 
-	totalEffectiveStakers, maxPoolSize = computeEffectiveStakersAndMaxPoolSize(nodes, recentStackers, poolSizes, specialRewards)
+	// Calculate total effective stakers and the maximum pool size.
+	totalEffectiveStakers, maxPoolSize, err = computeEffectiveStakersAndMaxPoolSize(nodes, recentStackers, poolSizes, specialRewards)
+	if err != nil {
+		return nil, err
+	}
 
+	// Calculate scores for each node.
 	scores, err := computeScores(nodes, recentStackers, poolSizes, totalEffectiveStakers, maxPoolSize, specialRewards)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, score := range scores {
-		totalScore += score
+		totalScore.Add(totalScore, score)
 	}
 
 	return calculateFinalRewards(scores, totalScore, specialRewards), nil
 }
 
 // parsePoolSizes extracts and parses staking pool sizes from nodes.
-func parsePoolSizes(nodes []*schema.Node) ([]uint64, error) {
-	poolSizes := make([]uint64, len(nodes))
+func parsePoolSizes(nodes []*schema.Node) ([]*big.Float, error) {
+	poolSizes := make([]*big.Float, len(nodes))
 
 	for i, node := range nodes {
-		poolSize, err := strconv.ParseUint(node.StakingPoolTokens, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse staking pool tokens for node %s: %w", node.Address, err)
+		poolSize := new(big.Float)
+		poolSize, ok := poolSize.SetString(node.StakingPoolTokens)
+
+		if !ok {
+			return nil, fmt.Errorf("failed to parse staking pool tokens for node %s: invalid number", node.Address)
 		}
 
 		poolSizes[i] = poolSize
@@ -57,25 +64,35 @@ func parsePoolSizes(nodes []*schema.Node) ([]uint64, error) {
 }
 
 // computeEffectiveStakersAndMaxPoolSize calculates total effective stakers and the maximum pool size.
-func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []uint64, specialRewards *config.SpecialRewards) (uint64, uint64) {
-	var totalEffectiveStakers, maxPoolSize uint64
+func computeEffectiveStakersAndMaxPoolSize(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []*big.Float, specialRewards *config.SpecialRewards) (uint64, *big.Float, error) {
+	var (
+		totalEffectiveStakers uint64
+		maxPoolSize           = big.NewFloat(0)
+	)
+
+	cliffPoint := big.NewFloat(0)
+	_, ok := cliffPoint.SetString(specialRewards.CliffPoint)
+
+	if !ok {
+		return 0, nil, fmt.Errorf("CliffPoint conversion failed")
+	}
 
 	for i, node := range nodes {
-		if poolSizes[i] <= specialRewards.CliffPoint {
+		if poolSizes[i].Cmp(cliffPoint) <= 0 {
 			totalEffectiveStakers += recentStackers[node.Address]
 		}
 
-		if maxPoolSize < poolSizes[i] {
+		if poolSizes[i].Cmp(maxPoolSize) == 1 {
 			maxPoolSize = poolSizes[i]
 		}
 	}
 
-	return totalEffectiveStakers, maxPoolSize
+	return totalEffectiveStakers, maxPoolSize, nil
 }
 
 // computeScores calculates the scores for each node based on various factors.
-func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []uint64, totalEffectiveStakers, maxPoolSize uint64, specialRewards *config.SpecialRewards) ([]float64, error) {
-	scores := make([]float64, len(nodes))
+func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint64, poolSizes []*big.Float, totalEffectiveStakers uint64, maxPoolSize *big.Float, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
+	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
 		stakers := recentStackers[nodes[i].Address]
@@ -85,15 +102,24 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 
 		score := applyGiniCoefficient(poolSize, specialRewards.GiniCoefficient)
 
-		if poolSize > specialRewards.CliffPoint {
-			applyCliffFactor(poolSize, maxPoolSize, &score, specialRewards.CliffFactor)
+		cliffPoint := big.NewFloat(0)
+		_, ok := cliffPoint.SetString(specialRewards.CliffPoint)
+
+		if !ok {
+			return nil, fmt.Errorf("CliffPoint conversion failed")
+		}
+
+		if poolSize.Cmp(cliffPoint) == 1 {
+			applyCliffFactor(poolSize, maxPoolSize, score, specialRewards.CliffFactor)
 		}
 
 		if totalEffectiveStakers > 0 {
-			applyStakerFactor(stakers, totalEffectiveStakers, specialRewards.StakerFactor, &score)
+			applyStakerFactor(stakers, totalEffectiveStakers, specialRewards.StakerFactor, score)
 		}
 
-		if score < 0 || score >= 1 {
+		zero := big.NewFloat(0)
+
+		if score.Cmp(zero) < 0 {
 			return nil, fmt.Errorf("invalid score: %f", score)
 		}
 
@@ -104,7 +130,7 @@ func computeScores(nodes []*schema.Node, recentStackers map[common.Address]uint6
 }
 
 // calculateFinalRewards converts scores into reward amounts.
-func calculateFinalRewards(scores []float64, totalScore float64, specialRewards *config.SpecialRewards) []*big.Int {
+func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards) []*big.Int {
 	rewards := make([]*big.Int, len(scores))
 	// scale is 10^18
 	scale := new(big.Float).SetInt(big.NewInt(1e18))
@@ -112,9 +138,9 @@ func calculateFinalRewards(scores []float64, totalScore float64, specialRewards 
 	for i, score := range scores {
 		// Perform calculation: reward = score / totalScore * specialRewards.Rewards
 		// truncate the reward to an integer to avoid floating point errors
-		reward := math.Trunc(score / totalScore * specialRewards.Rewards)
-		rewardBigFloat := new(big.Float).SetFloat64(reward)
-		scaledF := new(big.Float).Mul(rewardBigFloat, scale)
+		scoreRatio := new(big.Float).Quo(score, totalScore)
+		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(specialRewards.Rewards))
+		scaledF := new(big.Float).Mul(reward, scale)
 		rewardFinal, _ := scaledF.Int(nil)
 		rewards[i] = rewardFinal
 	}
@@ -123,21 +149,39 @@ func calculateFinalRewards(scores []float64, totalScore float64, specialRewards 
 }
 
 // applyGiniCoefficient applies the Gini Coefficient to the score
-func applyGiniCoefficient(poolSize uint64, giniCoefficient float64) float64 {
+func applyGiniCoefficient(poolSize *big.Float, giniCoefficient float64) *big.Float {
 	// Perform calculation: score = 1 / (1 + giniCoefficient * poolSize)
-	score := 1 / (1 + giniCoefficient*float64(poolSize))
+	one := big.NewFloat(1)
+	giniTimesPool := new(big.Float).Mul(new(big.Float).SetFloat64(giniCoefficient), poolSize)
+	denominator := new(big.Float).Add(one, giniTimesPool)
+	score := new(big.Float).Quo(one, denominator)
 
 	return score
 }
 
 // applyCliffFactor applies the Cliff Factor to the score
-func applyCliffFactor(poolSize uint64, maxPoolSize uint64, score *float64, cliffFactor float64) {
+func applyCliffFactor(poolSize *big.Float, maxPoolSize *big.Float, score *big.Float, cliffFactor float64) {
+	// Calculate poolSize / maxPoolSize
+	poolSizeRatio := new(big.Float).Quo(poolSize, maxPoolSize)
+
+	// Calculate cliffFactor ** poolSizeRatio
+	// As big.Float does not support exponentiation directly, using math.Pow after converting to float64
+	// For the precision loss here is negligible
+	poolSizeRatioFloat64, _ := poolSizeRatio.Float64()
+
 	// Perform calculation: score *= cliffFactor ** poolSize / maxPoolSize
-	*score *= math.Pow(cliffFactor, float64(poolSize)/float64(maxPoolSize))
+	score.Mul(score, big.NewFloat(math.Pow(cliffFactor, poolSizeRatioFloat64)))
 }
 
 // applyStakerFactor applies the Staker Factor to the score
-func applyStakerFactor(stakers uint64, totalEffectiveStakers uint64, stakerFactor float64, score *float64) {
+func applyStakerFactor(stakers uint64, totalEffectiveStakers uint64, stakerFactor float64, score *big.Float) {
+	totalEffectiveStakersFloat := new(big.Float).SetUint64(totalEffectiveStakers)
+
 	// Perform calculation: score += (score * stakers * staker_factor) / total_stakers
-	*score += (*score * float64(stakers) * stakerFactor) / float64(totalEffectiveStakers)
+	dividend := big.NewFloat(0)
+
+	dividend.Mul(score, new(big.Float).SetUint64(stakers))
+	dividend.Mul(dividend, big.NewFloat(stakerFactor))
+	dividend.Quo(dividend, totalEffectiveStakersFloat)
+	score.Add(score, dividend)
 }

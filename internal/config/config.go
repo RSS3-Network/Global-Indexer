@@ -59,7 +59,7 @@ type Settler struct {
 type SpecialRewards struct {
 	GiniCoefficient float64 `yaml:"gini_coefficient" validate:"required"`
 	CliffFactor     float64 `yaml:"cliff_factor" validate:"required"`
-	CliffPoint      uint64  `yaml:"cliff_point" validate:"required"`
+	CliffPoint      string  `yaml:"cliff_point" validate:"required"`
 	EpochLimit      int     `yaml:"epoch_limit" validate:"required"`
 	StakerFactor    float64 `yaml:"staker_factor" validate:"required"`
 	Rewards         float64 `yaml:"rewards" validate:"required"`
