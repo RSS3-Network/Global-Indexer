@@ -62,7 +62,7 @@ type SpecialRewards struct {
 	CliffPoint      string  `yaml:"cliff_point" validate:"required"`
 	EpochLimit      int     `yaml:"epoch_limit" validate:"required"`
 	StakerFactor    float64 `yaml:"staker_factor" validate:"required"`
-	Rewards         float64 `yaml:"rewards" validate:"required"`
+	Rewards         uint64  `yaml:"rewards" validate:"required"`
 }
 
 type GeoIP struct {

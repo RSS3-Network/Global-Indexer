@@ -139,7 +139,7 @@ func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRe
 		// Perform calculation: reward = score / totalScore * specialRewards.Rewards
 		// truncate the reward to an integer to avoid floating point errors
 		scoreRatio := new(big.Float).Quo(score, totalScore)
-		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(specialRewards.Rewards))
+		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetUint64(specialRewards.Rewards))
 		scaledF := new(big.Float).Mul(reward, scale)
 		rewardFinal, _ := scaledF.Int(nil)
 		rewards[i] = rewardFinal
@@ -175,13 +175,23 @@ func applyCliffFactor(poolSize *big.Float, maxPoolSize *big.Float, score *big.Fl
 
 // applyStakerFactor applies the Staker Factor to the score
 func applyStakerFactor(stakers uint64, totalEffectiveStakers uint64, stakerFactor float64, score *big.Float) {
+	// Convert totalEffectiveStakers to a big.Float for mathematical operations.
 	totalEffectiveStakersFloat := new(big.Float).SetUint64(totalEffectiveStakers)
 
-	// Perform calculation: score += (score * stakers * staker_factor) / total_stakers
-	dividend := big.NewFloat(0)
+	// Ensure totalEffectiveStakers is not zero to avoid division by zero.
+	if totalEffectiveStakers == 0 {
+		return // Optionally handle the error or log a message.
+	}
 
-	dividend.Mul(score, new(big.Float).SetUint64(stakers))
-	dividend.Mul(dividend, big.NewFloat(stakerFactor))
-	dividend.Quo(dividend, totalEffectiveStakersFloat)
-	score.Add(score, dividend)
+	// Calculate the score increment: (score * stakers * stakerFactor) / totalEffectiveStakers
+	stakersFloat := new(big.Float).SetUint64(stakers) // Convert stakers to big.Float for calculation.
+	stakerFactorFloat := big.NewFloat(stakerFactor)   // Ensure stakerFactor is in big.Float for consistency in operations.
+
+	// Perform the calculation in steps for clarity.
+	increment := new(big.Float).Mul(score, stakersFloat) // score * stakers
+	increment.Mul(increment, stakerFactorFloat)          // (score * stakers) * stakerFactor
+	increment.Quo(increment, totalEffectiveStakersFloat) // Final division to adjust the score increment.
+
+	// Add the calculated increment to the original score.
+	score.Add(score, increment)
 }

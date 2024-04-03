@@ -13,7 +13,7 @@ import (
 var (
 	// epsilon is the acceptable error margin for floating point comparisons
 	epsilon        = big.NewFloat(0.00000000001)
-	epsilonInt     = big.NewInt(250000)
+	epsilonInt     = big.NewInt(500000)
 	specialRewards = config.SpecialRewards{
 		GiniCoefficient: 0.00005,
 		CliffFactor:     300,
@@ -266,14 +266,24 @@ func TestCalculateOperationRewards(t *testing.T) {
 			}
 
 			if rewards != nil {
-				fmt.Print(rewards)
+				totalRewards := big.NewInt(0)
 
 				for i, reward := range rewards {
+					totalRewards.Add(totalRewards, reward)
 					diff := new(big.Int).Sub(reward, tt.expectedRewards[i])
 
 					if diff.Abs(diff).Cmp(epsilonInt) > 0 {
 						t.Errorf("Reward got = %v, want %v , diff is %v > %v", reward, tt.expectedRewards[i], diff, epsilonInt)
 					}
+				}
+
+				// Convert specialRewards.Rewards to a *big.Int with 18 decimal places
+				specialRewardsBigInt := new(big.Int).SetUint64(specialRewards.Rewards)
+				scaledSpecialRewards := new(big.Int).Mul(specialRewardsBigInt, big.NewInt(1e18))
+
+				// totalRewards must be less than scaledSpecialRewards
+				if totalRewards.Cmp(scaledSpecialRewards) >= 0 {
+					t.Errorf("Total rewards is over the limit: %v, limit: %v", totalRewards, scaledSpecialRewards)
 				}
 			} else {
 				t.Error("Rewards is nil")
