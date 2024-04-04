@@ -164,7 +164,7 @@ func (c *client) UpdateNodesScore(ctx context.Context, nodes []*schema.Node) err
 		return err
 	}
 
-	// Save node indexers.
+	// Update node scores.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{

@@ -66,7 +66,9 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 			return err
 		}
 
-		_ = s.updateNodesScore(ctx, transactionData.NodeAddress, nodes)
+		if len(nodes) > 0 {
+			_ = s.updateNodesScore(ctx, transactionData.NodeAddress, nodes)
+		}
 
 		if len(transactionData.NodeAddress) > 0 {
 			cursor = lo.ToPtr(transactionData.NodeAddress[len(transactionData.NodeAddress)-1].String())
