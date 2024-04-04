@@ -60,7 +60,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 
 	var nodes table.Nodes
 
-	if err := databaseStatement.Order("created_at DESC").Find(&nodes).Error; err != nil {
+	if err := databaseStatement.Order("score DESC, created_at DESC").Find(&nodes).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -132,7 +132,7 @@ func (c *client) SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema
 }
 
 func (c *client) UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error {
-	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	return c.WithTransaction(ctx, func(ctx context.Context, _ database.Client) error {
 		for {
 			result := c.database.WithContext(ctx).Model(&table.Node{}).
 				Where("last_heartbeat_timestamp < ? and status = ?", time.Unix(lastHeartbeatTimestamp, 0), schema.NodeStatusOnline).
@@ -155,6 +155,26 @@ func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.
 		Where("address = ?", nodeAddress).
 		Update("hideTaxRate", hideTaxRate).
 		Error
+}
+
+func (c *client) UpdateNodesScore(ctx context.Context, nodes []*schema.Node) error {
+	var tNodes table.Nodes
+
+	if err := tNodes.Import(nodes); err != nil {
+		return err
+	}
+
+	// Update node scores.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{"score"}),
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tNodes, math.MaxUint8).Error
 }
 
 func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error {

@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
@@ -19,10 +18,6 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
-
-// BatchSize is the number of Nodes to process in each batch.
-// This is to prevent the contract call from running out of gas.
-const BatchSize = 200
 
 // submitEpochProof submits proof of this epoch on chain
 // which calculates the Operation Rewards for the Nodes
@@ -46,7 +41,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 	for {
 		msg := "construct Settlement data"
 		// Construct transactionData as required by the Settlement contract
-		transactionData, err := s.constructSettlementData(ctx, epoch, cursor)
+		transactionData, nodes, err := s.constructSettlementData(ctx, epoch, cursor)
 		if err != nil {
 			zap.L().Error(msg, zap.Error(err))
 
@@ -71,39 +66,47 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 			return err
 		}
 
+		if len(nodes) > 0 {
+			_ = s.updateNodesScore(ctx, transactionData.NodeAddress, nodes)
+		}
+
 		if len(transactionData.NodeAddress) > 0 {
 			cursor = lo.ToPtr(transactionData.NodeAddress[len(transactionData.NodeAddress)-1].String())
 		}
 	}
 
-	zap.L().Info("Epoch Proof submitted successfully", zap.Uint64("epoch", epoch))
+	zap.L().Info("Epoch Proof submitted successfully", zap.Uint64("settler", epoch))
 
 	return nil
 }
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
-func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, error) {
+func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, error) {
+	// batchSize is the number of Nodes to process in each batch.
+	// This is to prevent the contract call from running out of gas.
+	batchSize := s.settlerConfig.BatchSize
+
 	// Find qualified Nodes from the database
 	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
 		Status: lo.ToPtr(schema.NodeStatusOnline),
 		Cursor: cursor,
-		Limit:  lo.ToPtr(BatchSize + 1),
+		Limit:  lo.ToPtr(batchSize + 1),
 	})
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		zap.L().Error("No qualified Nodes found", zap.Error(err), zap.Any("cursor", cursor))
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	// isFinal is true if it's the last batch of Nodes
-	isFinal := len(nodes) <= BatchSize
+	isFinal := len(nodes) <= batchSize
 	if !isFinal {
-		nodes = nodes[:BatchSize]
+		nodes = nodes[:batchSize]
 	}
 
 	// nodeAddresses is a slice of Node addresses
@@ -111,9 +114,11 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	for _, node := range nodes {
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
-
 	// Calculate the operation rewards for the Nodes
-	operationRewards := calculateOperationRewards(nodeAddresses)
+	operationRewards, err := calculateOperationRewards(nodes)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Calculate the operation rewards for the Nodes
 	requestCounts := prepareRequestCounts(nodeAddresses)
@@ -124,35 +129,54 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		OperationRewards: operationRewards,
 		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
-	}, nil
+	}, nodes, nil
 }
 
-// calculateOperationRewards calculates the Operation Rewards for all Nodes
-// For Alpha, there is no actual calculation logic, the rewards are set to 0
-// TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []common.Address) []*big.Int {
-	slice := make([]*big.Int, len(nodes))
-
-	// For Alpha, set the rewards to 0
-	for i := range slice {
-		slice[i] = big.NewInt(0)
+func (s *Server) updateNodesScore(ctx context.Context, nodeAddress []common.Address, nodes []*schema.Node) error {
+	// Update the node staking data from the chain.
+	if err := s.updateNodeStakingData(nodeAddress, nodes); err != nil {
+		return err
 	}
 
-	return slice
+	// Get the number of stakers and sum of stake value in the last 5 epochs for all nodes.
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
+	if err != nil {
+		return fmt.Errorf("find recent stakers count: %w", err)
+	}
+
+	// Update the node scores.
+	scores, err := calculateNodeScore(nodes, recentStakers, s.specialRewards)
+	if err != nil {
+		return err
+	}
+
+	for i, node := range nodes {
+		node.Score = scores[i]
+	}
+
+	return s.databaseClient.UpdateNodesScore(ctx, nodes)
 }
 
-// prepareRequestCounts prepares the Request Counts for all Nodes
-// For Alpha, there is no actual calculation logic, the counts are set to 0
-// TODO: Implement the actual logic to retrieve the counts from the database
-func prepareRequestCounts(nodes []common.Address) []*big.Int {
-	slice := make([]*big.Int, len(nodes))
-
-	// For Alpha, set the counts to 0
-	for i := range slice {
-		slice[i] = big.NewInt(0)
+// updateNodeStakingData retrieves node information from a staking contract
+// and updates the staking pool tokens for each node.
+func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*schema.Node) error {
+	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
+	if err != nil {
+		return fmt.Errorf("get nodes from chain: %w", err)
 	}
 
-	return slice
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
+		return node.Account, node
+	})
+
+	for _, node := range nodes {
+		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
+			stakePoolTokens := nodeInfo.StakingPoolTokens
+			node.StakingPoolTokens = stakePoolTokens.String()
+		}
+	}
+
+	return nil
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
@@ -178,22 +202,12 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 	return nil
 }
 
-// prepareInputData encodes input data for the transaction
-func (s *Server) prepareInputData(data schema.SettlementData) ([]byte, error) {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
-	if err != nil {
-		return nil, fmt.Errorf("encode input: %w", err)
-	}
-
-	return input, nil
-}
-
 // sendTransaction sends the transaction and returns the receipt if successful
 func (s *Server) sendTransaction(ctx context.Context, input []byte) (*types.Receipt, error) {
 	txCandidate := txmgr.TxCandidate{
 		TxData:   input,
 		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
-		GasLimit: s.gasLimit,
+		GasLimit: s.settlerConfig.GasLimit,
 		Value:    big.NewInt(0),
 	}
 
@@ -222,23 +236,8 @@ func (s *Server) saveSettlement(ctx context.Context, receipt *types.Receipt, dat
 		EpochID:         data.Epoch.Uint64(),
 		Data:            data,
 	}); err != nil {
-		return fmt.Errorf("save epoch submitEpochProof: %w", err)
+		return fmt.Errorf("save settler submitEpochProof: %w", err)
 	}
 
 	return nil
-}
-
-// encodeInput encodes the input data according to the contract ABI
-func (s *Server) encodeInput(contractABI, methodName string, args ...interface{}) ([]byte, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
-	if err != nil {
-		return nil, err
-	}
-
-	encodedArgs, err := parsedABI.Pack(methodName, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return encodedArgs, nil
 }
