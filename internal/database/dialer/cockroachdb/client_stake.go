@@ -348,13 +348,66 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 	return values, nil
 }
 
+func (c *client) FindStakerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]*schema.StakeRecentCount, error) {
+	// Get the block number of the recent epoch.
+	subQuery := c.database.
+		WithContext(ctx).
+		Table((*table.Epoch).TableName(nil)).
+		Select(`"block_number"`).
+		Order(`"id" DESC`).
+		Offset(recentEpochs).
+		Limit(1)
+
+	// Gets the count of unique stakers for each node.
+	databaseClient := c.database.
+		WithContext(ctx).
+		Table((*table.StakeTransaction).TableName(nil)).
+		Select(`"node", count(DISTINCT "user"),sum("value") as "stake"`).
+		Where(`"block_number" >= coalesce((?), 0) AND "type" = 'stake'`, subQuery).
+		Group(`"node"`)
+
+	// Define a row struct to store the result.
+	type row struct {
+		Node  string          `gorm:"column:node"`
+		Count uint64          `gorm:"column:count"`
+		Stake decimal.Decimal `gorm:"column:stake"`
+	}
+
+	// SELECT "node", count(DISTINCT "user"), sum("value") as "stake"
+	// FROM "stake"."transactions"
+	// WHERE "block_number" >= coalesce((SELECT "block_number" FROM "epoch" ORDER BY "id" DESC LIMIT 1 OFFSET @recentEpochs), 0)
+	//   AND "type" = 'stake'
+	// GROUP BY "node"
+
+	var rows []row
+	if err := databaseClient.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// Converts the rows into a map of node address to their staker counts.
+	result := lo.SliceToMap(rows, func(row row) (common.Address, *schema.StakeRecentCount) {
+		return common.HexToAddress(row.Node), &schema.StakeRecentCount{
+			StakerCount: row.Count,
+			StakeValue:  row.Stake,
+		}
+	})
+
+	return result, nil
+}
+
 func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error {
 	var value table.StakeTransaction
 	if err := value.Import(*stakeTransaction); err != nil {
 		return fmt.Errorf("import stake transaction: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }
 
 func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error {
@@ -363,7 +416,13 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 		return fmt.Errorf("import stake event: %w", err)
 	}
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+		},
+	}
+
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
 }
 
 func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/shopspring/decimal"
 )
 
 type StakeTransactionType string
@@ -58,4 +59,9 @@ type StakeTransactionsQuery struct {
 	Type    *StakeTransactionType
 	Pending *bool
 	Limit   int
+}
+
+type StakeRecentCount struct {
+	StakerCount uint64
+	StakeValue  decimal.Decimal
 }
