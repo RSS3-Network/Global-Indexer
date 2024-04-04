@@ -26,6 +26,7 @@ type Node struct {
 	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
 	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
 	APY                    decimal.Decimal   `gorm:"column:apy"`
+	Score                  decimal.Decimal   `gorm:"column:score"`
 	CreatedAt              time.Time         `gorm:"column:created_at"`
 	UpdatedAt              time.Time         `gorm:"column:updated_at"`
 }
@@ -46,6 +47,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Config = node.Config
 	n.MinTokensToStake = node.MinTokensToStake
 	n.APY = node.APY
+	n.Score = node.Score
 
 	n.Local, err = json.Marshal(node.Local)
 	if err != nil {
@@ -86,11 +88,28 @@ func (n *Node) Export() (*schema.Node, error) {
 		Avatar:                 avatar,
 		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
+		Score:                  n.Score,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }
 
-type Nodes []*Node
+type Nodes []Node
+
+func (n *Nodes) Import(nodes []*schema.Node) (err error) {
+	*n = make([]Node, 0, len(nodes))
+
+	for _, node := range nodes {
+		var tNode Node
+
+		if err = tNode.Import(node); err != nil {
+			return err
+		}
+
+		*n = append(*n, tNode)
+	}
+
+	return nil
+}
 
 func (n Nodes) Export() ([]*schema.Node, error) {
 	nodes := make([]*schema.Node, 0)
