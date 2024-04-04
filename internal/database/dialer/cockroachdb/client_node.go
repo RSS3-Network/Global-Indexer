@@ -43,7 +43,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 			return nil, fmt.Errorf("get node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
+		databaseStatement = databaseStatement.Where("score < ? OR (score = ? AND created_at < ?)", nodeCursor.Score, nodeCursor.Score, nodeCursor.CreatedAt)
 	}
 
 	if query.Status != nil {
