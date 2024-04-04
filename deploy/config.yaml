@@ -23,12 +23,12 @@ settler:
   batch_size: 200
 
 special_rewards:
-  gini_coefficient: 0.00005
-  cliff_factor: 300
-  cliff_point: 5000000
-  epoch_limit: 5
-  staker_factor: 25
+  gini_coefficient: 2
+  staker_factor: 0.05
+  epoch_limit: 10
+  node_threshold: 0.4
   rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
+  rewards_ceiling: 1000
 
 geo_ip:
   account:

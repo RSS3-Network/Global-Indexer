@@ -41,7 +41,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 	for {
 		msg := "construct Settlement data"
 		// Construct transactionData as required by the Settlement contract
-		transactionData, err := s.constructSettlementData(ctx, epoch, cursor)
+		transactionData, nodes, err := s.constructSettlementData(ctx, epoch, cursor)
 		if err != nil {
 			zap.L().Error(msg, zap.Error(err))
 
@@ -66,6 +66,8 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 			return err
 		}
 
+		_ = s.updateNodesScore(ctx, transactionData.NodeAddress, nodes)
+
 		if len(transactionData.NodeAddress) > 0 {
 			cursor = lo.ToPtr(transactionData.NodeAddress[len(transactionData.NodeAddress)-1].String())
 		}
@@ -77,7 +79,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 }
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
-func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, error) {
+func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
 	batchSize := s.settlerConfig.BatchSize
@@ -91,12 +93,12 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		zap.L().Error("No qualified Nodes found", zap.Error(err), zap.Any("cursor", cursor))
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	// isFinal is true if it's the last batch of Nodes
@@ -110,22 +112,10 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	for _, node := range nodes {
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
-
-	// Update the node staking data from the chain.
-	if err = s.updateNodeStakingData(nodeAddresses, nodes); err != nil {
-		return nil, err
-	}
-
-	// Get the number of stakers in the last 5 epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
-	if err != nil {
-		return nil, fmt.Errorf("find recent stakers: %w", err)
-	}
-
 	// Calculate the operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes, recentStakers, s.specialRewards)
+	operationRewards, err := calculateOperationRewards(nodes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Calculate the operation rewards for the Nodes
@@ -137,7 +127,32 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		OperationRewards: operationRewards,
 		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
-	}, nil
+	}, nodes, nil
+}
+
+func (s *Server) updateNodesScore(ctx context.Context, nodeAddress []common.Address, nodes []*schema.Node) error {
+	// Update the node staking data from the chain.
+	if err := s.updateNodeStakingData(nodeAddress, nodes); err != nil {
+		return err
+	}
+
+	// Get the number of stakers and sum of stake value in the last 5 epochs for all nodes.
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
+	if err != nil {
+		return fmt.Errorf("find recent stakers count: %w", err)
+	}
+
+	// Update the node scores.
+	scores, err := calculateNodeScore(nodes, recentStakers, s.specialRewards)
+	if err != nil {
+		return err
+	}
+
+	for i, node := range nodes {
+		node.Score = scores[i]
+	}
+
+	return s.databaseClient.UpdateNodesScore(ctx, nodes)
 }
 
 // updateNodeStakingData retrieves node information from a staking contract

@@ -60,7 +60,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 
 	var nodes table.Nodes
 
-	if err := databaseStatement.Order("created_at DESC").Find(&nodes).Error; err != nil {
+	if err := databaseStatement.Order("score DESC, created_at DESC").Find(&nodes).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -155,6 +155,26 @@ func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.
 		Where("address = ?", nodeAddress).
 		Update("hideTaxRate", hideTaxRate).
 		Error
+}
+
+func (c *client) UpdateNodesScore(ctx context.Context, nodes []*schema.Node) error {
+	var tNodes table.Nodes
+
+	if err := tNodes.Import(nodes); err != nil {
+		return err
+	}
+
+	// Save node indexers.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{"score"}),
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tNodes, math.MaxUint8).Error
 }
 
 func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error {
