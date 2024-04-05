@@ -7,21 +7,29 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
-	"github.com/shopspring/decimal"
 )
 
 // calculateOperationRewards calculates the Operation Rewards for all Nodes
 // For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
 // TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []*schema.Node) ([]*big.Int, error) {
-	operationRewards := make([]*big.Int, len(nodes))
-
-	// For Alpha, set the rewards to 0
-	for i := range operationRewards {
-		operationRewards[i] = big.NewInt(0)
+func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, []*big.Float, error) {
+	// If there are no nodes, return nil
+	if len(nodes) == 0 {
+		return nil, nil, nil
 	}
 
-	return operationRewards, nil
+	operationRewards, scores, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to calculate special rewards: %w", err)
+	}
+
+	// For Alpha, set the rewards to 0
+	//for i := range operationRewards {
+	//	operationRewards[i] = big.NewInt(0)
+	//}
+
+	return operationRewards, scores, nil
 }
 
 // prepareRequestCounts prepares the Request Counts for all Nodes
@@ -36,55 +44,4 @@ func prepareRequestCounts(nodes []common.Address) []*big.Int {
 	}
 
 	return slice
-}
-
-func calculateNodeScore(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]decimal.Decimal, error) {
-	var (
-		totalStakeValue *big.Int
-		totalPoolSize   = big.NewInt(0)
-	)
-
-	// Preprocessing step to avoid repeated parsing and condition checking.
-	poolSizes, err := parsePoolSizes(nodes)
-	if err != nil {
-		return nil, err
-	}
-
-	// Calculate the total pool size.
-	for _, poolSize := range poolSizes {
-		totalPoolSize.Add(totalPoolSize, poolSize)
-	}
-
-	// Calculate total stake value.
-	totalStakeValue, err = computeTotalStakeValue(nodes, recentStakers)
-	if err != nil {
-		return nil, err
-	}
-
-	// Calculate scores for each node.
-	scoresFloat, err := computeScores(nodes, recentStakers, poolSizes, totalPoolSize, totalStakeValue, specialRewards)
-	if err != nil {
-		return nil, err
-	}
-
-	scores, _ := parseScores(scoresFloat)
-
-	return scores, nil
-}
-
-func parseScores(scores []*big.Float) ([]decimal.Decimal, error) {
-	scoreDecimals := make([]decimal.Decimal, len(scores))
-
-	for i, score := range scores {
-		strValue := score.Text('f', -1)
-
-		decimalValue, err := decimal.NewFromString(strValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse score %d: %w", i, err)
-		}
-
-		scoreDecimals[i] = decimalValue
-	}
-
-	return scoreDecimals, nil
 }
