@@ -2,6 +2,7 @@ package settler
 
 import (
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -21,6 +22,81 @@ var (
 	}
 )
 
+func TestExtractOnlineStakerNodes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		nodes          []*schema.Node
+		recentStakers  map[common.Address]*schema.StakeRecentCount
+		expectedResult map[common.Address]*schema.StakeRecentCount
+	}{
+		{
+			name: "all nodes are online",
+			nodes: []*schema.Node{
+				{Address: common.Address{1}},
+				{Address: common.Address{2}},
+				{Address: common.Address{3}},
+				{Address: common.Address{4}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+		},
+		{
+			name: "some nodes are offline",
+			nodes: []*schema.Node{
+				{Address: common.Address{1}},
+				{Address: common.Address{2}},
+				{Address: common.Address{4}},
+				{Address: common.Address{5}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+			},
+		},
+		{
+			name: "no nodes are online",
+			nodes: []*schema.Node{
+				{Address: common.Address{4}},
+				{Address: common.Address{5}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			extractOnlineStakerNodes(tt.nodes, tt.recentStakers)
+
+			if !reflect.DeepEqual(tt.recentStakers, tt.expectedResult) {
+				t.Errorf("Expected %v, but got %v", tt.expectedResult, tt.recentStakers)
+			}
+		})
+	}
+}
+
 func TestCalculateOperationRewards(t *testing.T) {
 	t.Parallel()
 
@@ -36,6 +112,7 @@ func TestCalculateOperationRewards(t *testing.T) {
 			"1000000000000000000000",
 			"1000000000000000000000",
 			"711000000000000000000",
+			"0",
 		},
 		{
 			"585000000000000000000",
@@ -114,6 +191,10 @@ func TestCalculateOperationRewards(t *testing.T) {
 					Address:           common.Address{10},
 					StakingPoolTokens: "10776091947611685629896941",
 				},
+				{
+					Address:           common.Address{12},
+					StakingPoolTokens: "10776091947611685629896941",
+				},
 			},
 			recentStackers: map[common.Address]*schema.StakeRecentCount{
 				common.Address{1}:  {StakerCount: 32, StakeValue: decimal.NewFromInt(600)},
@@ -126,6 +207,7 @@ func TestCalculateOperationRewards(t *testing.T) {
 				common.Address{8}:  {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
 				common.Address{9}:  {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
 				common.Address{10}: {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
+				common.Address{11}: {StakerCount: 100, StakeValue: decimal.NewFromInt(50000)},
 			},
 			expectedRewards: expectedRewards[0],
 		},
@@ -174,9 +256,10 @@ func TestCalculateOperationRewards(t *testing.T) {
 				},
 			},
 			recentStackers: map[common.Address]*schema.StakeRecentCount{
-				common.Address{1}: {StakerCount: 32, StakeValue: decimal.NewFromInt(600)},
-				common.Address{2}: {StakerCount: 32, StakeValue: decimal.NewFromInt(100000)},
-				common.Address{3}: {StakerCount: 6, StakeValue: decimal.NewFromInt(10000)},
+				common.Address{1}:  {StakerCount: 32, StakeValue: decimal.NewFromInt(600)},
+				common.Address{2}:  {StakerCount: 32, StakeValue: decimal.NewFromInt(100000)},
+				common.Address{3}:  {StakerCount: 6, StakeValue: decimal.NewFromInt(10000)},
+				common.Address{11}: {StakerCount: 6, StakeValue: decimal.NewFromInt(10000)},
 			},
 			expectedRewards: expectedRewards[1],
 		},

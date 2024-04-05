@@ -30,6 +30,9 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 		return nil, nil, err
 	}
 
+	// Extract staker nodes that are online
+	extractOnlineStakerNodes(nodes, recentStakers)
+
 	// Calculate the total pool size.
 	for i, poolSize := range poolSizes {
 		if _, exist := recentStakers[nodes[i].Address]; exist {
@@ -90,6 +93,19 @@ func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*
 	}
 
 	return nil
+}
+
+// extractOnlineStakerNodes filters out staker nodes that are not online
+func extractOnlineStakerNodes(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) {
+	onlineNodes := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
+		return node.Address, struct{}{}
+	})
+
+	for address := range recentStakers {
+		if _, ok := onlineNodes[address]; !ok {
+			delete(recentStakers, address)
+		}
+	}
 }
 
 // parsePoolSizes extracts and parses staking pool sizes from nodes.
