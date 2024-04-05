@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
@@ -16,6 +15,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +41,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 	for {
 		msg := "construct Settlement data"
 		// Construct transactionData as required by the Settlement contract
-		transactionData, nodes, err := s.constructSettlementData(ctx, epoch, cursor)
+		transactionData, nodes, scores, err := s.constructSettlementData(ctx, epoch, cursor)
 		if err != nil {
 			zap.L().Error(msg, zap.Error(err))
 
@@ -66,8 +66,12 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 			return err
 		}
 
+		// Update the Node scores
 		if len(nodes) > 0 {
-			_ = s.updateNodesScore(ctx, transactionData.NodeAddress, nodes)
+			err = s.updateNodesScore(ctx, scores, nodes)
+			if err != nil {
+				zap.L().Error("failed to update node scores", zap.Error(err))
+			}
 		}
 
 		if len(transactionData.NodeAddress) > 0 {
@@ -81,7 +85,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 }
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
-func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, error) {
+func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Float, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
 	batchSize := s.settlerConfig.BatchSize
@@ -95,12 +99,12 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
-			return nil, nil, nil
+			return nil, nil, nil, nil
 		}
 
 		zap.L().Error("No qualified Nodes found", zap.Error(err), zap.Any("cursor", cursor))
 
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// isFinal is true if it's the last batch of Nodes
@@ -114,10 +118,28 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	for _, node := range nodes {
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
-	// Calculate the operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes)
+
+	// Update the node staking data from the chain.
+	if err := s.updateNodeStakingData(nodeAddresses, nodes); err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Get the number of stakers and sum of stake value in the last 5 epochs for all nodes.
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
+	}
+
+	// Calculate the operation rewards for the Nodes
+	operationRewards, scores, err := calculateOperationRewards(nodes, recentStakers, s.specialRewards)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	for i, node := range nodes {
+		if _, exist := recentStakers[node.Address]; exist {
+			fmt.Printf("address:%s,pool:%s, count:%d, stake:%d,score:%d,reward:%d\n", node.Address.String(), node.StakingPoolTokens, recentStakers[node.Address].StakerCount, recentStakers[node.Address].StakeValue, scores[i], operationRewards[i])
+		}
 	}
 
 	// Calculate the operation rewards for the Nodes
@@ -129,54 +151,37 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		OperationRewards: operationRewards,
 		RequestCounts:    requestCounts,
 		IsFinal:          isFinal,
-	}, nodes, nil
+	}, nodes, scores, nil
 }
 
-func (s *Server) updateNodesScore(ctx context.Context, nodeAddress []common.Address, nodes []*schema.Node) error {
-	// Update the node staking data from the chain.
-	if err := s.updateNodeStakingData(nodeAddress, nodes); err != nil {
-		return err
-	}
-
-	// Get the number of stakers and sum of stake value in the last 5 epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
+func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, nodes []*schema.Node) error {
+	scoreDecimals, err := parseScores(scores)
 	if err != nil {
-		return fmt.Errorf("find recent stakers count: %w", err)
-	}
-
-	// Update the node scores.
-	scores, err := calculateNodeScore(nodes, recentStakers, s.specialRewards)
-	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse scores: %w", err)
 	}
 
 	for i, node := range nodes {
-		node.Score = scores[i]
+		node.Score = scoreDecimals[i]
 	}
 
 	return s.databaseClient.UpdateNodesScore(ctx, nodes)
 }
 
-// updateNodeStakingData retrieves node information from a staking contract
-// and updates the staking pool tokens for each node.
-func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*schema.Node) error {
-	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
-	if err != nil {
-		return fmt.Errorf("get nodes from chain: %w", err)
-	}
+func parseScores(scores []*big.Float) ([]decimal.Decimal, error) {
+	scoreDecimals := make([]decimal.Decimal, len(scores))
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
-		return node.Account, node
-	})
+	for i, score := range scores {
+		strValue := score.Text('f', -1)
 
-	for _, node := range nodes {
-		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
-			stakePoolTokens := nodeInfo.StakingPoolTokens
-			node.StakingPoolTokens = stakePoolTokens.String()
+		decimalValue, err := decimal.NewFromString(strValue)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse score %d: %w", i, err)
 		}
+
+		scoreDecimals[i] = decimalValue
 	}
 
-	return nil
+	return scoreDecimals, nil
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
