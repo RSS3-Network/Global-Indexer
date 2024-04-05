@@ -124,7 +124,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		return nil, nil, nil, err
 	}
 
-	// Get the number of stakers and sum of stake value in the last 5 epochs for all nodes.
+	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
 	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
