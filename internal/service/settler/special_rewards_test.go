@@ -88,7 +88,7 @@ func TestExtractOnlineStakerNodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			extractOnlineStakerNodes(tt.nodes, tt.recentStakers)
+			excludeUnqualifiedNodes(tt.nodes, tt.recentStakers)
 
 			if !reflect.DeepEqual(tt.recentStakers, tt.expectedResult) {
 				t.Errorf("Expected %v, but got %v", tt.expectedResult, tt.recentStakers)

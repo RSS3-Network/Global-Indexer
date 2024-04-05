@@ -30,8 +30,8 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 		return nil, nil, err
 	}
 
-	// Extract staker nodes that are online
-	extractOnlineStakerNodes(nodes, recentStakers)
+	// Online nodes that are online and have recent stakers are qualified for rewards.
+	excludeUnqualifiedNodes(nodes, recentStakers)
 
 	// Calculate the total pool size.
 	for i, poolSize := range poolSizes {
@@ -95,8 +95,8 @@ func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*
 	return nil
 }
 
-// extractOnlineStakerNodes filters out staker nodes that are not online
-func extractOnlineStakerNodes(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) {
+// excludeUnqualifiedNodes excludes offline Nodes even if they have recent stakers.
+func excludeUnqualifiedNodes(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) {
 	onlineNodes := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
 		return node.Address, struct{}{}
 	})
@@ -241,10 +241,14 @@ func applyGiniCoefficient(poolSizeRatio *big.Float, giniCoefficient float64) *bi
 
 // applyStakerFactor applies the Staker Factor to the score
 func applyStakerFactor(stakers uint64, stakeRadio *big.Float, stakerFactor float64, score *big.Float) {
-	stakersFloat := new(big.Float).SetUint64(stakers)                             // Convert stakers to big.Float for calculation.
-	stakerFactorFloat := big.NewFloat(stakerFactor)                               // Ensure stakerFactor is in big.Float for consistency in operations.
-	stakerFactorCalculated := new(big.Float).Mul(stakerFactorFloat, stakersFloat) // stakerFactor * stakeRatio
-	exponentFloat := new(big.Float).Mul(stakerFactorCalculated, stakeRadio)       // Calculate the exponent for the exponential function.
+	// Convert stakers to big.Float for calculation.
+	stakersFloat := new(big.Float).SetUint64(stakers)
+	// Ensure stakerFactor is in big.Float for consistency in operations.
+	stakerFactorFloat := big.NewFloat(stakerFactor)
+	// stakerFactor * stakeRatio
+	stakerFactorCalculated := new(big.Float).Mul(stakerFactorFloat, stakersFloat)
+	// Calculate the exponent for the exponential function.
+	exponentFloat := new(big.Float).Mul(stakerFactorCalculated, stakeRadio)
 
 	exponent, _ := exponentFloat.Float64()
 	// Perform calculation: score *= math.exp(stakerFactorCalculated * stakeRatio)
