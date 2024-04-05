@@ -13,6 +13,11 @@ import (
 // For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
 // TODO: Implement the actual calculation logic
 func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, []*big.Float, error) {
+	// If there are no nodes, return nil
+	if len(nodes) == 0 {
+		return nil, nil, nil
+	}
+
 	operationRewards, scores, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
 
 	if err != nil {

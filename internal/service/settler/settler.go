@@ -136,12 +136,6 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		return nil, nil, nil, err
 	}
 
-	for i, node := range nodes {
-		if _, exist := recentStakers[node.Address]; exist {
-			fmt.Printf("address:%s,pool:%s, count:%d, stake:%d,score:%d,reward:%d\n", node.Address.String(), node.StakingPoolTokens, recentStakers[node.Address].StakerCount, recentStakers[node.Address].StakeValue, scores[i], operationRewards[i])
-		}
-	}
-
 	// Calculate the operation rewards for the Nodes
 	requestCounts := prepareRequestCounts(nodeAddresses)
 
