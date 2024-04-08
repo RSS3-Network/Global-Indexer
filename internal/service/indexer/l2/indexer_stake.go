@@ -254,7 +254,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 	for _, chipID := range stakeTransaction.Chips {
 		chipID := chipID
 
-		resultPool.Go(func(ctx context.Context) (*schema.StakeChip, error) {
+		resultPool.Go(func(_ context.Context) (*schema.StakeChip, error) {
 			tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
 			if err != nil {
 				return nil, fmt.Errorf("get #%d token uri", chipID)
@@ -584,7 +584,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		i := i
 
-		errorPool.Go(func(ctx context.Context) error {
+		errorPool.Go(func(_ context.Context) error {
 			var (
 				apy, minTokensToStake decimal.Decimal
 				address               = epoch.RewardItems[i].NodeAddress
