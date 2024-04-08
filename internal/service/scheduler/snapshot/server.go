@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	nodecount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_count"
@@ -43,7 +44,12 @@ func (s *server) Run(ctx context.Context) error {
 	return nil
 }
 
-func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, config *config.File) (service.Server, error) {
+	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
+	if err != nil {
+		return nil, fmt.Errorf("dial ethereum client: %w", err)
+	}
+
 	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)

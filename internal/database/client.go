@@ -83,6 +83,9 @@ type Client interface {
 
 	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error
 	FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error)
+
+	FindAverageTaxSubmissions(ctx context.Context, query schema.AverageTaxSubmissionQuery) ([]*schema.AverageTaxSubmission, error)
+	SaveAverageTaxSubmission(ctx context.Context, averageTaxSubmission *schema.AverageTaxSubmission) error
 }
 
 type Session interface {

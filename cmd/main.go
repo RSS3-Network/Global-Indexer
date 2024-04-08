@@ -154,13 +154,7 @@ var schedulerCommand = &cobra.Command{
 
 		redisClient := redis.NewClient(options)
 
-		// Dial rss3 ethereum client.
-		ethereumClient, err := ethclient.DialContext(cmd.Context(), config.RSS3Chain.EndpointL2)
-		if err != nil {
-			return fmt.Errorf("dial rss3 ethereum client: %w", err)
-		}
-
-		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient, ethereumClient)
+		instance, err := scheduler.New(lo.Must(flags.GetString(flag.KeyServer)), databaseClient, redisClient, config)
 		if err != nil {
 			return err
 		}
