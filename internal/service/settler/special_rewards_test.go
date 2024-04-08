@@ -2,6 +2,7 @@ package settler
 
 import (
 	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -11,8 +12,6 @@ import (
 )
 
 var (
-	// epsilon is the acceptable error margin for floating point comparisons
-	//epsilonInt     = big.NewInt(500000)
 	specialRewards = config.SpecialRewards{
 		GiniCoefficient: 2,
 		StakerFactor:    0.05,
@@ -23,83 +22,109 @@ var (
 	}
 )
 
-//func TestApplyGiniCoefficient(t *testing.T) {
-//	t.Parallel()
-//
-//	tests := []struct {
-//		name          string
-//		poolSize      *big.Int
-//		expectedScore *big.Float
-//	}{
-//		{
-//			name:          "poolSize 50",
-//			poolSize:      big.NewInt(50),
-//			expectedScore: big.NewFloat(0.9975062344139651),
-//		},
-//		{
-//			name:          "poolSize 500",
-//			poolSize:      big.NewInt(500),
-//			expectedScore: big.NewFloat(0.9756097560975611),
-//		},
-//		{
-//			name:          "poolSize 133667",
-//			poolSize:      big.NewInt(133667),
-//			expectedScore: big.NewFloat(0.13015156149335902),
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		tt := tt
-//		t.Run(tt.name, func(t *testing.T) {
-//			t.Parallel()
-//
-//			score := applyGiniCoefficient(tt.poolSize, specialRewards.GiniCoefficient)
-//
-//			fmt.Println(score, tt.expectedScore)
-//
-//			diff := new(big.Float).Sub(score, tt.expectedScore)
-//
-//			if diff.Abs(diff).Cmp(epsilon) > 0 {
-//				t.Errorf("Score got = %v, want %v, difference %v exceeds epsilon %v", score, tt.expectedScore, diff, epsilon)
-//			}
-//		})
-//	}
-//}
-//
+func TestExtractOnlineStakerNodes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		nodes          []*schema.Node
+		recentStakers  map[common.Address]*schema.StakeRecentCount
+		expectedResult map[common.Address]*schema.StakeRecentCount
+	}{
+		{
+			name: "all nodes are online",
+			nodes: []*schema.Node{
+				{Address: common.Address{1}},
+				{Address: common.Address{2}},
+				{Address: common.Address{3}},
+				{Address: common.Address{4}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+		},
+		{
+			name: "some nodes are offline",
+			nodes: []*schema.Node{
+				{Address: common.Address{1}},
+				{Address: common.Address{2}},
+				{Address: common.Address{4}},
+				{Address: common.Address{5}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+			},
+		},
+		{
+			name: "no nodes are online",
+			nodes: []*schema.Node{
+				{Address: common.Address{4}},
+				{Address: common.Address{5}},
+			},
+			recentStakers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}: {},
+				common.Address{2}: {},
+				common.Address{3}: {},
+			},
+			expectedResult: map[common.Address]*schema.StakeRecentCount{},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			excludeUnqualifiedNodes(tt.nodes, tt.recentStakers)
+
+			if !reflect.DeepEqual(tt.recentStakers, tt.expectedResult) {
+				t.Errorf("Expected %v, but got %v", tt.expectedResult, tt.recentStakers)
+			}
+		})
+	}
+}
 
 func TestCalculateOperationRewards(t *testing.T) {
 	t.Parallel()
 
-	//correctRewards := []string{
-	//	"908820928063146295296",
-	//	"1293616057212334505984",
-	//	"1636483513676843974656",
-	//	"3010321247805582082048",
-	//	"2468583836050489606144",
-	//	"3010174417191603011584",
-	//}
-
 	correctRewards := [][]string{
 		{
-			"908000000000000000000",
-			"1293000000000000000000",
-			"1636000000000000000000",
-			"3010000000000000000000",
-			"2468000000000000000000",
-			"3010000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"794000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"1000000000000000000000",
+			"711000000000000000000",
+			"0",
 		},
 		{
-			"1249000000000000000000",
-			"1249000000000000000000",
-			"1767000000000000000000",
-			"8062000000000000000000",
-			"1249000000000000000000",
-			"1249000000000000000000",
-			"1767000000000000000000",
-			"8062000000000000000000",
-			"1249000000000000000000",
-			"1249000000000000000000",
-			"1767000000000000000000",
+			"585000000000000000000",
+			"1000000000000000000000",
+			"245000000000000000000",
+			"0",
+			"0",
+			"0",
+			"0",
+			"0",
+			"0",
+			"0",
 		},
 	}
 
@@ -123,52 +148,8 @@ func TestCalculateOperationRewards(t *testing.T) {
 	}{
 		// Mock Nodes
 		// [Pool size, Recent Stackers]
-		//[7209,3],
-		//[3200,4],
-		//[1568,5],
-		//[501,10],
-		//[5000,10],
-		//[502,10],
-		//{
-		//	name: "case 1",
-		//	nodes: []*schema.Node{
-		//		{
-		//			Address:           common.Address{1},
-		//			StakingPoolTokens: "7209",
-		//		},
-		//		{
-		//			Address:           common.Address{2},
-		//			StakingPoolTokens: "3200",
-		//		},
-		//		{
-		//			Address:           common.Address{3},
-		//			StakingPoolTokens: "1568",
-		//		},
-		//		{
-		//			Address:           common.Address{4},
-		//			StakingPoolTokens: "501",
-		//		},
-		//		{
-		//			Address:           common.Address{5},
-		//			StakingPoolTokens: "5000",
-		//		},
-		//		{
-		//			Address:           common.Address{6},
-		//			StakingPoolTokens: "502",
-		//		},
-		//	},
-		//	recentStackers: map[common.Address]uint64{
-		//		common.Address{1}: 3,
-		//		common.Address{2}: 4,
-		//		common.Address{3}: 5,
-		//		common.Address{4}: 10,
-		//		common.Address{5}: 10,
-		//		common.Address{6}: 10,
-		//	},
-		//	expectedRewards: expectedRewards[0],
-		//},
 		{
-			name: "case 2",
+			name: "case 1: reach the threshold",
 			nodes: []*schema.Node{
 				{
 					Address:           common.Address{1},
@@ -211,7 +192,7 @@ func TestCalculateOperationRewards(t *testing.T) {
 					StakingPoolTokens: "10776091947611685629896941",
 				},
 				{
-					Address:           common.Address{11},
+					Address:           common.Address{12},
 					StakingPoolTokens: "10776091947611685629896941",
 				},
 			},
@@ -226,7 +207,59 @@ func TestCalculateOperationRewards(t *testing.T) {
 				common.Address{8}:  {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
 				common.Address{9}:  {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
 				common.Address{10}: {StakerCount: 1, StakeValue: decimal.NewFromInt(500)},
-				common.Address{11}: {StakerCount: 0, StakeValue: decimal.NewFromInt(0)},
+				common.Address{11}: {StakerCount: 100, StakeValue: decimal.NewFromInt(50000)},
+			},
+			expectedRewards: expectedRewards[0],
+		},
+		{
+			name: "case 2: below the threshold",
+			nodes: []*schema.Node{
+				{
+					Address:           common.Address{1},
+					StakingPoolTokens: "254939021336715733204793",
+				},
+				{
+					Address:           common.Address{2},
+					StakingPoolTokens: "4504650447234721822705",
+				},
+				{
+					Address:           common.Address{3},
+					StakingPoolTokens: "2830103823431924402058258",
+				},
+				{
+					Address:           common.Address{4},
+					StakingPoolTokens: "1333245734400959927416363",
+				},
+				{
+					Address:           common.Address{5},
+					StakingPoolTokens: "8172497478991576157429545",
+				},
+				{
+					Address:           common.Address{6},
+					StakingPoolTokens: "3007716787095077937681957",
+				},
+				{
+					Address:           common.Address{7},
+					StakingPoolTokens: "1474974191505938360613272",
+				},
+				{
+					Address:           common.Address{8},
+					StakingPoolTokens: "262882511174109870226533",
+				},
+				{
+					Address:           common.Address{9},
+					StakingPoolTokens: "560896507154228577606539",
+				},
+				{
+					Address:           common.Address{10},
+					StakingPoolTokens: "10776091947611685629896941",
+				},
+			},
+			recentStackers: map[common.Address]*schema.StakeRecentCount{
+				common.Address{1}:  {StakerCount: 32, StakeValue: decimal.NewFromInt(600)},
+				common.Address{2}:  {StakerCount: 32, StakeValue: decimal.NewFromInt(100000)},
+				common.Address{3}:  {StakerCount: 6, StakeValue: decimal.NewFromInt(10000)},
+				common.Address{11}: {StakerCount: 6, StakeValue: decimal.NewFromInt(10000)},
 			},
 			expectedRewards: expectedRewards[1],
 		},
@@ -237,7 +270,7 @@ func TestCalculateOperationRewards(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			rewards, err := calculateAlphaSpecialRewards(tt.nodes, tt.recentStackers, &specialRewards)
+			rewards, _, err := calculateAlphaSpecialRewards(tt.nodes, tt.recentStackers, &specialRewards)
 
 			if err != nil {
 				t.Error(err)
@@ -248,12 +281,11 @@ func TestCalculateOperationRewards(t *testing.T) {
 
 				for i, reward := range rewards {
 					totalRewards.Add(totalRewards, reward)
-					//diff := new(big.Int).Sub(reward, tt.expectedRewards[i])
+					diff := new(big.Int).Sub(reward, tt.expectedRewards[i])
 
-					t.Logf("Reward got = %v, want %v", reward, tt.expectedRewards[i])
-					//if reward.Cmp(tt.expectedRewards[i]) != 0 {
-					//	t.Errorf("Reward got = %v, want %v", reward, tt.expectedRewards[i])
-					//}
+					if reward.Cmp(tt.expectedRewards[i]) != 0 {
+						t.Errorf("Reward got = %v, want %v, diff %v", reward, tt.expectedRewards[i], diff)
+					}
 				}
 
 				// Convert specialRewards.Rewards to a *big.Int with 18 decimal places
