@@ -188,8 +188,8 @@ func validateData(data []byte, target any) bool {
 	return false
 }
 
-func NewSimpleRouter(httpClient httpx.Client) (*SimpleRouter, error) {
+func NewSimpleRouter(httpClient httpx.Client) *SimpleRouter {
 	return &SimpleRouter{
 		httpClient: httpClient,
-	}, nil
+	}
 }
