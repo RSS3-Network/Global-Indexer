@@ -224,3 +224,13 @@ func BuildPath(path string, query any, nodes []Cache) (map[common.Address]string
 
 	return urls, nil
 }
+
+type DataResponse struct {
+	Address common.Address
+	Data    []byte
+	// Valid indicates whether the data is non-null.
+	Valid          bool
+	Err            error
+	Request        int
+	InvalidRequest int
+}

@@ -2,10 +2,11 @@ package schema
 
 import (
 	"encoding/json"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/shopspring/decimal"
-	"math/big"
 )
 
 type Node struct {
