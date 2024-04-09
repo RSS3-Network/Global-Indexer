@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
@@ -131,7 +133,7 @@ func (h *Hub) GetStakeTransactions(c echo.Context) error {
 		Data: stakeTransactionModels,
 	}
 
-	if length := len(stakeTransactionModels); length > 0 {
+	if length := len(stakeTransactionModels); length > 0 && length == request.Limit {
 		response.Cursor = stakeTransactionModels[length-1].ID.String()
 	}
 
@@ -260,7 +262,9 @@ func (h *Hub) GetStakeChips(c echo.Context) error {
 		return stakeChip.Node
 	})
 
-	node, err := h.databaseClient.FindNodes(c.Request().Context(), nodeAddresses, nil, nil, len(nodeAddresses))
+	node, err := h.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
+		NodeAddresses: nodeAddresses,
+	})
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
 	}
@@ -411,7 +415,7 @@ func (h *Hub) GetStakeStakings(c echo.Context) error {
 		Data: model.NewStakeStaking(stakeStakings, baseURL(c)),
 	}
 
-	if length := len(stakeStakings); length > 0 {
+	if length := len(stakeStakings); length > 0 && length == request.Limit {
 		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
 	}
 
@@ -423,9 +427,19 @@ type GetStakeOwnerProfitRequest struct {
 }
 
 type GetStakeOwnerProfitResponse struct {
-	Owner            common.Address  `json:"owner"`
+	Owner            common.Address                           `json:"owner"`
+	TotalChipAmounts decimal.Decimal                          `json:"totalChipAmounts"`
+	TotalChipValues  decimal.Decimal                          `json:"totalChipValues"`
+	OneDay           *GetStakeOwnerProfitChangesSinceResponse `json:"oneDay"`
+	OneWeek          *GetStakeOwnerProfitChangesSinceResponse `json:"oneWeek"`
+	OneMonth         *GetStakeOwnerProfitChangesSinceResponse `json:"oneMonth"`
+}
+
+type GetStakeOwnerProfitChangesSinceResponse struct {
+	Date             time.Time       `json:"date"`
 	TotalChipAmounts decimal.Decimal `json:"totalChipAmounts"`
 	TotalChipValues  decimal.Decimal `json:"totalChipValues"`
+	PNL              decimal.Decimal `json:"pnl"`
 }
 
 func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
@@ -439,19 +453,39 @@ func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
 		return response.ValidateFailedError(c, err)
 	}
 
+	// Find all stake chips
+	data, err := h.findChipsByOwner(c.Request().Context(), request.Owner)
+	if err != nil {
+		return response.InternalError(c, err)
+	}
+
+	// Find history profit snapshots
+	changes, err := h.findStakerHistoryProfitSnapshots(c.Request().Context(), request.Owner, data)
+	if err != nil {
+		return response.InternalError(c, err)
+	}
+
+	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
+
+	return c.JSON(http.StatusOK, Response{
+		Data: data,
+	})
+}
+
+func (h *Hub) findChipsByOwner(ctx context.Context, owner common.Address) (*GetStakeOwnerProfitResponse, error) {
 	var (
 		cursor *big.Int
-		data   = GetStakeOwnerProfitResponse{Owner: request.Owner}
+		data   = &GetStakeOwnerProfitResponse{Owner: owner}
 	)
 
 	for {
-		chips, err := h.databaseClient.FindStakeChips(c.Request().Context(), schema.StakeChipsQuery{
-			Owner:  &request.Owner,
+		chips, err := h.databaseClient.FindStakeChips(ctx, schema.StakeChipsQuery{
+			Owner:  lo.ToPtr(owner),
 			Cursor: cursor,
 			Limit:  lo.ToPtr(500),
 		})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-			return response.InternalError(c, fmt.Errorf("find stake chips: %w", err))
+			return nil, fmt.Errorf("find stake chips: %w", err)
 		}
 
 		if len(chips) == 0 {
@@ -468,7 +502,7 @@ func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
 		for node, count := range nodes {
 			minTokensToStake, err := h.stakingContract.MinTokensToStake(nil, node)
 			if err != nil {
-				return response.InternalError(c, fmt.Errorf("get min tokens from rpc: %w", err))
+				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
 			}
 
 			data.TotalChipAmounts = data.TotalChipAmounts.Add(decimal.NewFromInt(int64(count)))
@@ -478,7 +512,51 @@ func (h *Hub) GetStakeOwnerProfit(c echo.Context) error {
 		cursor = chips[len(chips)-1].ID
 	}
 
-	return c.JSON(http.StatusOK, Response{
-		Data: data,
-	})
+	return data, nil
+}
+
+func (h *Hub) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *GetStakeOwnerProfitResponse) ([]*GetStakeOwnerProfitChangesSinceResponse, error) {
+	if profit == nil {
+		return nil, nil
+	}
+
+	now := time.Now()
+	query := schema.StakerProfitSnapshotsQuery{
+		OwnerAddress: lo.ToPtr(owner),
+		Dates: []time.Time{
+			now.Add(-24 * time.Hour),      // 1 day
+			now.Add(-7 * 24 * time.Hour),  // 1 week
+			now.Add(-30 * 24 * time.Hour), // 1 month
+		},
+	}
+
+	snapshots, err := h.databaseClient.FindStakerProfitSnapshots(ctx, query)
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
+	}
+
+	data := make([]*GetStakeOwnerProfitChangesSinceResponse, len(query.Dates))
+
+	for _, snapshot := range snapshots {
+		if snapshot.TotalChipValues.IsZero() {
+			continue
+		}
+
+		var index int
+
+		if snapshot.Date.After(query.Dates[2]) && snapshot.Date.Before(query.Dates[1]) {
+			index = 2
+		} else if snapshot.Date.After(query.Dates[1]) && snapshot.Date.Before(query.Dates[0]) {
+			index = 1
+		}
+
+		data[index] = &GetStakeOwnerProfitChangesSinceResponse{
+			Date:             snapshot.Date,
+			TotalChipAmounts: snapshot.TotalChipAmounts,
+			TotalChipValues:  snapshot.TotalChipValues,
+			PNL:              profit.TotalChipValues.Sub(snapshot.TotalChipValues).Div(snapshot.TotalChipValues),
+		}
+	}
+
+	return data, nil
 }

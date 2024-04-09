@@ -59,14 +59,15 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	}
 
 	// register router
-	instance.httpServer.GET("/nodes", instance.hub.GetNodesHandler)
-	instance.httpServer.GET("/nodes/:id", instance.hub.GetNodeHandler)
-	instance.httpServer.GET("/nodes/:id/events", instance.hub.GetNodeEventsHandler)
-	instance.httpServer.GET("/nodes/:id/challenge", instance.hub.GetNodeChallengeHandler)
-	instance.httpServer.POST("/nodes/:id/hideTaxRate", instance.hub.PostNodeHideTaxRateHandler)
-	instance.httpServer.GET("/nodes/:id/avatar.svg", instance.hub.GetNodeAvatarHandler)
-	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNodeHandler)
-	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeatHandler)
+	instance.httpServer.GET("/nodes", instance.hub.GetNodes)
+	instance.httpServer.GET("/nodes/:id", instance.hub.GetNode)
+	instance.httpServer.GET("/nodes/:id/events", instance.hub.GetNodeEvents)
+	instance.httpServer.GET("/nodes/:id/challenge", instance.hub.GetNodeChallenge)
+	instance.httpServer.POST("/nodes/:id/hideTaxRate", instance.hub.PostNodeHideTaxRate)
+	instance.httpServer.GET("/nodes/:id/avatar.svg", instance.hub.GetNodeAvatar)
+	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNode)
+	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeat)
+	instance.httpServer.GET("/operation/:operator/profits", instance.hub.GetOperatorProfit)
 
 	instance.httpServer.GET("/bridge/transactions", instance.hub.GetBridgeTransactions)
 	instance.httpServer.GET("/bridge/transactions/:id", instance.hub.GetBridgeTransaction)
@@ -80,19 +81,20 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	instance.httpServer.GET("/chips/:id", instance.hub.GetStakeChip)
 	instance.httpServer.GET("/chips/:id/image.svg", instance.hub.GetStakeChipImage)
 
-	instance.httpServer.GET("/epochs", instance.hub.GetEpochsHandler)
-	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpochHandler)
-	instance.httpServer.GET("/epochs/distributions/:transaction", instance.hub.GetEpochDistributionHandler)
-	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewardsHandler)
+	instance.httpServer.GET("/epochs", instance.hub.GetEpochs)
+	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpoch)
+	instance.httpServer.GET("/epochs/distributions/:transaction", instance.hub.GetEpochDistribution)
+	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewards)
 
 	instance.httpServer.GET("/snapshots/nodes/count", instance.hub.GetNodeCountSnapshots)
 	instance.httpServer.POST("/snapshots/nodes/minTokensToStake", instance.hub.BatchGetNodeMinTokensToStakeSnapshots)
 	instance.httpServer.GET("/snapshots/stakers/count", instance.hub.GetStakerCountSnapshots)
 	instance.httpServer.GET("/snapshots/stakers/profits", instance.hub.GetStakerProfitsSnapshots)
+	instance.httpServer.GET("/snapshots/operators/profits", instance.hub.GetOperatorProfitsSnapshots)
 
-	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHubHandler)
-	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivityHandler)
-	instance.httpServer.GET("/decentralized/:account", instance.hub.GetAccountActivitiesHandler)
+	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHub)
+	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivity)
+	instance.httpServer.GET("/decentralized/:account", instance.hub.GetAccountActivities)
 
 	return &instance, nil
 }

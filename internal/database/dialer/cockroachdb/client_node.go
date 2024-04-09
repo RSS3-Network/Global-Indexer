@@ -33,30 +33,34 @@ func (c *client) FindNode(ctx context.Context, nodeAddress common.Address) (*sch
 	return node.Export()
 }
 
-func (c *client) FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.NodeStatus, cursor *string, limit int) ([]*schema.Node, error) {
+func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]*schema.Node, error) {
 	databaseStatement := c.database.WithContext(ctx)
 
-	if cursor != nil {
+	if query.Cursor != nil {
 		var nodeCursor *table.Node
 
-		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(cursor))).Error; err != nil {
+		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
 			return nil, fmt.Errorf("get node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
+		databaseStatement = databaseStatement.Where("score < ? OR (score = ? AND created_at < ?)", nodeCursor.Score, nodeCursor.Score, nodeCursor.CreatedAt)
 	}
 
-	if status != nil {
-		databaseStatement = databaseStatement.Where("status = ?", status.String())
+	if query.Status != nil {
+		databaseStatement = databaseStatement.Where("status = ?", query.Status.String())
 	}
 
-	if len(nodeAddresses) > 0 {
-		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	if len(query.NodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", query.NodeAddresses)
+	}
+
+	if query.Limit != nil {
+		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
 
 	var nodes table.Nodes
 
-	if err := databaseStatement.Limit(limit).Order("created_at DESC").Find(&nodes).Error; err != nil {
+	if err := databaseStatement.Order("score DESC, created_at DESC").Find(&nodes).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -128,7 +132,7 @@ func (c *client) SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema
 }
 
 func (c *client) UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error {
-	return c.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	return c.WithTransaction(ctx, func(ctx context.Context, _ database.Client) error {
 		for {
 			result := c.database.WithContext(ctx).Model(&table.Node{}).
 				Where("last_heartbeat_timestamp < ? and status = ?", time.Unix(lastHeartbeatTimestamp, 0), schema.NodeStatusOnline).
@@ -151,6 +155,26 @@ func (c *client) UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.
 		Where("address = ?", nodeAddress).
 		Update("hideTaxRate", hideTaxRate).
 		Error
+}
+
+func (c *client) UpdateNodesScore(ctx context.Context, nodes []*schema.Node) error {
+	var tNodes table.Nodes
+
+	if err := tNodes.Import(nodes); err != nil {
+		return err
+	}
+
+	// Update node scores.
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "address",
+			},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{"score"}),
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tNodes, math.MaxUint8).Error
 }
 
 func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error {
@@ -524,4 +548,86 @@ func (c *client) SaveNodeMinTokensToStakeSnapshots(ctx context.Context, snapshot
 	}
 
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
+}
+
+func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx).Table((*table.OperatorProfitSnapshot).TableName(nil))
+
+	if query.Operator != nil {
+		databaseClient = databaseClient.Where("operator = ?", *query.Operator)
+	}
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where("id < ?", query.Cursor)
+	}
+
+	if query.BeforeDate != nil {
+		databaseClient = databaseClient.Where("date <= ?", query.BeforeDate)
+	}
+
+	if query.AfterDate != nil {
+		databaseClient = databaseClient.Where("date >= ?", query.AfterDate)
+	}
+
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
+
+	var snapshots table.OperatorProfitSnapshots
+
+	if len(query.Dates) > 0 {
+		var (
+			queries []string
+			values  []interface{}
+		)
+
+		for _, date := range query.Dates {
+			queries = append(queries, `(SELECT * FROM "node"."operator_profit_snapshots" WHERE "date" >= ? and "operator" = ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date, query.Operator)
+		}
+
+		// Combine all queries with UNION ALL
+		fullQuery := strings.Join(queries, " UNION ALL ")
+
+		// Execute the combined query
+		if err := databaseClient.Raw(fullQuery, values...).Scan(&snapshots).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	} else {
+		if err := databaseClient.Order("epoch_id DESC, id DESC").Find(&snapshots).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	}
+
+	return snapshots.Export()
+}
+
+func (c *client) SaveOperatorProfitSnapshots(ctx context.Context, snapshots []*schema.OperatorProfitSnapshot) error {
+	var value table.OperatorProfitSnapshots
+
+	if err := value.Import(snapshots); err != nil {
+		return fmt.Errorf("import operator profit snapshots: %w", err)
+	}
+
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "operator",
+			},
+			{
+				Name: "epoch_id",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(value, math.MaxUint8).Error
 }

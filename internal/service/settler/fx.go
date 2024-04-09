@@ -1,4 +1,4 @@
-package epoch
+package settler
 
 import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/provider"

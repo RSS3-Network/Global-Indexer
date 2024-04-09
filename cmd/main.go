@@ -8,10 +8,10 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/epoch"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/settler"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
@@ -42,7 +42,7 @@ var command = cobra.Command{
 
 var indexCommand = &cobra.Command{
 	Use: "index",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		server := service.NewServer(
 			indexer.Module,
 			fx.Provide(indexer.NewServer),
@@ -60,7 +60,7 @@ var indexCommand = &cobra.Command{
 
 var schedulerCommand = &cobra.Command{
 	Use: "scheduler",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		server := service.NewServer(
 			scheduler.Module,
 			fx.Provide(scheduler.NewServer),
@@ -76,12 +76,12 @@ var schedulerCommand = &cobra.Command{
 	},
 }
 
-var epochCommand = &cobra.Command{
-	Use: "epoch",
-	RunE: func(cmd *cobra.Command, args []string) error {
+var settlerCommand = &cobra.Command{
+	Use: "settler",
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		server := service.NewServer(
-			epoch.Module,
-			fx.Provide(epoch.NewServer),
+			settler.Module,
+			fx.Provide(settler.NewServer),
 		)
 
 		if err := server.Start(cmd.Context()); err != nil {
@@ -107,7 +107,7 @@ func init() {
 
 	command.AddCommand(indexCommand)
 	command.AddCommand(schedulerCommand)
-	command.AddCommand(epochCommand)
+	command.AddCommand(settlerCommand)
 
 	command.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	command.PersistentFlags().Uint64(flag.KeyChainIDL1, flag.ValueChainIDL1, "l1 chain id")
@@ -116,7 +116,7 @@ func init() {
 	indexCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	schedulerCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 	schedulerCommand.PersistentFlags().String(flag.KeyServer, "detector", "server name")
-	epochCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
+	settlerCommand.PersistentFlags().String(flag.KeyConfig, "./deploy/config.yaml", "config file path")
 }
 
 func main() {

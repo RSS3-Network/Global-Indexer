@@ -21,6 +21,7 @@ type GetBridgeTransactionsRequest struct {
 	Receiver *common.Address               `query:"receiver"`
 	Address  *common.Address               `query:"address"`
 	Type     *schema.BridgeTransactionType `query:"type"`
+	Limit    int                           `query:"limit" default:"20" min:"1" max:"20"`
 }
 
 func (h *Hub) GetBridgeTransactions(c echo.Context) error {
@@ -94,7 +95,7 @@ func (h *Hub) GetBridgeTransactions(c echo.Context) error {
 		Data: transactionModels,
 	}
 
-	if length := len(transactionModels); length > 0 {
+	if length := len(transactionModels); length > 0 && length == request.Limit {
 		response.Cursor = transactionModels[length-1].ID.String()
 	}
 

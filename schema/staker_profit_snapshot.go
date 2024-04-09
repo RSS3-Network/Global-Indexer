@@ -20,7 +20,10 @@ type StakerProfitSnapshot struct {
 
 type StakerProfitSnapshotsQuery struct {
 	Cursor       *string         `json:"cursor"`
-	Limit        int             `json:"limit"`
+	Limit        *int            `json:"limit"`
 	OwnerAddress *common.Address `json:"ownerAddress"`
 	EpochID      *uint64         `json:"epochID"`
+	Dates        []time.Time     `json:"dates"`
+	BeforeDate   *time.Time      `json:"beforeDate"`
+	AfterDate    *time.Time      `json:"afterDate"`
 }

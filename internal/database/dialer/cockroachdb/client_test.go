@@ -81,9 +81,11 @@ func TestClient(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			var container *gnomock.Container
-			var dataSourceName string
-			var err error
+			var (
+				container      *gnomock.Container
+				dataSourceName string
+				err            error
+			)
 
 			for {
 				container, dataSourceName, err = createContainer(context.Background(), testcase.driver)
@@ -117,7 +119,9 @@ func TestClient(t *testing.T) {
 			require.NotEmpty(t, nodeFound.Address)
 
 			// Find nodes.
-			nodesFound, err := client.FindNodes(context.Background(), []common.Address{testcase.nodeCreated.Address}, nil, nil, 10)
+			nodesFound, err := client.FindNodes(context.Background(), schema.FindNodesQuery{
+				NodeAddresses: []common.Address{testcase.nodeCreated.Address},
+			})
 			require.NoError(t, err)
 			require.Equal(t, 1, len(nodesFound))
 

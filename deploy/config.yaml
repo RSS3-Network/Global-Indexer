@@ -14,11 +14,21 @@ rss3_chain:
   block_threads_l1: 20
   block_threads_l2: 100
 
-epoch:
+settler:
   private_key:
   wallet_address:
   signer_endpoint: http://localhost:3000
+  epoch_interval_in_hours: 18
   gas_limit: 3000000
+  batch_size: 200
+
+special_rewards:
+  gini_coefficient: 2
+  staker_factor: 0.05
+  epoch_limit: 10
+  node_threshold: 0.4
+  rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
+  rewards_ceiling: 1000
 
 geo_ip:
   account:

@@ -27,11 +27,12 @@ type Client interface {
 	SaveCheckpoint(ctx context.Context, checkpoint *schema.Checkpoint) error
 
 	FindNode(ctx context.Context, nodeAddress common.Address) (*schema.Node, error)
-	FindNodes(ctx context.Context, nodeAddresses []common.Address, status *schema.NodeStatus, cursor *string, limit int) ([]*schema.Node, error)
+	FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]*schema.Node, error)
 	FindNodeAvatar(ctx context.Context, nodeAddress common.Address) (*l2.ChipsTokenMetadata, error)
 	SaveNode(ctx context.Context, node *schema.Node) error
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
+	UpdateNodesScore(ctx context.Context, nodes []*schema.Node) error
 
 	BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
@@ -53,6 +54,9 @@ type Client interface {
 	SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error
 	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)
 	SaveStakerProfitSnapshots(ctx context.Context, stakerProfitSnapshots []*schema.StakerProfitSnapshot) error
+	FindStakerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]*schema.StakeRecentCount, error)
+	FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error)
+	SaveOperatorProfitSnapshots(ctx context.Context, operatorProfitSnapshots []*schema.OperatorProfitSnapshot) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)

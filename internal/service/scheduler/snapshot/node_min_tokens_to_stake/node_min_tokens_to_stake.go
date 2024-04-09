@@ -111,7 +111,10 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 		var cursor *string
 
 		for {
-			nodes, err := s.databaseClient.FindNodes(ctx, nil, nil, cursor, 1000)
+			nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
+				Cursor: cursor,
+				Limit:  lo.ToPtr(1000),
+			})
 			if errors.Is(err, database.ErrorRowNotFound) || len(nodes) == 0 {
 				break
 			}
@@ -125,7 +128,7 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 			for _, node := range nodes {
 				// Query the min tokens to stake from the staking contract.
 				if id < latestEpochEvent {
-					minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{BlockNumber: epochItems[0].BlockNumber}, node.Address)
+					minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{Context: ctx, BlockNumber: epochItems[0].BlockNumber}, node.Address)
 					if err != nil {
 						zap.L().Error("get min tokens to stake", zap.Error(err), zap.String("nodeAddress", node.Address.String()), zap.Any("blockNumber", epochItems[0].BlockNumber))
 
