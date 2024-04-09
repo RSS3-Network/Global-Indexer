@@ -133,6 +133,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 	}
 
 	waitGroup.Wait()
+	// Process the results to calculate the actual request of each node
 	processResults(results)
 }
 
