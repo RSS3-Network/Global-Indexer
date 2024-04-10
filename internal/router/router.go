@@ -56,31 +56,31 @@ func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.Cache) (m
 	return urls, nil
 }
 
-func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResults func([]*model.DataResponse)) (model.DataResponse, error) {
-	// firstResult is a channel that will be used to send the first result
-	var firstResult = make(chan model.DataResponse, 1)
+func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse)) (model.DataResponse, error) {
+	// firstResponse is a channel that will be used to send the first response
+	var firstResponse = make(chan model.DataResponse, 1)
 
 	// Distribute the request to the nodes
-	r.distribute(ctx, nodeMap, processResults, firstResult)
+	r.distribute(ctx, nodeMap, processResponses, firstResponse)
 
 	select {
-	case result := <-firstResult:
-		close(firstResult)
-		return result, nil
+	case response := <-firstResponse:
+		close(firstResponse)
+		return response, nil
 	case <-ctx.Done():
 		return model.DataResponse{Err: fmt.Errorf("failed to retrieve node data, please retry")}, nil
 	}
 }
 
-func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResults func([]*model.DataResponse), firstResult chan<- model.DataResponse) {
+func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
 	var (
 		waitGroup sync.WaitGroup
 		mu        sync.Mutex
 
-		// results contains all the returned results
-		results []*model.DataResponse
-		// resultSent is used to ensure that the first result is sent only once
-		resultSent bool
+		// responses contains all the returned responses
+		responses []*model.DataResponse
+		// responseSent is used to ensure that the first response is sent only once
+		responseSent bool
 	)
 
 	var cancel context.CancelFunc
@@ -94,14 +94,14 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 		go func(address common.Address, endpoint string) {
 			defer waitGroup.Done()
 
-			result := &model.DataResponse{Address: address}
+			response := &model.DataResponse{Address: address}
 			// Fetch the data from the node.
 			body, err := r.httpClient.Fetch(ctx, endpoint)
 
 			if err != nil {
 				zap.L().Error("failed to fetch request", zap.String("node", address.String()), zap.Error(err))
 
-				result.Err = err
+				response.Err = err
 			} else {
 				// Read the response body.
 				data, readErr := io.ReadAll(body)
@@ -109,7 +109,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 				if readErr != nil {
 					zap.L().Error("failed to read response body", zap.String("node", address.String()), zap.Error(readErr))
 
-					result.Err = readErr
+					response.Err = readErr
 				} else {
 					activity := &model.ActivityResponse{}
 					activities := &model.ActivitiesResponse{}
@@ -118,56 +118,56 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 					if !validateData(data, activity) && !validateData(data, activities) {
 						zap.L().Error("failed to parse response", zap.String("node", address.String()))
 
-						result.Err = fmt.Errorf("invalid data")
+						response.Err = fmt.Errorf("invalid data")
 					} else {
 						// If the data is non-null, set the result as valid.
 						if activity.Data != nil || activities.Data != nil {
-							result.Valid = true
+							response.Valid = true
 						}
 
-						result.Data = data
+						response.Data = data
 					}
 				}
 			}
 
-			sendResult(&mu, &results, result, &resultSent, firstResult, len(nodeMap))
+			sendResponse(&mu, &responses, response, &responseSent, firstResponse, len(nodeMap))
 		}(address, endpoint)
 	}
 
 	waitGroup.Wait()
-	// Process the results to calculate the actual request of each node
-	processResults(results)
+	// Process the responses to calculate the actual request of each node
+	processResponses(responses)
 }
 
-func sendResult(mu *sync.Mutex, results *[]*model.DataResponse, result *model.DataResponse, resultSent *bool, firstResult chan<- model.DataResponse, nodesRequested int) {
+func sendResponse(mu *sync.Mutex, responses *[]*model.DataResponse, response *model.DataResponse, responseSent *bool, firstResponse chan<- model.DataResponse, nodesRequested int) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	*results = append(*results, result)
+	*responses = append(*responses, response)
 
-	if !*resultSent {
-		// If the result is valid (no error and contains data), send it as the first valid result.
-		if result.Err == nil && result.Valid {
-			firstResult <- *result
+	if !*responseSent {
+		// If the response is valid (no error and contains data), send it as the first valid response.
+		if response.Err == nil && response.Valid {
+			firstResponse <- *response
 
-			*resultSent = true
+			*responseSent = true
 
 			return
 		}
 
 		// If all the results have been received
-		if len(*results) == nodesRequested {
-			for _, res := range *results {
+		if len(*responses) == nodesRequested {
+			for _, res := range *responses {
 				if res.Err != nil {
 					continue
 				}
 
-				firstResult <- *res
+				firstResponse <- *res
 
 				return
 			}
 
-			firstResult <- *(*results)[0]
+			firstResponse <- *(*responses)[0]
 		}
 	}
 }

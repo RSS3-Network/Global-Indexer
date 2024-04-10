@@ -45,26 +45,26 @@ func TestDistributeRequestWithValidData(t *testing.T) {
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(validActivitiesData)), nil)
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8070").Return(io.NopCloser(bytes.NewBufferString(nullData)), nil)
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err != nil {
+	if err = response.Err; err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if string(result.Data) != validActivitiesData {
-		t.Errorf("Expected 'valid', got %s", result.Data)
+	if string(response.Data) != validActivitiesData {
+		t.Errorf("Expected 'valid', got %s", response.Data)
 	}
 
-	if !result.Valid {
-		t.Errorf("Expected 'true', got %v", result.Valid)
+	if !response.Valid {
+		t.Errorf("Expected 'true', got %v", response.Valid)
 	}
 
-	if result.Address != common.HexToAddress("0x567") {
-		t.Errorf("Expected '0x567', got %v", result.Address.String())
+	if response.Address != common.HexToAddress("0x567") {
+		t.Errorf("Expected '0x567', got %v", response.Address.String())
 	}
 }
 
@@ -83,22 +83,22 @@ func TestDistributeRequestWithNullData(t *testing.T) {
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(nullData)), nil)
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8070").Return(io.NopCloser(bytes.NewBufferString(nullData)), nil)
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err != nil {
+	if err = response.Err; err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if string(result.Data) != nullData {
-		t.Errorf("Expected 'null', got %s", result.Data)
+	if string(response.Data) != nullData {
+		t.Errorf("Expected 'null', got %s", response.Data)
 	}
 
-	if result.Valid {
-		t.Errorf("Expected 'false', got %v", result.Valid)
+	if response.Valid {
+		t.Errorf("Expected 'false', got %v", response.Valid)
 	}
 }
 
@@ -117,18 +117,18 @@ func TestDistributeRequestWithNodeError(t *testing.T) {
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(errResponse)), nil)
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(notFoundResponse)), nil)
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err == nil {
+	if err = response.Err; err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
 
-	if result.Valid {
-		t.Errorf("Expected 'false', got %v", result.Valid)
+	if response.Valid {
+		t.Errorf("Expected 'false', got %v", response.Valid)
 	}
 }
 
@@ -147,18 +147,18 @@ func TestDistributeRequestWithError(t *testing.T) {
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8080"))
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8090"))
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err == nil {
+	if err = response.Err; err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
 
-	if result.Valid {
-		t.Errorf("Expected 'false', got %v", result.Valid)
+	if response.Valid {
+		t.Errorf("Expected 'false', got %v", response.Valid)
 	}
 }
 
@@ -177,18 +177,18 @@ func TestDistributeRequestAndReturnNull(t *testing.T) {
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(notFoundResponse)), nil)
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8090"))
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err != nil {
+	if err = response.Err; err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
 
-	if string(result.Data) != nullData {
-		t.Errorf("Expected 'valid', got %s", result.Data)
+	if string(response.Data) != nullData {
+		t.Errorf("Expected 'valid', got %s", response.Data)
 	}
 }
 
@@ -208,29 +208,29 @@ func TestDistributeRequest(t *testing.T) {
 	//mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8090"))
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(validActivityData)), nil)
 
-	result, err := r.DistributeRequest(context.Background(), nodeMap, process)
+	response, err := r.DistributeRequest(context.Background(), nodeMap, process)
 
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if err = result.Err; err != nil {
+	if err = response.Err; err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
 
-	if !result.Valid {
-		t.Errorf("Expected 'false', got %v", result.Valid)
+	if !response.Valid {
+		t.Errorf("Expected 'false', got %v", response.Valid)
 	}
 
-	if string(result.Data) != validActivityData {
-		t.Errorf("Expected 'valid', got %s", result.Data)
+	if string(response.Data) != validActivityData {
+		t.Errorf("Expected 'valid', got %s", response.Data)
 	}
 }
 
-func process(results []*model.DataResponse) {
-	fmt.Println(len(results))
+func process(responses []*model.DataResponse) {
+	fmt.Println(len(responses))
 
-	for _, res := range results {
+	for _, res := range responses {
 		fmt.Printf("address: %s,valid:%v\n", res.Address.String(), res.Valid)
 	}
 }
