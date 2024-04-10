@@ -28,7 +28,7 @@ type Cache struct {
 }
 
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
-// https://github.com/NaturalSelectionLabs/RSS3-Node/blob/develop/deploy/config.development.yaml
+// https://github.com/RSS3-Network/Node/blob/develop/deploy/config.yaml
 var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Fallback: {
 		filter.NetworkEthereum.String(),
