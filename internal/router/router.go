@@ -83,7 +83,9 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 		resultSent bool
 	)
 
-	ctx, cancel := context.WithCancel(ctx)
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, httpx.DefaultTimeout)
+
 	defer cancel()
 
 	for address, endpoint := range nodeMap {
