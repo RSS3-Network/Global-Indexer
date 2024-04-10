@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
+	averagetax "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/average_tax"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot"
@@ -14,7 +16,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient) (service.Server, error) {
+func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File) (service.Server, error) {
 	ethereumClient, err := ethereumMultiChainClient.Get(viper.GetUint64(flag.KeyChainIDL2))
 	if err != nil {
 		return nil, fmt.Errorf("get ethereum client: %w", err)
@@ -26,9 +28,9 @@ func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMult
 	case integrator.Name:
 		return integrator.New(databaseClient, redis, ethereumClient)
 	case snapshot.Name:
-		return snapshot.New(databaseClient, redis, config)
+		return snapshot.New(databaseClient, redis, ethereumClient)
 	case averagetax.Name:
-		return averagetax.New(databaseClient, redis, config)
+		return averagetax.New(databaseClient, redis, ethereumClient, config)
 	default:
 		return nil, fmt.Errorf("unknown scheduler server: %s", server)
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -186,7 +185,7 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 		return err
 	}
 
-	receipt, err := s.sendTransaction(ctx, input)
+	receipt, err := s.txManager.SendTransaction(ctx, input, lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy), s.settlerConfig.GasLimit)
 	if err != nil {
 		return err
 	}
@@ -199,33 +198,6 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 	zap.L().Info("Settlement contracted invoked successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", data))
 
 	return nil
-}
-
-// sendTransaction sends the transaction and returns the receipt if successful
-func (s *Server) sendTransaction(ctx context.Context, input []byte) (*types.Receipt, error) {
-	txCandidate := txmgr.TxCandidate{
-		TxData:   input,
-		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
-		GasLimit: s.settlerConfig.GasLimit,
-		Value:    big.NewInt(0),
-	}
-
-	receipt, err := s.txManager.Send(ctx, txCandidate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send tx: %w", err)
-	}
-
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
-
-		// select {} purposely block the process as it is a critical error and meaningless to continue
-		// if panic() is called, the process will be restarted by the supervisor
-		// we do not want that as it will be stuck in the same state
-		select {}
-	}
-
-	// return the receipt if the transaction is successful
-	return receipt, nil
 }
 
 // saveSettlement saves the Settlement data to the database

@@ -39,6 +39,10 @@ type Server struct {
 	txManager       txmgr.TxManager
 }
 
+func (s *Server) Name() string {
+	return Name
+}
+
 func (s *Server) Spec() string {
 	return "*/10 * * * * *" // every 10 seconds
 }
@@ -94,12 +98,7 @@ func (s *Server) Run(ctx context.Context) error {
 	return nil
 }
 
-func New(databaseClient database.Client, redisClient *redis.Client, config *config.File) (*Server, error) {
-	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
-	if err != nil {
-		return nil, fmt.Errorf("dial ethereum client: %w", err)
-	}
-
+func New(databaseClient database.Client, redisClient *redis.Client, ethereumClient *ethclient.Client, config *config.File) (*Server, error) {
 	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("get chain ID: %w", err)

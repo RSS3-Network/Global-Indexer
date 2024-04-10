@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
@@ -225,12 +224,7 @@ func (s *server) calcPoints(stat *schema.Stat) {
 	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
 }
 
-func New(databaseClient database.Client, redis *redis.Client, config *config.File) (service.Server, error) {
-	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
-	if err != nil {
-		return nil, fmt.Errorf("dial ethereum client: %w", err)
-	}
-
+func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
 	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)

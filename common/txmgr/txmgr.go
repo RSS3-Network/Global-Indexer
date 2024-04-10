@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
 	"strings"
 	"sync"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/txpool"
@@ -58,6 +58,8 @@ type TxCandidate struct {
 	Value *big.Int
 }
 
+// SendTransaction sends a transaction to the chain.
+// If the transaction is successful, the receipt is returned, otherwise this process will be blocked.
 func (m *SimpleTxManager) SendTransaction(ctx context.Context, input []byte, to *common.Address, gasLimit uint64) (*types.Receipt, error) {
 	txCandidate := TxCandidate{
 		TxData:   input,
@@ -83,6 +85,7 @@ func (m *SimpleTxManager) SendTransaction(ctx context.Context, input []byte, to 
 	return receipt, nil
 }
 
+// Send sends a candidate to the chain.
 func (m *SimpleTxManager) Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error) {
 	receipt, err := m.send(ctx, candidate)
 	if err != nil {

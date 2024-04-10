@@ -3,6 +3,7 @@ package averagetax
 import (
 	"context"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
