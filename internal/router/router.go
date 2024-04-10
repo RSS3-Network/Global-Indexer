@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/httpx"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
 	"go.uber.org/zap"
 )
 
