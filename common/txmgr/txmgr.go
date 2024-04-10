@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
 	"strings"
 	"sync"
@@ -31,6 +32,7 @@ var oneHundred = big.NewInt(100)
 
 type TxManager interface {
 	Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error)
+	SendTransaction(ctx context.Context, input []byte, to *common.Address, gasLimit uint64) (*types.Receipt, error)
 }
 
 type SimpleTxManager struct {
@@ -54,6 +56,31 @@ type TxCandidate struct {
 	GasLimit uint64
 	// Value is the value to be used in the constructed tx.
 	Value *big.Int
+}
+
+func (m *SimpleTxManager) SendTransaction(ctx context.Context, input []byte, to *common.Address, gasLimit uint64) (*types.Receipt, error) {
+	txCandidate := TxCandidate{
+		TxData:   input,
+		To:       to,
+		GasLimit: gasLimit,
+		Value:    big.NewInt(0),
+	}
+
+	receipt, err := m.Send(ctx, txCandidate)
+	if err != nil {
+		return nil, fmt.Errorf("send transaction: %w", err)
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
+
+		// select {} purposely block the process as it is a critical error and meaningless to continue
+		// if panic() is called, the process will be restarted by the supervisor
+		// we do not want that as it will be stuck in the same state
+		select {}
+	}
+
+	return receipt, nil
 }
 
 func (m *SimpleTxManager) Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error) {
@@ -502,6 +529,21 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 	}
 
 	return newTx, nil
+}
+
+// EncodeInput encodes the input data according to the contract ABI
+func EncodeInput(contractABI, methodName string, args ...interface{}) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return nil, err
+	}
+
+	encodedArgs, err := parsedABI.Pack(methodName, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return encodedArgs, nil
 }
 
 func NewSimpleTxManager(conf Config, chainID *big.Int, nonce *uint64, ethereumClient *ethclient.Client, from common.Address, singer gicrypto.SignerFn) (*SimpleTxManager, error) {

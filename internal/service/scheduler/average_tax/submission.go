@@ -3,13 +3,8 @@ package averagetax
 import (
 	"context"
 	"fmt"
-	"math/big"
-	"strings"
-
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -123,7 +118,7 @@ func (s *Server) invokeSettlementContract(ctx context.Context, tax decimal.Decim
 
 // prepareInputData encodes the input data for the settlement contract.
 func (s *Server) prepareInputData(taxRateBasisPoints uint64) ([]byte, error) {
-	input, err := s.encodeInput(l2.SettlementMetaData.ABI, l2.MethodSetTaxRateBasisPoints4PublicPool, taxRateBasisPoints)
+	input, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSetTaxRateBasisPoints4PublicPool, taxRateBasisPoints)
 	if err != nil {
 		return nil, fmt.Errorf("encode input: %w", err)
 	}
@@ -131,44 +126,12 @@ func (s *Server) prepareInputData(taxRateBasisPoints uint64) ([]byte, error) {
 	return input, nil
 }
 
-// encodeInput encodes the input data according to the contract ABI
-func (s *Server) encodeInput(contractABI, methodName string, args ...interface{}) ([]byte, error) {
-	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
-	if err != nil {
-		return nil, err
-	}
-
-	encodedArgs, err := parsedABI.Pack(methodName, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return encodedArgs, nil
-}
-
 // sendTransaction sends the transaction to the chain.
 func (s *Server) sendTransaction(ctx context.Context, input []byte) (*common.Hash, error) {
-	txCandidate := txmgr.TxCandidate{
-		TxData:   input,
-		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
-		GasLimit: s.settlerConfig.GasLimit,
-		Value:    big.NewInt(0),
-	}
-
-	receipt, err := s.txManager.Send(ctx, txCandidate)
+	receipt, err := s.txManager.SendTransaction(ctx, input, lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy), s.settlerConfig.GasLimit)
 	if err != nil {
 		return nil, fmt.Errorf("send transaction: %w", err)
 	}
 
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
-
-		// select {} purposely block the process as it is a critical error and meaningless to continue
-		// if panic() is called, the process will be restarted by the supervisor
-		// we do not want that as it will be stuck in the same state
-		select {}
-	}
-
-	// return the receipt if the transaction is successful
 	return lo.ToPtr(receipt.TxHash), nil
 }
