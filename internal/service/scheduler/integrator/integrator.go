@@ -15,8 +15,8 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
@@ -34,6 +34,10 @@ type server struct {
 	settlementContract *l2.Settlement
 	databaseClient     database.Client
 	cacheClient        cache.Client
+}
+
+func (s *server) Name() string {
+	return Name
 }
 
 func (s *server) Spec() string {
