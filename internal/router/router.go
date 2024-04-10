@@ -72,6 +72,7 @@ func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common
 	}
 }
 
+// distribute sends the request to the nodes and processes the responses
 func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
 	var (
 		waitGroup sync.WaitGroup
@@ -139,6 +140,8 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 	processResponses(responses)
 }
 
+// sendResponse sends the first valid response to the firstResponse channel
+// If all the responses are invalid, the first response will be the first response received
 func sendResponse(mu *sync.Mutex, responses *[]*model.DataResponse, response *model.DataResponse, responseSent *bool, firstResponse chan<- model.DataResponse, nodesRequested int) {
 	mu.Lock()
 	defer mu.Unlock()
