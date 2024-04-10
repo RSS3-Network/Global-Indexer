@@ -139,7 +139,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 	processResults(results)
 }
 
-func sendResult(mu *sync.Mutex, results *[]*model.DataResponse, result *model.DataResponse, resultSent *bool, firstResult chan<- model.DataResponse, nodeMapLen int) {
+func sendResult(mu *sync.Mutex, results *[]*model.DataResponse, result *model.DataResponse, resultSent *bool, firstResult chan<- model.DataResponse, nodesRequested int) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -156,7 +156,7 @@ func sendResult(mu *sync.Mutex, results *[]*model.DataResponse, result *model.Da
 		}
 
 		// If all the results have been received
-		if len(*results) == nodeMapLen {
+		if len(*results) == nodesRequested {
 			for _, res := range *results {
 				if res.Err != nil {
 					continue
