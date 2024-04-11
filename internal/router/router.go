@@ -10,7 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/httpx"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/httputil"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
 	"go.uber.org/zap"
 )
@@ -23,7 +23,7 @@ type Router interface {
 }
 
 type SimpleRouter struct {
-	httpClient httpx.Client
+	httpClient httputil.Client
 }
 
 func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.Cache) (map[common.Address]string, error) {
@@ -85,7 +85,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 	)
 
 	var cancel context.CancelFunc
-	ctx, cancel = context.WithTimeout(ctx, httpx.DefaultTimeout)
+	ctx, cancel = context.WithTimeout(ctx, httputil.DefaultTimeout)
 
 	defer cancel()
 
@@ -188,7 +188,7 @@ func validateData(data []byte, target any) bool {
 	return false
 }
 
-func NewSimpleRouter(httpClient httpx.Client) *SimpleRouter {
+func NewSimpleRouter(httpClient httputil.Client) *SimpleRouter {
 	return &SimpleRouter{
 		httpClient: httpClient,
 	}

@@ -1,24 +1,24 @@
-package httpx_test
+package httputil_test
 
 import (
 	"context"
 	"sync"
 	"testing"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/httpx"
+	"github.com/naturalselectionlabs/rss3-global-indexer/common/httputil"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	setupOnce  sync.Once
-	httpClient httpx.Client
+	httpClient httputil.Client
 )
 
 func setup(t *testing.T) {
 	setupOnce.Do(func() {
 		var err error
 
-		httpClient, err = httpx.NewHTTPClient()
+		httpClient, err = httputil.NewHTTPClient()
 		require.NoError(t, err)
 	})
 }
