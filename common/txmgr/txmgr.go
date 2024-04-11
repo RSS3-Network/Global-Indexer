@@ -73,15 +73,6 @@ func (m *SimpleTxManager) SendTransaction(ctx context.Context, input []byte, to 
 		return nil, fmt.Errorf("send transaction: %w", err)
 	}
 
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
-
-		// select {} purposely block the process as it is a critical error and meaningless to continue
-		// if panic() is called, the process will be restarted by the supervisor
-		// we do not want that as it will be stuck in the same state
-		select {}
-	}
-
 	return receipt, nil
 }
 

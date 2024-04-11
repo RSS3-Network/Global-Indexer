@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
 	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
 	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
@@ -132,6 +133,15 @@ func (s *Server) sendTransaction(ctx context.Context, input []byte) (*common.Has
 	receipt, err := s.txManager.SendTransaction(ctx, input, lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy), s.settlerConfig.GasLimit)
 	if err != nil {
 		return nil, fmt.Errorf("send transaction: %w", err)
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
+
+		// select {} purposely block the process as it is a critical error and meaningless to continue
+		// if panic() is called, the process will be restarted by the supervisor
+		// we do not want that as it will be stuck in the same state
+		select {}
 	}
 
 	return lo.ToPtr(receipt.TxHash), nil

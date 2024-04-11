@@ -190,6 +190,15 @@ func (s *Server) invokeSettlementContract(ctx context.Context, data schema.Settl
 		return err
 	}
 
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		zap.L().Error("received an invalid transaction receipt", zap.String("tx", receipt.TxHash.String()))
+
+		// select {} purposely block the process as it is a critical error and meaningless to continue
+		// if panic() is called, the process will be restarted by the supervisor
+		// we do not want that as it will be stuck in the same state
+		select {}
+	}
+
 	// Save the Settlement to the database, as the reference point for the next Epoch
 	if err := s.saveSettlement(ctx, receipt, data); err != nil {
 		return err
