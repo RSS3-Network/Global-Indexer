@@ -192,7 +192,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 	}
 
 	// Save node info to the database.
-	return h.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
+	return h.databaseClient.WithTransaction(ctx, func(ctx context.Context, _ database.Client) error {
 		// Save node to database.
 		if err = h.databaseClient.SaveNode(ctx, node); err != nil {
 			return fmt.Errorf("save node: %s, %w", node.Address.String(), err)

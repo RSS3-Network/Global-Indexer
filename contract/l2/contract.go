@@ -60,7 +60,8 @@ var (
 )
 
 var (
-	MethodDistributeRewards = "distributeRewards"
+	MethodDistributeRewards                = "distributeRewards"
+	MethodSetTaxRateBasisPoints4PublicPool = "setTaxRateBasisPoints4PublicPool"
 )
 
 type ChipsTokenMetadata struct {

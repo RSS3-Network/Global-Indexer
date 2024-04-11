@@ -94,7 +94,7 @@ func (s *server) sortNodes(ctx context.Context) error {
 		for _, stat := range stats {
 			stat := stat
 
-			statsPool.Go(func(ctx context.Context) error {
+			statsPool.Go(func(_ context.Context) error {
 				if err = s.updateNodeEpochStats(stat, epoch.Int64()); err != nil {
 					return err
 				}
