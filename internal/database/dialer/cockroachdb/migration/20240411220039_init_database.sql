@@ -1,3 +1,16 @@
+-- Create "average_tax_rate_submissions" table
+CREATE TABLE "public"."average_tax_rate_submissions" (
+  "id" bigint NOT NULL DEFAULT unique_rowid(),
+  "created_at" timestamptz NULL,
+  "updated_at" timestamptz NULL,
+  "deleted_at" timestamptz NULL,
+  "epoch_id" bigint NULL,
+  "average_tax_rate" text NULL,
+  "transaction_hash" text NULL,
+  PRIMARY KEY ("id")
+);
+-- Create index "idx_average_tax_rate_submissions_deleted_at" to table: "average_tax_rate_submissions"
+CREATE INDEX "idx_average_tax_rate_submissions_deleted_at" ON "public"."average_tax_rate_submissions" ("deleted_at");
 -- Create "checkpoints" table
 CREATE TABLE "public"."checkpoints" (
   "id" bigint NOT NULL DEFAULT unique_rowid(),
@@ -93,19 +106,18 @@ CREATE TABLE "public"."epoch_trigger" (
 CREATE INDEX "idx_epoch_trigger_deleted_at" ON "public"."epoch_trigger" ("deleted_at");
 -- Create "events" table
 CREATE TABLE "public"."events" (
-  "id" text NOT NULL,
+  "id" text NULL,
   "created_at" timestamptz NULL,
   "updated_at" timestamptz NULL,
   "deleted_at" timestamptz NULL,
   "type" text NULL,
-  "transaction_hash" text NULL,
+  "transaction_hash" text NOT NULL,
   "transaction_index" bigint NULL,
   "transaction_status" bigint NULL,
-  "chain_id" bigint NULL,
-  "block_hash" text NULL,
+  "block_hash" text NOT NULL,
   "block_number" bigint NULL,
   "block_timestamp" timestamptz NULL,
-  PRIMARY KEY ("id")
+  PRIMARY KEY ("transaction_hash", "block_hash")
 );
 -- Create index "idx_events_deleted_at" to table: "events"
 CREATE INDEX "idx_events_deleted_at" ON "public"."events" ("deleted_at");
@@ -148,6 +160,7 @@ CREATE TABLE "public"."node_info" (
   "avatar" jsonb NULL,
   "min_tokens_to_stake" text NULL,
   "apy" text NULL,
+  "score" text NULL,
   PRIMARY KEY ("address")
 );
 -- Create index "idx_node_info_deleted_at" to table: "node_info"
@@ -208,7 +221,7 @@ CREATE TABLE "public"."transactions" (
   "created_at" timestamptz NULL,
   "updated_at" timestamptz NULL,
   "deleted_at" timestamptz NULL,
-  "type" text NULL,
+  "type" text NOT NULL,
   "user" text NULL,
   "node" text NULL,
   "value" text NULL,
@@ -216,7 +229,7 @@ CREATE TABLE "public"."transactions" (
   "block_timestamp" timestamptz NULL,
   "block_number" bigint NULL,
   "transaction_index" bigint NULL,
-  PRIMARY KEY ("id")
+  PRIMARY KEY ("id", "type")
 );
 -- Create index "idx_transactions_deleted_at" to table: "transactions"
 CREATE INDEX "idx_transactions_deleted_at" ON "public"."transactions" ("deleted_at");

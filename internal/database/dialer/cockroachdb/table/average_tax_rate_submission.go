@@ -6,9 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
 
 type AverageTaxRateSubmission struct {
+	gorm.Model
 	ID              uint64          `gorm:"id"`
 	EpochID         uint64          `gorm:"epoch_id"`
 	AverageTaxRate  decimal.Decimal `gorm:"average_tax_rate"`
