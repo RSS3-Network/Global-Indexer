@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -51,6 +53,19 @@ func (h *Hub) GetNodes(c echo.Context) error {
 	if len(nodes) > 0 && len(nodes) == request.Limit {
 		cursor = nodes[len(nodes)-1].Address.String()
 	}
+
+	// If the score is the same, sort by staking pool size.
+	// TODO: Since node's StakingPoolTokens needs to be obtained from vsl.
+	//  Now only the nodes of the current page can be sorted.
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].Score.Cmp(nodes[j].Score) == 0 {
+			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
+			jTokens, _ := new(big.Int).SetString(nodes[j].StakingPoolTokens, 10)
+			return iTokens.Cmp(jTokens) > 0
+		}
+
+		return nodes[i].Score.Cmp(nodes[j].Score) > 0
+	})
 
 	return c.JSON(http.StatusOK, Response{
 		Data:   model.NewNodes(nodes, baseURL(c)),
