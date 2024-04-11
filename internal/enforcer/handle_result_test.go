@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/hub/model"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
 	"github.com/stretchr/testify/assert"
 )
 
