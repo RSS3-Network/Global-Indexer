@@ -78,6 +78,7 @@ func NewSignerFactory(privateKey, endpoint, address string) (SignerFactory, comm
 		fromAddress = crypto.PubkeyToAddress(privKey.PublicKey)
 		signer = func(chainID *big.Int) SignerFn {
 			s := PrivateKeySignerFn(privKey, chainID)
+
 			return func(_ context.Context, addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
 				return s(addr, tx)
 			}

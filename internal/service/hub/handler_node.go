@@ -61,6 +61,7 @@ func (h *Hub) GetNodes(c echo.Context) error {
 		if nodes[i].Score.Cmp(nodes[j].Score) == 0 {
 			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
 			jTokens, _ := new(big.Int).SetString(nodes[j].StakingPoolTokens, 10)
+
 			return iTokens.Cmp(jTokens) > 0
 		}
 

@@ -1,12 +1,14 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
 	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/protocol-go/schema/metadata"
 )
 
 var (
@@ -26,7 +28,7 @@ type Cache struct {
 }
 
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
-// https://github.com/NaturalSelectionLabs/RSS3-Node/blob/develop/deploy/config.development.yaml
+// https://github.com/RSS3-Network/Node/blob/develop/deploy/config.yaml
 var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Fallback: {
 		filter.NetworkEthereum.String(),
@@ -223,4 +225,98 @@ func BuildPath(path string, query any, nodes []Cache) (map[common.Address]string
 	}
 
 	return urls, nil
+}
+
+type DataResponse struct {
+	Address common.Address
+	Data    []byte
+	// Valid valid data must be non-null.
+	Valid          bool
+	Err            error
+	Request        int
+	InvalidRequest int
+}
+
+type ErrResponse struct {
+	Error     string `json:"error"`
+	ErrorCode string `json:"error_code"`
+}
+
+type ActivityResponse struct {
+	Data *Feed `json:"data"`
+}
+
+type ActivitiesResponse struct {
+	Data []*Feed     `json:"data"`
+	Meta *MetaCursor `json:"meta,omitempty"`
+}
+
+type MetaCursor struct {
+	Cursor string `json:"cursor"`
+}
+
+type Feed struct {
+	ID       string    `json:"id"`
+	Owner    string    `json:"owner,omitempty"`
+	Network  string    `json:"network"`
+	Index    uint      `json:"index"`
+	From     string    `json:"from"`
+	To       string    `json:"to"`
+	Tag      string    `json:"tag"`
+	Type     string    `json:"type"`
+	Platform string    `json:"platform,omitempty"`
+	Actions  []*Action `json:"actions"`
+}
+
+type Action struct {
+	Tag         string            `json:"tag"`
+	Type        string            `json:"type"`
+	Platform    string            `json:"platform,omitempty"`
+	From        string            `json:"from"`
+	To          string            `json:"to"`
+	Metadata    metadata.Metadata `json:"metadata"`
+	RelatedURLs []string          `json:"related_urls,omitempty"`
+}
+
+type Actions []*Action
+
+var _ json.Unmarshaler = (*Action)(nil)
+
+func (a *Action) UnmarshalJSON(bytes []byte) error {
+	type ActionAlias Action
+
+	type action struct {
+		ActionAlias
+
+		MetadataX json.RawMessage `json:"metadata"`
+	}
+
+	var temp action
+
+	// Unmarshal the byte slice into the temporary action struct.
+	if err := json.Unmarshal(bytes, &temp); err != nil {
+		return fmt.Errorf("unmarshal action: %w", err)
+	}
+
+	// Validate and filter the action's tag.
+	tag, err := filter.TagString(temp.Tag)
+	if err != nil {
+		return fmt.Errorf("invalid action tag: %w", err)
+	}
+
+	// Validate and filter the action's type based on the tag.
+	typeX, err := filter.TypeString(tag, temp.Type)
+	if err != nil {
+		return fmt.Errorf("invalid action type: %w", err)
+	}
+
+	// Unmarshal the metadata using the filtered type.
+	if temp.Metadata, err = metadata.Unmarshal(typeX, temp.MetadataX); err != nil {
+		return fmt.Errorf("invalid action metadata: %w", err)
+	}
+
+	// Assign the unmarshalled ActionAlias back to the Action receiver.
+	*a = Action(temp.ActionAlias)
+
+	return nil
 }

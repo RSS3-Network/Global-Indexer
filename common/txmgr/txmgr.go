@@ -11,6 +11,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/txpool"
@@ -56,6 +57,7 @@ type TxCandidate struct {
 	Value *big.Int
 }
 
+// Send sends a candidate to the chain.
 func (m *SimpleTxManager) Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error) {
 	receipt, err := m.send(ctx, candidate)
 	if err != nil {
@@ -502,6 +504,21 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 	}
 
 	return newTx, nil
+}
+
+// EncodeInput encodes the input data according to the contract ABI
+func EncodeInput(contractABI, methodName string, args ...interface{}) ([]byte, error) {
+	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
+	if err != nil {
+		return nil, err
+	}
+
+	encodedArgs, err := parsedABI.Pack(methodName, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return encodedArgs, nil
 }
 
 func NewSimpleTxManager(conf Config, chainID *big.Int, nonce *uint64, ethereumClient *ethclient.Client, from common.Address, singer gicrypto.SignerFn) (*SimpleTxManager, error) {
