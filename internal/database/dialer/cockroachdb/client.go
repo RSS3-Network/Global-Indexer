@@ -6,8 +6,8 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/pressly/goose/v3"
+	"github.com/rss3-network/global-indexer/internal/database"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

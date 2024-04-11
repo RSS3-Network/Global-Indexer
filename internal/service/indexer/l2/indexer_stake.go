@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"github.com/sourcegraph/conc/pool"
@@ -254,7 +254,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 	for _, chipID := range stakeTransaction.Chips {
 		chipID := chipID
 
-		resultPool.Go(func(ctx context.Context) (*schema.StakeChip, error) {
+		resultPool.Go(func(_ context.Context) (*schema.StakeChip, error) {
 			tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
 			if err != nil {
 				return nil, fmt.Errorf("get #%d token uri", chipID)
@@ -584,7 +584,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 	for i := 0; i < epoch.TotalRewardItems; i++ {
 		i := i
 
-		errorPool.Go(func(ctx context.Context) error {
+		errorPool.Go(func(_ context.Context) error {
 			var (
 				apy, minTokensToStake decimal.Decimal
 				address               = epoch.RewardItems[i].NodeAddress

@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l1"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/contract/l1"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel"
@@ -37,6 +37,10 @@ type server struct {
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
 	blockThreads                   uint64
+}
+
+func (s *server) Name() string {
+	return "l1"
 }
 
 func (s *server) Run(ctx context.Context) (err error) {
@@ -280,18 +284,15 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, ethereumClient *ethclient.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
 			databaseClient: databaseClient,
+			ethereumClient: ethereumClient,
 			blockThreads:   config.BlockThreads,
 		}
 		err error
 	)
-
-	if instance.ethereumClient, err = ethclient.DialContext(ctx, config.Endpoint); err != nil {
-		return nil, err
-	}
 
 	if instance.chainID, err = instance.ethereumClient.ChainID(ctx); err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)

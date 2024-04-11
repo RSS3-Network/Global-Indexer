@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="run hub with testnet" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="Global-Indexer" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="--chain-id.l1=11155111 --chain-id.l2=2331" />
+    <kind value="PACKAGE" />
+    <package value="github.com/rss3-network/global-indexer/cmd" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

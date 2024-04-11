@@ -5,54 +5,103 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/schema"
+	"github.com/samber/lo"
 )
 
 // calculateAlphaSpecialRewards calculates the distribution of the Special Rewards used to replace the Operation Rewards
 // the Special Rewards are used to incentivize staking in smaller Nodes
 // currently, the amount is set to 30,000,000 / 486.6666666666667 * 0.2 ~= 12328
-func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
+func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, []*big.Float, error) {
 	var (
 		totalStakeValue *big.Int
 		totalPoolSize   = big.NewInt(0)
 		totalScore      = big.NewFloat(0)
+		totalRewards    float64
 	)
 
 	// Preprocessing step to avoid repeated parsing and condition checking.
 	poolSizes, err := parsePoolSizes(nodes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	// Exclude unqualified nodes.
+	excludeUnqualifiedNodes(nodes, recentStakers)
+
 	// Calculate the total pool size.
-	for _, poolSize := range poolSizes {
-		totalPoolSize.Add(totalPoolSize, poolSize)
+	for i, poolSize := range poolSizes {
+		if _, exist := recentStakers[nodes[i].Address]; exist {
+			totalPoolSize.Add(totalPoolSize, poolSize)
+		}
 	}
 
 	// Calculate total stake value.
-	totalStakeValue, err = computeTotalStakeValue(nodes, recentStakers)
-	if err != nil {
-		return nil, err
+	totalStakeValue = computeTotalStakeValue(nodes, recentStakers)
+
+	// Calculate the ratio of active nodes to total nodes
+	activeNodesRadio := float64(len(recentStakers)) / float64(len(nodes))
+
+	totalRewards = specialRewards.Rewards
+	// If the ratio is less than the threshold, reduce the rewards
+	if activeNodesRadio < specialRewards.NodeThreshold {
+		totalRewards = specialRewards.Rewards * activeNodesRadio
 	}
 
 	// Calculate scores for each node.
-	scores, err := computeScores(nodes, recentStakers, poolSizes, totalPoolSize, totalStakeValue, specialRewards)
-	if err != nil {
-		return nil, err
-	}
+	scores := computeScores(nodes, recentStakers, poolSizes, totalPoolSize, totalStakeValue, specialRewards)
 
 	for _, score := range scores {
 		totalScore.Add(totalScore, score)
 	}
 
-	rewards, err := calculateFinalRewards(scores, totalScore, specialRewards)
+	rewards, err := calculateFinalRewards(scores, totalScore, specialRewards, totalRewards)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return rewards, nil
+	return rewards, scores, nil
+}
+
+// updateNodeStakingData retrieves node information from a staking contract
+// and updates the staking pool tokens for each node.
+func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*schema.Node) error {
+	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
+	if err != nil {
+		return fmt.Errorf("get nodes from chain: %w", err)
+	}
+
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
+		return node.Account, node
+	})
+
+	for _, node := range nodes {
+		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
+			stakePoolTokens := nodeInfo.StakingPoolTokens
+			node.StakingPoolTokens = stakePoolTokens.String()
+		}
+	}
+
+	return nil
+}
+
+// excludeUnqualifiedNodes excludes Nodes if they:
+// 1. have no recent stakers
+// 2. are offline
+func excludeUnqualifiedNodes(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) {
+	onlineNodes := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
+		return node.Address, struct{}{}
+	})
+
+	for address := range recentStakers {
+		if _, ok := onlineNodes[address]; !ok {
+			delete(recentStakers, address)
+		}
+	}
 }
 
 // parsePoolSizes extracts and parses staking pool sizes from nodes.
@@ -73,8 +122,8 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, error) {
 	return poolSizes, nil
 }
 
-// computeTotalStakersAndTotalStakeValue calculates the total effective stakers and the stake value.
-func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) (*big.Int, error) {
+// computeTotalStakeValue calculates the total stake value.
+func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) *big.Int {
 	var totalStakeValue = big.NewInt(0)
 
 	for _, node := range nodes {
@@ -83,36 +132,41 @@ func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Addre
 		}
 	}
 
-	return totalStakeValue, nil
+	return totalStakeValue
 }
 
 // computeScores calculates the scores for each node based on various factors.
-func computeScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, poolSizes []*big.Int, totalPoolSize *big.Int, totalStakeValue *big.Int, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
+func computeScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, poolSizes []*big.Int, totalPoolSize *big.Int, totalStakeValue *big.Int, specialRewards *config.SpecialRewards) []*big.Float {
 	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
-		stakers := recentStakers[nodes[i].Address]
-
-		if stakers == nil || stakers.StakerCount == 0 {
+		// If the Node has no recent stakers, set the score to 0
+		if _, exist := recentStakers[nodes[i].Address]; !exist {
 			scores[i] = big.NewFloat(0)
 			continue
 		}
 
+		stakeInfo := recentStakers[nodes[i].Address]
+
+		// Calculate the ratio of poolSize to totalPoolSize
+		// poolSizeRatio = poolSize / totalPoolSize
 		poolSizeRatio := new(big.Float).Quo(new(big.Float).SetInt(poolSize), new(big.Float).SetInt(totalPoolSize))
-		stakeRadio := new(big.Float).Quo(new(big.Float).SetInt(stakers.StakeValue.BigInt()), new(big.Float).SetInt(totalStakeValue))
+		// Calculate the ratio of stakeValue to totalStakeValue
+		// stakeRadio = stakeValue / totalStakeValue
+		stakeRadio := new(big.Float).Quo(new(big.Float).SetInt(stakeInfo.StakeValue.BigInt()), new(big.Float).SetInt(totalStakeValue))
 
 		score := applyGiniCoefficient(poolSizeRatio, specialRewards.GiniCoefficient)
 
-		applyStakerFactor(stakers.StakerCount, stakeRadio, specialRewards.StakerFactor, score)
+		applyStakerFactor(stakeInfo.StakerCount, stakeRadio, specialRewards.StakerFactor, score)
 
 		scores[i] = score
 	}
 
-	return scores, nil
+	return scores
 }
 
 // calculateFinalRewards converts scores into reward amounts.
-func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards) ([]*big.Int, error) {
+func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRewards *config.SpecialRewards, totalRewards float64) ([]*big.Int, error) {
 	if totalScore.Cmp(big.NewFloat(0)) == 0 {
 		return nil, fmt.Errorf("totalScore cannot be zero")
 	}
@@ -124,10 +178,11 @@ func calculateFinalRewards(scores []*big.Float, totalScore *big.Float, specialRe
 		scoreRatio := new(big.Float).Quo(score, totalScore)
 
 		// Apply special rewards
-		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetFloat64(specialRewards.Rewards))
+		reward := new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetFloat64(totalRewards))
+		maxReward := big.NewFloat(0).SetFloat64(specialRewards.RewardsCeiling)
 
-		if reward.Cmp(big.NewFloat(0).SetFloat64(specialRewards.RewardsCeiling)) == 1 {
-			reward = big.NewFloat(0).SetFloat64(specialRewards.RewardsCeiling)
+		if reward.Cmp(maxReward) == 1 {
+			reward = maxReward
 		}
 
 		// Convert to integer to truncate before scaling
@@ -178,12 +233,18 @@ func applyGiniCoefficient(poolSizeRatio *big.Float, giniCoefficient float64) *bi
 
 // applyStakerFactor applies the Staker Factor to the score
 func applyStakerFactor(stakers uint64, stakeRadio *big.Float, stakerFactor float64, score *big.Float) {
-	stakersFloat := new(big.Float).SetUint64(stakers)                             // Convert stakers to big.Float for calculation.
-	stakerFactorFloat := big.NewFloat(stakerFactor)                               // Ensure stakerFactor is in big.Float for consistency in operations.
-	stakerFactorCalculated := new(big.Float).Mul(stakerFactorFloat, stakersFloat) // stakerFactor * stakeRatio
+	// Convert stakers to big.Float for calculation.
+	stakersFloat := new(big.Float).SetUint64(stakers)
+	// Ensure stakerFactor is in big.Float for consistency in operations.
+	stakerFactorFloat := big.NewFloat(stakerFactor)
+	// stakerFactor * stakeRatio
+	stakerFactorCalculated := new(big.Float).Mul(stakerFactorFloat, stakersFloat)
+	// Calculate the exponent for the exponential function.
+	exponentFloat := new(big.Float).Mul(stakerFactorCalculated, stakeRadio)
 
-	e, _ := new(big.Float).Mul(stakerFactorCalculated, stakeRadio).Float64()
+	exponent, _ := exponentFloat.Float64()
 	// Perform calculation: score *= math.exp(stakerFactorCalculated * stakeRatio)
-	expResultBigFloat := new(big.Float).SetFloat64(math.Exp(e))
+	expResultBigFloat := new(big.Float).SetFloat64(math.Exp(exponent))
+
 	score.Mul(score, expResultBigFloat)
 }

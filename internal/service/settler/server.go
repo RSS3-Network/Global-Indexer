@@ -10,15 +10,21 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
-	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/redis/go-redis/v9"
+	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
+	"github.com/rss3-network/global-indexer/common/txmgr"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
+
+const Name = "settler"
 
 type Server struct {
 	txManager       txmgr.TxManager
@@ -34,6 +40,10 @@ type Server struct {
 	// it will be removed in the future
 
 	specialRewards *config.SpecialRewards
+}
+
+func (s *Server) Name() string {
+	return Name
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -205,23 +215,20 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return indexedBlock.BlockNumber, latestBlock, nil
 }
 
-func New(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, config config.File) (*Server, error) {
+func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File) (service.Server, error) {
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
-	ethereumClient, err := ethclient.Dial(config.RSS3Chain.EndpointL2)
-	if err != nil {
-		return nil, fmt.Errorf("dial ethereum client: %w", err)
-	}
+	chainID := new(big.Int).SetUint64(viper.GetUint64(flag.KeyChainIDL2))
 
-	chainID, err := ethereumClient.ChainID(ctx)
+	ethereumClient, err := ethereumMultiChainClient.Get(chainID.Uint64())
 	if err != nil {
-		return nil, fmt.Errorf("get chain ID: %w", err)
+		return nil, fmt.Errorf("load l2 ethereum client: %w", err)
 	}
 
 	contractAddresses := l2.ContractMap[chainID.Uint64()]
 	if contractAddresses == nil {
-		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
+		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
 	}
 
 	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)

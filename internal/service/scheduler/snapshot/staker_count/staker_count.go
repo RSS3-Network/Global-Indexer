@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/cronjob"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/schema"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +27,10 @@ type server struct {
 	cronJob        *cronjob.CronJob
 	databaseClient database.Client
 	redisClient    *redis.Client
+}
+
+func (s *server) Name() string {
+	return Name
 }
 
 func (s *server) Spec() string {

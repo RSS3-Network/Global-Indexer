@@ -6,7 +6,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/database"
 	"gopkg.in/yaml.v3"
 )
 
