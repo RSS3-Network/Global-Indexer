@@ -25,6 +25,10 @@ type server struct {
 	snapshots []service.Server
 }
 
+func (s *server) Name() string {
+	return Name
+}
+
 func (s *server) Run(ctx context.Context) error {
 	errorPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 

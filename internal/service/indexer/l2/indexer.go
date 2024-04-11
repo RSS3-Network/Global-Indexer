@@ -43,6 +43,10 @@ type server struct {
 	blockThreads                   uint64
 }
 
+func (s *server) Name() string {
+	return "l2"
+}
+
 func (s *server) Run(ctx context.Context) (err error) {
 	// Load checkpoint from database.
 	if s.checkpoint, err = s.databaseClient.FindCheckpoint(ctx, s.chainID.Uint64()); err != nil {
@@ -292,19 +296,16 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 	return nil
 }
 
-func NewServer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, config Config) (service.Server, error) {
+func NewServer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, ethereumClient *ethclient.Client, config Config) (service.Server, error) {
 	var (
 		instance = server{
 			databaseClient: databaseClient,
 			cacheClient:    cacheClient,
+			ethereumClient: ethereumClient,
 			blockThreads:   config.BlockThreads,
 		}
 		err error
 	)
-
-	if instance.ethereumClient, err = ethclient.DialContext(ctx, config.Endpoint); err != nil {
-		return nil, err
-	}
 
 	if instance.chainID, err = instance.ethereumClient.ChainID(ctx); err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)
