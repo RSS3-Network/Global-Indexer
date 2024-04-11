@@ -109,6 +109,7 @@ func Test_Resolve(t *testing.T) {
 				if err != nil {
 					t.Fatalf("unexpected error %v", err)
 				}
+
 				if !strings.EqualFold(tt.output, output) {
 					t.Errorf("Failure: %v => %v (expected %v)\n", tt.input, output, tt.output)
 				}
