@@ -1,0 +1,58 @@
+package nta
+
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/rss3-network/global-indexer/schema"
+)
+
+type NodeEventsRequest struct {
+	Address common.Address `param:"id" validate:"required"`
+	Cursor  *string        `query:"cursor"`
+	Limit   int            `query:"limit" validate:"min=1,max=100" default:"20"`
+}
+
+type NodeEventResponseData *NodeEvent
+
+type NodeEventsResponseData []*NodeEvent
+
+type NodeEvent struct {
+	Transaction TransactionEventTransaction `json:"transaction"`
+	Block       TransactionEventBlock       `json:"block"`
+	AddressFrom common.Address              `json:"addressFrom"`
+	AddressTo   common.Address              `json:"addressTo"`
+	NodeID      uint64                      `json:"nodeID"`
+	Type        schema.NodeEventType        `json:"type"`
+	LogIndex    uint                        `json:"logIndex"`
+	ChainID     uint64                      `json:"chainID"`
+	Metadata    schema.NodeEventMetadata    `json:"metadata"`
+}
+
+func NewNodeEvent(event *schema.NodeEvent) NodeEventResponseData {
+	return &NodeEvent{
+		Transaction: TransactionEventTransaction{
+			Hash:  event.TransactionHash,
+			Index: event.TransactionIndex,
+		},
+		Block: TransactionEventBlock{
+			Hash:      event.BlockHash,
+			Number:    event.BlockNumber,
+			Timestamp: event.BlockTimestamp,
+		},
+		AddressFrom: event.AddressFrom,
+		AddressTo:   event.AddressTo,
+		NodeID:      event.NodeID.Uint64(),
+		Type:        event.Type,
+		LogIndex:    event.LogIndex,
+		ChainID:     event.ChainID,
+		Metadata:    event.Metadata,
+	}
+}
+
+func NewNodeEvents(events []*schema.NodeEvent) NodeEventsResponseData {
+	result := make([]*NodeEvent, len(events))
+	for i, event := range events {
+		result[i] = NewNodeEvent(event)
+	}
+
+	return result
+}

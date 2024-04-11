@@ -15,11 +15,11 @@ type Client interface {
 var _ Client = (*client)(nil)
 
 type client struct {
-	cacheClient *redis.Client
+	redisClient *redis.Client
 }
 
 func (c *client) Get(ctx context.Context, key string, dest interface{}) error {
-	data, err := c.cacheClient.Get(ctx, key).Bytes()
+	data, err := c.redisClient.Get(ctx, key).Bytes()
 	if err != nil {
 		return err
 	}
@@ -33,11 +33,11 @@ func (c *client) Set(ctx context.Context, key string, value interface{}) error {
 		return err
 	}
 
-	return c.cacheClient.Set(ctx, key, data, 0).Err()
+	return c.redisClient.Set(ctx, key, data, 0).Err()
 }
 
 func New(redisClient *redis.Client) Client {
 	return &client{
-		cacheClient: redisClient,
+		redisClient: redisClient,
 	}
 }
