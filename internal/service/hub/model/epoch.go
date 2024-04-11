@@ -3,7 +3,7 @@ package model
 import (
 	"sort"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
 )
 

@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/maxmind/geoipupdate/v6/pkg/geoipupdate"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/oschwald/geoip2-golang"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/schema"
 	"go.uber.org/zap"
 )
 

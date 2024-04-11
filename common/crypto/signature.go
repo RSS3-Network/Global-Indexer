@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	gisigner "github.com/naturalselectionlabs/rss3-global-indexer/common/signer"
+	gisigner "github.com/rss3-network/global-indexer/common/signer"
 )
 
 func PrivateKeySignerFn(key *ecdsa.PrivateKey, chainID *big.Int) bind.SignerFn {

@@ -1,4 +1,4 @@
-module github.com/naturalselectionlabs/rss3-global-indexer
+module github.com/rss3-network/global-indexer
 
 go 1.21.4
 

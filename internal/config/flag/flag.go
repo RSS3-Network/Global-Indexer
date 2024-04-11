@@ -1,6 +1,6 @@
 package flag
 
-import "github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
+import "github.com/rss3-network/global-indexer/internal/client/ethereum"
 
 const (
 	KeyConfig = "config"

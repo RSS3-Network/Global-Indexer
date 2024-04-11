@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 )
 

@@ -12,9 +12,9 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/crossbell"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/lens"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/contract/crossbell"
+	"github.com/rss3-network/global-indexer/contract/lens"
+	"github.com/rss3-network/global-indexer/internal/config"
 	goens "github.com/wealdtech/go-ens/v3"
 	"go.uber.org/zap"
 )

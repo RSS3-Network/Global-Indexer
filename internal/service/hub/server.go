@@ -7,13 +7,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/docs"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
+	"github.com/rss3-network/global-indexer/internal/service"
 )
 
 const Name = "hub"

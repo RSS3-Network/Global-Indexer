@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/schema"
 )
 
 // prepareInputData encodes input data for the transaction

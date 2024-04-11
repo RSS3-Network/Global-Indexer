@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/database"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )

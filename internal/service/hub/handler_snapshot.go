@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/response"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/response"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
