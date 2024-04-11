@@ -3,6 +3,7 @@ package taxer
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -131,9 +132,16 @@ func (s *Server) prepareInputData(taxRateBasisPoints uint64) ([]byte, error) {
 
 // sendTransaction sends the transaction to the chain.
 func (s *Server) sendTransaction(ctx context.Context, input []byte) (*common.Hash, error) {
-	receipt, err := s.txManager.SendTransaction(ctx, input, lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy), s.settlerConfig.GasLimit)
+	txCandidate := txmgr.TxCandidate{
+		TxData:   input,
+		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
+		GasLimit: s.settlerConfig.GasLimit,
+		Value:    big.NewInt(0),
+	}
+
+	receipt, err := s.txManager.Send(ctx, txCandidate)
 	if err != nil {
-		return nil, fmt.Errorf("send transaction: %w", err)
+		return nil, fmt.Errorf("failed to send tx: %w", err)
 	}
 
 	if receipt.Status != types.ReceiptStatusSuccessful {

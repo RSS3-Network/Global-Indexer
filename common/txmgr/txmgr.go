@@ -32,7 +32,6 @@ var oneHundred = big.NewInt(100)
 
 type TxManager interface {
 	Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error)
-	SendTransaction(ctx context.Context, input []byte, to *common.Address, gasLimit uint64) (*types.Receipt, error)
 }
 
 type SimpleTxManager struct {
@@ -56,24 +55,6 @@ type TxCandidate struct {
 	GasLimit uint64
 	// Value is the value to be used in the constructed tx.
 	Value *big.Int
-}
-
-// SendTransaction sends a transaction to the chain.
-// If the transaction is successful, the receipt is returned, otherwise this process will be blocked.
-func (m *SimpleTxManager) SendTransaction(ctx context.Context, input []byte, to *common.Address, gasLimit uint64) (*types.Receipt, error) {
-	txCandidate := TxCandidate{
-		TxData:   input,
-		To:       to,
-		GasLimit: gasLimit,
-		Value:    big.NewInt(0),
-	}
-
-	receipt, err := m.Send(ctx, txCandidate)
-	if err != nil {
-		return nil, fmt.Errorf("send transaction: %w", err)
-	}
-
-	return receipt, nil
 }
 
 // Send sends a candidate to the chain.
