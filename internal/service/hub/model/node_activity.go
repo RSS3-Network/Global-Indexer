@@ -230,7 +230,7 @@ func BuildPath(path string, query any, nodes []Cache) (map[common.Address]string
 type DataResponse struct {
 	Address common.Address
 	Data    []byte
-	// Valid indicates whether the data is non-null.
+	// Valid valid data must be non-null.
 	Valid          bool
 	Err            error
 	Request        int
@@ -293,26 +293,29 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 
 	var temp action
 
-	err := json.Unmarshal(bytes, &temp)
-	if err != nil {
+	// Unmarshal the byte slice into the temporary action struct.
+	if err := json.Unmarshal(bytes, &temp); err != nil {
 		return fmt.Errorf("unmarshal action: %w", err)
 	}
 
+	// Validate and filter the action's tag.
 	tag, err := filter.TagString(temp.Tag)
 	if err != nil {
 		return fmt.Errorf("invalid action tag: %w", err)
 	}
 
+	// Validate and filter the action's type based on the tag.
 	typeX, err := filter.TypeString(tag, temp.Type)
 	if err != nil {
 		return fmt.Errorf("invalid action type: %w", err)
 	}
 
-	temp.Metadata, err = metadata.Unmarshal(typeX, temp.MetadataX)
-	if err != nil {
+	// Unmarshal the metadata using the filtered type.
+	if temp.Metadata, err = metadata.Unmarshal(typeX, temp.MetadataX); err != nil {
 		return fmt.Errorf("invalid action metadata: %w", err)
 	}
 
+	// Assign the unmarshalled ActionAlias back to the Action receiver.
 	*a = Action(temp.ActionAlias)
 
 	return nil
