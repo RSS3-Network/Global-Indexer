@@ -13,9 +13,7 @@ func TestNodeLocal(t *testing.T) {
 	t.Parallel()
 
 	c := geolite2.NewClient(&config.GeoIP{
-		//Account:    976142,
-		LicenseKey: "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",
-		File:       "./mmdb/GeoLite2-City.mmdb",
+		File: "./mmdb/GeoLite2-City.mmdb",
 	})
 
 	testcases := []struct {
@@ -24,7 +22,7 @@ func TestNodeLocal(t *testing.T) {
 	}{
 		{
 			name:     "ip",
-			endpoint: "86.25.237.241",
+			endpoint: "1.2.3.4",
 		},
 		{
 			name:     "domain",
