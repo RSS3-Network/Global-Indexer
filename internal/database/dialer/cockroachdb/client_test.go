@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database/dialer"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/cockroachdb"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/database/dialer"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )

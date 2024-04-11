@@ -7,9 +7,9 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/pressly/goose/v3"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/schema"
 	"go.uber.org/zap"
 )
 
@@ -83,6 +83,9 @@ type Client interface {
 
 	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error
 	FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error)
+
+	FindAverageTaxSubmissions(ctx context.Context, query schema.AverageTaxRateSubmissionQuery) ([]*schema.AverageTaxRateSubmission, error)
+	SaveAverageTaxSubmission(ctx context.Context, averageTaxSubmission *schema.AverageTaxRateSubmission) error
 }
 
 type Session interface {

@@ -3,7 +3,7 @@ package table
 import (
 	"time"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/schema"
 	"gorm.io/gorm"
 	gormSchema "gorm.io/gorm/schema"
 )

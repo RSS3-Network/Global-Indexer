@@ -7,9 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 )
 
@@ -30,7 +30,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 		return nil, nil, err
 	}
 
-	// Online nodes that are online and have recent stakers are qualified for rewards.
+	// Exclude unqualified nodes.
 	excludeUnqualifiedNodes(nodes, recentStakers)
 
 	// Calculate the total pool size.
@@ -41,10 +41,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	}
 
 	// Calculate total stake value.
-	totalStakeValue, err = computeTotalStakeValue(nodes, recentStakers)
-	if err != nil {
-		return nil, nil, err
-	}
+	totalStakeValue = computeTotalStakeValue(nodes, recentStakers)
 
 	// Calculate the ratio of active nodes to total nodes
 	activeNodesRadio := float64(len(recentStakers)) / float64(len(nodes))
@@ -56,10 +53,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	}
 
 	// Calculate scores for each node.
-	scores, err := computeScores(nodes, recentStakers, poolSizes, totalPoolSize, totalStakeValue, specialRewards)
-	if err != nil {
-		return nil, nil, err
-	}
+	scores := computeScores(nodes, recentStakers, poolSizes, totalPoolSize, totalStakeValue, specialRewards)
 
 	for _, score := range scores {
 		totalScore.Add(totalScore, score)
@@ -95,7 +89,9 @@ func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*
 	return nil
 }
 
-// excludeUnqualifiedNodes excludes offline Nodes even if they have recent stakers.
+// excludeUnqualifiedNodes excludes Nodes if they:
+// 1. have no recent stakers
+// 2. are offline
 func excludeUnqualifiedNodes(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) {
 	onlineNodes := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
 		return node.Address, struct{}{}
@@ -127,7 +123,7 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, error) {
 }
 
 // computeTotalStakeValue calculates the total stake value.
-func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) (*big.Int, error) {
+func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) *big.Int {
 	var totalStakeValue = big.NewInt(0)
 
 	for _, node := range nodes {
@@ -136,25 +132,21 @@ func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Addre
 		}
 	}
 
-	return totalStakeValue, nil
+	return totalStakeValue
 }
 
 // computeScores calculates the scores for each node based on various factors.
-func computeScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, poolSizes []*big.Int, totalPoolSize *big.Int, totalStakeValue *big.Int, specialRewards *config.SpecialRewards) ([]*big.Float, error) {
+func computeScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, poolSizes []*big.Int, totalPoolSize *big.Int, totalStakeValue *big.Int, specialRewards *config.SpecialRewards) []*big.Float {
 	scores := make([]*big.Float, len(nodes))
 
 	for i, poolSize := range poolSizes {
+		// If the Node has no recent stakers, set the score to 0
 		if _, exist := recentStakers[nodes[i].Address]; !exist {
 			scores[i] = big.NewFloat(0)
 			continue
 		}
 
 		stakeInfo := recentStakers[nodes[i].Address]
-
-		if stakeInfo.StakerCount == 0 {
-			scores[i] = big.NewFloat(0)
-			continue
-		}
 
 		// Calculate the ratio of poolSize to totalPoolSize
 		// poolSizeRatio = poolSize / totalPoolSize
@@ -170,7 +162,7 @@ func computeScores(nodes []*schema.Node, recentStakers map[common.Address]*schem
 		scores[i] = score
 	}
 
-	return scores, nil
+	return scores
 }
 
 // calculateFinalRewards converts scores into reward amounts.

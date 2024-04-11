@@ -5,15 +5,15 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	nodecount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_count"
-	nodemintokenstostake "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
-	operatorprofit "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/operator_profit"
-	stakercount "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_count"
-	stakerprofit "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
+	nodecount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_count"
+	nodemintokenstostake "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
+	operatorprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/operator_profit"
+	stakercount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_count"
+	stakerprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/sourcegraph/conc/pool"
 )
 
@@ -23,6 +23,10 @@ var _ service.Server = (*server)(nil)
 
 type server struct {
 	snapshots []service.Server
+}
+
+func (s *server) Name() string {
+	return Name
 }
 
 func (s *server) Run(ctx context.Context) error {

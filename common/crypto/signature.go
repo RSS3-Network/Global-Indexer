@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	gisigner "github.com/naturalselectionlabs/rss3-global-indexer/common/signer"
+	gisigner "github.com/rss3-network/global-indexer/common/signer"
 )
 
 func PrivateKeySignerFn(key *ecdsa.PrivateKey, chainID *big.Int) bind.SignerFn {
@@ -78,6 +78,7 @@ func NewSignerFactory(privateKey, endpoint, address string) (SignerFactory, comm
 		fromAddress = crypto.PubkeyToAddress(privKey.PublicKey)
 		signer = func(chainID *big.Int) SignerFn {
 			s := PrivateKeySignerFn(privKey, chainID)
+
 			return func(_ context.Context, addr common.Address, tx *types.Transaction) (*types.Transaction, error) {
 				return s(addr, tx)
 			}

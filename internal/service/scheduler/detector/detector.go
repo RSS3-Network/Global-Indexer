@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/cronjob"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +22,10 @@ var Name = "detector"
 type server struct {
 	cronJob        *cronjob.CronJob
 	databaseClient database.Client
+}
+
+func (s *server) Name() string {
+	return Name
 }
 
 func (s *server) Spec() string {

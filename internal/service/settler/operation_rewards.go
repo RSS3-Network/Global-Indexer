@@ -5,8 +5,8 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/schema"
 )
 
 // calculateOperationRewards calculates the Operation Rewards for all Nodes
