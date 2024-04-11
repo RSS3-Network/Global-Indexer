@@ -167,7 +167,7 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 
 	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 
-	node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
+	node.Local, err = h.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
 		zap.L().Error("get node local error", zap.Error(err))
 	}
@@ -304,7 +304,7 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 
 	// Get node local info.
 	if len(node.Local) == 0 {
-		node.Local, err = h.geoLite2.LookupLocal(ctx, requestIP)
+		node.Local, err = h.geoLite2.LookupNodeLocation(ctx, requestIP)
 		if err != nil {
 			zap.L().Error("get node local error", zap.Error(err))
 		}

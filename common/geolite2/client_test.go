@@ -12,14 +12,11 @@ import (
 func TestNodeLocal(t *testing.T) {
 	t.Parallel()
 
-	c, err := geolite2.NewClient(&config.GeoIP{
-		File: "./mmdb/GeoLite2-City.mmdb",
+	c := geolite2.NewClient(&config.GeoIP{
+		//Account:    976142,
+		LicenseKey: "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",
+		File:       "./mmdb/GeoLite2-City.mmdb",
 	})
-	if err != nil {
-		t.Log(err)
-
-		return
-	}
 
 	testcases := []struct {
 		name     string
@@ -27,7 +24,7 @@ func TestNodeLocal(t *testing.T) {
 	}{
 		{
 			name:     "ip",
-			endpoint: "1.2.3.4",
+			endpoint: "86.25.237.241",
 		},
 		{
 			name:     "domain",
@@ -41,7 +38,7 @@ func TestNodeLocal(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			locals, _ := c.LookupLocal(context.Background(), testcase.endpoint)
+			locals, _ := c.LookupNodeLocation(context.Background(), testcase.endpoint)
 			//require.NoError(t, err)
 
 			data, _ := json.Marshal(locals)

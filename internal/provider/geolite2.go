@@ -5,6 +5,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config"
 )
 
-func ProvideGeoIP2(configFile *config.File) (*geolite2.Client, error) {
+func ProvideGeoIP2(configFile *config.File) *geolite2.Client {
 	return geolite2.NewClient(configFile.GeoIP)
 }
