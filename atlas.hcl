@@ -35,3 +35,23 @@ env "dev" {
 env "prod" {
 
 }
+
+lint {
+  // https://atlasgo.io/lint/analyzers#data-dependent-changes
+  data_depend {
+    error = true
+  }
+  // https://atlasgo.io/lint/analyzers#backward-incompatible-changes
+  incompatible {
+    error = true
+  }
+  // https://atlasgo.io/lint/analyzers#destructive-changes
+  destructive {
+    error = true
+  }
+  naming {
+    error   = true
+    match   = "^[a-z]+$"
+    message = "must be lowercase"
+  }
+}
