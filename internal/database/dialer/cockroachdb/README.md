@@ -18,6 +18,12 @@ Or generate a schema.hcl file (we do not need it)
     atlas schema inspect -u "postgres://root:@localhost:26257?sslmode=disable" > ./internal/database/dialer/cockroachdb/table/schema.hcl
 ```
 
+## Convert goose migrations to Atlas migrations
+If you have existing goose migrations under `migration` folder (relative to your current directory), you can convert it to an Atlas migration.
+```
+    atlas migrate import --from file://migration?format=goose --to file://atlas
+```
+
 ## Init database from an Atlas schema.hcl
 If you have an existing schema.hcl file, you can initialize the database with it.
 ```
