@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/constant"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/provider"
+	"github.com/rss3-network/global-indexer/internal/constant"
+	"github.com/rss3-network/global-indexer/internal/provider"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"

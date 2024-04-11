@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
 )
 
 func Test_Resolve(t *testing.T) {

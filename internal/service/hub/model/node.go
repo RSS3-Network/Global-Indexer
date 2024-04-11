@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/schema"
 )
 
 func NewNode(node *schema.Node, baseURL url.URL) *schema.Node {

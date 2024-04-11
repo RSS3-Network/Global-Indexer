@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model"
 	"github.com/stretchr/testify/mock"
 )
 

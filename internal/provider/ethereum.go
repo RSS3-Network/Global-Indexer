@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config"
 )
 
 func ProvideEthereumMultiChainClient(configFile *config.File) (*ethereum.MultiChainClient, error) {

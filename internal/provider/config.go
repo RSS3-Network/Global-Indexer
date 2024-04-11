@@ -1,8 +1,8 @@
 package provider
 
 import (
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
 	"github.com/spf13/viper"
 )
 

@@ -3,16 +3,16 @@ package scheduler
 import (
 	"fmt"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/taxer"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler/detector"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler/integrator"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler/taxer"
 	"github.com/spf13/viper"
 )
 

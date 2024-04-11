@@ -8,9 +8,9 @@ import (
 	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/response"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/response"
 )
 
 func (h *Hub) GetEpochs(c echo.Context) error {

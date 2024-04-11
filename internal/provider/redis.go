@@ -3,8 +3,8 @@ package provider
 import (
 	"fmt"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/config"
 )
 
 func ProvideRedisClient(config *config.File) (*redis.Client, error) {

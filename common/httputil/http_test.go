@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/stretchr/testify/require"
 )
 

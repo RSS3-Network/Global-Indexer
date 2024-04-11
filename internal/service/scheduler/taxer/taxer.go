@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	gicrypto "github.com/naturalselectionlabs/rss3-global-indexer/common/crypto"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/txmgr"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
+	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
+	"github.com/rss3-network/global-indexer/common/txmgr"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/cronjob"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service"
 	"go.uber.org/zap"
 )
 

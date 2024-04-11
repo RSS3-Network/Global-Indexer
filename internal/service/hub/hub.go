@@ -6,14 +6,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
 	"github.com/spf13/viper"
 )
 
