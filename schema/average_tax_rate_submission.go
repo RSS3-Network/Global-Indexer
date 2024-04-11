@@ -7,16 +7,16 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type AverageTaxSubmission struct {
+type AverageTaxRateSubmission struct {
 	ID              uint64          `json:"id"`
 	EpochID         uint64          `json:"epoch_id"`
 	TransactionHash common.Hash     `json:"transaction_hash"`
-	AverageTax      decimal.Decimal `json:"average_tax"`
+	AverageTaxRate  decimal.Decimal `json:"average_tax_rate"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
 }
 
-type AverageTaxSubmissionQuery struct {
+type AverageTaxRateSubmissionQuery struct {
 	EpochID *uint64 `json:"epoch_id"`
 	Limit   *int    `json:"limit"`
 }

@@ -10,8 +10,8 @@ import (
 )
 
 // SaveAverageTaxSubmission Save records of average tax submissions
-func (c *client) SaveAverageTaxSubmission(ctx context.Context, submission *schema.AverageTaxSubmission) error {
-	var data table.AverageTaxSubmission
+func (c *client) SaveAverageTaxSubmission(ctx context.Context, submission *schema.AverageTaxRateSubmission) error {
+	var data table.AverageTaxRateSubmission
 	if err := data.Import(submission); err != nil {
 		zap.L().Error("import average tax submission", zap.Error(err), zap.Any("submission", submission))
 
@@ -37,8 +37,8 @@ func (c *client) SaveAverageTaxSubmission(ctx context.Context, submission *schem
 }
 
 // FindAverageTaxSubmissions Find records of average tax submissions
-func (c *client) FindAverageTaxSubmissions(ctx context.Context, query schema.AverageTaxSubmissionQuery) ([]*schema.AverageTaxSubmission, error) {
-	databaseStatement := c.database.WithContext(ctx).Table((*table.AverageTaxSubmission).TableName(nil))
+func (c *client) FindAverageTaxSubmissions(ctx context.Context, query schema.AverageTaxRateSubmissionQuery) ([]*schema.AverageTaxRateSubmission, error) {
+	databaseStatement := c.database.WithContext(ctx).Table((*table.AverageTaxRateSubmission).TableName(nil))
 
 	if query.EpochID != nil {
 		databaseStatement = databaseStatement.Where("epoch_id = ?", *query.EpochID)

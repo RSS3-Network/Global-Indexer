@@ -8,22 +8,22 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type AverageTaxSubmission struct {
+type AverageTaxRateSubmission struct {
 	ID              uint64          `gorm:"id"`
 	EpochID         uint64          `gorm:"epoch_id"`
-	AverageTax      decimal.Decimal `gorm:"average_tax"`
+	AverageTaxRate  decimal.Decimal `gorm:"average_tax_rate"`
 	TransactionHash string          `gorm:"transaction_hash"`
 	CreatedAt       time.Time       `gorm:"created_at"`
 	UpdatedAt       time.Time       `gorm:"updated_at"`
 }
 
-func (a *AverageTaxSubmission) TableName() string {
-	return "average_tax_submissions"
+func (a *AverageTaxRateSubmission) TableName() string {
+	return "average_tax_rate_submissions"
 }
 
-func (a *AverageTaxSubmission) Import(submission *schema.AverageTaxSubmission) error {
+func (a *AverageTaxRateSubmission) Import(submission *schema.AverageTaxRateSubmission) error {
 	a.EpochID = submission.EpochID
-	a.AverageTax = submission.AverageTax
+	a.AverageTaxRate = submission.AverageTaxRate
 	a.CreatedAt = submission.CreatedAt
 	a.UpdatedAt = submission.UpdatedAt
 	a.TransactionHash = submission.TransactionHash.String()
@@ -31,22 +31,22 @@ func (a *AverageTaxSubmission) Import(submission *schema.AverageTaxSubmission) e
 	return nil
 }
 
-func (a *AverageTaxSubmission) Export() (*schema.AverageTaxSubmission, error) {
-	return &schema.AverageTaxSubmission{
+func (a *AverageTaxRateSubmission) Export() (*schema.AverageTaxRateSubmission, error) {
+	return &schema.AverageTaxRateSubmission{
 		ID:              a.ID,
 		EpochID:         a.EpochID,
-		AverageTax:      a.AverageTax,
+		AverageTaxRate:  a.AverageTaxRate,
 		TransactionHash: common.HexToHash(a.TransactionHash),
 		CreatedAt:       a.CreatedAt,
 		UpdatedAt:       a.UpdatedAt,
 	}, nil
 }
 
-type AverageTaxSubmissions []AverageTaxSubmission
+type AverageTaxSubmissions []AverageTaxRateSubmission
 
-func (a *AverageTaxSubmissions) Import(submissions []*schema.AverageTaxSubmission) error {
+func (a *AverageTaxSubmissions) Import(submissions []*schema.AverageTaxRateSubmission) error {
 	for _, submission := range submissions {
-		var imported AverageTaxSubmission
+		var imported AverageTaxRateSubmission
 
 		if err := imported.Import(submission); err != nil {
 			return err
@@ -58,8 +58,8 @@ func (a *AverageTaxSubmissions) Import(submissions []*schema.AverageTaxSubmissio
 	return nil
 }
 
-func (a *AverageTaxSubmissions) Export() ([]*schema.AverageTaxSubmission, error) {
-	exported := make([]*schema.AverageTaxSubmission, 0)
+func (a *AverageTaxSubmissions) Export() ([]*schema.AverageTaxRateSubmission, error) {
+	exported := make([]*schema.AverageTaxRateSubmission, 0)
 
 	for _, submission := range *a {
 		exportedSubmission, err := submission.Export()

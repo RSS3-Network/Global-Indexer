@@ -1,4 +1,4 @@
-package averagetax
+package taxer
 
 import (
 	"context"
@@ -15,12 +15,12 @@ import (
 	"go.uber.org/zap"
 )
 
-// submitAverageTax submits an average tax to the chain, and saves the submission record.
-func (s *Server) submitAverageTax(ctx context.Context, epochID uint64) error {
+// submitAverageTaxRate submits the average tax rate to the VSL, and saves the submission record.
+func (s *Server) submitAverageTaxRate(ctx context.Context, epochID uint64) error {
 	// Calculate the average tax.
-	averageTax, err := s.calculateAverageTax(ctx)
+	averageTax, err := s.calculateAverageTaxRate(ctx)
 	if err != nil {
-		return fmt.Errorf("calculate average tax: %w", err)
+		return fmt.Errorf("calculate average tax rate: %w", err)
 	}
 
 	// Submit the average tax to the chain.
@@ -30,9 +30,9 @@ func (s *Server) submitAverageTax(ctx context.Context, epochID uint64) error {
 	}
 
 	// Save the submission record to the database.
-	submission := &schema.AverageTaxSubmission{
+	submission := &schema.AverageTaxRateSubmission{
 		EpochID:         epochID,
-		AverageTax:      *averageTax,
+		AverageTaxRate:  *averageTax,
 		TransactionHash: *transactionHash,
 	}
 	if err := s.databaseClient.SaveAverageTaxSubmission(ctx, submission); err != nil {
@@ -42,11 +42,11 @@ func (s *Server) submitAverageTax(ctx context.Context, epochID uint64) error {
 	return nil
 }
 
-// calculateAverageTax calculates the average tax for all non-public good nodes.
-func (s *Server) calculateAverageTax(ctx context.Context) (*decimal.Decimal, error) {
+// calculateAverageTaxRate calculates the average tax rate based on all non-public good nodes.
+func (s *Server) calculateAverageTaxRate(ctx context.Context) (*decimal.Decimal, error) {
 	var (
-		nodesTaxes, nodesAmount decimal.Decimal
-		cursor                  *string
+		sumTaxRate, nodeCount decimal.Decimal
+		cursor                *string
 	)
 
 	for {
@@ -65,7 +65,7 @@ func (s *Server) calculateAverageTax(ctx context.Context) (*decimal.Decimal, err
 			break
 		}
 
-		// Filter public good nodes
+		// Exclude public good nodes
 		var nodeAddresses []common.Address
 
 		for _, node := range nodes {
@@ -76,8 +76,8 @@ func (s *Server) calculateAverageTax(ctx context.Context) (*decimal.Decimal, err
 			nodeAddresses = append(nodeAddresses, node.Address)
 		}
 
-		// Query the nodes on the chain by staking contract.
-		chainNodes, err := s.stakingContract.GetNodes(&bind.CallOpts{Context: ctx}, nodeAddresses)
+		// Query the VSL to complement the Node info.
+		nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{Context: ctx}, nodeAddresses)
 		if err != nil {
 			zap.L().Error("get nodes on the chain by staking contract", zap.Error(err))
 
@@ -85,20 +85,21 @@ func (s *Server) calculateAverageTax(ctx context.Context) (*decimal.Decimal, err
 		}
 
 		// Accumulate the tax and number of all nodes.
-		for _, node := range chainNodes {
-			nodesTaxes = nodesTaxes.Add(decimal.NewFromInt(int64(node.TaxRateBasisPoints)))
-			nodesAmount = nodesAmount.Add(decimal.NewFromInt(1))
+		for _, node := range nodeInfo {
+			sumTaxRate = sumTaxRate.Add(decimal.NewFromInt(int64(node.TaxRateBasisPoints)))
+			nodeCount = nodeCount.Add(decimal.NewFromInt(1))
 		}
 
 		cursor = lo.ToPtr(nodes[len(nodes)-1].Address.String())
 	}
 
-	// Calculate the average tax.
-	if nodesAmount.IsZero() {
+	// If there are no Nodes, return 0.
+	if nodeCount.IsZero() {
 		return lo.ToPtr(decimal.Zero), nil
 	}
 
-	return lo.ToPtr(nodesTaxes.Div(nodesAmount)), nil
+	// Calculate and return the average tax rate.
+	return lo.ToPtr(sumTaxRate.Div(nodeCount)), nil
 }
 
 // invokeSettlementContract invokes the settlement contract to submit the average tax.

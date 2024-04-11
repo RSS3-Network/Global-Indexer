@@ -1,4 +1,4 @@
-package averagetax
+package taxer
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 var _ service.Server = (*Server)(nil)
 
 var (
-	Name    = "average_tax"
+	Name    = "taxer"
 	Timeout = 3 * time.Minute
 )
 
@@ -50,7 +50,7 @@ func (s *Server) Spec() string {
 func (s *Server) Run(ctx context.Context) error {
 	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
 		// Query the submission record of the average tax rate
-		submissions, err := s.databaseClient.FindAverageTaxSubmissions(ctx, schema.AverageTaxSubmissionQuery{
+		submissions, err := s.databaseClient.FindAverageTaxSubmissions(ctx, schema.AverageTaxRateSubmissionQuery{
 			Limit: lo.ToPtr(1),
 		})
 		if err != nil {
@@ -76,7 +76,7 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 
 		// Submit a new average tax rate and save record
-		if err := s.submitAverageTax(ctx, latestEvent[0].ID); err != nil {
+		if err := s.submitAverageTaxRate(ctx, latestEvent[0].ID); err != nil {
 			zap.L().Error("submit average tax", zap.Error(err))
 
 			return

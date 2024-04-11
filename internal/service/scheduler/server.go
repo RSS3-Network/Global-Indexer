@@ -8,10 +8,10 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	averagetax "github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/average_tax"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/detector"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/integrator"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/snapshot"
+	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler/taxer"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
 )
@@ -29,8 +29,8 @@ func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMult
 		return integrator.New(databaseClient, redis, ethereumClient)
 	case snapshot.Name:
 		return snapshot.New(databaseClient, redis, ethereumClient)
-	case averagetax.Name:
-		return averagetax.New(databaseClient, redis, ethereumClient, config)
+	case taxer.Name:
+		return taxer.New(databaseClient, redis, ethereumClient, config)
 	default:
 		return nil, fmt.Errorf("unknown scheduler server: %s", server)
 	}
