@@ -13,8 +13,8 @@ import (
 )
 
 type Enforcer interface {
-	Verify(ctx context.Context, results []model.DataResponse) error
-	PartialVerify(ctx context.Context, results []model.DataResponse) error
+	Verify(ctx context.Context, responses []model.DataResponse) error
+	PartialVerify(ctx context.Context, responses []model.DataResponse) error
 	MaintainScore(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 }
@@ -23,26 +23,26 @@ type SimpleEnforcer struct {
 	databaseClient database.Client
 }
 
-func (e *SimpleEnforcer) Verify(ctx context.Context, results []model.DataResponse) error {
-	if len(results) == 0 {
+func (e *SimpleEnforcer) Verify(ctx context.Context, responses []model.DataResponse) error {
+	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
 	}
 
-	nodeStatsMap, err := e.getNodeStatsMap(ctx, results)
+	nodeStatsMap, err := e.getNodeStatsMap(ctx, responses)
 	if err != nil {
 		return fmt.Errorf("failed to find node stats: %w", err)
 	}
 
 	// non-error and non-null results are always in front of the list
-	sort.SliceStable(results, func(i, j int) bool {
-		return (results[i].Err == nil && results[j].Err != nil) ||
-			(results[i].Err == nil && results[j].Err == nil && results[i].Valid && !results[j].Valid)
+	sort.SliceStable(responses, func(i, j int) bool {
+		return (responses[i].Err == nil && responses[j].Err != nil) ||
+			(responses[i].Err == nil && responses[j].Err == nil && responses[i].Valid && !responses[j].Valid)
 	})
 
 	// update requests based on data compare
-	updateRequestsBasedOnDataCompare(results)
+	updateRequestsBasedOnDataCompare(responses)
 
-	updateStatsWithResults(nodeStatsMap, results)
+	updateStatsWithResults(nodeStatsMap, responses)
 
 	if err = e.databaseClient.SaveNodeStats(ctx, lo.MapToSlice(nodeStatsMap,
 		func(_ common.Address, stat *schema.Stat) *schema.Stat {
@@ -54,10 +54,10 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, results []model.DataRespons
 	return nil
 }
 
-func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, results []model.DataResponse) (map[common.Address]*schema.Stat, error) {
+func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []model.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: lo.Map(results, func(result model.DataResponse, _ int) common.Address {
-			return result.Address
+		AddressList: lo.Map(responses, func(response model.DataResponse, _ int) common.Address {
+			return response.Address
 		}),
 	})
 
@@ -70,12 +70,12 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, results []model.Da
 	}), nil
 }
 
-func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, results []model.DataResponse) {
-	for _, result := range results {
-		if stat, exists := statsMap[result.Address]; exists {
-			stat.TotalRequest += int64(result.Request)
-			stat.EpochRequest += int64(result.Request)
-			stat.EpochInvalidRequest += int64(result.InvalidRequest)
+func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []model.DataResponse) {
+	for _, response := range responses {
+		if stat, exists := statsMap[response.Address]; exists {
+			stat.TotalRequest += int64(response.Request)
+			stat.EpochRequest += int64(response.Request)
+			stat.EpochInvalidRequest += int64(response.InvalidRequest)
 		}
 	}
 }

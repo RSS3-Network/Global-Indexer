@@ -13,29 +13,29 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		results         []model.DataResponse
+		responses       []model.DataResponse
 		requests        []int
 		invalidRequests []int
 	}{
 		{
-			name: "one_error_result",
-			results: []model.DataResponse{
+			name: "one_error_response",
+			responses: []model.DataResponse{
 				{Err: errors.New("error")},
 			},
 			requests:        []int{0},
 			invalidRequests: []int{1},
 		},
 		{
-			name: "one_valid_result",
-			results: []model.DataResponse{
+			name: "one_valid_response",
+			responses: []model.DataResponse{
 				{Data: []byte("data1"), Valid: true},
 			},
 			requests:        []int{1},
 			invalidRequests: []int{0},
 		},
 		{
-			name: "two_error_results",
-			results: []model.DataResponse{
+			name: "two_error_responses",
+			responses: []model.DataResponse{
 				{Err: errors.New("error1")},
 				{Err: errors.New("error2")},
 			},
@@ -43,8 +43,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 			invalidRequests: []int{1, 1},
 		},
 		{
-			name: "one_error_with_two_results",
-			results: []model.DataResponse{
+			name: "one_error_with_two_responses",
+			responses: []model.DataResponse{
 				{Data: []byte("data1"), Valid: true},
 				{Err: errors.New("error")},
 			},
@@ -52,8 +52,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 			invalidRequests: []int{0, 1},
 		},
 		{
-			name: "two_results_with_different_data",
-			results: []model.DataResponse{
+			name: "two_responses_with_different_data",
+			responses: []model.DataResponse{
 				{Data: []byte("data1"), Valid: true},
 				{Data: []byte("data2"), Valid: true},
 			},
@@ -61,8 +61,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 			invalidRequests: []int{0, 0},
 		},
 		{
-			name: "two_results_with_same_data",
-			results: []model.DataResponse{
+			name: "two_responses_with_same_data",
+			responses: []model.DataResponse{
 				{Data: []byte("data1"), Valid: true},
 				{Data: []byte("data1"), Valid: true},
 			},
@@ -71,7 +71,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_errors",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Err: errors.New("error1")},
 				{Err: errors.New("error2")},
 				{Err: errors.New("error3")},
@@ -81,7 +81,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_errors",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1"), Valid: true},
 				{Err: errors.New("error2")},
 				{Err: errors.New("error3")},
@@ -91,7 +91,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_error_with_same_data",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data1")},
 				{Err: errors.New("error3")},
@@ -101,7 +101,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_error_with_different_data",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data2")},
 				{Err: errors.New("error3")},
@@ -111,7 +111,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_same_data",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data1")},
 				{Data: []byte("data1")},
@@ -121,7 +121,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_different_data",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data2")},
 				{Data: []byte("data3")},
@@ -131,7 +131,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_01",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data1")},
 				{Data: []byte("data2")},
@@ -141,7 +141,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_02",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data1")},
 				{Data: []byte("data2")},
 				{Data: []byte("data1")},
@@ -151,7 +151,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_12_with_valid",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data0")},
 				{Data: []byte("data1"), Valid: true},
 				{Data: []byte("data1")},
@@ -161,7 +161,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_12_with_invalid",
-			results: []model.DataResponse{
+			responses: []model.DataResponse{
 				{Data: []byte("data0")},
 				{Data: []byte("data1")},
 				{Data: []byte("data1")},
@@ -177,8 +177,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			updateRequestsBasedOnDataCompare(tc.results)
-			for i, result := range tc.results {
+			updateRequestsBasedOnDataCompare(tc.responses)
+			for i, result := range tc.responses {
 				assert.Equal(t, tc.requests[i], result.Request)
 				assert.Equal(t, tc.invalidRequests[i], result.InvalidRequest)
 			}
