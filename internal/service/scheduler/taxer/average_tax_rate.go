@@ -16,6 +16,46 @@ import (
 	"go.uber.org/zap"
 )
 
+// checkAndSubmitAverageTaxRate checks the average tax rate and submits it to the VSL if necessary.
+func (s *Server) checkAndSubmitAverageTaxRate(ctx context.Context) error {
+	// Query the submission record of the average tax rate
+	submissions, err := s.databaseClient.FindAverageTaxSubmissions(ctx, schema.AverageTaxRateSubmissionQuery{
+		Limit: lo.ToPtr(1),
+	})
+	if err != nil {
+		zap.L().Error("find average tax submissions", zap.Error(err))
+
+		return err
+	}
+
+	// Query the latest of epoch events
+	latestEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+	if err != nil {
+		zap.L().Error("find epochs", zap.Error(err))
+
+		return err
+	}
+
+	// If there is no latest epoch event, do nothing.
+	if len(latestEvent) == 0 {
+		return nil
+	}
+
+	// If the latest submission record is the same as the latest epoch event, do nothing.
+	if len(submissions) > 0 && submissions[0].EpochID == latestEvent[0].ID {
+		return nil
+	}
+
+	// Submit a new average tax rate and save record
+	if err = s.submitAverageTaxRate(ctx, latestEvent[0].ID); err != nil {
+		zap.L().Error("submit average tax", zap.Error(err))
+
+		return err
+	}
+
+	return nil
+}
+
 // submitAverageTaxRate submits the average tax rate to the VSL, and saves the submission record.
 func (s *Server) submitAverageTaxRate(ctx context.Context, epochID uint64) error {
 	// Calculate the average tax.

@@ -17,9 +17,7 @@ import (
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
 	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -49,35 +47,8 @@ func (s *Server) Spec() string {
 
 func (s *Server) Run(ctx context.Context) error {
 	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
-		// Query the submission record of the average tax rate
-		submissions, err := s.databaseClient.FindAverageTaxSubmissions(ctx, schema.AverageTaxRateSubmissionQuery{
-			Limit: lo.ToPtr(1),
-		})
-		if err != nil {
-			zap.L().Error("find average tax submissions", zap.Error(err))
-
-			return
-		}
-
-		// Query the latest of epoch events
-		latestEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
-		if err != nil {
-			zap.L().Error("find epochs", zap.Error(err))
-
-			return
-		}
-
-		if len(latestEvent) == 0 {
-			return
-		}
-
-		if len(submissions) > 0 && submissions[0].EpochID == latestEvent[0].ID {
-			return
-		}
-
-		// Submit a new average tax rate and save record
-		if err := s.submitAverageTaxRate(ctx, latestEvent[0].ID); err != nil {
-			zap.L().Error("submit average tax", zap.Error(err))
+		if err := s.checkAndSubmitAverageTaxRate(ctx); err != nil {
+			zap.L().Error("submit average tax rate error", zap.Error(err))
 
 			return
 		}
