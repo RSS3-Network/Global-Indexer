@@ -3,10 +3,10 @@ package dsl
 import (
 	"context"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/distributor"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
 )
 
 type DSL struct {

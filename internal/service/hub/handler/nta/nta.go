@@ -5,10 +5,10 @@ import (
 	"net/url"
 
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/database"
 )
 
 type NTA struct {

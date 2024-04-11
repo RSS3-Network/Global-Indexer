@@ -8,8 +8,8 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/dsl"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
 )
@@ -58,7 +58,7 @@ func (d *Distributor) verifyData(ctx context.Context, results []DataResponse) er
 			}
 		}
 	} else {
-		if !results[0].First {
+		if !results[0].Valid {
 			for i := range results {
 				results[i].InvalidRequest = 1
 			}
@@ -237,7 +237,7 @@ func (d *Distributor) getNodeStatsMap(ctx context.Context, results []DataRespons
 // It takes a slice of data responses as an input parameter.
 func (d *Distributor) sortResults(results []DataResponse) {
 	sort.SliceStable(results, func(i, j int) bool {
-		return results[i].First && !results[j].First
+		return results[i].Valid && !results[j].Valid
 	})
 }
 

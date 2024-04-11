@@ -13,11 +13,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/dsl"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -260,7 +260,7 @@ func (d *Distributor) batchRequestNodes(_ context.Context, nodeMap map[common.Ad
 			}
 
 			mu.Lock()
-			results = append(results, DataResponse{Address: address, Data: data, First: true})
+			results = append(results, DataResponse{Address: address, Data: data, Valid: true})
 			mu.Unlock()
 
 			select {
@@ -314,7 +314,7 @@ func (d *Distributor) processActivitiesResults(results []DataResponse) {
 
 	zap.L().Info("complete feed request verify", zap.Any("results", len(results)))
 
-	if !results[0].First {
+	if !results[0].Valid {
 		return
 	}
 

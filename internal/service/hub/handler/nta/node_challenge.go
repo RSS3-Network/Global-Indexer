@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/errorx"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model/nta"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 )
 
 var (
