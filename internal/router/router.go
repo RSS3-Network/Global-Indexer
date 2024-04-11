@@ -181,11 +181,6 @@ func validateData(data []byte, target any) bool {
 		return false
 	}
 
-	var notFound model.NotFoundResponse
-	if err := json.Unmarshal(data, &notFound); err == nil && notFound.Message != "" {
-		return false
-	}
-
 	if err := json.Unmarshal(data, target); err == nil {
 		return true
 	}

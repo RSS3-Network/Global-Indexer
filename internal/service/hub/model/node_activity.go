@@ -242,10 +242,6 @@ type ErrResponse struct {
 	ErrorCode string `json:"error_code"`
 }
 
-type NotFoundResponse struct {
-	Message string `json:"message"`
-}
-
 type ActivityResponse struct {
 	Data *Feed `json:"data"`
 }
