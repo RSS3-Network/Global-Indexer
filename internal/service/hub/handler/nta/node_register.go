@@ -123,7 +123,11 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.NodeStatusOnline
+
+	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	if err != nil {
+		return fmt.Errorf("update node status: %w", err)
+	}
 
 	minTokensToStake, err := n.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
 	if err != nil {
@@ -284,7 +288,11 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.NodeStatusOnline
+	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+
+	if err != nil {
+		return fmt.Errorf("update node status: %w", err)
+	}
 
 	// Save node to database.
 	return n.databaseClient.SaveNode(ctx, node)
