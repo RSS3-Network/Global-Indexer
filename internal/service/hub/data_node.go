@@ -154,7 +154,11 @@ func (h *Hub) register(ctx context.Context, request *RegisterNodeRequest, reques
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.NodeStatusOnline
+
+	err = model.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	if err != nil {
+		return fmt.Errorf("update node status: %w", err)
+	}
 
 	minTokensToStake, err := h.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
 	if err != nil {
@@ -315,7 +319,11 @@ func (h *Hub) heartbeat(ctx context.Context, request *NodeHeartbeatRequest, requ
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Status = schema.NodeStatusOnline
+	err = model.UpdateNodeStatus(node, schema.NodeStatusOnline)
+
+	if err != nil {
+		return fmt.Errorf("update node status: %w", err)
+	}
 
 	// Save node to database.
 	return h.databaseClient.SaveNode(ctx, node)
