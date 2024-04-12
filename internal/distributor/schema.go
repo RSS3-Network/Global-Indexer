@@ -18,6 +18,10 @@ var (
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
 	DefaultVerifyCount = 3
+
+	MutablePlatformMap = map[string]struct{}{
+		filter.PlatformFarcaster.String(): {},
+	}
 )
 
 type Cache struct {

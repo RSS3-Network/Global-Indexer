@@ -1,7 +1,7 @@
 package enforcer
 
 import (
-	"crypto/sha256"
+	"encoding/json"
 
 	"github.com/rss3-network/global-indexer/internal/distributor"
 )
@@ -26,13 +26,96 @@ func updateRequestsBasedOnDataCompare(responses []distributor.DataResponse) {
 
 // compareData compares two byte slices and returns true if they are equal.
 func compareData(src, des []byte) bool {
-	if src == nil || des == nil {
+	srcActivity := &distributor.ActivityResponse{}
+	desActivity := &distributor.ActivityResponse{}
+
+	// check if the data is activity response
+	if validateData(src, srcActivity) && validateData(des, desActivity) {
+		if srcActivity.Data == nil && desActivity.Data == nil {
+			return true
+		} else if srcActivity.Data != nil && desActivity.Data != nil {
+			if _, exist := distributor.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
+				// TODO: if false, save the record to the database
+				return compareActivity(srcActivity.Data, desActivity.Data)
+			}
+
+			return true
+		}
+	}
+
+	srcActivities := &distributor.ActivitiesResponse{}
+	desActivities := &distributor.ActivitiesResponse{}
+	// check if the data is activities	response
+	if validateData(src, srcActivities) && validateData(des, desActivities) {
+		if srcActivities.Data == nil && desActivities.Data == nil {
+			return true
+		} else if srcActivities.Data != nil && desActivities.Data != nil {
+			// exclude the mutable platforms
+			srcFeeds, desFeeds := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
+
+			for i := range srcFeeds {
+				if !compareActivity(srcFeeds[i], desFeeds[i]) {
+					// TODO: if false, save the record to the database
+					return false
+				}
+			}
+
+			return true
+		}
+	}
+
+	return false
+}
+
+// excludeMutableActivity excludes the mutable platforms from the activities.
+func excludeMutableActivity(activities []*distributor.Feed) []*distributor.Feed {
+	var newActivities []*distributor.Feed
+
+	for i := range activities {
+		if _, exist := distributor.MutablePlatformMap[activities[i].Platform]; !exist {
+			newActivities = append(newActivities, activities[i])
+		}
+	}
+
+	return newActivities
+}
+
+// compareActivity compares two activities and returns true if they are equal.
+func compareActivity(src, des *distributor.Feed) bool {
+	if src.ID != des.ID ||
+		src.Network != des.Network ||
+		src.Index != des.Index ||
+		src.From != des.From ||
+		src.To != des.To ||
+		src.Owner != des.Owner ||
+		src.Tag != des.Tag ||
+		src.Type != des.Type ||
+		src.Platform != des.Platform ||
+		len(src.Actions) != len(des.Actions) {
 		return false
 	}
 
-	srcHash, destHash := sha256.Sum256(src), sha256.Sum256(des)
+	if len(src.Actions) > 0 {
+		for i := range des.Actions {
+			if src.Actions[i].From != des.Actions[i].From ||
+				src.Actions[i].To != des.Actions[i].To ||
+				src.Actions[i].Tag != des.Actions[i].Tag ||
+				src.Actions[i].Type != des.Actions[i].Type {
+				return false
+			}
+		}
+	}
 
-	return string(srcHash[:]) == string(destHash[:])
+	return true
+}
+
+// validateData validates the data and returns true if the data is valid.
+func validateData(data []byte, target any) bool {
+	if err := json.Unmarshal(data, target); err == nil {
+		return true
+	}
+
+	return false
 }
 
 // markErrorResponsesAndCount marks the error results and returns the count of error results.
@@ -72,6 +155,7 @@ func handleFullResponses(responses []distributor.DataResponse, errResponseCount 
 	}
 }
 
+// updateRequestBasedOnComparison updates the requests based on the comparison of the data.
 func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 	if compareData(responses[0].Data, responses[1].Data) {
 		responses[0].Request = 2 * requestUnit
@@ -81,6 +165,7 @@ func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 	}
 }
 
+// markErrorResponse marks the error responses.
 func markErrorResponse(responses ...distributor.DataResponse) {
 	for i, result := range responses {
 		if result.Err != nil {
@@ -91,6 +176,7 @@ func markErrorResponse(responses ...distributor.DataResponse) {
 	}
 }
 
+// compareAndAssignRequests compares the data and assigns the requests.
 func compareAndAssignRequests(responses []distributor.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
 	diff01, diff02, diff12 := compareData(d0, d1), compareData(d0, d2), compareData(d1, d2)

@@ -23,6 +23,7 @@ type SimpleEnforcer struct {
 	databaseClient database.Client
 }
 
+// Verify verifies the responses from the nodes.
 func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.DataResponse) error {
 	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
@@ -41,9 +42,9 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.Dat
 
 	// update requests based on data compare
 	updateRequestsBasedOnDataCompare(responses)
-
+	// update stats based on results
 	updateStatsWithResults(nodeStatsMap, responses)
-
+	// save node stats
 	if err = e.databaseClient.SaveNodeStats(ctx, lo.MapToSlice(nodeStatsMap,
 		func(_ common.Address, stat *schema.Stat) *schema.Stat {
 			return stat
