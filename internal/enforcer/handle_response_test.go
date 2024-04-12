@@ -262,8 +262,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 			updateRequestsBasedOnComparisonResults(tc.responses)
 
 			for i, result := range tc.responses {
-				assert.Equal(t, tc.requests[i], result.Request)
-				assert.Equal(t, tc.invalidRequests[i], result.InvalidRequest)
+				assert.Equal(t, tc.requests[i], result.ValidPoint)
+				assert.Equal(t, tc.invalidRequests[i], result.InvalidPoint)
 			}
 		})
 	}

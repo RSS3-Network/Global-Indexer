@@ -33,11 +33,13 @@ type Cache struct {
 type DataResponse struct {
 	Address common.Address
 	Data    []byte
-	// Data responses that are neither errors nor null will be set to true.
-	Valid          bool
-	Err            error
-	Request        int
-	InvalidRequest int
+	// A valid response must be non-null and non-error
+	Valid bool
+	Err   error
+	// ValidPoint is the points given to the response
+	ValidPoint int
+	// InvalidPoint is the points given to the response when it is invalid
+	InvalidPoint int
 }
 
 type ErrResponse struct {

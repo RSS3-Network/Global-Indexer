@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	requestUnit        = 1
-	invalidRequestUnit = 1
+	// a valid response gives 1 point
+	validPointUnit = 1
+	// an invalid response gives 1 point (in a bad way)
+	invalidPointUnit = 1
 )
 
 // sortResponseByErrorAndValidity sorts the responses based on the error and validity.
@@ -104,6 +106,7 @@ func areActivitiesIdentical(src, des *distributor.Feed) bool {
 		return false
 	}
 
+	// check if the inner actions are identical
 	if len(src.Actions) > 0 {
 		for i := range des.Actions {
 			if src.Actions[i].From != des.Actions[i].From ||
@@ -131,7 +134,7 @@ func isDataValid(data []byte, target any) bool {
 func countAndMarkErrorResponse(responses []distributor.DataResponse) (errResponseCount int) {
 	for i := range responses {
 		if responses[i].Err != nil {
-			responses[i].InvalidRequest = invalidRequestUnit
+			responses[i].InvalidPoint = invalidPointUnit
 			errResponseCount++
 		}
 	}
@@ -151,9 +154,9 @@ func handleTwoResponses(responses []distributor.DataResponse) {
 // handleSingleResponse handles the case when there is only one response.
 func handleSingleResponse(responses []distributor.DataResponse) {
 	if responses[0].Err == nil {
-		responses[0].Request = requestUnit
+		responses[0].ValidPoint = validPointUnit
 	} else {
-		responses[0].InvalidRequest = invalidRequestUnit
+		responses[0].InvalidPoint = invalidPointUnit
 	}
 }
 
@@ -167,10 +170,10 @@ func handleFullResponses(responses []distributor.DataResponse, errResponseCount 
 // updateRequestBasedOnComparison updates the requests based on the comparison of the data.
 func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 	if areResponsesIdentical(responses[0].Data, responses[1].Data) {
-		responses[0].Request = 2 * requestUnit
-		responses[1].Request = requestUnit
+		responses[0].ValidPoint = 2 * validPointUnit
+		responses[1].ValidPoint = validPointUnit
 	} else {
-		responses[0].Request = requestUnit
+		responses[0].ValidPoint = validPointUnit
 	}
 }
 
@@ -178,9 +181,9 @@ func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 func markErrorResponse(responses ...distributor.DataResponse) {
 	for i, result := range responses {
 		if result.Err != nil {
-			responses[i].InvalidRequest = invalidRequestUnit
+			responses[i].InvalidPoint = invalidPointUnit
 		} else {
-			responses[i].Request = requestUnit
+			responses[i].ValidPoint = validPointUnit
 		}
 	}
 }
@@ -193,41 +196,41 @@ func compareAndAssignRequests(responses []distributor.DataResponse, errResponseC
 	switch errResponseCount {
 	// responses contain 2 errors
 	case len(responses) - 1:
-		responses[0].Request = requestUnit
+		responses[0].ValidPoint = validPointUnit
 	// responses contain 1 error
 	case len(responses) - 2:
 		if diff01 {
-			responses[0].Request = 2 * requestUnit
-			responses[1].Request = requestUnit
+			responses[0].ValidPoint = 2 * validPointUnit
+			responses[1].ValidPoint = validPointUnit
 		} else {
-			responses[0].Request = requestUnit
+			responses[0].ValidPoint = validPointUnit
 		}
 	// responses contain no errors
 	case len(responses) - 3:
 		if diff01 && diff02 && diff12 {
-			responses[0].Request = 2 * requestUnit
-			responses[1].Request = requestUnit
-			responses[2].Request = requestUnit
+			responses[0].ValidPoint = 2 * validPointUnit
+			responses[1].ValidPoint = validPointUnit
+			responses[2].ValidPoint = validPointUnit
 		} else if diff01 && !diff02 {
-			responses[0].Request = 2 * requestUnit
-			responses[1].Request = requestUnit
-			responses[2].InvalidRequest = invalidRequestUnit
+			responses[0].ValidPoint = 2 * validPointUnit
+			responses[1].ValidPoint = validPointUnit
+			responses[2].InvalidPoint = invalidPointUnit
 		} else if diff02 && !diff01 {
-			responses[0].Request = 2 * requestUnit
-			responses[1].InvalidRequest = invalidRequestUnit
-			responses[2].Request = requestUnit
+			responses[0].ValidPoint = 2 * validPointUnit
+			responses[1].InvalidPoint = invalidPointUnit
+			responses[2].ValidPoint = validPointUnit
 		} else if diff12 {
 			// if the second response is non-null
 			if responses[1].Valid {
-				responses[0].InvalidRequest = invalidRequestUnit
-				responses[1].Request = requestUnit
-				responses[2].Request = requestUnit
+				responses[0].InvalidPoint = invalidPointUnit
+				responses[1].ValidPoint = validPointUnit
+				responses[2].ValidPoint = validPointUnit
 			} else {
 				// the last two responses must include null data
-				responses[0].Request = requestUnit
+				responses[0].ValidPoint = validPointUnit
 			}
 		} else if !diff01 {
-			responses[0].Request = requestUnit
+			responses[0].ValidPoint = validPointUnit
 		}
 	}
 }
