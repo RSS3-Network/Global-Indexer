@@ -31,8 +31,9 @@ type Cache struct {
 }
 
 type DataResponse struct {
-	Address        common.Address
-	Data           []byte
+	Address common.Address
+	Data    []byte
+	// Data responses that are neither errors nor null will be set to true.
 	Valid          bool
 	Err            error
 	Request        int
