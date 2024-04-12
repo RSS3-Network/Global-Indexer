@@ -27,7 +27,7 @@ type Node struct {
 	Config                 json.RawMessage        `json:"-"`
 	Status                 NodeStatus             `json:"status"`
 	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
-	Local                  []*NodeLocal           `json:"local"`
+	Location               []*NodeLocation        `json:"location"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	APY                    decimal.Decimal        `json:"apy"`
@@ -35,7 +35,7 @@ type Node struct {
 	CreatedAt              int64                  `json:"createdAt"`
 }
 
-type NodeLocal struct {
+type NodeLocation struct {
 	Country   string  `json:"country"`
 	Region    string  `json:"region"`
 	City      string  `json:"city"`

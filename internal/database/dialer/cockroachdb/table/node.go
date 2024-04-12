@@ -22,13 +22,14 @@ type Node struct {
 	Config                 json.RawMessage   `gorm:"column:config;type:jsonb"`
 	Status                 schema.NodeStatus `gorm:"column:status"`
 	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp"`
-	Local                  json.RawMessage   `gorm:"column:local;type:jsonb"`
-	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
-	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
-	APY                    decimal.Decimal   `gorm:"column:apy"`
-	Score                  decimal.Decimal   `gorm:"column:score"`
-	CreatedAt              time.Time         `gorm:"column:created_at"`
-	UpdatedAt              time.Time         `gorm:"column:updated_at"`
+	// TODO: rename column to Location in database once atlas is merged
+	Location         json.RawMessage `gorm:"column:local;type:jsonb"`
+	Avatar           json.RawMessage `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake decimal.Decimal `gorm:"column:min_tokens_to_stake"`
+	APY              decimal.Decimal `gorm:"column:apy"`
+	Score            decimal.Decimal `gorm:"column:score"`
+	CreatedAt        time.Time       `gorm:"column:created_at"`
+	UpdatedAt        time.Time       `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {
@@ -49,7 +50,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.APY = node.APY
 	n.Score = node.Score
 
-	n.Local, err = json.Marshal(node.Local)
+	n.Location, err = json.Marshal(node.Location)
 	if err != nil {
 		return fmt.Errorf("marshal node local: %w", err)
 	}
@@ -63,10 +64,10 @@ func (n *Node) Import(node *schema.Node) (err error) {
 }
 
 func (n *Node) Export() (*schema.Node, error) {
-	local := make([]*schema.NodeLocal, 0)
+	locations := make([]*schema.NodeLocation, 0)
 
-	if err := json.Unmarshal(n.Local, &local); len(n.Local) > 0 && err != nil {
-		return nil, fmt.Errorf("unmarshal node local: %w", err)
+	if err := json.Unmarshal(n.Location, &locations); len(n.Location) > 0 && err != nil {
+		return nil, fmt.Errorf("unmarshal node locations: %w", err)
 	}
 
 	var avatar *l2.ChipsTokenMetadata
@@ -84,7 +85,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		LastHeartbeatTimestamp: n.LastHeartbeatTimestamp.Unix(),
 		Stream:                 n.Stream,
 		Config:                 n.Config,
-		Local:                  local,
+		Location:               locations,
 		Avatar:                 avatar,
 		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
