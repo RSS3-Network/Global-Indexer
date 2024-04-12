@@ -4,11 +4,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type EpochItem struct {
-	gorm.Model
 	EpochID          uint64          `gorm:"column:epoch_id;"`
 	Index            int             `gorm:"column:index;primaryKey"`
 	TransactionHash  string          `gorm:"column:transaction_hash;primaryKey"`

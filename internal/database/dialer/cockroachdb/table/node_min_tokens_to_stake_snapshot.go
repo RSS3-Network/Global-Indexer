@@ -6,11 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type NodeMinTokensToStakeSnapshot struct {
-	gorm.Model
 	ID               uint64          `gorm:"column:id"`
 	Date             time.Time       `gorm:"column:date"`
 	EpochID          uint64          `gorm:"column:epoch_id"`
@@ -21,7 +19,7 @@ type NodeMinTokensToStakeSnapshot struct {
 }
 
 func (s *NodeMinTokensToStakeSnapshot) TableName() string {
-	return "min_tokens_to_stake_snapshots"
+	return "node.min_tokens_to_stake_snapshots"
 }
 
 func (s *NodeMinTokensToStakeSnapshot) Import(snapshot schema.NodeMinTokensToStakeSnapshot) error {

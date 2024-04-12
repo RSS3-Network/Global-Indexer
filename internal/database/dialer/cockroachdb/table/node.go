@@ -10,11 +10,9 @@ import (
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type Node struct {
-	gorm.Model
 	Address                common.Address    `gorm:"column:address;primaryKey"`
 	NodeID                 uint64            `gorm:"column:id"`
 	Endpoint               string            `gorm:"column:endpoint"`

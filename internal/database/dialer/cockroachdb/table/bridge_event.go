@@ -6,17 +6,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
-	"gorm.io/gorm"
-	gormSchema "gorm.io/gorm/schema"
+	gorm "gorm.io/gorm/schema"
 )
 
 var (
-	_ gormSchema.Tabler             = (*BridgeEvent)(nil)
+	_ gorm.Tabler                   = (*BridgeEvent)(nil)
 	_ schema.BridgeEventTransformer = (*BridgeEvent)(nil)
 )
 
 type BridgeEvent struct {
-	gorm.Model
 	ID                string    `gorm:"column:id"`
 	Type              string    `gorm:"column:type"`
 	TransactionHash   string    `gorm:"column:transaction_hash;primaryKey"`
@@ -29,7 +27,7 @@ type BridgeEvent struct {
 }
 
 func (b *BridgeEvent) TableName() string {
-	return "events"
+	return "bridge.events"
 }
 
 func (b *BridgeEvent) Import(bridgeEvent schema.BridgeEvent) error {

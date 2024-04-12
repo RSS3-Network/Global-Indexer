@@ -22,7 +22,7 @@ env "dev" {
   dev = "postgres://root:@localhost:26258/?sslmode=disable"
   // location of migration files
   migration {
-    dir = "file://internal/database/dialer/cockroachdb/migration"
+    dir = "file://internal/database/dialer/cockroachdb/migration?format=goose"
   }
   format {
     migrate {

@@ -7,17 +7,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
-	gormSchema "gorm.io/gorm/schema"
+	gorm "gorm.io/gorm/schema"
 )
 
 var (
-	_ gormSchema.Tabler           = (*StakeChip)(nil)
+	_ gorm.Tabler                 = (*StakeChip)(nil)
 	_ schema.StakeChipTransformer = (*StakeChip)(nil)
 )
 
 type StakeChip struct {
-	gorm.Model
 	ID             decimal.Decimal `gorm:"column:id"`
 	Owner          string          `gorm:"column:owner"`
 	Node           string          `gorm:"column:node"`
@@ -28,7 +26,7 @@ type StakeChip struct {
 }
 
 func (s *StakeChip) TableName() string {
-	return "chips"
+	return "stake.chips"
 }
 
 func (s *StakeChip) Import(stakeChip schema.StakeChip) error {

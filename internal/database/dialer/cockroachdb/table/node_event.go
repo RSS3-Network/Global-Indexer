@@ -8,11 +8,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
-	"gorm.io/gorm"
 )
 
 type NodeEvent struct {
-	gorm.Model
 	TransactionHash  string               `gorm:"transaction_hash"`
 	TransactionIndex uint                 `gorm:"transaction_index"`
 	NodeID           uint64               `gorm:"node_id"`
@@ -28,7 +26,7 @@ type NodeEvent struct {
 }
 
 func (*NodeEvent) TableName() string {
-	return "events"
+	return "node.events"
 }
 
 func (n *NodeEvent) Import(nodeEvent schema.NodeEvent) (err error) {

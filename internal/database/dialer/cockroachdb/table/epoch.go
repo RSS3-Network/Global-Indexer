@@ -7,11 +7,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type Epoch struct {
-	gorm.Model
 	ID                    uint64          `gorm:"column:id;primaryKey"`
 	StartTimestamp        time.Time       `gorm:"column:start_timestamp"`
 	EndTimestamp          time.Time       `gorm:"column:end_timestamp"`

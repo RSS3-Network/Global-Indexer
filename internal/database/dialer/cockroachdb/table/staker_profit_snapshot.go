@@ -6,11 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type StakerProfitSnapshot struct {
-	gorm.Model
 	ID               uint64          `gorm:"column:id"`
 	Date             time.Time       `gorm:"column:date"`
 	EpochID          uint64          `gorm:"column:epoch_id"`
@@ -22,7 +20,7 @@ type StakerProfitSnapshot struct {
 }
 
 func (s *StakerProfitSnapshot) TableName() string {
-	return "profit_snapshots"
+	return "stake.profit_snapshots"
 }
 
 func (s *StakerProfitSnapshot) Import(snapshot schema.StakerProfitSnapshot) error {

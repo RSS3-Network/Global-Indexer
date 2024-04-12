@@ -6,17 +6,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
-	"gorm.io/gorm"
-	gormSchema "gorm.io/gorm/schema"
+	gorm "gorm.io/gorm/schema"
 )
 
 var (
-	_ gormSchema.Tabler            = (*StakeEvent)(nil)
+	_ gorm.Tabler                  = (*StakeEvent)(nil)
 	_ schema.StakeEventTransformer = (*StakeEvent)(nil)
 )
 
 type StakeEvent struct {
-	gorm.Model
 	ID                string    `gorm:"column:id"`
 	Type              string    `gorm:"column:type"`
 	TransactionHash   string    `gorm:"column:transaction_hash;primaryKey"`
@@ -28,7 +26,7 @@ type StakeEvent struct {
 }
 
 func (b *StakeEvent) TableName() string {
-	return "events"
+	return "stake.events"
 }
 
 func (b *StakeEvent) Import(stakeEvent schema.StakeEvent) error {

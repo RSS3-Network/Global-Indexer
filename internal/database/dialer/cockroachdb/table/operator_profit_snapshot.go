@@ -6,11 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 )
 
 type OperatorProfitSnapshot struct {
-	gorm.Model
 	ID            uint64          `gorm:"column:id"`
 	Date          time.Time       `gorm:"column:date"`
 	EpochID       uint64          `gorm:"column:epoch_id"`
@@ -21,7 +19,7 @@ type OperatorProfitSnapshot struct {
 }
 
 func (s *OperatorProfitSnapshot) TableName() string {
-	return "operator_profit_snapshots"
+	return "node.operator_profit_snapshots"
 }
 
 func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) error {
