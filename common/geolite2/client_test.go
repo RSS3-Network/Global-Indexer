@@ -9,17 +9,12 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config"
 )
 
-func TestNodeLocal(t *testing.T) {
+func TestLookupNodeLocation(t *testing.T) {
 	t.Parallel()
 
-	c, err := geolite2.NewClient(&config.GeoIP{
+	c := geolite2.NewClient(&config.GeoIP{
 		File: "./mmdb/GeoLite2-City.mmdb",
 	})
-	if err != nil {
-		t.Log(err)
-
-		return
-	}
 
 	testcases := []struct {
 		name     string
@@ -41,7 +36,7 @@ func TestNodeLocal(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			locals, _ := c.LookupLocal(context.Background(), testcase.endpoint)
+			locals, _ := c.LookupNodeLocation(context.Background(), testcase.endpoint)
 			//require.NoError(t, err)
 
 			data, _ := json.Marshal(locals)
