@@ -66,8 +66,8 @@ type SpecialRewards struct {
 }
 
 type GeoIP struct {
-	Account    int    `yaml:"account" validate:"required"`
-	LicenseKey string `yaml:"license_key" validate:"required"`
+	Account    int    `yaml:"account"`
+	LicenseKey string `yaml:"license_key"`
 	File       string `yaml:"file" validate:"required" default:"./common/geolite2/mmdb/GeoLite2-City.mmdb"`
 }
 

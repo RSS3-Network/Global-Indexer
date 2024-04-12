@@ -17,10 +17,10 @@ type Client struct {
 	reader *geoip2.Reader
 }
 
-func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.NodeLocal, error) {
+func (c *Client) LookupNodeLocation(_ context.Context, endpoint string) ([]*schema.NodeLocation, error) {
 	ips := make([]net.IP, 0)
 
-	zap.L().Info("Looking up local", zap.String("endpoint", endpoint))
+	zap.L().Info("Looking up Node location", zap.String("endpoint", endpoint))
 
 	if ip := net.ParseIP(endpoint); ip == nil {
 		ipAddresses, err := net.LookupIP(endpoint)
@@ -37,7 +37,7 @@ func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.Node
 		ips = append(ips, ip)
 	}
 
-	records := make([]*schema.NodeLocal, 0, len(ips))
+	records := make([]*schema.NodeLocation, 0, len(ips))
 
 	for _, ip := range ips {
 		record, err := c.reader.City(ip)
@@ -49,7 +49,7 @@ func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.Node
 			continue
 		}
 
-		local := &schema.NodeLocal{
+		local := &schema.NodeLocation{
 			Latitude:  record.Location.Latitude,
 			Longitude: record.Location.Longitude,
 		}
@@ -72,7 +72,7 @@ func (c *Client) LookupLocal(_ context.Context, endpoint string) ([]*schema.Node
 	return records, nil
 }
 
-func NewClient(conf *config.GeoIP) (*Client, error) {
+func NewClient(conf *config.GeoIP) *Client {
 	dir := filepath.Dir(conf.File)
 
 	config := &geoipupdate.Config{
@@ -91,15 +91,16 @@ func NewClient(conf *config.GeoIP) (*Client, error) {
 
 	err := client.Run(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("run geoipupdate: %w", err)
+		zap.L().Warn("run geoipupdate failed", zap.Error(err))
 	}
 
 	reader, err := geoip2.Open(conf.File)
 	if err != nil {
-		return nil, fmt.Errorf("open geolite2: %w", err)
+		zap.L().Warn("open geoip2 database failed", zap.Error(err))
+		return nil
 	}
 
 	return &Client{
 		reader: reader,
-	}, nil
+	}
 }
