@@ -53,11 +53,11 @@ const (
 	// Possible reasons:
 	// - Node is not reachable by the Network.
 	// - Node Operator has not deposited the minimum amount of tokens required.
-	NodeStatusRegistered NodeStatus = iota
+	NodeStatusRegistered NodeStatus = iota // registered
 
 	// NodeStatusOnline
 	// Node is online and fully operational.
-	NodeStatusOnline
+	NodeStatusOnline // online
 
 	// NodeStatusOffline
 	// Node was previously in NodeStatusOnline, but is currently offline.
@@ -65,22 +65,22 @@ const (
 	// - [Alpha only] Node missed a heartbeat.
 	// - Node was slashed in the previous epoch, and was kicked out of the Network, the Operator did not acknowledge the slash and rejoin the Network.
 	// - Node did not perform the mandatory upgrade before the deadline required by the Network.
-	NodeStatusOffline
+	NodeStatusOffline // offline
 
 	// NodeStatusExited
 	// Node was previously in NodeStatusOnline, but is not anymore.
 	// Possible reasons:
 	// - Node announced its intention to leave the Network and gracefully exited after the mandatory waiting period.
 	// - Node has been offline for a long time and is considered as exited.
-	NodeStatusExited
+	NodeStatusExited // exited
 
 	// NodeStatusSlashed
 	// Node was slashed in the current epoch, and was kicked out of the Network.
-	NodeStatusSlashed
+	NodeStatusSlashed // slashed
 
 	// NodeStatusExiting
 	// Node announced its intention to leave the Network, and is now in the mandatory waiting period.
-	NodeStatusExiting
+	NodeStatusExiting // exiting
 )
 
 type Stat struct {

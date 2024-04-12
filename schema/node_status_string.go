@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeStatusName = "NodeStatusRegisteredNodeStatusOnlineNodeStatusOfflineNodeStatusExitedNodeStatusSlashedNodeStatusExiting"
+const _NodeStatusName = "registeredonlineofflineexitedslashedexiting"
 
-var _NodeStatusIndex = [...]uint8{0, 20, 36, 53, 69, 86, 103}
+var _NodeStatusIndex = [...]uint8{0, 10, 16, 23, 29, 36, 43}
 
-const _NodeStatusLowerName = "nodestatusregisterednodestatusonlinenodestatusofflinenodestatusexitednodestatusslashednodestatusexiting"
+const _NodeStatusLowerName = "registeredonlineofflineexitedslashedexiting"
 
 func (i NodeStatus) String() string {
 	if i < 0 || i >= NodeStatus(len(_NodeStatusIndex)-1) {
@@ -41,27 +41,27 @@ func _NodeStatusNoOp() {
 var _NodeStatusValues = []NodeStatus{NodeStatusRegistered, NodeStatusOnline, NodeStatusOffline, NodeStatusExited, NodeStatusSlashed, NodeStatusExiting}
 
 var _NodeStatusNameToValueMap = map[string]NodeStatus{
-	_NodeStatusName[0:20]:        NodeStatusRegistered,
-	_NodeStatusLowerName[0:20]:   NodeStatusRegistered,
-	_NodeStatusName[20:36]:       NodeStatusOnline,
-	_NodeStatusLowerName[20:36]:  NodeStatusOnline,
-	_NodeStatusName[36:53]:       NodeStatusOffline,
-	_NodeStatusLowerName[36:53]:  NodeStatusOffline,
-	_NodeStatusName[53:69]:       NodeStatusExited,
-	_NodeStatusLowerName[53:69]:  NodeStatusExited,
-	_NodeStatusName[69:86]:       NodeStatusSlashed,
-	_NodeStatusLowerName[69:86]:  NodeStatusSlashed,
-	_NodeStatusName[86:103]:      NodeStatusExiting,
-	_NodeStatusLowerName[86:103]: NodeStatusExiting,
+	_NodeStatusName[0:10]:       NodeStatusRegistered,
+	_NodeStatusLowerName[0:10]:  NodeStatusRegistered,
+	_NodeStatusName[10:16]:      NodeStatusOnline,
+	_NodeStatusLowerName[10:16]: NodeStatusOnline,
+	_NodeStatusName[16:23]:      NodeStatusOffline,
+	_NodeStatusLowerName[16:23]: NodeStatusOffline,
+	_NodeStatusName[23:29]:      NodeStatusExited,
+	_NodeStatusLowerName[23:29]: NodeStatusExited,
+	_NodeStatusName[29:36]:      NodeStatusSlashed,
+	_NodeStatusLowerName[29:36]: NodeStatusSlashed,
+	_NodeStatusName[36:43]:      NodeStatusExiting,
+	_NodeStatusLowerName[36:43]: NodeStatusExiting,
 }
 
 var _NodeStatusNames = []string{
-	_NodeStatusName[0:20],
-	_NodeStatusName[20:36],
-	_NodeStatusName[36:53],
-	_NodeStatusName[53:69],
-	_NodeStatusName[69:86],
-	_NodeStatusName[86:103],
+	_NodeStatusName[0:10],
+	_NodeStatusName[10:16],
+	_NodeStatusName[16:23],
+	_NodeStatusName[23:29],
+	_NodeStatusName[29:36],
+	_NodeStatusName[36:43],
 }
 
 // NodeStatusString retrieves an enum value from the enum constants string name.
