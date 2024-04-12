@@ -28,7 +28,7 @@ type Node struct {
 	Config                 json.RawMessage        `json:"-"`
 	Status                 NodeStatus             `json:"status"`
 	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
-	Local                  []*NodeLocation        `json:"local"`
+	Location               []*NodeLocation        `json:"location"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	APY                    decimal.Decimal        `json:"apy"`

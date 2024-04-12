@@ -136,7 +136,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 
-	node.Local, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
+	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
 		zap.L().Error("get node local error", zap.Error(err))
 	}
@@ -272,8 +272,8 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	// Get node local info.
-	if len(node.Local) == 0 {
-		node.Local, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
+	if len(node.Location) == 0 {
+		node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 		if err != nil {
 			zap.L().Error("get node local error", zap.Error(err))
 		}
