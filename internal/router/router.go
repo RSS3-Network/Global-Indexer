@@ -11,22 +11,22 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/form/v4"
 	"github.com/rss3-network/global-indexer/common/httputil"
-	"github.com/rss3-network/global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/distributor"
 	"go.uber.org/zap"
 )
 
 type Router interface {
 	// BuildPath builds the path for the request and returns a map of node addresses to their respective paths
-	BuildPath(path string, query any, nodes []model.Cache) (map[common.Address]string, error)
+	BuildPath(path string, query any, nodes []distributor.Cache) (map[common.Address]string, error)
 	// DistributeRequest sends the request to the nodes and processes the results
-	DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResults func([]model.DataResponse)) (model.DataResponse, error)
+	DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResults func([]distributor.DataResponse)) (distributor.DataResponse, error)
 }
 
 type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.Cache) (map[common.Address]string, error) {
+func (r *SimpleRouter) BuildPath(path string, query any, nodes []distributor.Cache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
@@ -56,9 +56,9 @@ func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.Cache) (m
 	return urls, nil
 }
 
-func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse)) (model.DataResponse, error) {
+func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*distributor.DataResponse)) (distributor.DataResponse, error) {
 	// firstResponse is a channel that will be used to send the first response
-	var firstResponse = make(chan model.DataResponse, 1)
+	var firstResponse = make(chan distributor.DataResponse, 1)
 
 	// Distribute the request to the nodes
 	r.distribute(ctx, nodeMap, processResponses, firstResponse)
@@ -68,18 +68,18 @@ func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common
 		close(firstResponse)
 		return response, nil
 	case <-ctx.Done():
-		return model.DataResponse{Err: fmt.Errorf("failed to retrieve node data, please retry")}, nil
+		return distributor.DataResponse{Err: fmt.Errorf("failed to retrieve node data, please retry")}, nil
 	}
 }
 
 // distribute sends the request to the nodes and processes the responses
-func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
+func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*distributor.DataResponse), firstResponse chan<- distributor.DataResponse) {
 	var (
 		waitGroup sync.WaitGroup
 		mu        sync.Mutex
 
 		// responses contains all the returned responses
-		responses []*model.DataResponse
+		responses []*distributor.DataResponse
 		// responseSent is used to ensure that the first response is sent only once
 		responseSent bool
 	)
@@ -95,7 +95,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 		go func(address common.Address, endpoint string) {
 			defer waitGroup.Done()
 
-			response := &model.DataResponse{Address: address}
+			response := &distributor.DataResponse{Address: address}
 			// Fetch the data from the node.
 			body, err := r.httpClient.Fetch(ctx, endpoint)
 
@@ -112,8 +112,8 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 					response.Err = readErr
 				} else {
-					activity := &model.ActivityResponse{}
-					activities := &model.ActivitiesResponse{}
+					activity := &distributor.ActivityResponse{}
+					activities := &distributor.ActivitiesResponse{}
 
 					// Check if the node's data is valid.
 					if !validateData(data, activity) && !validateData(data, activities) {
@@ -142,7 +142,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 // sendResponse sends the first valid response to the firstResponse channel
 // If all the responses are invalid, the first response will be the first response received
-func sendResponse(mu *sync.Mutex, responses *[]*model.DataResponse, response *model.DataResponse, responseSent *bool, firstResponse chan<- model.DataResponse, nodesRequested int) {
+func sendResponse(mu *sync.Mutex, responses *[]*distributor.DataResponse, response *distributor.DataResponse, responseSent *bool, firstResponse chan<- distributor.DataResponse, nodesRequested int) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -176,7 +176,7 @@ func sendResponse(mu *sync.Mutex, responses *[]*model.DataResponse, response *mo
 }
 
 func validateData(data []byte, target any) bool {
-	var errRes model.ErrResponse
+	var errRes distributor.ErrResponse
 	if err := json.Unmarshal(data, &errRes); err == nil && errRes.ErrorCode != "" {
 		return false
 	}

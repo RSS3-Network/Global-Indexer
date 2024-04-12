@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rss3-network/global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 )
 
@@ -81,13 +81,13 @@ func TestUpdateNodeStatus(t *testing.T) {
 			t.Parallel()
 
 			node := &schema.Node{Status: tt.initial}
-			err := model.UpdateNodeStatus(node, tt.newStatus)
+			err := nta.UpdateNodeStatus(node, tt.newStatus)
 
 			if tt.shouldFail {
 				if err == nil {
 					t.Errorf("expected an error, got none")
 				} else {
-					var nodeStatusTransitionError *model.NodeStatusTransitionError
+					var nodeStatusTransitionError *nta.NodeStatusTransitionError
 					if !errors.As(err, &nodeStatusTransitionError) {
 						t.Errorf("expected a schema.NodeStatusTransitionError, got %T", err)
 					}
