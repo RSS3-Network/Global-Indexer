@@ -3,7 +3,7 @@ package enforcer
 import (
 	"crypto/sha256"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
+	"github.com/rss3-network/global-indexer/internal/distributor"
 )
 
 const (
@@ -12,12 +12,12 @@ const (
 )
 
 // updateRequestsBasedOnDataCompare updates the requests based on the data comparison responses.
-func updateRequestsBasedOnDataCompare(responses []model.DataResponse) {
+func updateRequestsBasedOnDataCompare(responses []distributor.DataResponse) {
 	errResponseCount := markErrorResponsesAndCount(responses)
 
-	if len(responses) == model.DefaultNodeCount-1 {
+	if len(responses) == distributor.DefaultNodeCount-1 {
 		handleTwoResponses(responses)
-	} else if len(responses) == model.DefaultNodeCount-2 {
+	} else if len(responses) == distributor.DefaultNodeCount-2 {
 		handleSingleResponse(responses)
 	} else {
 		handleFullResponses(responses, errResponseCount)
@@ -36,7 +36,7 @@ func compareData(src, des []byte) bool {
 }
 
 // markErrorResponsesAndCount marks the error results and returns the count of error results.
-func markErrorResponsesAndCount(responses []model.DataResponse) (errResponseCount int) {
+func markErrorResponsesAndCount(responses []distributor.DataResponse) (errResponseCount int) {
 	for i := range responses {
 		if responses[i].Err != nil {
 			responses[i].InvalidRequest = invalidRequestUnit
@@ -48,7 +48,7 @@ func markErrorResponsesAndCount(responses []model.DataResponse) (errResponseCoun
 }
 
 // handleTwoResponses handles the case when there are two results.
-func handleTwoResponses(responses []model.DataResponse) {
+func handleTwoResponses(responses []distributor.DataResponse) {
 	if responses[0].Err == nil && responses[1].Err == nil {
 		updateRequestBasedOnComparison(responses)
 	} else {
@@ -57,7 +57,7 @@ func handleTwoResponses(responses []model.DataResponse) {
 }
 
 // handleSingleResponse handles the case when there is only one response.
-func handleSingleResponse(responses []model.DataResponse) {
+func handleSingleResponse(responses []distributor.DataResponse) {
 	if responses[0].Err == nil {
 		responses[0].Request = requestUnit
 	} else {
@@ -66,13 +66,13 @@ func handleSingleResponse(responses []model.DataResponse) {
 }
 
 // handleFullResponses handles the case when there are more than two results.
-func handleFullResponses(responses []model.DataResponse, errResponseCount int) {
+func handleFullResponses(responses []distributor.DataResponse, errResponseCount int) {
 	if errResponseCount < len(responses) {
 		compareAndAssignRequests(responses, errResponseCount)
 	}
 }
 
-func updateRequestBasedOnComparison(responses []model.DataResponse) {
+func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 	if compareData(responses[0].Data, responses[1].Data) {
 		responses[0].Request = 2 * requestUnit
 		responses[1].Request = requestUnit
@@ -81,7 +81,7 @@ func updateRequestBasedOnComparison(responses []model.DataResponse) {
 	}
 }
 
-func markErrorResponse(responses ...model.DataResponse) {
+func markErrorResponse(responses ...distributor.DataResponse) {
 	for i, result := range responses {
 		if result.Err != nil {
 			responses[i].InvalidRequest = invalidRequestUnit
@@ -91,7 +91,7 @@ func markErrorResponse(responses ...model.DataResponse) {
 	}
 }
 
-func compareAndAssignRequests(responses []model.DataResponse, errResponseCount int) {
+func compareAndAssignRequests(responses []distributor.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
 	diff01, diff02, diff12 := compareData(d0, d1), compareData(d0, d2), compareData(d1, d2)
 

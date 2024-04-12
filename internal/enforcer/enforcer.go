@@ -6,15 +6,15 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 )
 
 type Enforcer interface {
-	Verify(ctx context.Context, responses []model.DataResponse) error
-	PartialVerify(ctx context.Context, responses []model.DataResponse) error
+	Verify(ctx context.Context, responses []distributor.DataResponse) error
+	PartialVerify(ctx context.Context, responses []distributor.DataResponse) error
 	MaintainScore(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 }
@@ -23,7 +23,7 @@ type SimpleEnforcer struct {
 	databaseClient database.Client
 }
 
-func (e *SimpleEnforcer) Verify(ctx context.Context, responses []model.DataResponse) error {
+func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.DataResponse) error {
 	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
 	}
@@ -54,9 +54,9 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, responses []model.DataRespo
 	return nil
 }
 
-func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []model.DataResponse) (map[common.Address]*schema.Stat, error) {
+func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []distributor.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: lo.Map(responses, func(response model.DataResponse, _ int) common.Address {
+		AddressList: lo.Map(responses, func(response distributor.DataResponse, _ int) common.Address {
 			return response.Address
 		}),
 	})
@@ -70,7 +70,7 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []model.
 	}), nil
 }
 
-func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []model.DataResponse) {
+func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []distributor.DataResponse) {
 	for _, response := range responses {
 		if stat, exists := statsMap[response.Address]; exists {
 			stat.TotalRequest += int64(response.Request)
@@ -80,7 +80,7 @@ func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses 
 	}
 }
 
-func (e *SimpleEnforcer) PartialVerify(_ context.Context, _ []model.DataResponse) error {
+func (e *SimpleEnforcer) PartialVerify(_ context.Context, _ []distributor.DataResponse) error {
 	return nil
 }
 
