@@ -24,7 +24,7 @@ type NodesResponseData []*schema.Node
 
 func NewNode(node *schema.Node, baseURL url.URL) NodeResponseData {
 	if node.Avatar != nil {
-		node.Avatar.Image = baseURL.JoinPath(fmt.Sprintf("/nodes/%s/avatar.svg", node.Address)).String()
+		node.Avatar.Image = baseURL.JoinPath(fmt.Sprintf("/nta/nodes/%s/avatar.svg", node.Address)).String()
 	}
 
 	if node.HideTaxRate {
