@@ -1,7 +1,7 @@
 package hub
 
 import (
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/provider"
+	"github.com/rss3-network/global-indexer/internal/provider"
 	"go.uber.org/fx"
 )
 

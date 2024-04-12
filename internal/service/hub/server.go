@@ -7,13 +7,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/docs"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/docs"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
+	"github.com/rss3-network/global-indexer/internal/service"
 )
 
 const Name = "hub"
@@ -39,7 +39,7 @@ func (s *Server) Run(_ context.Context) error {
 }
 
 func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver) (service.Server, error) {
-	hub, err := NewHub(databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService)
+	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
@@ -59,42 +59,49 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	}
 
 	// register router
-	instance.httpServer.GET("/nodes", instance.hub.GetNodes)
-	instance.httpServer.GET("/nodes/:id", instance.hub.GetNode)
-	instance.httpServer.GET("/nodes/:id/events", instance.hub.GetNodeEvents)
-	instance.httpServer.GET("/nodes/:id/challenge", instance.hub.GetNodeChallenge)
-	instance.httpServer.POST("/nodes/:id/hideTaxRate", instance.hub.PostNodeHideTaxRate)
-	instance.httpServer.GET("/nodes/:id/avatar.svg", instance.hub.GetNodeAvatar)
-	instance.httpServer.POST("/nodes/register", instance.hub.RegisterNode)
-	instance.httpServer.POST("/nodes/heartbeat", instance.hub.NodeHeartbeat)
-	instance.httpServer.GET("/operation/:operator/profits", instance.hub.GetOperatorProfit)
+	instance.httpServer.POST("/nodes/register", instance.hub.nta.RegisterNode)
+	instance.httpServer.POST("/nodes/heartbeat", instance.hub.nta.NodeHeartbeat)
 
-	instance.httpServer.GET("/bridge/transactions", instance.hub.GetBridgeTransactions)
-	instance.httpServer.GET("/bridge/transactions/:id", instance.hub.GetBridgeTransaction)
+	nta := instance.httpServer.Group("/nta")
+	{
+		nta.GET("/nodes", instance.hub.nta.GetNodes)
+		nta.GET("/nodes/:id", instance.hub.nta.GetNode)
+		nta.GET("/nodes/:id/events", instance.hub.nta.GetNodeEvents)
+		nta.GET("/nodes/:id/challenge", instance.hub.nta.GetNodeChallenge)
+		nta.POST("/nodes/:id/hideTaxRate", instance.hub.nta.PostNodeHideTaxRate)
+		nta.GET("/nodes/:id/avatar.svg", instance.hub.nta.GetNodeAvatar)
+		nta.GET("/operation/:operator/profits", instance.hub.nta.GetOperatorProfit)
 
-	instance.httpServer.GET("/stake/transactions", instance.hub.GetStakeTransactions)
-	instance.httpServer.GET("/stake/transactions/:id", instance.hub.GetStakeTransaction)
-	instance.httpServer.GET("/stake/stakings", instance.hub.GetStakeStakings)
-	instance.httpServer.GET("/stake/:owner/profits", instance.hub.GetStakeOwnerProfit)
+		nta.GET("/bridge/transactions", instance.hub.nta.GetBridgeTransactions)
+		nta.GET("/bridge/transactions/:id", instance.hub.nta.GetBridgeTransaction)
 
-	instance.httpServer.GET("/chips", instance.hub.GetStakeChips)
-	instance.httpServer.GET("/chips/:id", instance.hub.GetStakeChip)
-	instance.httpServer.GET("/chips/:id/image.svg", instance.hub.GetStakeChipImage)
+		nta.GET("/stake/transactions", instance.hub.nta.GetStakeTransactions)
+		nta.GET("/stake/transactions/:id", instance.hub.nta.GetStakeTransaction)
+		nta.GET("/stake/stakings", instance.hub.nta.GetStakeStakings)
+		nta.GET("/stake/:owner/profits", instance.hub.nta.GetStakeOwnerProfit)
 
-	instance.httpServer.GET("/epochs", instance.hub.GetEpochs)
-	instance.httpServer.GET("/epochs/:id", instance.hub.GetEpoch)
-	instance.httpServer.GET("/epochs/distributions/:transaction", instance.hub.GetEpochDistribution)
-	instance.httpServer.GET("/epochs/:node/rewards", instance.hub.GetEpochNodeRewards)
+		nta.GET("/chips", instance.hub.nta.GetStakeChips)
+		nta.GET("/chips/:id", instance.hub.nta.GetStakeChip)
+		nta.GET("/chips/:id/image.svg", instance.hub.nta.GetStakeChipImage)
 
-	instance.httpServer.GET("/snapshots/nodes/count", instance.hub.GetNodeCountSnapshots)
-	instance.httpServer.POST("/snapshots/nodes/minTokensToStake", instance.hub.BatchGetNodeMinTokensToStakeSnapshots)
-	instance.httpServer.GET("/snapshots/stakers/count", instance.hub.GetStakerCountSnapshots)
-	instance.httpServer.GET("/snapshots/stakers/profits", instance.hub.GetStakerProfitsSnapshots)
-	instance.httpServer.GET("/snapshots/operators/profits", instance.hub.GetOperatorProfitsSnapshots)
+		nta.GET("/epochs", instance.hub.nta.GetEpochs)
+		nta.GET("/epochs/:id", instance.hub.nta.GetEpoch)
+		nta.GET("/epochs/distributions/:transaction", instance.hub.nta.GetEpochDistribution)
+		nta.GET("/epochs/:node/rewards", instance.hub.nta.GetEpochNodeRewards)
 
-	instance.httpServer.GET("/rss/*", instance.hub.GetRSSHub)
-	instance.httpServer.GET("/decentralized/tx/:id", instance.hub.GetActivity)
-	instance.httpServer.GET("/decentralized/:account", instance.hub.GetAccountActivities)
+		nta.GET("/snapshots/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
+		nta.POST("/snapshots/nodes/minTokensToStake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
+		nta.GET("/snapshots/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
+		nta.GET("/snapshots/stakers/profits", instance.hub.nta.GetStakerProfitsSnapshots)
+		nta.GET("/snapshots/operators/profits", instance.hub.nta.GetOperatorProfitsSnapshots)
+	}
+
+	dsl := instance.httpServer.Group("")
+	{
+		dsl.GET("/rss/*", instance.hub.dsl.GetRSSHub)
+		dsl.GET("/decentralized/tx/:id", instance.hub.dsl.GetActivity)
+		dsl.GET("/decentralized/:account", instance.hub.dsl.GetAccountActivities)
+	}
 
 	return &instance, nil
 }

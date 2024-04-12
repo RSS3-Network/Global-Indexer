@@ -1,29 +1,27 @@
 package hub
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/naturalselectionlabs/rss3-global-indexer/common/geolite2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/client/ethereum"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/nameresolver"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/nameresolver"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/nta"
 	"github.com/spf13/viper"
 )
 
 type Hub struct {
-	databaseClient  database.Client
-	geoLite2        *geolite2.Client
-	cacheClient     cache.Client
-	stakingContract *l2.Staking
-	httpClient      *http.Client
-	nameService     *nameresolver.NameResolver
+	dsl *dsl.DSL
+	nta *nta.NTA
 }
 
 var _ echo.Validator = (*Validator)(nil)
@@ -40,7 +38,7 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Hub, error) {
+func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Hub, error) {
 	chainID := viper.GetUint64(flag.KeyChainIDL2)
 
 	ethereumClient, err := ethereumMultiChainClient.Get(chainID)
@@ -58,12 +56,10 @@ func NewHub(databaseClient database.Client, redisClient *redis.Client, ethereumM
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	cacheClient := cache.New(redisClient)
+
 	return &Hub{
-		databaseClient:  databaseClient,
-		geoLite2:        geoLite2,
-		cacheClient:     cache.New(redisClient),
-		stakingContract: stakingContract,
-		httpClient:      http.DefaultClient,
-		nameService:     nameService,
+		dsl: dsl.NewDSL(ctx, databaseClient, cacheClient, nameService),
+		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient),
 	}, nil
 }

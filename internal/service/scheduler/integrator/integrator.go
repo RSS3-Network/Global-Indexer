@@ -11,14 +11,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/naturalselectionlabs/rss3-global-indexer/contract/l2"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cache"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/cronjob"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/database"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub/model"
-	"github.com/naturalselectionlabs/rss3-global-indexer/schema"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/cronjob"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
@@ -94,7 +94,7 @@ func (s *server) sortNodes(ctx context.Context) error {
 		for _, stat := range stats {
 			stat := stat
 
-			statsPool.Go(func(ctx context.Context) error {
+			statsPool.Go(func(_ context.Context) error {
 				if err = s.updateNodeEpochStats(stat, epoch.Int64()); err != nil {
 					return err
 				}
@@ -125,28 +125,28 @@ func (s *server) sortNodes(ctx context.Context) error {
 func (s *server) updateNodeCache(ctx context.Context) error {
 	rssNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		IsRssNode:    lo.ToPtr(true),
-		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		ValidRequest: lo.ToPtr(distributor.DefaultSlashCount),
+		Limit:        lo.ToPtr(distributor.DefaultNodeCount),
 	})
 
 	if err != nil {
 		return err
 	}
 
-	if err = s.setNodeCache(ctx, model.RssNodeCacheKey, rssNodes); err != nil {
+	if err = s.setNodeCache(ctx, distributor.RssNodeCacheKey, rssNodes); err != nil {
 		return err
 	}
 
 	fullNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		IsFullNode:   lo.ToPtr(true),
-		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		ValidRequest: lo.ToPtr(distributor.DefaultSlashCount),
+		Limit:        lo.ToPtr(distributor.DefaultNodeCount),
 	})
 	if err != nil {
 		return err
 	}
 
-	return s.setNodeCache(ctx, model.FullNodeCacheKey, fullNodes)
+	return s.setNodeCache(ctx, distributor.FullNodeCacheKey, fullNodes)
 }
 
 func (s *server) updateNodeEpochStats(stat *schema.Stat, epoch int64) error {
@@ -176,7 +176,7 @@ func (s *server) updateNodePoints(stat *schema.Stat) error {
 
 	if node.Status == schema.NodeStatusOffline {
 		stat.ResetAt = time.Now()
-		stat.EpochInvalidRequest = int64(model.DefaultSlashCount)
+		stat.EpochInvalidRequest = int64(distributor.DefaultSlashCount)
 
 		return nil
 	}
@@ -187,8 +187,8 @@ func (s *server) updateNodePoints(stat *schema.Stat) error {
 }
 
 func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.Cache {
-		return model.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.Cache {
+		return distributor.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	if err := s.cacheClient.Set(ctx, key, nodesCache); err != nil {

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/config/flag"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/hub"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/indexer"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/scheduler"
-	"github.com/naturalselectionlabs/rss3-global-indexer/internal/service/settler"
+	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/config/flag"
+	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/internal/service/hub"
+	"github.com/rss3-network/global-indexer/internal/service/indexer"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler"
+	"github.com/rss3-network/global-indexer/internal/service/settler"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
@@ -21,7 +21,7 @@ import (
 var command = cobra.Command{
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		return viper.BindPFlags(cmd.Flags())
 	},
 	RunE: func(cmd *cobra.Command, _ []string) error {

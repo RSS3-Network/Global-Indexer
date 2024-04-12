@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeStatusName = "registeredonlineofflineexiting"
+const _NodeStatusName = "registeredonlineofflineexitedslashedexiting"
 
-var _NodeStatusIndex = [...]uint8{0, 10, 16, 23, 30}
+var _NodeStatusIndex = [...]uint8{0, 10, 16, 23, 29, 36, 43}
 
-const _NodeStatusLowerName = "registeredonlineofflineexiting"
+const _NodeStatusLowerName = "registeredonlineofflineexitedslashedexiting"
 
 func (i NodeStatus) String() string {
 	if i < 0 || i >= NodeStatus(len(_NodeStatusIndex)-1) {
@@ -34,9 +34,11 @@ func _NodeStatusNoOp() {
 	_ = x[NodeStatusOnline-(1)]
 	_ = x[NodeStatusOffline-(2)]
 	_ = x[NodeStatusExited-(3)]
+	_ = x[NodeStatusSlashed-(4)]
+	_ = x[NodeStatusExiting-(5)]
 }
 
-var _NodeStatusValues = []NodeStatus{NodeStatusRegistered, NodeStatusOnline, NodeStatusOffline, NodeStatusExited}
+var _NodeStatusValues = []NodeStatus{NodeStatusRegistered, NodeStatusOnline, NodeStatusOffline, NodeStatusExited, NodeStatusSlashed, NodeStatusExiting}
 
 var _NodeStatusNameToValueMap = map[string]NodeStatus{
 	_NodeStatusName[0:10]:       NodeStatusRegistered,
@@ -45,15 +47,21 @@ var _NodeStatusNameToValueMap = map[string]NodeStatus{
 	_NodeStatusLowerName[10:16]: NodeStatusOnline,
 	_NodeStatusName[16:23]:      NodeStatusOffline,
 	_NodeStatusLowerName[16:23]: NodeStatusOffline,
-	_NodeStatusName[23:30]:      NodeStatusExited,
-	_NodeStatusLowerName[23:30]: NodeStatusExited,
+	_NodeStatusName[23:29]:      NodeStatusExited,
+	_NodeStatusLowerName[23:29]: NodeStatusExited,
+	_NodeStatusName[29:36]:      NodeStatusSlashed,
+	_NodeStatusLowerName[29:36]: NodeStatusSlashed,
+	_NodeStatusName[36:43]:      NodeStatusExiting,
+	_NodeStatusLowerName[36:43]: NodeStatusExiting,
 }
 
 var _NodeStatusNames = []string{
 	_NodeStatusName[0:10],
 	_NodeStatusName[10:16],
 	_NodeStatusName[16:23],
-	_NodeStatusName[23:30],
+	_NodeStatusName[23:29],
+	_NodeStatusName[29:36],
+	_NodeStatusName[36:43],
 }
 
 // NodeStatusString retrieves an enum value from the enum constants string name.
