@@ -19,6 +19,7 @@ var (
 	DefaultSlashCount  = 4
 	DefaultVerifyCount = 3
 
+	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
 		filter.PlatformFarcaster.String(): {},
 	}
