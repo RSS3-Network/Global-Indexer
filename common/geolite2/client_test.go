@@ -9,7 +9,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config"
 )
 
-func TestNodeLocal(t *testing.T) {
+func TestLookupNodeLocation(t *testing.T) {
 	t.Parallel()
 
 	c := geolite2.NewClient(&config.GeoIP{
