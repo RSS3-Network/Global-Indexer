@@ -84,7 +84,7 @@ func TestCompareData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := compareData(tc.src, tc.des)
+			result := areResponsesIdentical(tc.src, tc.des)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -259,7 +259,8 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			updateRequestsBasedOnDataCompare(tc.responses)
+			updateRequestsBasedOnComparisonResults(tc.responses)
+
 			for i, result := range tc.responses {
 				assert.Equal(t, tc.requests[i], result.Request)
 				assert.Equal(t, tc.invalidRequests[i], result.InvalidRequest)

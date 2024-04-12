@@ -3,7 +3,6 @@ package enforcer
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -34,14 +33,10 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.Dat
 		return fmt.Errorf("failed to find node stats: %w", err)
 	}
 
-	// non-error and non-null results are always in front of the list
-	sort.SliceStable(responses, func(i, j int) bool {
-		return (responses[i].Err == nil && responses[j].Err != nil) ||
-			(responses[i].Err == nil && responses[j].Err == nil && responses[i].Valid && !responses[j].Valid)
-	})
-
+	// non-error and non-null results are always put in front of the list
+	sortResponseByErrorAndValidity(responses)
 	// update requests based on data compare
-	updateRequestsBasedOnDataCompare(responses)
+	updateRequestsBasedOnComparisonResults(responses)
 	// update stats based on results
 	updateStatsWithResults(nodeStatsMap, responses)
 	// save node stats
@@ -74,9 +69,9 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []distri
 func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []distributor.DataResponse) {
 	for _, response := range responses {
 		if stat, exists := statsMap[response.Address]; exists {
-			stat.TotalRequest += int64(response.Request)
-			stat.EpochRequest += int64(response.Request)
-			stat.EpochInvalidRequest += int64(response.InvalidRequest)
+			stat.TotalRequest += int64(response.ValidPoint)
+			stat.EpochRequest += int64(response.ValidPoint)
+			stat.EpochInvalidRequest += int64(response.InvalidPoint)
 		}
 	}
 }

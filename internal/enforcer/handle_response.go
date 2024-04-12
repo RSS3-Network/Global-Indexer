@@ -2,6 +2,7 @@ package enforcer
 
 import (
 	"encoding/json"
+	"sort"
 
 	"github.com/rss3-network/global-indexer/internal/distributor"
 )
@@ -11,9 +12,17 @@ const (
 	invalidRequestUnit = 1
 )
 
-// updateRequestsBasedOnDataCompare updates the requests based on the data comparison responses.
-func updateRequestsBasedOnDataCompare(responses []distributor.DataResponse) {
-	errResponseCount := markErrorResponsesAndCount(responses)
+// sortResponseByErrorAndValidity sorts the responses based on the error and validity.
+func sortResponseByErrorAndValidity(responses []distributor.DataResponse) {
+	sort.SliceStable(responses, func(i, j int) bool {
+		return (responses[i].Err == nil && responses[j].Err != nil) ||
+			(responses[i].Err == nil && responses[j].Err == nil && responses[i].Valid && !responses[j].Valid)
+	})
+}
+
+// updateRequestsBasedOnComparisonResults updates the requests based on the data comparison responses.
+func updateRequestsBasedOnComparisonResults(responses []distributor.DataResponse) {
+	errResponseCount := countAndMarkErrorResponse(responses)
 
 	if len(responses) == distributor.DefaultNodeCount-1 {
 		handleTwoResponses(responses)
@@ -24,19 +33,19 @@ func updateRequestsBasedOnDataCompare(responses []distributor.DataResponse) {
 	}
 }
 
-// compareData compares two byte slices and returns true if they are equal.
-func compareData(src, des []byte) bool {
+// areResponsesIdentical returns true if two byte slices (responses) are identical.
+func areResponsesIdentical(src, des []byte) bool {
 	srcActivity := &distributor.ActivityResponse{}
 	desActivity := &distributor.ActivityResponse{}
 
 	// check if the data is activity response
-	if validateData(src, srcActivity) && validateData(des, desActivity) {
+	if isDataValid(src, srcActivity) && isDataValid(des, desActivity) {
 		if srcActivity.Data == nil && desActivity.Data == nil {
 			return true
 		} else if srcActivity.Data != nil && desActivity.Data != nil {
 			if _, exist := distributor.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
 				// TODO: if false, save the record to the database
-				return compareActivity(srcActivity.Data, desActivity.Data)
+				return areActivitiesIdentical(srcActivity.Data, desActivity.Data)
 			}
 
 			return true
@@ -46,7 +55,7 @@ func compareData(src, des []byte) bool {
 	srcActivities := &distributor.ActivitiesResponse{}
 	desActivities := &distributor.ActivitiesResponse{}
 	// check if the data is activities	response
-	if validateData(src, srcActivities) && validateData(des, desActivities) {
+	if isDataValid(src, srcActivities) && isDataValid(des, desActivities) {
 		if srcActivities.Data == nil && desActivities.Data == nil {
 			return true
 		} else if srcActivities.Data != nil && desActivities.Data != nil {
@@ -54,7 +63,7 @@ func compareData(src, des []byte) bool {
 			srcFeeds, desFeeds := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
 
 			for i := range srcFeeds {
-				if !compareActivity(srcFeeds[i], desFeeds[i]) {
+				if !areActivitiesIdentical(srcFeeds[i], desFeeds[i]) {
 					// TODO: if false, save the record to the database
 					return false
 				}
@@ -80,8 +89,8 @@ func excludeMutableActivity(activities []*distributor.Feed) []*distributor.Feed 
 	return newActivities
 }
 
-// compareActivity compares two activities and returns true if they are equal.
-func compareActivity(src, des *distributor.Feed) bool {
+// areActivitiesIdentical returns true if two activities are identical.
+func areActivitiesIdentical(src, des *distributor.Feed) bool {
 	if src.ID != des.ID ||
 		src.Network != des.Network ||
 		src.Index != des.Index ||
@@ -109,8 +118,8 @@ func compareActivity(src, des *distributor.Feed) bool {
 	return true
 }
 
-// validateData validates the data and returns true if the data is valid.
-func validateData(data []byte, target any) bool {
+// isDataValid returns true if the data is valid.
+func isDataValid(data []byte, target any) bool {
 	if err := json.Unmarshal(data, target); err == nil {
 		return true
 	}
@@ -118,8 +127,8 @@ func validateData(data []byte, target any) bool {
 	return false
 }
 
-// markErrorResponsesAndCount marks the error results and returns the count of error results.
-func markErrorResponsesAndCount(responses []distributor.DataResponse) (errResponseCount int) {
+// countAndMarkErrorResponse marks the error results and returns the count.
+func countAndMarkErrorResponse(responses []distributor.DataResponse) (errResponseCount int) {
 	for i := range responses {
 		if responses[i].Err != nil {
 			responses[i].InvalidRequest = invalidRequestUnit
@@ -130,7 +139,7 @@ func markErrorResponsesAndCount(responses []distributor.DataResponse) (errRespon
 	return errResponseCount
 }
 
-// handleTwoResponses handles the case when there are two results.
+// handleTwoResponses handles the case when there are two responses.
 func handleTwoResponses(responses []distributor.DataResponse) {
 	if responses[0].Err == nil && responses[1].Err == nil {
 		updateRequestBasedOnComparison(responses)
@@ -157,7 +166,7 @@ func handleFullResponses(responses []distributor.DataResponse, errResponseCount 
 
 // updateRequestBasedOnComparison updates the requests based on the comparison of the data.
 func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
-	if compareData(responses[0].Data, responses[1].Data) {
+	if areResponsesIdentical(responses[0].Data, responses[1].Data) {
 		responses[0].Request = 2 * requestUnit
 		responses[1].Request = requestUnit
 	} else {
@@ -179,7 +188,7 @@ func markErrorResponse(responses ...distributor.DataResponse) {
 // compareAndAssignRequests compares the data and assigns the requests.
 func compareAndAssignRequests(responses []distributor.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
-	diff01, diff02, diff12 := compareData(d0, d1), compareData(d0, d2), compareData(d1, d2)
+	diff01, diff02, diff12 := areResponsesIdentical(d0, d1), areResponsesIdentical(d0, d2), areResponsesIdentical(d1, d2)
 
 	switch errResponseCount {
 	// responses contain 2 errors
@@ -193,7 +202,7 @@ func compareAndAssignRequests(responses []distributor.DataResponse, errResponseC
 		} else {
 			responses[0].Request = requestUnit
 		}
-	// responses contain no error
+	// responses contain no errors
 	case len(responses) - 3:
 		if diff01 && diff02 && diff12 {
 			responses[0].Request = 2 * requestUnit
@@ -214,7 +223,7 @@ func compareAndAssignRequests(responses []distributor.DataResponse, errResponseC
 				responses[1].Request = requestUnit
 				responses[2].Request = requestUnit
 			} else {
-				// it means the last two responses are the null data
+				// the last two responses must include null data
 				responses[0].Request = requestUnit
 			}
 		} else if !diff01 {
