@@ -59,6 +59,9 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	}
 
 	// register router
+	instance.httpServer.POST("/nodes/register", instance.hub.nta.RegisterNode)
+	instance.httpServer.POST("/nodes/heartbeat", instance.hub.nta.NodeHeartbeat)
+
 	nta := instance.httpServer.Group("/nta")
 	{
 		nta.GET("/nodes", instance.hub.nta.GetNodes)
@@ -67,8 +70,6 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 		nta.GET("/nodes/:id/challenge", instance.hub.nta.GetNodeChallenge)
 		nta.POST("/nodes/:id/hideTaxRate", instance.hub.nta.PostNodeHideTaxRate)
 		nta.GET("/nodes/:id/avatar.svg", instance.hub.nta.GetNodeAvatar)
-		nta.POST("/nodes/register", instance.hub.nta.RegisterNode)
-		nta.POST("/nodes/heartbeat", instance.hub.nta.NodeHeartbeat)
 		nta.GET("/operation/:operator/profits", instance.hub.nta.GetOperatorProfit)
 
 		nta.GET("/bridge/transactions", instance.hub.nta.GetBridgeTransactions)
