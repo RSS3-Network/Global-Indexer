@@ -14,16 +14,16 @@ const (
 	invalidPointUnit = 1
 )
 
-// sortResponseByErrorAndValidity sorts the responses based on the error and validity.
-func sortResponseByErrorAndValidity(responses []distributor.DataResponse) {
+// sortResponseByValidity sorts the responses based on the validity.
+func sortResponseByValidity(responses []distributor.DataResponse) {
 	sort.SliceStable(responses, func(i, j int) bool {
 		return (responses[i].Err == nil && responses[j].Err != nil) ||
 			(responses[i].Err == nil && responses[j].Err == nil && responses[i].Valid && !responses[j].Valid)
 	})
 }
 
-// updateRequestsBasedOnComparisonResults updates the requests based on the data comparison responses.
-func updateRequestsBasedOnComparisonResults(responses []distributor.DataResponse) {
+// updatePointsBasedOnIdentity updates both  based on responses identity.
+func updatePointsBasedOnIdentity(responses []distributor.DataResponse) {
 	errResponseCount := countAndMarkErrorResponse(responses)
 
 	if len(responses) == distributor.DefaultNodeCount-1 {
@@ -35,8 +35,8 @@ func updateRequestsBasedOnComparisonResults(responses []distributor.DataResponse
 	}
 }
 
-// areResponsesIdentical returns true if two byte slices (responses) are identical.
-func areResponsesIdentical(src, des []byte) bool {
+// isResponseIdentical returns true if two byte slices (responses) are identical.
+func isResponseIdentical(src, des []byte) bool {
 	srcActivity := &distributor.ActivityResponse{}
 	desActivity := &distributor.ActivityResponse{}
 
@@ -47,7 +47,7 @@ func areResponsesIdentical(src, des []byte) bool {
 		} else if srcActivity.Data != nil && desActivity.Data != nil {
 			if _, exist := distributor.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
 				// TODO: if false, save the record to the database
-				return areActivitiesIdentical(srcActivity.Data, desActivity.Data)
+				return isActivityIdentical(srcActivity.Data, desActivity.Data)
 			}
 
 			return true
@@ -65,7 +65,7 @@ func areResponsesIdentical(src, des []byte) bool {
 			srcFeeds, desFeeds := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
 
 			for i := range srcFeeds {
-				if !areActivitiesIdentical(srcFeeds[i], desFeeds[i]) {
+				if !isActivityIdentical(srcFeeds[i], desFeeds[i]) {
 					// TODO: if false, save the record to the database
 					return false
 				}
@@ -91,8 +91,8 @@ func excludeMutableActivity(activities []*distributor.Feed) []*distributor.Feed 
 	return newActivities
 }
 
-// areActivitiesIdentical returns true if two activities are identical.
-func areActivitiesIdentical(src, des *distributor.Feed) bool {
+// isActivityIdentical returns true if two activities are identical.
+func isActivityIdentical(src, des *distributor.Feed) bool {
 	if src.ID != des.ID ||
 		src.Network != des.Network ||
 		src.Index != des.Index ||
@@ -163,13 +163,13 @@ func handleSingleResponse(responses []distributor.DataResponse) {
 // handleFullResponses handles the case when there are more than two results.
 func handleFullResponses(responses []distributor.DataResponse, errResponseCount int) {
 	if errResponseCount < len(responses) {
-		compareAndAssignRequests(responses, errResponseCount)
+		compareAndAssignPoints(responses, errResponseCount)
 	}
 }
 
 // updateRequestBasedOnComparison updates the requests based on the comparison of the data.
 func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
-	if areResponsesIdentical(responses[0].Data, responses[1].Data) {
+	if isResponseIdentical(responses[0].Data, responses[1].Data) {
 		responses[0].ValidPoint = 2 * validPointUnit
 		responses[1].ValidPoint = validPointUnit
 	} else {
@@ -188,10 +188,10 @@ func markErrorResponse(responses ...distributor.DataResponse) {
 	}
 }
 
-// compareAndAssignRequests compares the data and assigns the requests.
-func compareAndAssignRequests(responses []distributor.DataResponse, errResponseCount int) {
+// compareAndAssignPoints compares the data for identity and assigns corresponding points.
+func compareAndAssignPoints(responses []distributor.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
-	diff01, diff02, diff12 := areResponsesIdentical(d0, d1), areResponsesIdentical(d0, d2), areResponsesIdentical(d1, d2)
+	diff01, diff02, diff12 := isResponseIdentical(d0, d1), isResponseIdentical(d0, d2), isResponseIdentical(d1, d2)
 
 	switch errResponseCount {
 	// responses contain 2 errors

@@ -34,12 +34,12 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.Dat
 	}
 
 	// non-error and non-null results are always put in front of the list
-	sortResponseByErrorAndValidity(responses)
+	sortResponseByValidity(responses)
 	// update requests based on data compare
-	updateRequestsBasedOnComparisonResults(responses)
-	// update stats based on results
+	updatePointsBasedOnIdentity(responses)
+	// update stats struct based on the above results
 	updateStatsWithResults(nodeStatsMap, responses)
-	// save node stats
+	// save stats to the database
 	if err = e.databaseClient.SaveNodeStats(ctx, lo.MapToSlice(nodeStatsMap,
 		func(_ common.Address, stat *schema.Stat) *schema.Stat {
 			return stat
