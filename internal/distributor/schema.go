@@ -18,6 +18,11 @@ var (
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
 	DefaultVerifyCount = 3
+
+	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
+	MutablePlatformMap = map[string]struct{}{
+		filter.PlatformFarcaster.String(): {},
+	}
 )
 
 type Cache struct {
@@ -26,12 +31,15 @@ type Cache struct {
 }
 
 type DataResponse struct {
-	Address        common.Address
-	Data           []byte
-	Valid          bool
-	Err            error
-	Request        int
-	InvalidRequest int
+	Address common.Address
+	Data    []byte
+	// A valid response must be non-null and non-error
+	Valid bool
+	Err   error
+	// ValidPoint is the points given to the response
+	ValidPoint int
+	// InvalidPoint is the points given to the response when it is invalid
+	InvalidPoint int
 }
 
 type ErrResponse struct {

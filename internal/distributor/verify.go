@@ -51,16 +51,16 @@ func (d *Distributor) verifyData(ctx context.Context, results []DataResponse) er
 		for i := range results {
 			if _, exists := statsMap[results[i].Address]; exists {
 				if results[i].Err != nil {
-					results[i].InvalidRequest = 1
+					results[i].InvalidPoint = 1
 				} else {
-					results[i].Request = 1
+					results[i].ValidPoint = 1
 				}
 			}
 		}
 	} else {
 		if !results[0].Valid {
 			for i := range results {
-				results[i].InvalidRequest = 1
+				results[i].InvalidPoint = 1
 			}
 		} else {
 			d.updateRequestsBasedOnDataCompare(results)
@@ -246,9 +246,9 @@ func (d *Distributor) sortResults(results []DataResponse) {
 func (d *Distributor) updateStatsWithResults(statsMap map[common.Address]*schema.Stat, results []DataResponse) {
 	for _, result := range results {
 		if stat, exists := statsMap[result.Address]; exists {
-			stat.TotalRequest += int64(result.Request)
-			stat.EpochRequest += int64(result.Request)
-			stat.EpochInvalidRequest += int64(result.InvalidRequest)
+			stat.TotalRequest += int64(result.ValidPoint)
+			stat.EpochRequest += int64(result.ValidPoint)
+			stat.EpochInvalidRequest += int64(result.InvalidPoint)
 		}
 	}
 }
@@ -261,29 +261,29 @@ func (d *Distributor) updateRequestsBasedOnDataCompare(results []DataResponse) {
 	diff12 := compareData(results[1].Data, results[2].Data)
 
 	if diff01 && diff02 {
-		results[0].Request = 2
-		results[1].Request = 1
-		results[2].Request = 1
+		results[0].ValidPoint = 2
+		results[1].ValidPoint = 1
+		results[2].ValidPoint = 1
 	} else if !diff01 && diff12 {
-		results[0].InvalidRequest = 1
-		results[1].Request = 1
-		results[2].Request = 1
+		results[0].InvalidPoint = 1
+		results[1].ValidPoint = 1
+		results[2].ValidPoint = 1
 	} else if !diff01 && diff02 {
-		results[0].Request = 2
-		results[1].InvalidRequest = 1
-		results[2].Request = 1
+		results[0].ValidPoint = 2
+		results[1].InvalidPoint = 1
+		results[2].ValidPoint = 1
 	} else if diff01 && !diff02 {
-		results[0].Request = 2
-		results[1].Request = 1
-		results[2].InvalidRequest = 1
+		results[0].ValidPoint = 2
+		results[1].ValidPoint = 1
+		results[2].InvalidPoint = 1
 	} else if !diff01 && !diff02 && !diff12 {
 		for i := range results {
 			if results[i].Data == nil && results[i].Err != nil {
-				results[i].InvalidRequest = 1
+				results[i].InvalidPoint = 1
 			}
 
 			if results[i].Data != nil && results[i].Err == nil {
-				results[i].Request = 1
+				results[i].ValidPoint = 1
 			}
 		}
 	}

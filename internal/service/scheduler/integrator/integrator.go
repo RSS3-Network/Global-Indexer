@@ -200,28 +200,28 @@ func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.S
 
 func (s *server) calcPoints(stat *schema.Stat) {
 	// staking pool tokens
-	stat.Points = math.Min(math.Log2(stat.Staking/100000+1), 0.2)
+	stat.Score = math.Min(math.Log2(stat.Staking/100000+1), 0.2)
 
 	// public good
-	stat.Points += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
+	stat.Score += float64(lo.Ternary(stat.IsPublicGood, 0, 1))
 
 	// running time
-	stat.Points += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/18)/120, 0.3)
+	stat.Score += math.Min(math.Ceil(time.Since(stat.ResetAt).Hours()/18)/120, 0.3)
 
 	// total requests
-	stat.Points += math.Min(math.Log(float64(stat.TotalRequest)/100000+1)/math.Log(100), 0.3)
+	stat.Score += math.Min(math.Log(float64(stat.TotalRequest)/100000+1)/math.Log(100), 0.3)
 
 	// epoch requests
-	stat.Points += math.Min(math.Log(float64(stat.EpochRequest)/1000000+1)/math.Log(5000), 1)
+	stat.Score += math.Min(math.Log(float64(stat.EpochRequest)/1000000+1)/math.Log(5000), 1)
 
 	// network count
-	stat.Points += 0.1*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + 0.3*float64(lo.Ternary(stat.IsRssNode, 1, 0))
+	stat.Score += 0.1*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + 0.3*float64(lo.Ternary(stat.IsRssNode, 1, 0))
 
 	// indexer count
-	stat.Points += math.Min(float64(stat.Indexer)*0.05, 0.2)
+	stat.Score += math.Min(float64(stat.Indexer)*0.05, 0.2)
 
 	// epoch failure requests
-	stat.Points -= 0.5 * float64(stat.EpochInvalidRequest)
+	stat.Score -= 0.5 * float64(stat.EpochInvalidRequest)
 }
 
 func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
