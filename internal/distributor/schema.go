@@ -243,6 +243,7 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 	},
 }
 
+// PlatformToWorkerMap is a map of platform to worker.
 var PlatformToWorkerMap = map[filter.Platform]string{
 	filter.PlatformRSS3:       filter.RSS3.String(),
 	filter.PlatformMirror:     filter.Mirror.String(),
