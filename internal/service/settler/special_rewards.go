@@ -145,7 +145,7 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, []*big.Int, error) {
 		operationPoolSizes[i] = operationPoolSize
 	}
 
-	return stakingPoolSizes, stakingPoolSizes, nil
+	return stakingPoolSizes, operationPoolSizes, nil
 }
 
 // computeTotalStakeValue calculates the total stake value.
