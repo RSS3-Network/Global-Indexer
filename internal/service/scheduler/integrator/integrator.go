@@ -187,8 +187,8 @@ func (s *server) updateNodePoints(stat *schema.Stat) error {
 }
 
 func (s *server) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.Cache {
-		return distributor.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.NodeEndpointCache {
+		return distributor.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	if err := s.cacheClient.Set(ctx, key, nodesCache); err != nil {
