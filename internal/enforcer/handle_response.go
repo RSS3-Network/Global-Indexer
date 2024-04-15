@@ -56,16 +56,16 @@ func isResponseIdentical(src, des []byte) bool {
 
 	srcActivities := &distributor.ActivitiesResponse{}
 	desActivities := &distributor.ActivitiesResponse{}
-	// check if the data is activities	response
+	// check if the data is activities response
 	if isDataValid(src, srcActivities) && isDataValid(des, desActivities) {
 		if srcActivities.Data == nil && desActivities.Data == nil {
 			return true
 		} else if srcActivities.Data != nil && desActivities.Data != nil {
 			// exclude the mutable platforms
-			srcFeeds, desFeeds := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
+			srcActivity, desActivity := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
 
-			for i := range srcFeeds {
-				if !isActivityIdentical(srcFeeds[i], desFeeds[i]) {
+			for i := range srcActivity {
+				if !isActivityIdentical(srcActivity[i], desActivity[i]) {
 					// TODO: if false, save the record to the database
 					return false
 				}
@@ -79,8 +79,8 @@ func isResponseIdentical(src, des []byte) bool {
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.
-func excludeMutableActivity(activities []*distributor.Feed) []*distributor.Feed {
-	var newActivities []*distributor.Feed
+func excludeMutableActivity(activities []*distributor.Activity) []*distributor.Activity {
+	var newActivities []*distributor.Activity
 
 	for i := range activities {
 		if _, exist := distributor.MutablePlatformMap[activities[i].Platform]; !exist {
@@ -91,8 +91,8 @@ func excludeMutableActivity(activities []*distributor.Feed) []*distributor.Feed 
 	return newActivities
 }
 
-// isActivityIdentical returns true if two activities are identical.
-func isActivityIdentical(src, des *distributor.Feed) bool {
+// isActivityIdentical returns true if two Activity are identical.
+func isActivityIdentical(src, des *distributor.Activity) bool {
 	if src.ID != des.ID ||
 		src.Network != des.Network ||
 		src.Index != des.Index ||

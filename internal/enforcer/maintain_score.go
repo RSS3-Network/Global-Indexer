@@ -114,7 +114,7 @@ func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2
 		staking := float64(nodesInfo[i].StakingPoolTokens.Uint64())
 		status := nodes[i].Status
 
-		statsPool.Go(func(ctx context.Context) error {
+		statsPool.Go(func(_ context.Context) error {
 			return updateNodeStat(stat, epoch, staking, status)
 		})
 	}
@@ -253,8 +253,8 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 
 // setNodeCache sets the cache for the nodes.
 func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.Cache {
-		return distributor.Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.NodeEndpointCache {
+		return distributor.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	return e.cacheClient.Set(ctx, key, nodesCache)
