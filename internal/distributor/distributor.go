@@ -86,7 +86,7 @@ func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.Activi
 // It takes a context and an account activities request as input parameters.
 // It returns the retrieved data or an error if any occurred.
 func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.AccountActivitiesRequest) ([]byte, error) {
-	nodes := make([]Cache, 0, DefaultNodeCount)
+	nodes := make([]NodeEndpointCache, 0, DefaultNodeCount)
 
 	nodeAddresses, err := d.matchLightNodes(ctx, request)
 
@@ -108,7 +108,7 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 		num := lo.Ternary(len(nodeStats) > DefaultNodeCount, DefaultNodeCount, len(nodeStats))
 
 		for i := 0; i < num; i++ {
-			nodes = append(nodes, Cache{
+			nodes = append(nodes, NodeEndpointCache{
 				Address:  nodeStats[i].Address.String(),
 				Endpoint: nodeStats[i].Endpoint,
 			})
@@ -149,9 +149,9 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 // retrieveNodes retrieves nodes from the cache or database.
 // It takes a context and a cache key as input parameters.
 // It returns the retrieved nodes or an error if any occurred.
-func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]Cache, error) {
+func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]NodeEndpointCache, error) {
 	var (
-		nodesCache []Cache
+		nodesCache []NodeEndpointCache
 		nodes      []*schema.Stat
 	)
 
@@ -196,8 +196,8 @@ func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]Cache, e
 
 		zap.L().Info("set nodes to cache", zap.String("key", key))
 
-		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) Cache {
-			return Cache{
+		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) NodeEndpointCache {
+			return NodeEndpointCache{
 				Address:  n.Address.String(),
 				Endpoint: n.Endpoint,
 			}
@@ -307,7 +307,7 @@ func (d *Distributor) processActivitiesResults(results []DataResponse) {
 	ctx := context.Background()
 
 	if err := d.verifyData(ctx, results); err != nil {
-		zap.L().Error("fail activity request verify", zap.Any("results", len(results)))
+		zap.L().Error("fail to verify activity request", zap.Any("results", len(results)))
 
 		return
 	}
@@ -343,7 +343,7 @@ func (d *Distributor) processActivitiesResults(results []DataResponse) {
 // buildActivityPathByID builds the path for activity data retrieval by ID.
 // It takes an activity request and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildActivityPathByID(query dsl.ActivityRequest, nodes []Cache) (map[common.Address]string, error) {
+func (d *Distributor) buildActivityPathByID(query dsl.ActivityRequest, nodes []NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.buildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -355,7 +355,7 @@ func (d *Distributor) buildActivityPathByID(query dsl.ActivityRequest, nodes []C
 // buildAccountActivitiesPath builds the path for account activities data retrieval.
 // It takes an account activities request and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildAccountActivitiesPath(query dsl.AccountActivitiesRequest, nodes []Cache) (map[common.Address]string, error) {
+func (d *Distributor) buildAccountActivitiesPath(query dsl.AccountActivitiesRequest, nodes []NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.buildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -368,8 +368,8 @@ func (d *Distributor) buildAccountActivitiesPath(query dsl.AccountActivitiesRequ
 // It takes a context, a cache key, and a slice of stats as input parameters.
 // It returns an error if any occurred.
 func (d *Distributor) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) Cache {
-		return Cache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) NodeEndpointCache {
+		return NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	if err := d.cacheClient.Set(ctx, key, nodesCache); err != nil {
@@ -474,7 +474,7 @@ func (d *Distributor) fetch(ctx context.Context, decodedURI string) ([]byte, err
 // buildPath builds the path for nodes.
 // It takes a path, a query, and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildPath(path string, query any, nodes []Cache) (map[common.Address]string, error) {
+func (d *Distributor) buildPath(path string, query any, nodes []NodeEndpointCache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
@@ -507,7 +507,7 @@ func (d *Distributor) buildPath(path string, query any, nodes []Cache) (map[comm
 // buildRSSHubPath builds the path for RSS Hub data retrieval.
 // It takes a parameter, a query, and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildRSSHubPath(param, query string, nodes []Cache) (map[common.Address]string, error) {
+func (d *Distributor) buildRSSHubPath(param, query string, nodes []NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.buildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)

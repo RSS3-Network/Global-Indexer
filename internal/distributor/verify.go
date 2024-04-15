@@ -137,7 +137,7 @@ func (d *Distributor) verifyStat(ctx context.Context, activity *Activity, stats 
 
 			nodeMap, err := d.buildActivityPathByID(
 				request,
-				[]Cache{
+				[]NodeEndpointCache{
 					{
 						Address:  stat.Address.String(),
 						Endpoint: stat.Endpoint,

@@ -91,7 +91,7 @@ func excludeMutableActivity(activities []*distributor.Activity) []*distributor.A
 	return newActivities
 }
 
-// isActivityIdentical returns true if two activities are identical.
+// isActivityIdentical returns true if two Activity are identical.
 func isActivityIdentical(src, des *distributor.Activity) bool {
 	if src.ID != des.ID ||
 		src.Network != des.Network ||

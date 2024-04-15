@@ -13,7 +13,7 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
-	MessageNodeDataFailed = "failed to request node data "
+	MessageNodeDataFailed = "failed to retrieve data from the node"
 
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
@@ -25,7 +25,7 @@ var (
 	}
 )
 
-type Cache struct {
+type NodeEndpointCache struct {
 	Address  string `json:"address"`
 	Endpoint string `json:"endpoint"`
 }
@@ -51,10 +51,12 @@ type NotFoundResponse struct {
 	Message string `json:"message"`
 }
 
+// ActivityResponse represents a single Activity in a response being returned to the requester.
 type ActivityResponse struct {
 	Data *Activity `json:"data"`
 }
 
+// ActivitiesResponse represents a list of Activity in a response being returned to the requester.
 type ActivitiesResponse struct {
 	Data []*Activity `json:"data"`
 	Meta *MetaCursor `json:"meta,omitempty"`
@@ -64,6 +66,7 @@ type MetaCursor struct {
 	Cursor string `json:"cursor"`
 }
 
+// Activity represents an activity.
 type Activity struct {
 	ID       string    `json:"id"`
 	Owner    string    `json:"owner,omitempty"`
@@ -77,6 +80,7 @@ type Activity struct {
 	Actions  []*Action `json:"actions"`
 }
 
+// Action represents an action within an Activity.
 type Action struct {
 	Tag         string            `json:"tag"`
 	Type        string            `json:"type"`
