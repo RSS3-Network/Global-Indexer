@@ -57,7 +57,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	totalActiveRewards = specialRewards.Rewards * specialRewards.RewardsRatioActive
 	// If the ratio is less than the threshold, reduce the rewards
 	if activeNodesRadio < specialRewards.NodeThreshold {
-		totalActiveRewards = specialRewards.Rewards * activeNodesRadio
+		totalActiveRewards = totalActiveRewards * activeNodesRadio
 	}
 
 	// Calculate the total operation rewards.
