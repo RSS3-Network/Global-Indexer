@@ -67,9 +67,7 @@ func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.S
 
 func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64) error {
 	// Retrieve all node addresses.
-	nodeAddresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
-		return stat.Address
-	})
+	nodeAddresses := extractNodeAddresses(stats)
 
 	// Retrieve node information from the blockchain.
 	nodesInfo, err := e.getNodesInfoFromBlockchain(nodeAddresses)
@@ -217,9 +215,7 @@ func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string)
 
 // getQualifiedNodes filters the qualified nodes.
 func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.Stat) ([]*schema.Stat, error) {
-	nodeAddresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
-		return stat.Address
-	})
+	nodeAddresses := extractNodeAddresses(stats)
 
 	// Retrieve the online nodes from the database.
 	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
@@ -258,4 +254,11 @@ func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*
 	})
 
 	return e.cacheClient.Set(ctx, key, nodesCache)
+}
+
+// extractNodeAddresses returns all Node addresses from stats.
+func extractNodeAddresses(stats []*schema.Stat) []common.Address {
+	return lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
+		return stat.Address
+	})
 }
