@@ -25,11 +25,14 @@ var (
 	}
 )
 
+// NodeEndpointCache represents a cache of a Node.
 type NodeEndpointCache struct {
 	Address  string `json:"address"`
 	Endpoint string `json:"endpoint"`
 }
 
+// DataResponse represents the response returned by a Node.
+// It is also used to store the verification result.
 type DataResponse struct {
 	Address common.Address
 	Data    []byte
