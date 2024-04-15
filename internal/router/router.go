@@ -17,7 +17,7 @@ import (
 
 type Router interface {
 	// BuildPath builds the path for the request and returns a map of node addresses to their respective paths
-	BuildPath(path string, query any, nodes []distributor.Cache) (map[common.Address]string, error)
+	BuildPath(path string, query any, nodes []distributor.NodeEndpointCache) (map[common.Address]string, error)
 	// DistributeRequest sends the request to the nodes and processes the results
 	DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResults func([]distributor.DataResponse)) (distributor.DataResponse, error)
 }
@@ -26,7 +26,7 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(path string, query any, nodes []distributor.Cache) (map[common.Address]string, error) {
+func (r *SimpleRouter) BuildPath(path string, query any, nodes []distributor.NodeEndpointCache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
