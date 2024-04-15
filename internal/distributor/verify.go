@@ -14,21 +14,21 @@ import (
 	"github.com/samber/lo"
 )
 
-// processSecondVerify processes the second verification stage by verifying feeds against working nodes.
-// It takes a list of feeds and a list of working nodes' addresses as input parameters.
-func (d *Distributor) processSecondVerify(feeds []*Feed, workingNodes []common.Address) {
+// processSecondVerify processes the second verification stage by verifying Activity against working nodes.
+// It takes a list of Activity and a list of working nodes' addresses as input parameters.
+func (d *Distributor) processSecondVerify(activities []*Activity, workingNodes []common.Address) {
 	ctx := context.Background()
 	platformMap := make(map[string]struct{})
 	statMap := make(map[string]struct{})
 
-	for _, feed := range feeds {
-		if len(feed.Platform) == 0 {
+	for _, activity := range activities {
+		if len(activity.Platform) == 0 {
 			continue
 		}
 
-		d.verifyPlatform(ctx, feed, platformMap, statMap, workingNodes)
+		d.verifyPlatform(ctx, activity, platformMap, statMap, workingNodes)
 
-		if _, exists := platformMap[feed.Platform]; !exists {
+		if _, exists := platformMap[activity.Platform]; !exists {
 			if len(platformMap) == DefaultVerifyCount {
 				break
 			}
@@ -78,17 +78,17 @@ func (d *Distributor) verifyData(ctx context.Context, results []DataResponse) er
 	return nil
 }
 
-// verifyPlatform verifies feeds against nodes associated with the feed's platform.
-// It takes a context, a feed pointer, platform and stat maps, and a list of working nodes' addresses as input parameters.
-func (d *Distributor) verifyPlatform(ctx context.Context, feed *Feed, platformMap, statMap map[string]struct{}, workingNodes []common.Address) {
-	pid, err := filter.PlatformString(feed.Platform)
+// verifyPlatform verifies activity against nodes associated with the activity's platform.
+// It takes a context, an activity pointer, platform and stat maps, and a list of working nodes' addresses as input parameters.
+func (d *Distributor) verifyPlatform(ctx context.Context, activity *Activity, platformMap, statMap map[string]struct{}, workingNodes []common.Address) {
+	pid, err := filter.PlatformString(activity.Platform)
 	if err != nil {
 		return
 	}
 
 	worker := PlatformToWorkerMap[pid]
 
-	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, []string{feed.Network}, []string{worker})
+	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, []string{activity.Network}, []string{worker})
 
 	if err != nil {
 		return
@@ -115,14 +115,14 @@ func (d *Distributor) verifyPlatform(ctx context.Context, feed *Feed, platformMa
 		return
 	}
 
-	d.verifyStat(ctx, feed, stats, statMap)
+	d.verifyStat(ctx, activity, stats, statMap)
 
-	platformMap[feed.Platform] = struct{}{}
+	platformMap[activity.Platform] = struct{}{}
 }
 
-// verifyStat verifies feed statistics and updates them based on comparison with feed data.
-// It takes a context, a feed pointer, a slice of feed statistics, and a stat map as input parameters.
-func (d *Distributor) verifyStat(ctx context.Context, feed *Feed, stats []*schema.Stat, statMap map[string]struct{}) {
+// verifyStat verifies Activity statistics and updates them based on comparison with Activity data.
+// It takes a context, a Activity pointer, a slice of Node statistics, and a stat map as input parameters.
+func (d *Distributor) verifyStat(ctx context.Context, activity *Activity, stats []*schema.Stat, statMap map[string]struct{}) {
 	for _, stat := range stats {
 		if stat.EpochInvalidRequest >= int64(DefaultSlashCount) {
 			continue
@@ -132,7 +132,7 @@ func (d *Distributor) verifyStat(ctx context.Context, feed *Feed, stats []*schem
 			statMap[stat.Address.String()] = struct{}{}
 
 			request := dsl.ActivityRequest{
-				ID: feed.ID,
+				ID: activity.ID,
 			}
 
 			nodeMap, err := d.buildActivityPathByID(
@@ -156,7 +156,7 @@ func (d *Distributor) verifyStat(ctx context.Context, feed *Feed, stats []*schem
 			if err != nil || !flag {
 				stat.EpochInvalidRequest++
 			} else {
-				if !d.compareFeeds(feed, res.Data) {
+				if !d.compareActivities(activity, res.Data) {
 					stat.EpochInvalidRequest++
 				} else {
 					stat.TotalRequest++
@@ -171,9 +171,10 @@ func (d *Distributor) verifyStat(ctx context.Context, feed *Feed, stats []*schem
 	}
 }
 
-// compareFeeds compares two feed objects and returns true if they are identical, otherwise false.
-// It takes two feed pointers as input parameters.
-func (d *Distributor) compareFeeds(src, des *Feed) bool {
+// compareActivities returns true if two Activity are identical.
+// It takes two Activity pointers as input parameters.
+// Deprecated: replaced by isActivityIdentical, as inner metadata cannot be efficiently compared.
+func (d *Distributor) compareActivities(src, des *Activity) bool {
 	var flag bool
 
 	if src.ID != des.ID ||

@@ -16,8 +16,8 @@ import (
 )
 
 type Enforcer interface {
-	Verify(ctx context.Context, responses []distributor.DataResponse) error
-	PartialVerify(ctx context.Context, responses []distributor.DataResponse)
+	VerifyResponses(ctx context.Context, responses []distributor.DataResponse) error
+	VerifyPartialResponses(ctx context.Context, responses []distributor.DataResponse)
 	MaintainScore(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 }
@@ -27,8 +27,8 @@ type SimpleEnforcer struct {
 	httpClient     httputil.Client
 }
 
-// Verify verifies the responses from the nodes.
-func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.DataResponse) error {
+// VerifyResponses verifies the responses from the nodes.
+func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []distributor.DataResponse) error {
 	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
 	}
@@ -53,6 +53,41 @@ func (e *SimpleEnforcer) Verify(ctx context.Context, responses []distributor.Dat
 	}
 
 	return nil
+}
+
+// VerifyPartialResponses performs a partial verification of the responses from the nodes.
+func (e *SimpleEnforcer) VerifyPartialResponses(ctx context.Context, responses []distributor.DataResponse) {
+	// Check if there are any responses
+	if len(responses) == 0 {
+		zap.L().Warn("no response returned from nodes")
+
+		return
+	}
+
+	activities := &distributor.ActivitiesResponse{}
+	// TODO: Consider selecting response that have been successfully verified as data source
+	// and now select the first response as data source
+	data := responses[0].Data
+
+	// Check if the data is valid
+	if !isDataValid(data, activities) {
+		zap.L().Warn("failed to parse response")
+
+		return
+	}
+
+	// Check if there are any activities in the activities responses data
+	if len(activities.Data) == 0 {
+		zap.L().Warn("no activities returned from nodes")
+
+		return
+	}
+
+	workingNodes := lo.Map(responses, func(result distributor.DataResponse, _ int) common.Address {
+		return result.Address
+	})
+
+	e.verifyPartialActivities(ctx, activities.Data, workingNodes)
 }
 
 func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []distributor.DataResponse) (map[common.Address]*schema.Stat, error) {
@@ -81,58 +116,23 @@ func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses 
 	}
 }
 
-// PartialVerify performs a partial verification of the responses from the nodes.
-func (e *SimpleEnforcer) PartialVerify(ctx context.Context, responses []distributor.DataResponse) {
-	// Check if there are any responses
-	if len(responses) == 0 {
-		zap.L().Warn("no response returned from nodes")
-
-		return
-	}
-
-	activities := &distributor.ActivitiesResponse{}
-	// TODO: Consider selecting response that have been successfully verified as data source
-	// and now select the first response as data source
-	data := responses[0].Data
-
-	// Check if the data is valid
-	if !isDataValid(data, activities) {
-		zap.L().Warn("failed to parse response")
-
-		return
-	}
-
-	// Check if there are any feeds in the activities data
-	if len(activities.Data) == 0 {
-		zap.L().Warn("no feed returned from nodes")
-
-		return
-	}
-
-	workingNodes := lo.Map(responses, func(result distributor.DataResponse, _ int) common.Address {
-		return result.Address
-	})
-
-	e.verifyPartialFeeds(ctx, activities.Data, workingNodes)
-}
-
-// verifyPartialFeeds filter feeds based on the platform to perform partial verification.
-func (e *SimpleEnforcer) verifyPartialFeeds(ctx context.Context, feeds []*distributor.Feed, workingNodes []common.Address) {
+// verifyPartialActivities filter Activity based on the platform to perform a partial verification.
+func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, activities []*distributor.Activity, workingNodes []common.Address) {
 	// platformMap is used to store the platform that has been verified
 	platformMap := make(map[string]struct{}, distributor.DefaultVerifyCount)
 	// statMap is used to store the stats that have been verified
 	statMap := make(map[string]struct{})
 
-	for _, feed := range feeds {
-		// This usually indicates that the feed belongs to the fallback worker.
-		// We cannot determine whether this feed belongs to a readable worker，
+	for _, activity := range activities {
+		// This usually indicates that the activity belongs to the fallback worker.
+		// We cannot determine whether this activity belongs to a readable worker，
 		// therefore it is skipped.
-		if len(feed.Platform) == 0 {
+		if len(activity.Platform) == 0 {
 			continue
 		}
 
 		// Find stats that related to the platform
-		stats, err := e.findStatsByPlatform(ctx, feed, workingNodes)
+		stats, err := e.findStatsByPlatform(ctx, activity, workingNodes)
 
 		if err != nil {
 			zap.L().Error("failed to verify platform", zap.Error(err))
@@ -146,11 +146,11 @@ func (e *SimpleEnforcer) verifyPartialFeeds(ctx context.Context, feeds []*distri
 			continue
 		}
 
-		// Verify the feed by stats
-		e.verifyFeedByStats(ctx, feed, stats, statMap, platformMap)
+		// Verify the activity by stats
+		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap)
 
 		// If the platform count reaches the DefaultVerifyCount, exit the verification loop.
-		if _, exists := platformMap[feed.Platform]; !exists {
+		if _, exists := platformMap[activity.Platform]; !exists {
 			if len(platformMap) == distributor.DefaultVerifyCount {
 				break
 			}
@@ -159,14 +159,14 @@ func (e *SimpleEnforcer) verifyPartialFeeds(ctx context.Context, feeds []*distri
 }
 
 // findStatsByPlatform finds the stats by platform.
-func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, feed *distributor.Feed, workingNodes []common.Address) ([]*schema.Stat, error) {
-	pid, err := filter.PlatformString(feed.Platform)
+func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *distributor.Activity, workingNodes []common.Address) ([]*schema.Stat, error) {
+	pid, err := filter.PlatformString(activity.Platform)
 	if err != nil {
 		return nil, err
 	}
 
 	worker := distributor.PlatformToWorkerMap[pid]
-	indexers, err := e.databaseClient.FindNodeIndexers(ctx, nil, []string{feed.Network}, []string{worker})
+	indexers, err := e.databaseClient.FindNodeIndexers(ctx, nil, []string{activity.Network}, []string{worker})
 
 	if err != nil {
 		return nil, err
@@ -199,18 +199,18 @@ func excludeWorkingNodes(indexers []*schema.Indexer, workingNodes []common.Addre
 	})
 }
 
-// verifyFeedByStats verifies the feed by stats.
-func (e *SimpleEnforcer) verifyFeedByStats(ctx context.Context, feed *distributor.Feed, stats []*schema.Stat, statMap, platformMap map[string]struct{}) {
+// verifyActivityByStats verifies the activity by stats.
+func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *distributor.Activity, stats []*schema.Stat, statMap, platformMap map[string]struct{}) {
 	for _, stat := range stats {
 		if _, exists := statMap[stat.Address.String()]; !exists {
 			statMap[stat.Address.String()] = struct{}{}
 
-			activity, err := e.fetchActivityByTxID(ctx, stat.Endpoint, feed.ID)
+			activityFetched, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
 
 			if err != nil {
 				stat.EpochInvalidRequest += invalidPointUnit
 			} else {
-				if activity.Data == nil || !isActivityIdentical(feed, activity.Data) {
+				if activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
 					// TODO: if false, save the record to the database
 					stat.EpochInvalidRequest += invalidPointUnit
 				} else {
@@ -219,7 +219,7 @@ func (e *SimpleEnforcer) verifyFeedByStats(ctx context.Context, feed *distributo
 				}
 			}
 
-			platformMap[feed.Platform] = struct{}{}
+			platformMap[activity.Platform] = struct{}{}
 
 			if err = e.databaseClient.SaveNodeStat(ctx, stat); err != nil {
 				zap.L().Warn("[verifyStat] failed to save node stat", zap.Error(err))
@@ -230,9 +230,9 @@ func (e *SimpleEnforcer) verifyFeedByStats(ctx context.Context, feed *distributo
 	}
 }
 
-// fetchActivityByTxID fetches the activity by txID.
-func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, endpoint, txID string) (*distributor.ActivityResponse, error) {
-	fullURL := endpoint + "/decentralized/tx/" + txID
+// fetchActivityByTxID fetches the activity by txID from a Node.
+func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*distributor.ActivityResponse, error) {
+	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
 	body, err := e.httpClient.Fetch(ctx, fullURL)
 	if err != nil {

@@ -296,9 +296,9 @@ func (d *Distributor) processRSSHubResults(results []DataResponse) {
 // processActivityResults processes activity data retrieval results.
 func (d *Distributor) processActivityResults(results []DataResponse) {
 	if err := d.verifyData(context.Background(), results); err != nil {
-		zap.L().Error("fail to verify  feed id request ", zap.Any("results", len(results)))
+		zap.L().Error("fail to verify activity id request ", zap.Any("results", len(results)))
 	} else {
-		zap.L().Info("complete feed id request verify", zap.Any("results", len(results)))
+		zap.L().Info("complete activity id request verify", zap.Any("results", len(results)))
 	}
 }
 
@@ -307,12 +307,12 @@ func (d *Distributor) processActivitiesResults(results []DataResponse) {
 	ctx := context.Background()
 
 	if err := d.verifyData(ctx, results); err != nil {
-		zap.L().Error("fail feed request verify", zap.Any("results", len(results)))
+		zap.L().Error("fail activity request verify", zap.Any("results", len(results)))
 
 		return
 	}
 
-	zap.L().Info("complete feed request verify", zap.Any("results", len(results)))
+	zap.L().Info("complete activity request verify", zap.Any("results", len(results)))
 
 	if !results[0].Valid {
 		return

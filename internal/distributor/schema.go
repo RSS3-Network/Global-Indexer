@@ -52,11 +52,11 @@ type NotFoundResponse struct {
 }
 
 type ActivityResponse struct {
-	Data *Feed `json:"data"`
+	Data *Activity `json:"data"`
 }
 
 type ActivitiesResponse struct {
-	Data []*Feed     `json:"data"`
+	Data []*Activity `json:"data"`
 	Meta *MetaCursor `json:"meta,omitempty"`
 }
 
@@ -64,7 +64,7 @@ type MetaCursor struct {
 	Cursor string `json:"cursor"`
 }
 
-type Feed struct {
+type Activity struct {
 	ID       string    `json:"id"`
 	Owner    string    `json:"owner,omitempty"`
 	Network  string    `json:"network"`
