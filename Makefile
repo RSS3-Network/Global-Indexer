@@ -19,7 +19,7 @@ build:
 
 image:
 	docker build \
-    		--tag naturalselectionlabs/rss3-global-indexer:$(VERSION) \
+    		--tag rss3-network/global-indexer:$(VERSION) \
     		.
 
 run:

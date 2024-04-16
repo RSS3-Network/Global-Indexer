@@ -13,25 +13,36 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
-	MessageNodeDataFailed = "failed to request node data "
+	MessageNodeDataFailed = "failed to retrieve data from the node"
 
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
 	DefaultVerifyCount = 3
+
+	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
+	MutablePlatformMap = map[string]struct{}{
+		filter.PlatformFarcaster.String(): {},
+	}
 )
 
-type Cache struct {
+// NodeEndpointCache represents a cache of a Node.
+type NodeEndpointCache struct {
 	Address  string `json:"address"`
 	Endpoint string `json:"endpoint"`
 }
 
+// DataResponse represents the response returned by a Node.
+// It is also used to store the verification result.
 type DataResponse struct {
-	Address        common.Address
-	Data           []byte
-	Valid          bool
-	Err            error
-	Request        int
-	InvalidRequest int
+	Address common.Address
+	Data    []byte
+	// A valid response must be non-null and non-error
+	Valid bool
+	Err   error
+	// ValidPoint is the points given to the response
+	ValidPoint int
+	// InvalidPoint is the points given to the response when it is invalid
+	InvalidPoint int
 }
 
 type ErrResponse struct {
@@ -43,12 +54,14 @@ type NotFoundResponse struct {
 	Message string `json:"message"`
 }
 
+// ActivityResponse represents a single Activity in a response being returned to the requester.
 type ActivityResponse struct {
-	Data *Feed `json:"data"`
+	Data *Activity `json:"data"`
 }
 
+// ActivitiesResponse represents a list of Activity in a response being returned to the requester.
 type ActivitiesResponse struct {
-	Data []*Feed     `json:"data"`
+	Data []*Activity `json:"data"`
 	Meta *MetaCursor `json:"meta,omitempty"`
 }
 
@@ -56,7 +69,8 @@ type MetaCursor struct {
 	Cursor string `json:"cursor"`
 }
 
-type Feed struct {
+// Activity represents an activity.
+type Activity struct {
 	ID       string    `json:"id"`
 	Owner    string    `json:"owner,omitempty"`
 	Network  string    `json:"network"`
@@ -69,6 +83,7 @@ type Feed struct {
 	Actions  []*Action `json:"actions"`
 }
 
+// Action represents an action within an Activity.
 type Action struct {
 	Tag         string            `json:"tag"`
 	Type        string            `json:"type"`
@@ -235,6 +250,7 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 	},
 }
 
+// PlatformToWorkerMap is a map of platform to worker.
 var PlatformToWorkerMap = map[filter.Platform]string{
 	filter.PlatformRSS3:       filter.RSS3.String(),
 	filter.PlatformMirror:     filter.Mirror.String(),
