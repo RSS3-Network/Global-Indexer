@@ -24,3 +24,11 @@ image:
 
 run:
 	ENVIRONMENT=development go run ./cmd
+
+.PHONY: genmigration
+MIG ?= new_migration
+ENV ?= dev
+genmigration:
+	docker compose -f ./docker-compose.migration.yml up -d
+	atlas migrate diff $(MIG) --env $(ENV)
+	docker compose -f ./docker-compose.migration.yml down -v
