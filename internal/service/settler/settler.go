@@ -120,7 +120,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Update the node staking data from the chain.
-	if err := s.updateNodeStakingData(nodeAddresses, nodes); err != nil {
+	if err := s.fetchNodePoolSizes(nodeAddresses, nodes); err != nil {
 		return nil, nil, nil, err
 	}
 

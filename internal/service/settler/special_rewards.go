@@ -18,13 +18,16 @@ import (
 // currently, the amount is set to 30,000,000 / 486.6666666666667 * 0.2 ~= 12328
 func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, []*big.Float, error) {
 	var (
-		totalStakeValue                  *big.Int
-		totalRecentStakerStakingPoolSize = big.NewInt(0)
-		totalOperationPoolSize           = big.NewInt(0)
-		totalActiveScore                 = big.NewFloat(0)
-		totalActiveRewards               float64
-		totalOperationRewards            float64
-		scores                           = make([]*big.Float, len(nodes))
+		finalScores = make([]*big.Float, len(nodes))
+		// sum of all active scores
+		totalActiveScore = big.NewFloat(0)
+		// sum of all Ps with recent stakers.
+		totalActiveStake       = big.NewInt(0)
+		totalActiveRewards     float64
+		totalOperationPoolSize = big.NewInt(0)
+		totalOperationRewards  float64
+		// sum of all Ps sizes.
+		totalStake *big.Int
 	)
 
 	// Preprocessing step to avoid repeated parsing and condition checking.
@@ -39,7 +42,7 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	// Calculate the total pool size.
 	for i, poolSize := range stakingPoolSizes {
 		if _, exist := recentStakers[nodes[i].Address]; exist {
-			totalRecentStakerStakingPoolSize.Add(totalRecentStakerStakingPoolSize, poolSize)
+			totalActiveStake.Add(totalActiveStake, poolSize)
 		}
 	}
 
@@ -48,8 +51,8 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 		totalOperationPoolSize.Add(totalOperationPoolSize, poolSize)
 	}
 
-	// Calculate total stake value.
-	totalStakeValue = computeTotalStakeValue(nodes, recentStakers)
+	// Calculate total stake.
+	totalStake = sumTotalStake(nodes, recentStakers)
 
 	// Calculate the ratio of active nodes to total nodes.
 	activeNodesRadio := float64(len(recentStakers)) / float64(len(nodes))
@@ -64,17 +67,17 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	totalOperationRewards = specialRewards.Rewards * specialRewards.RewardsRatioOperation
 
 	// Calculate activeScores for each node.
-	activeScores := computeActiveScores(nodes, recentStakers, stakingPoolSizes, totalRecentStakerStakingPoolSize, totalStakeValue, specialRewards)
+	activeScores := computeActiveScores(nodes, recentStakers, stakingPoolSizes, totalActiveStake, totalStake, specialRewards)
 
 	// Calculate operationScores for each node.
 	operationScores := computeOperationScores(operationPoolSizes, totalOperationPoolSize)
 
-	for i, score := range activeScores {
-		totalActiveScore.Add(totalActiveScore, score)
+	// calculate the total activeScore for each node
+	for i, activeScore := range activeScores {
+		totalActiveScore.Add(totalActiveScore, activeScore)
 
-		// calculate the total score for each node
-		// totalScore = activeScore + operationScore
-		scores[i] = new(big.Float).Add(score, operationScores[i])
+		// finalScore = activeScore + operationScore
+		finalScores[i] = new(big.Float).Add(activeScore, operationScores[i])
 	}
 
 	rewards, err := calculateFinalRewards(activeScores, totalActiveScore, operationScores, specialRewards, totalActiveRewards, totalOperationRewards)
@@ -82,12 +85,12 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 		return nil, nil, err
 	}
 
-	return rewards, scores, nil
+	return rewards, finalScores, nil
 }
 
-// updateNodeStakingData retrieves node information from a staking contract
-// and updates the staking and operation pool tokens for each node.
-func (s *Server) updateNodeStakingData(nodeAddresses []common.Address, nodes []*schema.Node) error {
+// fetchNodePoolSizes retrieves node information from a staking contract
+// and updates the staking and operation pool sizes for each node.
+func (s *Server) fetchNodePoolSizes(nodeAddresses []common.Address, nodes []*schema.Node) error {
 	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 	if err != nil {
 		return fmt.Errorf("get nodes from chain: %w", err)
@@ -122,7 +125,7 @@ func excludeUnqualifiedNodes(nodes []*schema.Node, recentStakers map[common.Addr
 	}
 }
 
-// parsePoolSizes extracts and parses staking and operation pool sizes from nodes.
+// parsePoolSizes extracts and parses staking and operation pool sizes for all Nodes.
 func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, []*big.Int, error) {
 	stakingPoolSizes := make([]*big.Int, len(nodes))
 	operationPoolSizes := make([]*big.Int, len(nodes))
@@ -148,17 +151,17 @@ func parsePoolSizes(nodes []*schema.Node) ([]*big.Int, []*big.Int, error) {
 	return stakingPoolSizes, operationPoolSizes, nil
 }
 
-// computeTotalStakeValue calculates the total stake value.
-func computeTotalStakeValue(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) *big.Int {
-	var totalStakeValue = big.NewInt(0)
+// sumTotalStake sum the total stake.
+func sumTotalStake(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount) *big.Int {
+	var totalStake = big.NewInt(0)
 
 	for _, node := range nodes {
 		if _, exist := recentStakers[node.Address]; exist {
-			totalStakeValue.Add(totalStakeValue, recentStakers[node.Address].StakeValue.BigInt())
+			totalStake.Add(totalStake, recentStakers[node.Address].StakeValue.BigInt())
 		}
 	}
 
-	return totalStakeValue
+	return totalStake
 }
 
 // computeActiveScores calculates the scores for each node based on various factors.
@@ -208,14 +211,14 @@ func calculateFinalRewards(activeScores []*big.Float, totalActiveScore *big.Floa
 	rewards := make([]*big.Int, len(activeScores))
 	maxReward := big.NewFloat(0).SetFloat64(specialRewards.RewardsCeiling)
 
-	for i, score := range activeScores {
+	for i, activeScore := range activeScores {
 		// Apply active rewards
 		activeReward := big.NewFloat(0)
 
 		// If totalActiveScore is greater than 0, calculate the active reward
 		if totalActiveScore.Cmp(big.NewFloat(0)) > 0 {
-			// Calculate the ratio of score to totalScore
-			scoreRatio := new(big.Float).Quo(score, totalActiveScore)
+			// Calculate the ratio of activeScore to totalScore
+			scoreRatio := new(big.Float).Quo(activeScore, totalActiveScore)
 			activeReward = new(big.Float).Mul(scoreRatio, big.NewFloat(0).SetFloat64(totalRewards))
 		}
 		// Apply operation rewards
