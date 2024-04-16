@@ -11,18 +11,18 @@ import (
 )
 
 type NodeEvent struct {
-	TransactionHash  string               `gorm:"transaction_hash"`
-	TransactionIndex uint                 `gorm:"transaction_index"`
-	NodeID           uint64               `gorm:"node_id"`
-	AddressFrom      common.Address       `gorm:"address_from"`
-	AddressTo        common.Address       `gorm:"address_to"`
-	Type             schema.NodeEventType `gorm:"type"`
-	LogIndex         uint                 `gorm:"log_index"`
-	ChainID          uint64               `gorm:"chain_id"`
-	BlockHash        string               `gorm:"block_hash"`
-	BlockNumber      uint64               `gorm:"block_number"`
-	BlockTimestamp   time.Time            `gorm:"block_timestamp"`
-	Metadata         json.RawMessage      `gorm:"metadata"`
+	TransactionHash  string               `gorm:"column:transaction_hash"`
+	TransactionIndex uint                 `gorm:"column:transaction_index"`
+	NodeID           uint64               `gorm:"column:node_id"`
+	AddressFrom      common.Address       `gorm:"column:address_from"`
+	AddressTo        common.Address       `gorm:"column:address_to"`
+	Type             schema.NodeEventType `gorm:"column:type"`
+	LogIndex         uint                 `gorm:"column:log_index"`
+	ChainID          uint64               `gorm:"column:chain_id"`
+	BlockHash        string               `gorm:"column:block_hash"`
+	BlockNumber      uint64               `gorm:"column:block_number"`
+	BlockTimestamp   time.Time            `gorm:"column:block_timestamp"`
+	Metadata         json.RawMessage      `gorm:"column:metadata"`
 }
 
 func (*NodeEvent) TableName() string {
