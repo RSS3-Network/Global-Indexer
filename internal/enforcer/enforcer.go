@@ -7,6 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/contract/l2"
+	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/distributor"
 	"github.com/rss3-network/global-indexer/schema"
@@ -23,8 +25,10 @@ type Enforcer interface {
 }
 
 type SimpleEnforcer struct {
-	databaseClient database.Client
-	httpClient     httputil.Client
+	cacheClient     cache.Client
+	databaseClient  database.Client
+	httpClient      httputil.Client
+	stakingContract *l2.Staking
 }
 
 // VerifyResponses verifies the responses from the nodes.
@@ -252,17 +256,48 @@ func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, 
 	return nil, fmt.Errorf("invalid data")
 }
 
-func (e *SimpleEnforcer) MaintainScore(_ context.Context) error {
-	return nil
+// MaintainScore maintains the score of the nodes.
+func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
+	// Retrieve the most recently indexed epoch.
+	currentEpoch, err := e.getCurrentEpoch(ctx)
+	if err != nil {
+		return err
+	}
+
+	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
+
+	// Traverse the entire node and update its score.
+	for first := true; query.Cursor != nil || first; first = false {
+		stats, err := e.databaseClient.FindNodeStats(ctx, query)
+		if err != nil {
+			return err
+		}
+
+		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
+			return err
+		}
+
+		if len(stats) == 0 {
+			break
+		}
+
+		lastStat, _ := lo.Last(stats)
+		query.Cursor = lo.ToPtr(lastStat.Address.String())
+	}
+
+	// Update the cache for the node type.
+	return e.updateNodeCache(ctx)
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
 
-func NewSimpleEnforcer(databaseClient database.Client, httpClient httputil.Client) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client) (*SimpleEnforcer, error) {
 	return &SimpleEnforcer{
-		databaseClient: databaseClient,
-		httpClient:     httpClient,
+		databaseClient:  databaseClient,
+		cacheClient:     cacheClient,
+		stakingContract: stakingContract,
+		httpClient:      httpClient,
 	}, nil
 }
