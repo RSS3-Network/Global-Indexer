@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
@@ -171,7 +171,7 @@ func calculateScore(stat *schema.Stat) error {
 
 	// epoch failure requests
 
-	if stat.EpochInvalidRequest >= int64(distributor.DefaultSlashCount) {
+	if stat.EpochInvalidRequest >= int64(model.DefaultSlashCount) {
 		// If the number of invalid requests in the epoch is greater than the threshold, then the score is 0.
 		stat.Score = 0
 	} else {
@@ -183,20 +183,20 @@ func calculateScore(stat *schema.Stat) error {
 
 // UpdateNodeCache updates the cache for the node type.
 func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
-	if err := e.updateCacheForNodeType(ctx, distributor.RssNodeCacheKey); err != nil {
+	if err := e.updateCacheForNodeType(ctx, model.RssNodeCacheKey); err != nil {
 		return err
 	}
 
-	return e.updateCacheForNodeType(ctx, distributor.FullNodeCacheKey)
+	return e.updateCacheForNodeType(ctx, model.FullNodeCacheKey)
 }
 
 func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
 	query := &schema.StatQuery{PointsOrder: lo.ToPtr("DESC")}
 
 	switch key {
-	case distributor.FullNodeCacheKey:
+	case model.FullNodeCacheKey:
 		query.IsFullNode = lo.ToPtr(true)
-	case distributor.RssNodeCacheKey:
+	case model.RssNodeCacheKey:
 		query.IsRssNode = lo.ToPtr(true)
 	}
 
@@ -239,7 +239,7 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 			qualifiedNodes = append(qualifiedNodes, stat)
 		}
 
-		if len(qualifiedNodes) >= distributor.DefaultNodeCount {
+		if len(qualifiedNodes) >= model.DefaultNodeCount {
 			break
 		}
 	}
@@ -249,8 +249,8 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 
 // setNodeCache sets the cache for the nodes.
 func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.NodeEndpointCache {
-		return distributor.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.NodeEndpointCache {
+		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	return e.cacheClient.Set(ctx, key, nodesCache)

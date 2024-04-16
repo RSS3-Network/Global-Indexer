@@ -17,7 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
@@ -299,7 +299,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 }
 
 func (n *NTA) verifyFullNode(indexers []*NodeConfigModule) (bool, error) {
-	if len(indexers) < len(distributor.WorkerToNetworksMap) {
+	if len(indexers) < len(model.WorkerToNetworksMap) {
 		return false, nil
 	}
 
@@ -319,7 +319,7 @@ func (n *NTA) verifyFullNode(indexers []*NodeConfigModule) (bool, error) {
 		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
 	}
 
-	for wid, requiredNetworks := range distributor.WorkerToNetworksMap {
+	for wid, requiredNetworks := range model.WorkerToNetworksMap {
 		networks, exists := workerToNetworksMap[wid]
 		if !exists || len(networks) != len(requiredNetworks) {
 			return false, nil

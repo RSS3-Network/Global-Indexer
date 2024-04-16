@@ -1,9 +1,10 @@
-package distributor
+package dsl
 
 import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/protocol-go/schema/filter"
 	"github.com/samber/lo"
@@ -33,7 +34,7 @@ func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.AccountAc
 			return nil, err
 		}
 
-		tagWorker, exists := TagToWorkersMap[tid]
+		tagWorker, exists := model.TagToWorkersMap[tid]
 
 		if !exists {
 			return nil, err
@@ -52,7 +53,7 @@ func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.AccountAc
 			return nil, err
 		}
 
-		platformWorker, exists := PlatformToWorkerMap[pid]
+		platformWorker, exists := model.PlatformToWorkerMap[pid]
 
 		if !exists {
 			return nil, err
@@ -127,7 +128,7 @@ func (d *Distributor) matchNetwork(ctx context.Context, requestNetworks []string
 		for network, workers := range networkToWorkersMap {
 			nid, _ := filter.NetworkString(network)
 
-			requiredWorkers := NetworkToWorkersMap[nid]
+			requiredWorkers := model.NetworkToWorkersMap[nid]
 
 			// number of workers not match
 			if len(requiredWorkers) != len(workers) {
@@ -193,7 +194,7 @@ func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]comm
 		for worker, networks := range workerToNetworksMap {
 			wid, _ := filter.NameString(worker)
 
-			requiredNetworks := WorkerToNetworksMap[wid]
+			requiredNetworks := model.WorkerToNetworksMap[wid]
 
 			// number of networks not match
 			if len(requiredNetworks) != len(networks) {
@@ -255,7 +256,7 @@ func (d *Distributor) matchWorkerAndNetwork(ctx context.Context, workers, reques
 		for worker, networks := range workerToNetworksMap {
 			wid, _ := filter.NameString(worker)
 
-			workerRequiredNetworks := WorkerToNetworksMap[wid]
+			workerRequiredNetworks := model.WorkerToNetworksMap[wid]
 
 			requiredNetworks := findCommonStr(workerRequiredNetworks, requestNetworks)
 

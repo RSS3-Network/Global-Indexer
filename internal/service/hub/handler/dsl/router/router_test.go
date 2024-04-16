@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -226,7 +226,7 @@ func TestDistributeRequest(t *testing.T) {
 	}
 }
 
-func process(responses []*distributor.DataResponse) {
+func process(responses []*model.DataResponse) {
 	fmt.Println(len(responses))
 
 	for _, res := range responses {

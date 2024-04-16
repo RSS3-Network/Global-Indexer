@@ -1,4 +1,4 @@
-package distributor
+package model
 
 import (
 	"encoding/json"
@@ -12,8 +12,6 @@ import (
 var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
-
-	MessageNodeDataFailed = "failed to retrieve data from the node"
 
 	DefaultNodeCount   = 3
 	DefaultSlashCount  = 4
@@ -48,10 +46,6 @@ type DataResponse struct {
 type ErrResponse struct {
 	Error     string `json:"error"`
 	ErrorCode string `json:"error_code"`
-}
-
-type NotFoundResponse struct {
-	Message string `json:"message"`
 }
 
 // ActivityResponse represents a single Activity in a response being returned to the requester.
