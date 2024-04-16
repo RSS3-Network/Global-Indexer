@@ -293,11 +293,11 @@ func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
 
-func NewSimpleEnforcer(databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client) *SimpleEnforcer {
 	return &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
 		stakingContract: stakingContract,
 		httpClient:      httpClient,
-	}, nil
+	}
 }
