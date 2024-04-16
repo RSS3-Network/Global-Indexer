@@ -26,7 +26,7 @@ type StakeEvent struct {
 }
 
 func (b *StakeEvent) TableName() string {
-	return "stake.events"
+	return "stake_events"
 }
 
 func (b *StakeEvent) Import(stakeEvent schema.StakeEvent) error {

@@ -26,7 +26,7 @@ type NodeEvent struct {
 }
 
 func (*NodeEvent) TableName() string {
-	return "node.events"
+	return "node_events"
 }
 
 func (n *NodeEvent) Import(nodeEvent schema.NodeEvent) (err error) {

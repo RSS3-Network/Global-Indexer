@@ -18,7 +18,7 @@ type NodeSnapshot struct {
 }
 
 func (s *NodeSnapshot) TableName() string {
-	return "node.count_snapshots"
+	return "node_count_snapshots"
 }
 
 func (s *NodeSnapshot) Import(stakeSnapshot schema.NodeSnapshot) error {

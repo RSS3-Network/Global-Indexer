@@ -30,7 +30,7 @@ type StakeTransaction struct {
 }
 
 func (s *StakeTransaction) TableName() string {
-	return "stake.transactions"
+	return "stake_transactions"
 }
 
 func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {

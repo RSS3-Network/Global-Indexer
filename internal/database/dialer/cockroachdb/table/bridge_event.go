@@ -27,7 +27,7 @@ type BridgeEvent struct {
 }
 
 func (b *BridgeEvent) TableName() string {
-	return "bridge.events"
+	return "bridge_events"
 }
 
 func (b *BridgeEvent) Import(bridgeEvent schema.BridgeEvent) error {

@@ -19,7 +19,7 @@ type OperatorProfitSnapshot struct {
 }
 
 func (s *OperatorProfitSnapshot) TableName() string {
-	return "node.operator_profit_snapshots"
+	return "node_operator_profit_snapshots"
 }
 
 func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) error {

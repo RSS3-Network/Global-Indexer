@@ -19,7 +19,7 @@ type NodeMinTokensToStakeSnapshot struct {
 }
 
 func (s *NodeMinTokensToStakeSnapshot) TableName() string {
-	return "node.min_tokens_to_stake_snapshots"
+	return "node_min_tokens_to_stake_snapshots"
 }
 
 func (s *NodeMinTokensToStakeSnapshot) Import(snapshot schema.NodeMinTokensToStakeSnapshot) error {

@@ -26,7 +26,7 @@ type StakeChip struct {
 }
 
 func (s *StakeChip) TableName() string {
-	return "stake.chips"
+	return "stake_chips"
 }
 
 func (s *StakeChip) Import(stakeChip schema.StakeChip) error {

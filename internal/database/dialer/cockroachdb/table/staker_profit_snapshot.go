@@ -20,7 +20,7 @@ type StakerProfitSnapshot struct {
 }
 
 func (s *StakerProfitSnapshot) TableName() string {
-	return "stake.profit_snapshots"
+	return "stake_profit_snapshots"
 }
 
 func (s *StakerProfitSnapshot) Import(snapshot schema.StakerProfitSnapshot) error {

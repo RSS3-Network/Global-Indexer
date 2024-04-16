@@ -31,7 +31,7 @@ type BridgeTransaction struct {
 }
 
 func (b *BridgeTransaction) TableName() string {
-	return "bridge.transactions"
+	return "bridge_transactions"
 }
 
 func (b *BridgeTransaction) Import(bridgeTransaction schema.BridgeTransaction) error {
