@@ -24,11 +24,6 @@ func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Ad
 		return nil, nil, fmt.Errorf("failed to calculate special rewards: %w", err)
 	}
 
-	// Pause AlphaSpecialRewards
-	for i := range operationRewards {
-		operationRewards[i] = big.NewInt(0)
-	}
-
 	return operationRewards, activeScores, nil
 }
 

@@ -136,6 +136,11 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		return nil, nil, nil, err
 	}
 
+	// Pause AlphaSpecialRewards
+	for i := range operationRewards {
+		operationRewards[i] = big.NewInt(0)
+	}
+
 	// Calculate the operation rewards for the Nodes
 	requestCounts := prepareRequestCounts(nodeAddresses)
 
