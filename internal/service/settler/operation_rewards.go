@@ -18,7 +18,7 @@ func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Ad
 		return nil, nil, nil
 	}
 
-	operationRewards, scores, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
+	operationRewards, activeScores, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to calculate special rewards: %w", err)
@@ -29,7 +29,7 @@ func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Ad
 	//	operationRewards[i] = big.NewInt(0)
 	//}
 
-	return operationRewards, scores, nil
+	return operationRewards, activeScores, nil
 }
 
 // prepareRequestCounts prepares the Request Counts for all Nodes

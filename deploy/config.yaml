@@ -29,6 +29,8 @@ special_rewards:
   node_threshold: 0.4
   rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
   rewards_ceiling: 1000
+  rewards_ratio_active: 0.5
+  rewards_ratio_operation: 0.5
 
 geo_ip:
   account:
