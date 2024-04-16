@@ -57,12 +57,14 @@ type Settler struct {
 }
 
 type SpecialRewards struct {
-	GiniCoefficient float64 `yaml:"gini_coefficient" validate:"required"`
-	StakerFactor    float64 `yaml:"staker_factor" validate:"required"`
-	NodeThreshold   float64 `yaml:"node_threshold" validate:"required"`
-	EpochLimit      int     `yaml:"epoch_limit" validate:"required"`
-	Rewards         float64 `yaml:"rewards" validate:"required"`
-	RewardsCeiling  float64 `yaml:"rewards_ceiling" validate:"required"`
+	GiniCoefficient       float64 `yaml:"gini_coefficient" validate:"required"`
+	StakerFactor          float64 `yaml:"staker_factor" validate:"required"`
+	NodeThreshold         float64 `yaml:"node_threshold" validate:"required"`
+	EpochLimit            int     `yaml:"epoch_limit" validate:"required"`
+	Rewards               float64 `yaml:"rewards" validate:"required"`
+	RewardsCeiling        float64 `yaml:"rewards_ceiling" validate:"required"`
+	RewardsRatioActive    float64 `yaml:"rewards_ratio_active" validate:"required"`
+	RewardsRatioOperation float64 `yaml:"rewards_ratio_operation" validate:"required"`
 }
 
 type GeoIP struct {
