@@ -211,18 +211,18 @@ func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]model.No
 // processRSSHubResults processes the RSS Hub responses.
 func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
-		zap.L().Error("fail to verify rss hub request", zap.Any("results", len(responses)))
+		zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
 	} else {
-		zap.L().Info("complete rss hub request verify", zap.Any("results", len(responses)))
+		zap.L().Info("complete rss hub responses verify", zap.Any("responses", len(responses)))
 	}
 }
 
 // processActivityResults processes activity data retrieval responses.
 func (d *Distributor) processActivityResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
-		zap.L().Error("fail to verify activity id request ", zap.Any("results", len(responses)))
+		zap.L().Error("fail to verify activity id responses ", zap.Any("responses", len(responses)))
 	} else {
-		zap.L().Info("complete activity id request verify", zap.Any("results", len(responses)))
+		zap.L().Info("complete activity id responses verify", zap.Any("responses", len(responses)))
 	}
 }
 
@@ -231,14 +231,14 @@ func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse
 	ctx := context.Background()
 
 	if err := d.simpleEnforcer.VerifyResponses(ctx, responses); err != nil {
-		zap.L().Error("fail to verify activity request", zap.Any("results", len(responses)))
+		zap.L().Error("fail to verify activity responses", zap.Any("responses", len(responses)))
 
 		return
 	}
 
-	d.simpleEnforcer.VerifyPartialResponses(ctx, responses)
+	zap.L().Info("complete activity responses verify", zap.Any("responses", len(responses)))
 
-	zap.L().Info("complete activity request verify", zap.Any("results", len(responses)))
+	d.simpleEnforcer.VerifyPartialResponses(ctx, responses)
 }
 
 // setNodeCache sets nodes to the cache.
