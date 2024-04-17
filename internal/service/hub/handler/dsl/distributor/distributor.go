@@ -43,15 +43,19 @@ func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) 
 		return nil, err
 	}
 
-	nodeRes, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processRSSHubResponses)
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processRSSHubResponses)
 
 	if err != nil {
 		return nil, err
 	}
 
-	zap.L().Info("first node return", zap.Any("address", nodeRes.Address.String()))
+	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
 
-	return nodeRes.Data, nil
+	if nodeResponse.Err != nil {
+		return nil, nodeResponse.Err
+	}
+
+	return nodeResponse.Data, nil
 }
 
 // RouterActivityData routes activity data retrieval requests.
@@ -70,15 +74,19 @@ func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.Activi
 		return nil, err
 	}
 
-	nodeRes, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivityResponses)
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivityResponses)
 
 	if err != nil {
 		return nil, err
 	}
 
-	zap.L().Info("first node return", zap.Any("address", nodeRes.Address.String()))
+	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
 
-	return nodeRes.Data, nil
+	if nodeResponse.Err != nil {
+		return nil, nodeResponse.Err
+	}
+
+	return nodeResponse.Data, nil
 }
 
 // RouterActivitiesData routes account activities data retrieval requests.
@@ -134,15 +142,19 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 		return nil, err
 	}
 
-	nodeRes, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
 
 	if err != nil {
 		return nil, err
 	}
 
-	zap.L().Info("first node return", zap.Any("address", nodeRes.Address.String()))
+	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
 
-	return nodeRes.Data, nil
+	if nodeResponse.Err != nil {
+		return nil, nodeResponse.Err
+	}
+
+	return nodeResponse.Data, nil
 }
 
 // retrieveNodes retrieves nodes from the cache or database.
