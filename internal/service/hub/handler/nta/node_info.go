@@ -150,6 +150,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		NodeAddresses: request.NodeAddress,
 		Cursor:        request.Cursor,
 		Limit:         lo.ToPtr(request.Limit),
+		OrderByScore:  true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get nodes: %w", err)
