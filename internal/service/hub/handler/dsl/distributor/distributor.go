@@ -149,63 +149,51 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 // It takes a context and a cache key as input parameters.
 // It returns the retrieved nodes or an error if any occurred.
 func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
-	var (
-		nodesCache []model.NodeEndpointCache
-		nodes      []*schema.Stat
-	)
+	var nodesCache []model.NodeEndpointCache
 
-	err := d.cacheClient.Get(ctx, key, &nodesCache)
-	if err == nil {
+	if err := d.cacheClient.Get(ctx, key, &nodesCache); err == nil {
 		return nodesCache, nil
+	} else if !errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
 	}
 
 	zap.L().Info("not found nodes from cache", zap.String("key", key))
+	nodesCache, err := d.retrieveNodesFromDB(ctx, key)
 
-	if errors.Is(err, redis.Nil) {
-		switch key {
-		case model.RssNodeCacheKey:
-			nodes, err = d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-				IsRssNode:    lo.ToPtr(true),
-				Limit:        lo.ToPtr(model.DefaultNodeCount),
-				ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-				PointsOrder:  lo.ToPtr("DESC"),
-			})
-
-			if err != nil {
-				return nil, err
-			}
-		case model.FullNodeCacheKey:
-			nodes, err = d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-				IsFullNode:   lo.ToPtr(true),
-				Limit:        lo.ToPtr(model.DefaultNodeCount),
-				ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-				PointsOrder:  lo.ToPtr("DESC"),
-			})
-
-			if err != nil {
-				return nil, err
-			}
-		default:
-			return nil, fmt.Errorf("unknown cache key: %s", key)
-		}
-
-		if err = d.setNodeCache(ctx, key, nodes); err != nil {
-			return nil, err
-		}
-
-		zap.L().Info("set nodes to cache", zap.String("key", key))
-
-		nodesCache = lo.Map(nodes, func(n *schema.Stat, _ int) model.NodeEndpointCache {
-			return model.NodeEndpointCache{
-				Address:  n.Address.String(),
-				Endpoint: n.Endpoint,
-			}
-		})
-
-		return nodesCache, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
+	if err = d.setNodeCache(ctx, key, nodesCache); err != nil {
+		return nil, err
+	}
+
+	zap.L().Info("set nodes to cache", zap.String("key", key))
+
+	return nodesCache, nil
+}
+
+// retrieveNodesFromDB retrieves nodes from the database.
+func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
+	var query schema.StatQuery
+
+	switch key {
+	case model.RssNodeCacheKey:
+		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.DefaultNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+	case model.FullNodeCacheKey:
+		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.DefaultNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+	default:
+		return nil, fmt.Errorf("unknown cache key: %s", key)
+	}
+
+	nodes, err := d.databaseClient.FindNodeStats(ctx, &query)
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.Map(nodes, func(n *schema.Stat, _ int) model.NodeEndpointCache {
+		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	}), nil
 }
 
 // processRSSHubResults processes the RSS Hub responses.
@@ -244,11 +232,7 @@ func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse
 // setNodeCache sets nodes to the cache.
 // It takes a context, a cache key, and a slice of stats as input parameters.
 // It returns an error if any occurred.
-func (d *Distributor) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.NodeEndpointCache {
-		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
-	})
-
+func (d *Distributor) setNodeCache(ctx context.Context, key string, nodesCache []model.NodeEndpointCache) error {
 	if err := d.cacheClient.Set(ctx, key, nodesCache); err != nil {
 		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
 	}
