@@ -10,7 +10,6 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 COPY . .
 
 # Download GeoLite2-City.mmdb from Henry's Google Drive
-RUN apk add curl
 RUN mkdir -p common/geolite2/mmdb && touch common/geolite2/mmdb/.geoipupdate.lock
 RUN curl -L "https://drive.google.com/uc?export=download&id=1xyJc_0rupY5MZzdCTOr7sDL--j7r5i0w" -o common/geolite2/mmdb/GeoLite2-City.mmdb
 
