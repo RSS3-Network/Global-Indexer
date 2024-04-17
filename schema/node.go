@@ -93,4 +93,5 @@ type FindNodesQuery struct {
 	Status        *NodeStatus
 	Cursor        *string
 	Limit         *int
+	OrderByScore  bool
 }
