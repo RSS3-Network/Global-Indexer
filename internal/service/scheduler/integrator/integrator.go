@@ -126,7 +126,7 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 	rssNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		IsRssNode:    lo.ToPtr(true),
 		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		Limit:        lo.ToPtr(model.RequiredQualifiedNodeCount),
 	})
 
 	if err != nil {
@@ -140,7 +140,7 @@ func (s *server) updateNodeCache(ctx context.Context) error {
 	fullNodes, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		IsFullNode:   lo.ToPtr(true),
 		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
-		Limit:        lo.ToPtr(model.DefaultNodeCount),
+		Limit:        lo.ToPtr(model.RequiredQualifiedNodeCount),
 	})
 	if err != nil {
 		return err

@@ -26,9 +26,9 @@ func sortResponseByValidity(responses []*model.DataResponse) {
 func updatePointsBasedOnIdentity(responses []*model.DataResponse) {
 	errResponseCount := countAndMarkErrorResponse(responses)
 
-	if len(responses) == model.DefaultNodeCount-1 {
+	if len(responses) == model.RequiredQualifiedNodeCount-1 {
 		handleTwoResponses(responses)
-	} else if len(responses) == model.DefaultNodeCount-2 {
+	} else if len(responses) == model.RequiredQualifiedNodeCount-2 {
 		handleSingleResponse(responses)
 	} else {
 		handleFullResponses(responses, errResponseCount)

@@ -239,7 +239,7 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 			qualifiedNodes = append(qualifiedNodes, stat)
 		}
 
-		if len(qualifiedNodes) >= model.DefaultNodeCount {
+		if len(qualifiedNodes) >= model.RequiredQualifiedNodeCount {
 			break
 		}
 	}

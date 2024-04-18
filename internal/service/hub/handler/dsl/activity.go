@@ -28,7 +28,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.InternalError(c, err)
 	}
 
-	activity, err := d.Distributor.RouterActivityData(c.Request().Context(), request)
+	activity, err := d.distributor.RouteActivityRequest(c.Request().Context(), request)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}
@@ -37,7 +37,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 }
 
 func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
-	var request dsl.AccountActivitiesRequest
+	var request dsl.ActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
 		return errorx.BadRequestError(c, err)
@@ -63,7 +63,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		}
 	}
 
-	activities, err := d.Distributor.RouterActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.RouteActivitiesData(c.Request().Context(), request)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}

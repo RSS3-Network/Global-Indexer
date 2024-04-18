@@ -12,9 +12,9 @@ import (
 	"github.com/samber/lo"
 )
 
-// matchLightNodes matches light nodes based on the given account activities request,
-// and returns the addresses of light nodes that match the request.
-func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.AccountActivitiesRequest) ([]common.Address, error) {
+// matchLightNodes matches light Nodes based on the given Activities request
+// A light Node is a non-Full Node
+func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.ActivitiesRequest) ([]common.Address, error) {
 	// Find network nodes that match the network requests.
 	networks, err := getNetworks(request.Network)
 	if err != nil {
@@ -22,13 +22,13 @@ func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.AccountAc
 	}
 
 	// Find tag workers that match the tag requests.
-	tagWorkers, err := getTagWorkers(request.Tag)
+	tagWorkers, err := getWorkersByTag(request.Tag)
 	if err != nil {
 		return nil, err
 	}
 
 	// Find platform workers that match the platform requests.
-	platformWorkers, err := getPlatformWorkers(request.Platform)
+	platformWorkers, err := getWorkersByPlatform(request.Platform)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func getNetworks(networks []string) ([]string, error) {
 	return networks, nil
 }
 
-// getTagWorkers returns a set of workers based on the given tags.
-func getTagWorkers(tags []string) (WorkerSet, error) {
+// getWorkersByTag returns a set of workers based on the given tags.
+func getWorkersByTag(tags []string) (WorkerSet, error) {
 	tagWorkers := make(WorkerSet)
 
 	for _, tag := range tags {
@@ -76,8 +76,8 @@ func getTagWorkers(tags []string) (WorkerSet, error) {
 	return tagWorkers, nil
 }
 
-// getPlatformWorkers returns a set of workers based on the given platforms.
-func getPlatformWorkers(platforms []string) (WorkerSet, error) {
+// getWorkersByPlatform returns a set of workers based on the given platforms.
+func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
 	platformWorkers := make(WorkerSet)
 
 	for _, platform := range platforms {
@@ -99,7 +99,7 @@ func getPlatformWorkers(platforms []string) (WorkerSet, error) {
 
 // findQualifiedNodes finds nodes that match the given tag workers, platform workers, and networks.
 func (d *Distributor) findQualifiedNodes(ctx context.Context, tagWorkers, platformWorkers WorkerSet, networks []string) ([]common.Address, error) {
-	workers := combineWorkers(tagWorkers, platformWorkers)
+	workers := combineTagAndPlatformWorkers(tagWorkers, platformWorkers)
 	// If no common workers are found between tag workers and platform workers,
 	// it indicates that tags and platforms are not compatible.
 	if len(workers) == 0 && (len(tagWorkers) > 0 || len(platformWorkers) > 0) {
@@ -124,8 +124,8 @@ func (d *Distributor) findQualifiedNodes(ctx context.Context, tagWorkers, platfo
 	return nodes, err
 }
 
-// combineWorkers combines tag workers and platform workers.
-func combineWorkers(tagWorkers, platformWorkers WorkerSet) []string {
+// combineTagAndPlatformWorkers combines tag workers and platform workers.
+func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []string {
 	if len(tagWorkers) == 0 {
 		return lo.Keys(platformWorkers)
 	}
@@ -135,7 +135,7 @@ func combineWorkers(tagWorkers, platformWorkers WorkerSet) []string {
 	}
 
 	// Find common workers between tag workers and platform workers.
-	return findCommonElements(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
+	return IntersectUnique(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
 }
 
 // matchNetwork matches nodes based on the given network requests,
@@ -198,7 +198,7 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 
 		// Check if the workers match the required workers for the network.
 		requiredWorkers := model.NetworkToWorkersMap[nid]
-		if !AreSliceElementsEqual(workers, requiredWorkers) {
+		if !AreSliceElementsIdentical(workers, requiredWorkers) {
 			return false
 		}
 	}
@@ -262,7 +262,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 		wid, _ := filter.NameString(worker)
 
 		requiredNetworks := model.WorkerToNetworksMap[wid]
-		if !AreSliceElementsEqual(networks, requiredNetworks) {
+		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
 	}
@@ -296,7 +296,7 @@ func filterMatchingWorkerAndNetworkNodes(nodeWorkerNetworksMap map[common.Addres
 	return nodes
 }
 
-// isValidWorkerAndNetworkNode checks if the node matches the required workers and networks.
+// isValidWorkerAndNetworkNode checks if the Node matches the required workers and networks.
 func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, requestNetworks []string) bool {
 	if len(workerNetworksMap.Networks) != len(workers) {
 		return false
@@ -307,9 +307,9 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 
 		workerRequiredNetworks := model.WorkerToNetworksMap[wid]
 
-		requiredNetworks := findCommonElements(workerRequiredNetworks, requestNetworks)
+		requiredNetworks := IntersectUnique(workerRequiredNetworks, requestNetworks)
 
-		if !AreSliceElementsEqual(networks, requiredNetworks) {
+		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
 	}
@@ -317,8 +317,8 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	return true
 }
 
-// AreSliceElementsEqual checks if the elements of two string slices are equal.
-func AreSliceElementsEqual(slice1, slice2 []string) bool {
+// AreSliceElementsIdentical checks if the elements of two string slices are identical.
+func AreSliceElementsIdentical(slice1, slice2 []string) bool {
 	if len(slice1) != len(slice2) {
 		return false
 	}
@@ -338,11 +338,11 @@ func AreSliceElementsEqual(slice1, slice2 []string) bool {
 	return true
 }
 
-// findCommonElements finds common elements between two string slices.
-func findCommonElements(slice1, slice2 []string) []string {
+// IntersectUnique returns the unique common elements between two string slices.
+func IntersectUnique(slice1, slice2 []string) []string {
 	elementMap := make(map[string]struct{})
 
-	var commonElements []string
+	var uniqueElements []string
 
 	for _, v := range slice1 {
 		elementMap[v] = struct{}{}
@@ -350,10 +350,10 @@ func findCommonElements(slice1, slice2 []string) []string {
 
 	for _, v := range slice2 {
 		if _, found := elementMap[v]; found {
-			commonElements = append(commonElements, v)
+			uniqueElements = append(uniqueElements, v)
 			delete(elementMap, v)
 		}
 	}
 
-	return commonElements
+	return uniqueElements
 }

@@ -23,11 +23,9 @@ type Distributor struct {
 	cacheClient    cache.Client
 }
 
-// RouterRSSHubData routes RSS Hub data retrieval requests.
-// It takes a context, path, and query string as input parameters.
-// It returns the retrieved data or an error if any occurred.
+// RouterRSSHubData routes RSSHub requests to qualified Nodes.
 func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := d.retrieveNodes(ctx, model.RssNodeCacheKey)
+	nodes, err := d.retrieveQualifiedNodes(ctx, model.RssNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -54,11 +52,9 @@ func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) 
 	return nodeResponse.Data, nil
 }
 
-// RouterActivityData routes activity data retrieval requests.
-// It takes a context and an activity request as input parameters.
-// It returns the retrieved data or an error if any occurred.
-func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.ActivityRequest) ([]byte, error) {
-	nodes, err := d.retrieveNodes(ctx, model.FullNodeCacheKey)
+// RouteActivityRequest routes Activity requests to qualified Nodes.
+func (d *Distributor) RouteActivityRequest(ctx context.Context, request dsl.ActivityRequest) ([]byte, error) {
+	nodes, err := d.retrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
 
 	if err != nil {
 		return nil, err
@@ -85,11 +81,9 @@ func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.Activi
 	return nodeResponse.Data, nil
 }
 
-// RouterActivitiesData routes account activities data retrieval requests.
-// It takes a context and an account activities request as input parameters.
-// It returns the retrieved data or an error if any occurred.
-func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.AccountActivitiesRequest) ([]byte, error) {
-	nodes, err := d.getNodes(ctx, request)
+// RouteActivitiesData routes Activities requests to qualified Nodes.
+func (d *Distributor) RouteActivitiesData(ctx context.Context, request dsl.ActivitiesRequest) ([]byte, error) {
+	nodes, err := d.getQualifiedNodes(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +109,7 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 	return nodeResponse.Data, nil
 }
 
-// generateActivityPathByID builds the path for activity data retrieval by ID.
-// It takes an activity request and a slice of cache nodes as input parameters.
-// It returns a map of addresses to URLs or an error if any occurred.
+// generateActivityPathByID builds the path for Activity requests.
 func (d *Distributor) generateActivityPathByID(query dsl.ActivityRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
 	if err != nil {
@@ -127,10 +119,8 @@ func (d *Distributor) generateActivityPathByID(query dsl.ActivityRequest, nodes 
 	return endpointMap, nil
 }
 
-// generateAccountActivitiesPath builds the path for account activities data retrieval.
-// It takes an account activities request and a slice of cache nodes as input parameters.
-// It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) generateAccountActivitiesPath(query dsl.AccountActivitiesRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+// generateAccountActivitiesPath builds the path for Activities requests.
+func (d *Distributor) generateAccountActivitiesPath(query dsl.ActivitiesRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -139,9 +129,7 @@ func (d *Distributor) generateAccountActivitiesPath(query dsl.AccountActivitiesR
 	return endpointMap, nil
 }
 
-// generateRSSHubPath builds the path for RSS Hub data retrieval.
-// It takes a parameter, a query, and a slice of cache nodes as input parameters.
-// It returns a map of addresses to URLs or an error if any occurred.
+// generateRSSHubPath builds the path for RSSHub requests.
 func (d *Distributor) generateRSSHubPath(param, query string, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
 	if err != nil {

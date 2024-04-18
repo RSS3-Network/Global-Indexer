@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// processRSSHubResults processes the RSS Hub responses.
+// processRSSHubResults processes responses for RSSHub requests.
 func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
 		zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
@@ -16,7 +16,7 @@ func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
 	}
 }
 
-// processActivityResults processes activity data retrieval responses.
+// processActivityResults processes responses for Activity requests.
 func (d *Distributor) processActivityResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
 		zap.L().Error("fail to verify activity id responses ", zap.Any("responses", len(responses)))
@@ -25,7 +25,7 @@ func (d *Distributor) processActivityResponses(responses []*model.DataResponse) 
 	}
 }
 
-// processActivitiesResults processes account activities data retrieval responses.
+// processActivitiesResponses processes responses for Activities requests.
 func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse) {
 	ctx := context.Background()
 

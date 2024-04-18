@@ -13,9 +13,9 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
-	DefaultNodeCount   = 3
-	DefaultSlashCount  = 4
-	DefaultVerifyCount = 3
+	RequiredQualifiedNodeCount = 3
+	DefaultSlashCount          = 4
+	DefaultVerifyCount         = 3
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{

@@ -12,7 +12,7 @@ import (
 )
 
 type DSL struct {
-	Distributor    *distributor.Distributor
+	distributor    *distributor.Distributor
 	databaseClient database.Client
 	cacheClient    cache.Client
 	nameService    *nameresolver.NameResolver
@@ -20,7 +20,7 @@ type DSL struct {
 
 func NewDSL(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, nameService *nameresolver.NameResolver, stakingContract *l2.Staking, httpClient httputil.Client) *DSL {
 	return &DSL{
-		Distributor:    distributor.NewDistributor(ctx, databaseClient, cacheClient, httpClient, stakingContract),
+		distributor:    distributor.NewDistributor(ctx, databaseClient, cacheClient, httpClient, stakingContract),
 		databaseClient: databaseClient,
 		cacheClient:    cacheClient,
 		nameService:    nameService,
