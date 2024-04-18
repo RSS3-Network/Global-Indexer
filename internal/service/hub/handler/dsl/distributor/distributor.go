@@ -2,11 +2,9 @@ package distributor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
@@ -15,8 +13,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/router"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
-	"github.com/rss3-network/global-indexer/schema"
-	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +33,7 @@ func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) 
 		return nil, err
 	}
 
-	nodeMap, err := d.buildRSSHubPath(path, query, nodes)
+	nodeMap, err := d.generateRSSHubPath(path, query, nodes)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +64,7 @@ func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.Activi
 		return nil, err
 	}
 
-	nodeMap, err := d.buildActivityPathByID(request, nodes)
+	nodeMap, err := d.generateActivityPathByID(request, nodes)
 
 	if err != nil {
 		return nil, err
@@ -98,7 +94,7 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 		return nil, err
 	}
 
-	nodeMap, err := d.buildAccountActivitiesPath(request, nodes)
+	nodeMap, err := d.generateAccountActivitiesPath(request, nodes)
 
 	if err != nil {
 		return nil, err
@@ -119,158 +115,10 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 	return nodeResponse.Data, nil
 }
 
-func (d *Distributor) getNodes(ctx context.Context, request dsl.AccountActivitiesRequest) ([]model.NodeEndpointCache, error) {
-	// Match light nodes.
-	nodeAddresses, err := d.matchLightNodes(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-
-	// Generate nodes.
-	nodes, err := d.generateNodes(ctx, nodeAddresses)
-	if err != nil {
-		return nil, err
-	}
-
-	// If the number of nodes is less than the default node count, add full nodes.
-	if len(nodes) < model.DefaultNodeCount {
-		fullNodes, err := d.retrieveNodes(ctx, model.FullNodeCacheKey)
-		if err != nil {
-			return nil, err
-		}
-
-		nodesNeeded := model.DefaultNodeCount - len(nodes)
-		nodesToAdd := lo.Ternary(nodesNeeded > len(fullNodes), len(fullNodes), nodesNeeded)
-
-		for i := 0; i < nodesToAdd; i++ {
-			nodes = append(nodes, fullNodes[i])
-		}
-	}
-
-	return nodes, nil
-}
-
-func (d *Distributor) generateNodes(ctx context.Context, nodeAddresses []common.Address) ([]model.NodeEndpointCache, error) {
-	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: nodeAddresses,
-		Limit:       lo.ToPtr(model.DefaultNodeCount),
-		PointsOrder: lo.ToPtr("DESC"),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodes := make([]model.NodeEndpointCache, len(nodeStats))
-	for i, stat := range nodeStats {
-		nodes[i] = model.NodeEndpointCache{
-			Address:  stat.Address.String(),
-			Endpoint: stat.Endpoint,
-		}
-	}
-
-	return nodes, nil
-}
-
-// retrieveNodes retrieves nodes from the cache or database.
-// It takes a context and a cache key as input parameters.
-// It returns the retrieved nodes or an error if any occurred.
-func (d *Distributor) retrieveNodes(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
-	var nodesCache []model.NodeEndpointCache
-
-	if err := d.cacheClient.Get(ctx, key, &nodesCache); err == nil {
-		return nodesCache, nil
-	} else if !errors.Is(err, redis.Nil) {
-		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
-	}
-
-	zap.L().Info("not found nodes from cache", zap.String("key", key))
-	nodesCache, err := d.retrieveNodesFromDB(ctx, key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err = d.setNodeCache(ctx, key, nodesCache); err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("set nodes to cache", zap.String("key", key))
-
-	return nodesCache, nil
-}
-
-// retrieveNodesFromDB retrieves nodes from the database.
-func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
-	var query schema.StatQuery
-
-	switch key {
-	case model.RssNodeCacheKey:
-		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.DefaultNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
-	case model.FullNodeCacheKey:
-		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.DefaultNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
-	default:
-		return nil, fmt.Errorf("unknown cache key: %s", key)
-	}
-
-	nodes, err := d.databaseClient.FindNodeStats(ctx, &query)
-	if err != nil {
-		return nil, err
-	}
-
-	return lo.Map(nodes, func(n *schema.Stat, _ int) model.NodeEndpointCache {
-		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
-	}), nil
-}
-
-// processRSSHubResults processes the RSS Hub responses.
-func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
-	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
-		zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
-	} else {
-		zap.L().Info("complete rss hub responses verify", zap.Any("responses", len(responses)))
-	}
-}
-
-// processActivityResults processes activity data retrieval responses.
-func (d *Distributor) processActivityResponses(responses []*model.DataResponse) {
-	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
-		zap.L().Error("fail to verify activity id responses ", zap.Any("responses", len(responses)))
-	} else {
-		zap.L().Info("complete activity id responses verify", zap.Any("responses", len(responses)))
-	}
-}
-
-// processActivitiesResults processes account activities data retrieval responses.
-func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse) {
-	ctx := context.Background()
-
-	if err := d.simpleEnforcer.VerifyResponses(ctx, responses); err != nil {
-		zap.L().Error("fail to verify activity responses", zap.Any("responses", len(responses)))
-
-		return
-	}
-
-	zap.L().Info("complete activity responses verify", zap.Any("responses", len(responses)))
-
-	d.simpleEnforcer.VerifyPartialResponses(ctx, responses)
-}
-
-// setNodeCache sets nodes to the cache.
-// It takes a context, a cache key, and a slice of stats as input parameters.
-// It returns an error if any occurred.
-func (d *Distributor) setNodeCache(ctx context.Context, key string, nodesCache []model.NodeEndpointCache) error {
-	if err := d.cacheClient.Set(ctx, key, nodesCache); err != nil {
-		return fmt.Errorf("set nodes to cache: %s, %w", key, err)
-	}
-
-	return nil
-}
-
-// buildActivityPathByID builds the path for activity data retrieval by ID.
+// generateActivityPathByID builds the path for activity data retrieval by ID.
 // It takes an activity request and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildActivityPathByID(query dsl.ActivityRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+func (d *Distributor) generateActivityPathByID(query dsl.ActivityRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -279,10 +127,10 @@ func (d *Distributor) buildActivityPathByID(query dsl.ActivityRequest, nodes []m
 	return endpointMap, nil
 }
 
-// buildAccountActivitiesPath builds the path for account activities data retrieval.
+// generateAccountActivitiesPath builds the path for account activities data retrieval.
 // It takes an account activities request and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildAccountActivitiesPath(query dsl.AccountActivitiesRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+func (d *Distributor) generateAccountActivitiesPath(query dsl.AccountActivitiesRequest, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -291,10 +139,10 @@ func (d *Distributor) buildAccountActivitiesPath(query dsl.AccountActivitiesRequ
 	return endpointMap, nil
 }
 
-// buildRSSHubPath builds the path for RSS Hub data retrieval.
+// generateRSSHubPath builds the path for RSS Hub data retrieval.
 // It takes a parameter, a query, and a slice of cache nodes as input parameters.
 // It returns a map of addresses to URLs or an error if any occurred.
-func (d *Distributor) buildRSSHubPath(param, query string, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+func (d *Distributor) generateRSSHubPath(param, query string, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
