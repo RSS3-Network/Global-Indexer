@@ -11,7 +11,7 @@ func (d *DSL) GetRSSHub(c echo.Context) error {
 	path := c.Param("*")
 	query := c.Request().URL.RawQuery
 
-	data, err := d.distributor.RouterRSSHubData(c.Request().Context(), path, query)
+	data, err := d.distributor.DistributeRSSHubData(c.Request().Context(), path, query)
 
 	if err != nil {
 		return errorx.InternalError(c, err)

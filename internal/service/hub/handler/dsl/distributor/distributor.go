@@ -23,8 +23,8 @@ type Distributor struct {
 	cacheClient    cache.Client
 }
 
-// RouterRSSHubData routes RSSHub requests to qualified Nodes.
-func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
+// DistributeRSSHubData distributes RSSHub requests to qualified Nodes.
+func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
 	nodes, err := d.retrieveQualifiedNodes(ctx, model.RssNodeCacheKey)
 
 	if err != nil {
@@ -52,8 +52,8 @@ func (d *Distributor) RouterRSSHubData(ctx context.Context, path, query string) 
 	return nodeResponse.Data, nil
 }
 
-// RouteActivityRequest routes Activity requests to qualified Nodes.
-func (d *Distributor) RouteActivityRequest(ctx context.Context, request dsl.ActivityRequest) ([]byte, error) {
+// DistributeActivityRequest distributes Activity requests to qualified Nodes.
+func (d *Distributor) DistributeActivityRequest(ctx context.Context, request dsl.ActivityRequest) ([]byte, error) {
 	nodes, err := d.retrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
 
 	if err != nil {
@@ -81,8 +81,8 @@ func (d *Distributor) RouteActivityRequest(ctx context.Context, request dsl.Acti
 	return nodeResponse.Data, nil
 }
 
-// RouteActivitiesData routes Activities requests to qualified Nodes.
-func (d *Distributor) RouteActivitiesData(ctx context.Context, request dsl.ActivitiesRequest) ([]byte, error) {
+// DistributeActivitiesData distributes Activities requests to qualified Nodes.
+func (d *Distributor) DistributeActivitiesData(ctx context.Context, request dsl.ActivitiesRequest) ([]byte, error) {
 	nodes, err := d.getQualifiedNodes(ctx, request)
 	if err != nil {
 		return nil, err
