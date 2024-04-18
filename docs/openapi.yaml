@@ -1,6 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Global Indexer
+  title: Global Indexer - Network Transparency API
+  description: "Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
   version: 0.1.0
 servers:
   - url: https://gi.rss3.io
