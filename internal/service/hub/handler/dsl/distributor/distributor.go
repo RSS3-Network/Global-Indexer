@@ -93,47 +93,9 @@ func (d *Distributor) RouterActivityData(ctx context.Context, request dsl.Activi
 // It takes a context and an account activities request as input parameters.
 // It returns the retrieved data or an error if any occurred.
 func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.AccountActivitiesRequest) ([]byte, error) {
-	nodes := make([]model.NodeEndpointCache, 0, model.DefaultNodeCount)
-
-	nodeAddresses, err := d.matchLightNodes(ctx, request)
-
+	nodes, err := d.getNodes(ctx, request)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(nodeAddresses) > 0 {
-		nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-			AddressList: nodeAddresses,
-			Limit:       lo.ToPtr(model.DefaultNodeCount),
-			PointsOrder: lo.ToPtr("DESC"),
-		})
-
-		if err != nil {
-			return nil, err
-		}
-
-		num := lo.Ternary(len(nodeStats) > model.DefaultNodeCount, model.DefaultNodeCount, len(nodeStats))
-
-		for i := 0; i < num; i++ {
-			nodes = append(nodes, model.NodeEndpointCache{
-				Address:  nodeStats[i].Address.String(),
-				Endpoint: nodeStats[i].Endpoint,
-			})
-		}
-	}
-
-	if len(nodes) < model.DefaultNodeCount {
-		fullNodes, err := d.retrieveNodes(ctx, model.FullNodeCacheKey)
-		if err != nil {
-			return nil, err
-		}
-
-		nodesNeeded := model.DefaultNodeCount - len(nodes)
-		nodesToAdd := lo.Ternary(nodesNeeded > len(fullNodes), len(fullNodes), nodesNeeded)
-
-		for i := 0; i < nodesToAdd; i++ {
-			nodes = append(nodes, fullNodes[i])
-		}
 	}
 
 	nodeMap, err := d.buildAccountActivitiesPath(request, nodes)
@@ -155,6 +117,59 @@ func (d *Distributor) RouterActivitiesData(ctx context.Context, request dsl.Acco
 	}
 
 	return nodeResponse.Data, nil
+}
+
+func (d *Distributor) getNodes(ctx context.Context, request dsl.AccountActivitiesRequest) ([]model.NodeEndpointCache, error) {
+	// Match light nodes.
+	nodeAddresses, err := d.matchLightNodes(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate nodes.
+	nodes, err := d.generateNodes(ctx, nodeAddresses)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the number of nodes is less than the default node count, add full nodes.
+	if len(nodes) < model.DefaultNodeCount {
+		fullNodes, err := d.retrieveNodes(ctx, model.FullNodeCacheKey)
+		if err != nil {
+			return nil, err
+		}
+
+		nodesNeeded := model.DefaultNodeCount - len(nodes)
+		nodesToAdd := lo.Ternary(nodesNeeded > len(fullNodes), len(fullNodes), nodesNeeded)
+
+		for i := 0; i < nodesToAdd; i++ {
+			nodes = append(nodes, fullNodes[i])
+		}
+	}
+
+	return nodes, nil
+}
+
+func (d *Distributor) generateNodes(ctx context.Context, nodeAddresses []common.Address) ([]model.NodeEndpointCache, error) {
+	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		AddressList: nodeAddresses,
+		Limit:       lo.ToPtr(model.DefaultNodeCount),
+		PointsOrder: lo.ToPtr("DESC"),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]model.NodeEndpointCache, len(nodeStats))
+	for i, stat := range nodeStats {
+		nodes[i] = model.NodeEndpointCache{
+			Address:  stat.Address.String(),
+			Endpoint: stat.Endpoint,
+		}
+	}
+
+	return nodes, nil
 }
 
 // retrieveNodes retrieves nodes from the cache or database.
