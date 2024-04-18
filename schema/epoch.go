@@ -18,20 +18,20 @@ type Epoch struct {
 	BlockTimestamp        int64           `json:"blockTimestamp"`
 	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
-	TotalRewardItems      int             `json:"totalRewardItems"`
+	TotalRewardNodes      int             `json:"totalRewardNodes"`
 	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
-	RewardItems           []*EpochItem    `json:"rewardItems,omitempty"`
+	RewardedNodes         []*RewardedNode `json:"rewardedNodes,omitempty"`
 	CreatedAt             int64           `json:"-"`
 	UpdatedAt             int64           `json:"-"`
 }
 
-type EpochItem struct {
+type RewardedNode struct {
 	EpochID          uint64          `json:"epochID"`
 	Index            int             `json:"index"`
 	TransactionHash  common.Hash     `json:"transactionHash"`
 	NodeAddress      common.Address  `json:"nodeAddress"`
 	OperationRewards decimal.Decimal `json:"operationRewards"`
 	StakingRewards   decimal.Decimal `json:"stakingRewards"`
-	TaxAmounts       decimal.Decimal `json:"taxAmounts"`
-	RequestCounts    decimal.Decimal `json:"requestCounts"`
+	TaxCollected     decimal.Decimal `json:"taxCollected"`
+	RequestCount     decimal.Decimal `json:"requestCount"`
 }
