@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/protocol-go/schema/filter"
@@ -51,6 +51,6 @@ func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
-		Data: distributor.NetworkToWorkersMap[nid],
+		Data: model.NetworkToWorkersMap[nid],
 	})
 }
