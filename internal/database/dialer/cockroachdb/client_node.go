@@ -256,10 +256,11 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 			return nil, fmt.Errorf("get node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where(clause.Gt{
-			Column: "created_at",
-			Value:  statCursor.CreatedAt,
-		})
+		if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
+			databaseStatement = databaseStatement.Where("points < ? OR (points = ? AND created_at < ?)", statCursor.Points, statCursor.Points, statCursor.CreatedAt)
+		} else {
+			databaseStatement = databaseStatement.Where("created_at < ?", statCursor.CreatedAt)
+		}
 	}
 
 	if query.Address != nil {
@@ -301,24 +302,10 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
-	orderByPointsClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "points",
-		},
-	}
-
-	orderByCreatedAtClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "created_at",
-		},
-	}
-
 	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
-		orderByPointsClause.Desc = true
-
-		databaseStatement = databaseStatement.Order(orderByPointsClause)
+		databaseStatement = databaseStatement.Order("points DESC, created_at DESC")
 	} else {
-		databaseStatement = databaseStatement.Order(orderByCreatedAtClause)
+		databaseStatement = databaseStatement.Order("created_at DESC")
 	}
 
 	return databaseStatement, nil
