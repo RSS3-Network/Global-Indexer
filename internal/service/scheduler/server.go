@@ -10,7 +10,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/scheduler/detector"
-	"github.com/rss3-network/global-indexer/internal/service/scheduler/integrator"
+	"github.com/rss3-network/global-indexer/internal/service/scheduler/score"
 	"github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot"
 	"github.com/rss3-network/global-indexer/internal/service/scheduler/taxer"
 	"github.com/spf13/viper"
@@ -25,8 +25,8 @@ func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMult
 	switch server := viper.GetString(flag.KeyServer); server {
 	case detector.Name:
 		return detector.New(databaseClient, redis)
-	case integrator.Name:
-		return integrator.New(databaseClient, redis, ethereumClient)
+	case score.Name:
+		return score.New(databaseClient, redis, ethereumClient)
 	case snapshot.Name:
 		return snapshot.New(databaseClient, redis, ethereumClient)
 	case taxer.Name:
