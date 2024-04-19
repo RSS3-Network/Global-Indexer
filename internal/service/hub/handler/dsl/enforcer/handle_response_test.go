@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,13 +95,13 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		responses       []distributor.DataResponse
+		responses       []*model.DataResponse
 		requests        []int
 		invalidRequests []int
 	}{
 		{
 			name: "one_error_response",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Err: errors.New(errResponseData)},
 			},
 			requests:        []int{0},
@@ -109,7 +109,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_valid_response",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0), Valid: true},
 			},
 			requests:        []int{1},
@@ -117,7 +117,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_error_responses",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Err: errors.New("error1")},
 				{Err: errors.New("error2")},
 			},
@@ -126,7 +126,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_error_with_two_responses",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0), Valid: true},
 				{Err: errors.New("error")},
 			},
@@ -135,7 +135,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_responses_with_different_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0), Valid: true},
 				{Data: []byte(activityResponseData1), Valid: true},
 			},
@@ -144,7 +144,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_responses_with_same_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData1), Valid: true},
 				{Data: []byte(activityResponseData1), Valid: true},
 			},
@@ -153,7 +153,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_errors",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Err: errors.New("error1")},
 				{Err: errors.New("error2")},
 				{Err: errors.New("error3")},
@@ -163,7 +163,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_errors",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0), Valid: true},
 				{Err: errors.New("error2")},
 				{Err: errors.New("error3")},
@@ -173,7 +173,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_error_with_same_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activitiesResponseData)},
 				{Data: []byte(activitiesResponseData)},
 				{Err: errors.New("error3")},
@@ -183,7 +183,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "one_error_with_different_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData2)},
 				{Err: errors.New("error3")},
@@ -193,7 +193,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_same_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData0)},
@@ -203,7 +203,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "three_different_data",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData1)},
 				{Data: []byte(activityResponseData2)},
@@ -213,7 +213,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_01",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData2)},
@@ -223,7 +223,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_02",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData1)},
 				{Data: []byte(activityResponseData0)},
@@ -233,7 +233,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_12_with_valid",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(activityResponseData1), Valid: true},
 				{Data: []byte(activityResponseData1)},
@@ -243,7 +243,7 @@ func TestUpdateRequestsBasedOnDataCompare(t *testing.T) {
 		},
 		{
 			name: "two_different_data_12_with_invalid",
-			responses: []distributor.DataResponse{
+			responses: []*model.DataResponse{
 				{Data: []byte(activityResponseData0)},
 				{Data: []byte(nullData)},
 				{Data: []byte(nullData)},

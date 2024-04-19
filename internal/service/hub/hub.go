@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
@@ -38,7 +39,7 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver) (*Hub, error) {
+func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client) (*Hub, error) {
 	chainID := viper.GetUint64(flag.KeyChainIDL2)
 
 	ethereumClient, err := ethereumMultiChainClient.Get(chainID)
@@ -59,7 +60,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 	cacheClient := cache.New(redisClient)
 
 	return &Hub{
-		dsl: dsl.NewDSL(ctx, databaseClient, cacheClient, nameService),
+		dsl: dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, httpClient),
 		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient),
 	}, nil
 }
