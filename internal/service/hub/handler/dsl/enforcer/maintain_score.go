@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -94,6 +95,8 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 		return fmt.Errorf("get nodes info from database: %d,%d", len(nodes), len(stats))
 	}
 
+	nodes = sortNodes(nodeAddresses, nodes)
+
 	return updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch)
 }
 
@@ -105,16 +108,31 @@ func (e *SimpleEnforcer) getNodesInfoFromDatabase(ctx context.Context, nodeAddre
 	return e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{NodeAddresses: nodeAddresses})
 }
 
+// sortNodes sorts the nodes based on the node addresses.
+func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.Node {
+	nodeMap := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, *schema.Node) {
+		return node.Address, node
+	})
+
+	sortedNodes := make([]*schema.Node, len(nodeAddresses))
+
+	for i, addr := range nodeAddresses {
+		sortedNodes[i] = nodeMap[addr]
+	}
+
+	return sortedNodes
+}
+
 // updateStatsInPool concurrently updates the stats of the nodes.
 func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64) error {
 	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i, stat := range stats {
-		staking := float64(nodesInfo[i].StakingPoolTokens.Uint64())
-		status := nodes[i].Status
+		i := i
+		stat := stat
 
 		statsPool.Go(func(_ context.Context) error {
-			return updateNodeStat(stat, epoch, staking, status)
+			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 		})
 	}
 
@@ -122,8 +140,9 @@ func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2
 }
 
 // updateNodeStat updates the stat of the node.
-func updateNodeStat(stat *schema.Stat, epoch int64, staking float64, status schema.NodeStatus) error {
-	stat.Staking = staking
+func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status schema.NodeStatus) error {
+	// Convert the staking to float64.
+	stat.Staking, _ = staking.Div(staking, big.NewInt(1e18)).Float64()
 
 	if status == schema.NodeStatusOnline {
 		// Reset the epoch request and invalid request if the epoch changes.
