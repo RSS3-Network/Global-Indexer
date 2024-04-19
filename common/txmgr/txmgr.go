@@ -374,16 +374,17 @@ func (m *SimpleTxManager) queryReceipt(ctx context.Context, txHash common.Hash, 
 
 	receipt, err := m.ethereumClient.TransactionReceipt(ctx, txHash)
 
-	if errors.Is(err, ethereum.NotFound) {
+	switch {
+	case errors.Is(err, ethereum.NotFound):
 		sendState.TxNotMined(txHash)
 		zap.L().Info("Transaction not yet mined", zap.Any("hash", txHash.String()))
 
 		return nil
-	} else if err != nil {
+	case err != nil:
 		zap.L().Error("Receipt retrieval failed", zap.Any("hash", txHash.String()), zap.Error(err))
 
 		return nil
-	} else if receipt == nil {
+	case receipt == nil:
 		zap.L().Warn("Receipt and error are both nil", zap.Any("hash", txHash.String()))
 
 		return nil
@@ -425,19 +426,15 @@ func updateFees(oldTip, oldFeeCap, newTip, newBaseFee *big.Int) (*big.Int, *big.
 	thresholdTip := calcThresholdValue(oldTip)
 	thresholdFeeCap := calcThresholdValue(oldFeeCap)
 
-	if newTip.Cmp(thresholdTip) >= 0 && newFeeCap.Cmp(thresholdFeeCap) >= 0 {
+	switch {
+	case newTip.Cmp(thresholdTip) >= 0 && newFeeCap.Cmp(thresholdFeeCap) >= 0:
 		zap.L().Debug("Using new tip and feecap")
 		return newTip, newFeeCap
-	} else if newTip.Cmp(thresholdTip) >= 0 && newFeeCap.Cmp(thresholdFeeCap) < 0 {
-		// Tip has gone up, but basefee is flat or down.
-		// TODO(CLI-3714): Do we need to recalculate the FC here?
+	case newTip.Cmp(thresholdTip) >= 0 && newFeeCap.Cmp(thresholdFeeCap) < 0:
 		zap.L().Debug("Using new tip and threshold feecap")
 		return newTip, thresholdFeeCap
-	} else if newTip.Cmp(thresholdTip) < 0 && newFeeCap.Cmp(thresholdFeeCap) >= 0 {
-		// Basefee has gone up, but the tip hasn't. Recalculate the feecap because if the tip went up a lot
-		// not enough of the feecap may be dedicated to paying the basefee.
+	case newTip.Cmp(thresholdTip) < 0 && newFeeCap.Cmp(thresholdFeeCap) >= 0:
 		zap.L().Debug("Using threshold tip and recalculated feecap")
-
 		return thresholdTip, calcGasFeeCap(newBaseFee, thresholdTip)
 	}
 

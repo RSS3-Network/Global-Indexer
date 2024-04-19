@@ -26,11 +26,12 @@ func sortResponseByValidity(responses []*model.DataResponse) {
 func updatePointsBasedOnIdentity(responses []*model.DataResponse) {
 	errResponseCount := countAndMarkErrorResponse(responses)
 
-	if len(responses) == model.RequiredQualifiedNodeCount-1 {
+	switch {
+	case len(responses) == model.RequiredQualifiedNodeCount-1:
 		handleTwoResponses(responses)
-	} else if len(responses) == model.RequiredQualifiedNodeCount-2 {
+	case len(responses) == model.RequiredQualifiedNodeCount-2:
 		handleSingleResponse(responses)
-	} else {
+	default:
 		handleFullResponses(responses, errResponseCount)
 	}
 }
@@ -207,20 +208,20 @@ func compareAndAssignPoints(responses []*model.DataResponse, errResponseCount in
 		}
 	// responses contain no errors
 	case len(responses) - 3:
-		if diff01 && diff02 && diff12 {
+		switch {
+		case diff01 && diff02 && diff12:
 			responses[0].ValidPoint = 2 * validPointUnit
 			responses[1].ValidPoint = validPointUnit
 			responses[2].ValidPoint = validPointUnit
-		} else if diff01 && !diff02 {
+		case diff01 && !diff02:
 			responses[0].ValidPoint = 2 * validPointUnit
 			responses[1].ValidPoint = validPointUnit
 			responses[2].InvalidPoint = invalidPointUnit
-		} else if diff02 && !diff01 {
+		case diff02 && !diff01:
 			responses[0].ValidPoint = 2 * validPointUnit
 			responses[1].InvalidPoint = invalidPointUnit
 			responses[2].ValidPoint = validPointUnit
-		} else if diff12 {
-			// if the second response is non-null
+		case diff12:
 			if responses[1].Valid {
 				responses[0].InvalidPoint = invalidPointUnit
 				responses[1].ValidPoint = validPointUnit
@@ -229,7 +230,7 @@ func compareAndAssignPoints(responses []*model.DataResponse, errResponseCount in
 				// the last two responses must include null data
 				responses[0].ValidPoint = validPointUnit
 			}
-		} else if !diff01 {
+		case !diff01:
 			responses[0].ValidPoint = validPointUnit
 		}
 	}

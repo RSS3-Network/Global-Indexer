@@ -1,15 +1,15 @@
 package geolite2_test
 
-//import (
+// import (
 //	"context"
 //	"encoding/json"
 //	"testing"
 //
 //	"github.com/rss3-network/global-indexer/common/geolite2"
 //	"github.com/rss3-network/global-indexer/internal/config"
-//)
+// )
 //
-//func TestLookupNodeLocation(t *testing.T) {
+// func TestLookupNodeLocation(t *testing.T) {
 //	t.Parallel()
 //
 //	c := geolite2.NewClient(&config.GeoIP{
