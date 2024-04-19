@@ -4,7 +4,10 @@ ifeq ($(VERSION),)
 	VERSION="0.0.0"
 endif
 
-lint:
+lint-doc:
+	docker run --rm -v ./docs:/work:ro dshanley/vacuum lint openapi.yaml -d
+
+lint: lint-doc
 	go mod tidy
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 run
 

@@ -12,3 +12,7 @@ repos:
     rev: v2.42.1
     hooks:
       - id: commitizen
+  - repo: https://github.com/daveshanley/vacuum
+    rev: v0.9.14
+    hooks:
+      - id: vacuum
