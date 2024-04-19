@@ -41,7 +41,7 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 
 	// Save epoch items.
 	var items table.EpochItems
-	if err := items.Import(epoch.RewardItems); err != nil {
+	if err := items.Import(epoch.RewardedNodes); err != nil {
 		zap.L().Error("import epoch items", zap.Error(err), zap.Any("epoch", epoch))
 
 		return err
@@ -206,7 +206,7 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	}
 
 	epochIDs := make([]uint64, 0, len(items))
-	itemsMap := make(map[uint64][]*schema.EpochItem, len(items))
+	itemsMap := make(map[uint64][]*schema.RewardedNode, len(items))
 
 	for _, item := range items {
 		data, err := item.Export()
@@ -217,7 +217,7 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 		}
 
 		if _, ok := itemsMap[item.EpochID]; !ok {
-			itemsMap[item.EpochID] = make([]*schema.EpochItem, 0, 1)
+			itemsMap[item.EpochID] = make([]*schema.RewardedNode, 0, 1)
 		}
 
 		itemsMap[item.EpochID] = append(itemsMap[item.EpochID], data)

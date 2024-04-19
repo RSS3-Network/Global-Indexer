@@ -410,31 +410,31 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		BlockNumber:      header.Number,
 		BlockTimestamp:   int64(header.Time),
 		TransactionIndex: receipt.TransactionIndex,
-		TotalRewardItems: len(event.NodeAddrs),
-		RewardItems:      make([]*schema.EpochItem, len(event.NodeAddrs)),
+		TotalRewardNodes: len(event.NodeAddrs),
+		RewardedNodes:    make([]*schema.RewardedNode, len(event.NodeAddrs)),
 	}
 
-	if epoch.TotalRewardItems != len(event.StakingRewards) || epoch.TotalRewardItems != len(event.OperationRewards) || epoch.TotalRewardItems != len(event.TaxAmounts) {
-		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardItems), zap.String("transaction.hash", transaction.Hash().Hex()))
+	if epoch.TotalRewardNodes != len(event.StakingRewards) || epoch.TotalRewardNodes != len(event.OperationRewards) || epoch.TotalRewardNodes != len(event.TaxAmounts) {
+		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("length not match")
 	}
 
-	for i := 0; i < epoch.TotalRewardItems; i++ {
-		epoch.RewardItems[i] = &schema.EpochItem{
+	for i := 0; i < epoch.TotalRewardNodes; i++ {
+		epoch.RewardedNodes[i] = &schema.RewardedNode{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
 			TransactionHash:  transaction.Hash(),
 			NodeAddress:      event.NodeAddrs[i],
 			OperationRewards: decimal.NewFromBigInt(event.OperationRewards[i], 0),
 			StakingRewards:   decimal.NewFromBigInt(event.StakingRewards[i], 0),
-			TaxAmounts:       decimal.NewFromBigInt(event.TaxAmounts[i], 0),
-			RequestCounts:    decimal.NewFromBigInt(event.RequestCounts[i], 0),
+			TaxCollected:     decimal.NewFromBigInt(event.TaxAmounts[i], 0),
+			RequestCount:     decimal.NewFromBigInt(event.RequestCounts[i], 0),
 		}
 
-		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(epoch.RewardItems[i].OperationRewards)
-		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(epoch.RewardItems[i].StakingRewards)
-		epoch.TotalRequestCounts = epoch.TotalRequestCounts.Add(epoch.RewardItems[i].RequestCounts)
+		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(epoch.RewardedNodes[i].OperationRewards)
+		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(epoch.RewardedNodes[i].StakingRewards)
+		epoch.TotalRequestCounts = epoch.TotalRequestCounts.Add(epoch.RewardedNodes[i].RequestCount)
 	}
 
 	// Save epoch
@@ -577,17 +577,17 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 	)
 
 	var (
-		data      = make([]*schema.BatchUpdateNode, len(epoch.RewardItems))
+		data      = make([]*schema.BatchUpdateNode, len(epoch.RewardedNodes))
 		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 	)
 
-	for i := 0; i < epoch.TotalRewardItems; i++ {
+	for i := 0; i < epoch.TotalRewardNodes; i++ {
 		i := i
 
 		errorPool.Go(func(_ context.Context) error {
 			var (
 				apy, minTokensToStake decimal.Decimal
-				address               = epoch.RewardItems[i].NodeAddress
+				address               = epoch.RewardedNodes[i].NodeAddress
 			)
 
 			// Calculate node APY
@@ -603,7 +603,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
 				tax := 1 - float64(node.TaxRateBasisPoints)/10000
 
-				apy = epoch.RewardItems[i].OperationRewards.Add(epoch.RewardItems[i].StakingRewards).
+				apy = epoch.RewardedNodes[i].OperationRewards.Add(epoch.RewardedNodes[i].StakingRewards).
 					Div(decimal.NewFromBigInt(node.StakingPoolTokens, 0)).
 					Mul(decimal.NewFromFloat(tax)).
 					Mul(decimal.NewFromFloat(486.6666666666667))
