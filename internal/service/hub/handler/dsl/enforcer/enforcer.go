@@ -267,21 +267,22 @@ func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
 	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
 
 	// Traverse the entire node and update its score.
-	for first := true; query.Cursor != nil || first; first = false {
+	for {
 		stats, err := e.databaseClient.FindNodeStats(ctx, query)
 		if err != nil {
 			return err
+		}
+
+		// If there are no stats, exit the loop.
+		if len(stats) == 0 {
+			break
 		}
 
 		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
 			return err
 		}
 
-		if len(stats) == 0 {
-			break
-		}
-
-		lastStat, _ := lo.Last(stats)
+		lastStat := stats[len(stats)-1]
 		query.Cursor = lo.ToPtr(lastStat.Address.String())
 	}
 
