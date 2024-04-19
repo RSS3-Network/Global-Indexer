@@ -43,6 +43,7 @@ const (
 	defaultLimit = 50
 )
 
+// getNodeStatsMap returns the current epoch.
 func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
@@ -120,18 +121,19 @@ func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2
 	return statsPool.Wait()
 }
 
+// updateNodeStat updates the stat of the node.
 func updateNodeStat(stat *schema.Stat, epoch int64, staking float64, status schema.NodeStatus) error {
 	stat.Staking = staking
 
 	if status == schema.NodeStatusOnline {
-		// Update node epoch.
+		// Reset the epoch request and invalid request if the epoch changes.
 		if epoch != stat.Epoch {
 			stat.EpochRequest = 0
 			stat.EpochInvalidRequest = 0
 			stat.Epoch = epoch
 		}
 	} else {
-		// If node's status is not online, then reset the time.
+		// If node's status is not online, then reset the alive time.
 		stat.ResetAt = time.Now()
 	}
 
@@ -139,6 +141,7 @@ func updateNodeStat(stat *schema.Stat, epoch int64, staking float64, status sche
 	return calculateScore(stat)
 }
 
+// calculateScore calculates the score of the node.
 func calculateScore(stat *schema.Stat) error {
 	// staking pool tokens
 	// maximum score is 0.2
@@ -170,7 +173,6 @@ func calculateScore(stat *schema.Stat) error {
 	stat.Score += math.Min(float64(stat.Indexer)*perIndexerScore, indexerMaxScore)
 
 	// epoch failure requests
-
 	if stat.EpochInvalidRequest >= int64(model.DefaultSlashCount) {
 		// If the number of invalid requests in the epoch is greater than the threshold, then the score is 0.
 		stat.Score = 0
@@ -190,6 +192,7 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
 	return e.updateCacheForNodeType(ctx, model.FullNodeCacheKey)
 }
 
+// updateCacheForNodeType updates the cache for different node types.
 func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
 	query := &schema.StatQuery{PointsOrder: lo.ToPtr("DESC")}
 
