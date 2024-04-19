@@ -19,6 +19,6 @@ type SettlementData struct {
 	Epoch            *big.Int         `json:"epoch"`
 	NodeAddress      []common.Address `json:"nodeAddrs"`
 	OperationRewards []*big.Int       `json:"operationRewards"`
-	RequestCounts    []*big.Int       `json:"requestCounts"`
+	RequestCount     []*big.Int       `json:"requestCount"`
 	IsFinal          bool             `json:"isFinal"`
 }

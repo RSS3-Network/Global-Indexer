@@ -103,8 +103,8 @@ func (n *NTA) GetEpochDistribution(c echo.Context) error {
 	}
 
 	var cursor string
-	if len(epoch.RewardItems) > 0 && len(epoch.RewardItems) == request.ItemsLimit {
-		cursor = fmt.Sprintf("%d", epoch.RewardItems[len(epoch.RewardItems)-1].Index)
+	if len(epoch.RewardedNodes) > 0 && len(epoch.RewardedNodes) == request.ItemsLimit {
+		cursor = fmt.Sprintf("%d", epoch.RewardedNodes[len(epoch.RewardedNodes)-1].Index)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{

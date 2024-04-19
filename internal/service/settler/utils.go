@@ -11,7 +11,7 @@ import (
 
 // prepareInputData encodes input data for the transaction
 func (s *Server) prepareInputData(data schema.SettlementData) ([]byte, error) {
-	input, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCounts, data.IsFinal)
+	input, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, data.Epoch, data.NodeAddress, data.OperationRewards, data.RequestCount, data.IsFinal)
 	if err != nil {
 		return nil, fmt.Errorf("encode input: %w", err)
 	}

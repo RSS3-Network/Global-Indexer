@@ -6,6 +6,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// EpochItem stores information for a Node in an Epoch
+// TODO: we should probably rename this to NodeRewardRecord?
 type EpochItem struct {
 	EpochID          uint64          `gorm:"column:epoch_id;"`
 	Index            int             `gorm:"column:index;primaryKey"`
@@ -13,48 +15,50 @@ type EpochItem struct {
 	NodeAddress      string          `gorm:"column:node_address"`
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
 	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
-	TaxAmounts       decimal.Decimal `gorm:"column:tax_amounts"`
-	RequestCounts    decimal.Decimal `gorm:"column:request_counts"`
+	// FIXME: correct the column names
+	TaxCollected decimal.Decimal `gorm:"column:tax_amounts"`
+	// FIXME: correct the column names
+	RequestCount decimal.Decimal `gorm:"column:request_counts"`
 }
 
 func (e *EpochItem) TableName() string {
 	return "epoch_item"
 }
 
-func (e *EpochItem) Import(epochRewardItem *schema.EpochItem) error {
-	e.EpochID = epochRewardItem.EpochID
-	e.Index = epochRewardItem.Index
-	e.TransactionHash = epochRewardItem.TransactionHash.String()
-	e.NodeAddress = epochRewardItem.NodeAddress.String()
-	e.OperationRewards = epochRewardItem.OperationRewards
-	e.StakingRewards = epochRewardItem.StakingRewards
-	e.TaxAmounts = epochRewardItem.TaxAmounts
-	e.RequestCounts = epochRewardItem.RequestCounts
+func (e *EpochItem) Import(nodeToReward *schema.RewardedNode) error {
+	e.EpochID = nodeToReward.EpochID
+	e.Index = nodeToReward.Index
+	e.TransactionHash = nodeToReward.TransactionHash.String()
+	e.NodeAddress = nodeToReward.NodeAddress.String()
+	e.OperationRewards = nodeToReward.OperationRewards
+	e.StakingRewards = nodeToReward.StakingRewards
+	e.TaxCollected = nodeToReward.TaxCollected
+	e.RequestCount = nodeToReward.RequestCount
 
 	return nil
 }
 
-func (e *EpochItem) Export() (*schema.EpochItem, error) {
-	return &schema.EpochItem{
+func (e *EpochItem) Export() (*schema.RewardedNode, error) {
+	return &schema.RewardedNode{
 		EpochID:          e.EpochID,
 		Index:            e.Index,
 		TransactionHash:  common.HexToHash(e.TransactionHash),
 		NodeAddress:      common.HexToAddress(e.NodeAddress),
 		OperationRewards: e.OperationRewards,
 		StakingRewards:   e.StakingRewards,
-		TaxAmounts:       e.TaxAmounts,
-		RequestCounts:    e.RequestCounts,
+		TaxCollected:     e.TaxCollected,
+		RequestCount:     e.RequestCount,
 	}, nil
 }
 
 type EpochItems []*EpochItem
 
-func (e *EpochItems) Import(epochRewardItems []*schema.EpochItem) error {
-	*e = make([]*EpochItem, 0, len(epochRewardItems))
+func (e *EpochItems) Import(nodesToReward []*schema.RewardedNode) error {
+	*e = make([]*EpochItem, 0, len(nodesToReward))
 
-	for index, epochRewardItem := range epochRewardItems {
+	for index, nodeToReward := range nodesToReward {
 		epochItem := &EpochItem{}
-		if err := epochItem.Import(epochRewardItem); err != nil {
+		if err := epochItem.Import(nodeToReward); err != nil {
 			return err
 		}
 
@@ -66,8 +70,8 @@ func (e *EpochItems) Import(epochRewardItems []*schema.EpochItem) error {
 	return nil
 }
 
-func (e *EpochItems) Export() ([]*schema.EpochItem, error) {
-	items := make([]*schema.EpochItem, 0, len(*e))
+func (e *EpochItems) Export() ([]*schema.RewardedNode, error) {
+	items := make([]*schema.RewardedNode, 0, len(*e))
 
 	for _, epochItem := range *e {
 		epochRewardItem, err := epochItem.Export()
