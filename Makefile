@@ -4,8 +4,12 @@ ifeq ($(VERSION),)
 	VERSION="0.0.0"
 endif
 
+# generate a report to view locally
+lint-doc-report:
+	docker run --rm -v ${PWD}/docs:/work:rw dshanley/vacuum html-report openapi.yaml -d
+
 lint-doc:
-	docker run --rm -v ./docs:/work:ro dshanley/vacuum lint openapi.yaml -d
+	docker run --rm -v ${PWD}/docs:/work:rw dshanley/vacuum lint openapi.yaml -d
 
 lint: lint-doc
 	go mod tidy
