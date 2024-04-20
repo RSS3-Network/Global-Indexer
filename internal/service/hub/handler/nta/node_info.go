@@ -46,7 +46,7 @@ func (n *NTA) GetNodes(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get nodes: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Nodes: %w", err))
 	}
 
 	var cursor string
@@ -55,8 +55,8 @@ func (n *NTA) GetNodes(c echo.Context) error {
 	}
 
 	// If the score is the same, sort by staking pool size.
-	// TODO: Since node's StakingPoolTokens needs to be obtained from vsl.
-	//  Now only the nodes of the current page can be sorted.
+	// TODO: Since Node's StakingPoolTokens needs to be obtained from vsl.
+	//  Now only the Nodes of the current page can be sorted.
 	sort.Slice(nodes, func(i, j int) bool {
 		if nodes[i].Score.Cmp(nodes[j].Score) == 0 {
 			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
@@ -91,7 +91,7 @@ func (n *NTA) GetNode(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get node: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -116,7 +116,7 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get node avatar: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node avatar: %w", err))
 	}
 
 	return c.Blob(http.StatusOK, "image/svg+xml", avatar)
@@ -125,12 +125,12 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := n.databaseClient.FindNode(ctx, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node %s: %w", address, err)
+		return nil, fmt.Errorf("get Node %s: %w", address, err)
 	}
 
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node from chain: %w", err)
+		return nil, fmt.Errorf("get Node from chain: %w", err)
 	}
 
 	node.Name = nodeInfo.Name
@@ -153,7 +153,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		OrderByScore:  true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("get nodes: %w", err)
+		return nil, fmt.Errorf("get Nodes: %w", err)
 	}
 
 	addresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
@@ -162,7 +162,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 
 	nodeInfo, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
 	if err != nil {
-		return nil, fmt.Errorf("get nodes from chain: %w", err)
+		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
 	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
@@ -188,7 +188,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte, error) {
 	avatar, err := n.databaseClient.FindNodeAvatar(ctx, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node avatar %s: %w", address, err)
+		return nil, fmt.Errorf("get Node avatar %s: %w", address, err)
 	}
 
 	data, ok := strings.CutPrefix(avatar.Image, "data:image/svg+xml;base64,")
@@ -227,7 +227,7 @@ func (n *NTA) parseRequestIP(c echo.Context) (net.IP, error) {
 func (n *NTA) buildNodeAvatar(_ context.Context, address common.Address) (*l2.ChipsTokenMetadata, error) {
 	avatar, err := n.stakingContract.GetNodeAvatar(&bind.CallOpts{}, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node avatar from chain: %w", err)
+		return nil, fmt.Errorf("get Node avatar from chain: %w", err)
 	}
 
 	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")

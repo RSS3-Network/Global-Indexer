@@ -56,7 +56,7 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 		NodeAddresses: nodeAddresses,
 	})
 	if err != nil {
-		return fmt.Errorf("find nodes: %w", err)
+		return fmt.Errorf("find Nodes: %w", err)
 	}
 
 	values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
@@ -108,7 +108,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 
 	node, err := n.databaseClient.FindNode(c.Request().Context(), stakeChip.Node)
 	if err != nil {
-		return fmt.Errorf("find node: %w", err)
+		return fmt.Errorf("find Node: %w", err)
 	}
 
 	stakeChip.LatestValue = node.MinTokensToStake

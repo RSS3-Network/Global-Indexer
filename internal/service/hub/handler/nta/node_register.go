@@ -85,14 +85,14 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return err
 	}
 
-	// Check node from the chain.
+	// Check Node from the VSL.
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
 	if err != nil {
-		return fmt.Errorf("get node from chain: %w", err)
+		return fmt.Errorf("get Node from chain: %w", err)
 	}
 
 	if nodeInfo.Account == ethereum.AddressGenesis {
-		return fmt.Errorf("node: %s has not been registered on the chain", strings.ToLower(request.Address.String()))
+		return fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String()))
 	}
 
 	if strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
@@ -106,12 +106,12 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 			Address: request.Address,
 		}
 
-		// Get node's avatar from the chain
+		// Get Node's avatar from the VSL
 		if node.Avatar, err = n.buildNodeAvatar(ctx, request.Address); err != nil {
 			return fmt.Errorf("build node avatar: %w", err)
 		}
 
-		// Get from redis if the tax rate of the node needs to be hidden.
+		// Get from redis if the tax rate of the Node needs to be hidden.
 		if err = n.cacheClient.Get(ctx, n.buildNodeHideTaxRateKey(request.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
 			return fmt.Errorf("get hide tax rate: %w", err)
 		}
@@ -138,7 +138,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
-		zap.L().Error("get node local error", zap.Error(err))
+		zap.L().Error("get Node local error", zap.Error(err))
 	}
 
 	var (
@@ -164,23 +164,23 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		indexers = n.updateNodeIndexers(ctx, request.Address, nodeConfig)
 	}
 
-	// Save node info to the database.
+	// Save Node info to the database.
 	return n.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		// Save node to database.
+		// Save Node to database.
 		if err = client.SaveNode(ctx, node); err != nil {
-			return fmt.Errorf("save node: %s, %w", node.Address.String(), err)
+			return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
 		}
 
-		zap.L().Info("save node", zap.Any("node", node.Address.String()))
+		zap.L().Info("save Node", zap.Any("node", node.Address.String()))
 
-		// Save node stat to database
+		// Save Node stat to database
 		if err = client.SaveNodeStat(ctx, stat); err != nil {
-			return fmt.Errorf("save node stat: %s, %w", node.Address.String(), err)
+			return fmt.Errorf("save Node stat: %s, %w", node.Address.String(), err)
 		}
 
-		zap.L().Info("save node stat", zap.Any("node", node.Address.String()))
+		zap.L().Info("save Node stat", zap.Any("node", node.Address.String()))
 
-		// If the node is a full node,
+		// If the Node is a full node,
 		// then delete the record from the table.
 		// Otherwise, add the indexers to the table.
 		if err = client.DeleteNodeIndexers(ctx, node.Address); err != nil {
@@ -189,10 +189,10 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 		if !fullNode {
 			if err = client.SaveNodeIndexers(ctx, indexers); err != nil {
-				return fmt.Errorf("save node indexers: %s, %w", node.Address.String(), err)
+				return fmt.Errorf("save Node indexers: %s, %w", node.Address.String(), err)
 			}
 
-			zap.L().Info("save node indexer", zap.Any("node", node.Address.String()))
+			zap.L().Info("save Node indexer", zap.Any("node", node.Address.String()))
 		}
 
 		return nil
@@ -207,7 +207,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, request *nta.RegisterNodeReque
 
 	stat, err = n.databaseClient.FindNodeStat(ctx, request.Address)
 	if err != nil {
-		return nil, fmt.Errorf("find node stat: %w", err)
+		return nil, fmt.Errorf("find Node stat: %w", err)
 	}
 
 	if stat == nil {
@@ -261,10 +261,10 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("check signature: %w", err)
 	}
 
-	// Check node from database.
+	// Check Node from database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
-		return fmt.Errorf("get node %s from database: %w", request.Address, err)
+		return fmt.Errorf("get Node %s from database: %w", request.Address, err)
 	}
 
 	if node == nil {
@@ -275,11 +275,11 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	if len(node.Location) == 0 {
 		node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 		if err != nil {
-			zap.L().Error("get node local error", zap.Error(err))
+			zap.L().Error("get Node local error", zap.Error(err))
 		}
 	}
 
-	// Get node's avatar from the chain.
+	// Get Node's avatar from the VSL.
 	if node.Avatar == nil || node.Avatar.Name == "" {
 		node.Avatar, err = n.buildNodeAvatar(ctx, request.Address)
 		if err != nil {
@@ -294,7 +294,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("update node status: %w", err)
 	}
 
-	// Save node to database.
+	// Save Node to database.
 	return n.databaseClient.SaveNode(ctx, node)
 }
 
