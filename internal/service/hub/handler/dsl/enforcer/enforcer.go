@@ -256,8 +256,9 @@ func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, 
 	return nil, fmt.Errorf("invalid data")
 }
 
-// MaintainScore maintains the score of the Nodes.
-func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
+// MaintainReliabilityScore maintains the Reliability Score σ for all Nodes.
+// σ is used to determine the probability of a Node receiving a request on DSL.
+func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 	// Retrieve the most recently indexed epoch.
 	currentEpoch, err := e.getCurrentEpoch(ctx)
 	if err != nil {

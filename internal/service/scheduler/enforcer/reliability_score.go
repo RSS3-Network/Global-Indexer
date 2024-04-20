@@ -1,4 +1,4 @@
-package score
+package enforcer
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 
 var _ service.Server = (*server)(nil)
 
-var Name = "score"
+var Name = "reliability_score"
 
 type server struct {
 	cronJob        *cronjob.CronJob
@@ -38,14 +38,14 @@ func (s *server) Spec() string {
 
 func (s *server) Run(ctx context.Context) error {
 	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
-		if err := s.simpleEnforcer.MaintainScore(ctx); err != nil {
-			zap.L().Error("maintain score error", zap.Error(err))
+		if err := s.simpleEnforcer.MaintainReliabilityScore(ctx); err != nil {
+			zap.L().Error("maintain reliability_score error", zap.Error(err))
 			return
 		}
 	})
 
 	if err != nil {
-		return fmt.Errorf("add maintain score cron job: %w", err)
+		return fmt.Errorf("add maintain reliability score cron job: %w", err)
 	}
 
 	s.cronJob.Start()

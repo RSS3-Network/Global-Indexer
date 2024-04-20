@@ -161,7 +161,7 @@ func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status sch
 }
 
 // calculateReliabilityScore calculates the Reliability Score σ of a given Node.
-// σ is used to determine the probability of a Node to receive a request on DSL.
+// σ is used to determine the probability of a Node receiving a request on DSL.
 func calculateReliabilityScore(stat *schema.Stat) error {
 	// staking pool tokens
 	// maximum score is 0.2
