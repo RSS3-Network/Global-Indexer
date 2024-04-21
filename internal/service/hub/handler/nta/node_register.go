@@ -203,15 +203,16 @@ func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, n
 	})
 }
 
-func isFullNode(indexers []*NodeConfigModule) (bool, error) {
-	if len(indexers) < len(model.WorkerToNetworksMap) {
+// isFullNode returns true if the Node is a full Node: has every worker on all possible networks.
+func isFullNode(workers []*NodeConfigModule) (bool, error) {
+	if len(workers) < len(model.WorkerToNetworksMap) {
 		return false, nil
 	}
 
 	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
 
-	for _, indexer := range indexers {
-		wid, err := filter.NameString(indexer.Worker.String())
+	for _, worker := range workers {
+		wid, err := filter.NameString(worker.Worker.String())
 
 		if err != nil {
 			return false, err
@@ -221,9 +222,10 @@ func isFullNode(indexers []*NodeConfigModule) (bool, error) {
 			workerToNetworksMap[wid] = make(map[string]struct{})
 		}
 
-		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
+		workerToNetworksMap[wid][worker.Network.String()] = struct{}{}
 	}
 
+	// Ensure all networks for each worker are present
 	for wid, requiredNetworks := range model.WorkerToNetworksMap {
 		networks, exists := workerToNetworksMap[wid]
 		if !exists || len(networks) != len(requiredNetworks) {
