@@ -81,7 +81,7 @@ func (d *Distributor) retrieveQualifiedNodes(ctx context.Context, key string) ([
 	if err := d.cacheClient.Get(ctx, key, &nodesCache); err == nil {
 		return nodesCache, nil
 	} else if !errors.Is(err, redis.Nil) {
-		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
+		return nil, fmt.Errorf("get Nodes from cache: %s, %w", key, err)
 	}
 
 	zap.L().Info("nodes not in cache", zap.String("key", key))
@@ -100,7 +100,7 @@ func (d *Distributor) retrieveQualifiedNodes(ctx context.Context, key string) ([
 	return nodesCache, nil
 }
 
-// retrieveNodesFromDB retrieves nodes from the database.
+// retrieveNodesFromDB retrieves Nodes from the database.
 func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
 	var query schema.StatQuery
 

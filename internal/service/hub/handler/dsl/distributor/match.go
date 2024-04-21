@@ -139,7 +139,7 @@ func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []strin
 }
 
 // matchNetwork matches nodes based on the given network requests,
-// and returns the addresses of nodes that match the requests.
+// and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchNetwork(ctx context.Context, networks []string) ([]common.Address, error) {
 	// Find all indexers that match the networks.
 	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, networks, nil)
@@ -147,7 +147,7 @@ func (d *Distributor) matchNetwork(ctx context.Context, networks []string) ([]co
 		return nil, err
 	}
 
-	// Generate a map of node addresses to network workers.
+	// Generate a map of Node addresses to network workers.
 	nodeNetworkWorkersMap := generateNodeNetworkWorkersMap(indexers)
 	// Filter nodes that match the network requests.
 	return filterMatchingNetworkNodes(nodeNetworkWorkersMap, networks), nil
@@ -157,7 +157,7 @@ type NetworkWorkersMap struct {
 	Workers map[string][]string
 }
 
-// generateNodeNetworkWorkersMap generates a map of node addresses to network workers.
+// generateNodeNetworkWorkersMap generates a map of Node addresses to network workers.
 func generateNodeNetworkWorkersMap(indexers []*schema.Indexer) map[common.Address]NetworkWorkersMap {
 	nodeNetworkWorkersMap := make(map[common.Address]NetworkWorkersMap)
 
@@ -186,7 +186,7 @@ func filterMatchingNetworkNodes(nodeNetworkWorkersMap map[common.Address]Network
 	return nodes
 }
 
-// isValidNetworkNode checks if the node matches the required networks.
+// isValidNetworkNode checks if the Node has the capability to serve the required networks.
 func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []string) bool {
 	// Check if the number of networks match the number of request networks.
 	if len(networkWorkersMap.Workers) != len(requestNetworks) {
@@ -211,7 +211,7 @@ type WorkerNetworksMap struct {
 }
 
 // matchWorker matches nodes based on the given worker names,
-// and returns the addresses of nodes that match the requests.
+// and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]common.Address, error) {
 	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, nil, workers)
 	if err != nil {
@@ -223,7 +223,7 @@ func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]comm
 	return filterMatchingWorkerNodes(nodeWorkerNetworksMap, workers), nil
 }
 
-// generateNodeWorkerNetworksMap generates a map of node addresses to worker networks.
+// generateNodeWorkerNetworksMap generates a map of Node addresses to worker networks.
 func generateNodeWorkerNetworksMap(indexers []*schema.Indexer) map[common.Address]WorkerNetworksMap {
 	nodeWorkerNetworksMap := make(map[common.Address]WorkerNetworksMap)
 
@@ -252,7 +252,7 @@ func filterMatchingWorkerNodes(nodeWorkerNetworksMap map[common.Address]WorkerNe
 	return nodes
 }
 
-// isValidWorkerNode checks if the node matches the required workers.
+// isValidWorkerNode checks if the Node serves the required workers.
 func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bool {
 	if len(workerNetworksMap.Networks) != len(workers) {
 		return false

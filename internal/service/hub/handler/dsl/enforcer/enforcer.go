@@ -31,7 +31,7 @@ type SimpleEnforcer struct {
 	stakingContract *l2.Staking
 }
 
-// VerifyResponses verifies the responses from the nodes.
+// VerifyResponses verifies the responses from the Nodes.
 func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model.DataResponse) error {
 	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
@@ -39,7 +39,7 @@ func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model
 
 	nodeStatsMap, err := e.getNodeStatsMap(ctx, responses)
 	if err != nil {
-		return fmt.Errorf("failed to find node stats: %w", err)
+		return fmt.Errorf("failed to Find node stats: %w", err)
 	}
 
 	// non-error and non-null results are always put in front of the list
@@ -53,13 +53,13 @@ func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model
 		func(_ common.Address, stat *schema.Stat) *schema.Stat {
 			return stat
 		})); err != nil {
-		return fmt.Errorf("save node stats: %w", err)
+		return fmt.Errorf("save Node stats: %w", err)
 	}
 
 	return nil
 }
 
-// VerifyPartialResponses performs a partial verification of the responses from the nodes.
+// VerifyPartialResponses performs a partial verification of the responses from the Nodes.
 func (e *SimpleEnforcer) VerifyPartialResponses(ctx context.Context, responses []*model.DataResponse) {
 	// Check if there are any responses
 	if len(responses) == 0 {
@@ -191,7 +191,7 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 	return stats, nil
 }
 
-// excludeWorkingNodes excludes the working nodes from the indexers.
+// excludeWorkingNodes excludes the working Nodes from the indexers.
 func excludeWorkingNodes(indexers []*schema.Indexer, workingNodes []common.Address) []common.Address {
 	nodeAddresses := lo.Map(indexers, func(indexer *schema.Indexer, _ int) common.Address {
 		return indexer.Address
@@ -256,8 +256,9 @@ func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, 
 	return nil, fmt.Errorf("invalid data")
 }
 
-// MaintainScore maintains the score of the nodes.
-func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
+// MaintainReliabilityScore maintains the Reliability Score σ for all Nodes.
+// σ is used to determine the probability of a Node receiving a request on DSL.
+func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 	// Retrieve the most recently indexed epoch.
 	currentEpoch, err := e.getCurrentEpoch(ctx)
 	if err != nil {
@@ -267,25 +268,25 @@ func (e *SimpleEnforcer) MaintainScore(ctx context.Context) error {
 	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
 
 	// Traverse the entire node and update its score.
-	for first := true; query.Cursor != nil || first; first = false {
+	for {
 		stats, err := e.databaseClient.FindNodeStats(ctx, query)
 		if err != nil {
 			return err
+		}
+
+		// If there are no stats, exit the loop.
+		if len(stats) == 0 {
+			break
 		}
 
 		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
 			return err
 		}
 
-		if len(stats) == 0 {
-			break
-		}
-
-		lastStat, _ := lo.Last(stats)
+		lastStat := stats[len(stats)-1]
 		query.Cursor = lo.ToPtr(lastStat.Address.String())
 	}
 
-	// Update the cache for the node type.
 	return e.updateNodeCache(ctx)
 }
 

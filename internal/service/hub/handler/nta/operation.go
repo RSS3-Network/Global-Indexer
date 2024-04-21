@@ -31,7 +31,7 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 
 	node, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Operator)
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("get node from rpc: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node from rpc: %w", err))
 	}
 
 	data := nta.GetOperatorProfitRepsonseData{
