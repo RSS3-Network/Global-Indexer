@@ -203,6 +203,43 @@ func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, n
 	})
 }
 
+func isFullNode(indexers []*NodeConfigModule) (bool, error) {
+	if len(indexers) < len(model.WorkerToNetworksMap) {
+		return false, nil
+	}
+
+	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
+
+	for _, indexer := range indexers {
+		wid, err := filter.NameString(indexer.Worker.String())
+
+		if err != nil {
+			return false, err
+		}
+
+		if _, exists := workerToNetworksMap[wid]; !exists {
+			workerToNetworksMap[wid] = make(map[string]struct{})
+		}
+
+		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
+	}
+
+	for wid, requiredNetworks := range model.WorkerToNetworksMap {
+		networks, exists := workerToNetworksMap[wid]
+		if !exists || len(networks) != len(requiredNetworks) {
+			return false, nil
+		}
+
+		for _, network := range requiredNetworks {
+			if _, exists = networks[network]; !exists {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool) (*schema.Stat, error) {
 	var (
 		stat *schema.Stat
@@ -300,43 +337,6 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 
 	// Save Node to database.
 	return n.databaseClient.SaveNode(ctx, node)
-}
-
-func isFullNode(indexers []*NodeConfigModule) (bool, error) {
-	if len(indexers) < len(model.WorkerToNetworksMap) {
-		return false, nil
-	}
-
-	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
-
-	for _, indexer := range indexers {
-		wid, err := filter.NameString(indexer.Worker.String())
-
-		if err != nil {
-			return false, err
-		}
-
-		if _, exists := workerToNetworksMap[wid]; !exists {
-			workerToNetworksMap[wid] = make(map[string]struct{})
-		}
-
-		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
-	}
-
-	for wid, requiredNetworks := range model.WorkerToNetworksMap {
-		networks, exists := workerToNetworksMap[wid]
-		if !exists || len(networks) != len(requiredNetworks) {
-			return false, nil
-		}
-
-		for _, network := range requiredNetworks {
-			if _, exists = networks[network]; !exists {
-				return false, nil
-			}
-		}
-	}
-
-	return true, nil
 }
 
 func (n *NTA) checkSignature(_ context.Context, address common.Address, message string, signature []byte) error {
