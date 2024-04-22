@@ -11,10 +11,10 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-type NodeFailureResponse struct {
+type NodeInvalidResponse struct {
 	ID                uint64                           `gorm:"id;primaryKey"`
 	EpochID           uint64                           `gorm:"column:epoch_id"`
-	Status            schema.NodeFailureResponseStatus `gorm:"column:status"`
+	Status            schema.NodeInvalidResponseStatus `gorm:"column:status"`
 	ValidatorNode     common.Address                   `gorm:"column:validator_node"`
 	ValidatorRequest  string                           `gorm:"column:validator_request"`
 	ValidatorResponse json.RawMessage                  `gorm:"column:validator_response"`
@@ -25,11 +25,11 @@ type NodeFailureResponse struct {
 	UpdatedAt         time.Time                        `gorm:"column:updated_at"`
 }
 
-func (*NodeFailureResponse) TableName() string {
-	return "node_failure_response"
+func (*NodeInvalidResponse) TableName() string {
+	return "node_invalid_response"
 }
 
-func (n *NodeFailureResponse) Import(nodeResponseFailure *schema.NodeFailureResponse) {
+func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResponse) {
 	n.EpochID = nodeResponseFailure.EpochID
 	n.Status = nodeResponseFailure.Status
 	n.ValidatorNode = nodeResponseFailure.ValidatorNode
@@ -40,7 +40,7 @@ func (n *NodeFailureResponse) Import(nodeResponseFailure *schema.NodeFailureResp
 	n.VerifiedResponse = nodeResponseFailure.VerifiedResponse
 }
 
-func (n *NodeFailureResponse) Export() (*schema.NodeFailureResponse, error) {
+func (n *NodeInvalidResponse) Export() (*schema.NodeInvalidResponse, error) {
 	validatorRequest, err := extractPathAndParams(n.ValidatorRequest)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (n *NodeFailureResponse) Export() (*schema.NodeFailureResponse, error) {
 		return nil, err
 	}
 
-	return &schema.NodeFailureResponse{
+	return &schema.NodeInvalidResponse{
 		ID:                n.ID,
 		EpochID:           n.EpochID,
 		Status:            n.Status,

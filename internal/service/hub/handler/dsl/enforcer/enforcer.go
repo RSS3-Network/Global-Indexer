@@ -128,9 +128,9 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 	// statMap is used to store the stats that have been verified
 	statMap := make(map[string]struct{})
 
-	nodeFailureResponse := &schema.NodeFailureResponse{
+	nodeInvalidResponse := &schema.NodeInvalidResponse{
 		EpochID:           epochID,
-		Status:            schema.NodeFailureResponseStatusChallengeable,
+		Status:            schema.NodeInvalidResponseStatusChallengeable,
 		ValidatorNode:     vaildResponse.Address,
 		ValidatorRequest:  vaildResponse.Endpoint,
 		ValidatorResponse: vaildResponse.Data,
@@ -160,7 +160,7 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 		}
 
 		// Verify the activity by stats
-		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap, nodeFailureResponse)
+		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap, nodeInvalidResponse)
 
 		// If the platform count reaches the DefaultVerifyCount, exit the verification loop.
 		if _, exists := platformMap[activity.Platform]; !exists {
@@ -213,33 +213,33 @@ func excludeWorkingNodes(indexers []*schema.Indexer, workingNodes []common.Addre
 }
 
 // verifyActivityByStats verifies the activity by stats.
-func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *model.Activity, stats []*schema.Stat, statMap, platformMap map[string]struct{}, nodeFailureResponse *schema.NodeFailureResponse) {
+func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *model.Activity, stats []*schema.Stat, statMap, platformMap map[string]struct{}, nodeInvalidResponse *schema.NodeInvalidResponse) {
 	for _, stat := range stats {
 		if _, exists := statMap[stat.Address.String()]; !exists {
 			statMap[stat.Address.String()] = struct{}{}
 
 			activityFetched, rawData, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
 
-			nodeFailureResponse.VerifiedNode = stat.Address
-			nodeFailureResponse.VerifiedRequest = stat.Endpoint + "/decentralized/tx/" + activity.ID
+			nodeInvalidResponse.VerifiedNode = stat.Address
+			nodeInvalidResponse.VerifiedRequest = stat.Endpoint + "/decentralized/tx/" + activity.ID
 
 			if err != nil {
 				stat.EpochInvalidRequest += invalidPointUnit
-				nodeFailureResponse.VerifiedResponse = json.RawMessage(err.Error())
+				nodeInvalidResponse.VerifiedResponse = json.RawMessage(err.Error())
 			} else {
 				if activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
 					stat.EpochInvalidRequest += invalidPointUnit
-					nodeFailureResponse.VerifiedResponse = rawData
+					nodeInvalidResponse.VerifiedResponse = rawData
 				} else {
 					stat.TotalRequest++
 					stat.EpochRequest += validPointUnit
 				}
 			}
 
-			// If the request is invalid, save the failure response to the database.
+			// If the request is invalid, save the invalid response to the database.
 			if stat.EpochInvalidRequest > 0 {
-				if err = e.databaseClient.SaveNodeFailureResponse(ctx, nodeFailureResponse); err != nil {
-					zap.L().Error("save node failure response", zap.Error(err))
+				if err = e.databaseClient.SaveNodeInvalidResponse(ctx, nodeInvalidResponse); err != nil {
+					zap.L().Error("save node invalid response", zap.Error(err))
 				}
 			}
 

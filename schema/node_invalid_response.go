@@ -6,10 +6,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type NodeFailureResponse struct {
+type NodeInvalidResponse struct {
 	ID                uint64                    `json:"id"`
 	EpochID           uint64                    `json:"epochID"`
-	Status            NodeFailureResponseStatus `json:"status"`
+	Status            NodeInvalidResponseStatus `json:"status"`
 	ValidatorNode     common.Address            `json:"validatorNode"`
 	ValidatorRequest  string                    `json:"validatorRequest"`
 	ValidatorResponse json.RawMessage           `json:"validatorResponse"`
@@ -19,14 +19,14 @@ type NodeFailureResponse struct {
 	CreatedAt         int64                     `json:"createdAt"`
 }
 
-//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeFailureResponseStatus --linecomment --output node_failure_response_status_string.go --json --yaml --sql
-type NodeFailureResponseStatus int64
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeInvalidResponseStatus --linecomment --output node_invalid_response_status_string.go --json --yaml --sql
+type NodeInvalidResponseStatus int64
 
 const (
-	// NodeFailureResponseStatusChallengeable
+	// NodeInvalidResponseStatusChallengeable
 	// A node is in this status, it is possible to initiate a challenge.
 	// Possible reasons :
 	// - Incorrect data submission by the node.
 	// - Errors encountered during the processing of node requests.
-	NodeFailureResponseStatusChallengeable NodeFailureResponseStatus = iota // challengeable
+	NodeInvalidResponseStatusChallengeable NodeInvalidResponseStatus = iota // challengeable
 )

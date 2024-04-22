@@ -311,10 +311,10 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	return databaseStatement, nil
 }
 
-func (c *client) SaveNodeFailureResponse(ctx context.Context, nodeFailureResponse *schema.NodeFailureResponse) error {
-	var value table.NodeFailureResponse
+func (c *client) SaveNodeInvalidResponse(ctx context.Context, nodeInvalidResponse *schema.NodeInvalidResponse) error {
+	var value table.NodeInvalidResponse
 
-	value.Import(nodeFailureResponse)
+	value.Import(nodeInvalidResponse)
 
 	return c.database.WithContext(ctx).Create(&value).Error
 }

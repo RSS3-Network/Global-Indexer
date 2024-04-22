@@ -18,7 +18,7 @@ func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
 		zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
 	} else {
-		_ = d.processNodeFailureResponse(context.Background(), responses)
+		_ = d.processNodeInvalidResponse(context.Background(), responses)
 
 		zap.L().Info("complete rss hub responses verify", zap.Any("responses", len(responses)))
 	}
@@ -29,7 +29,7 @@ func (d *Distributor) processActivityResponses(responses []*model.DataResponse) 
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
 		zap.L().Error("fail to verify activity id responses ", zap.Any("responses", len(responses)))
 	} else {
-		_ = d.processNodeFailureResponse(context.Background(), responses)
+		_ = d.processNodeInvalidResponse(context.Background(), responses)
 
 		zap.L().Info("complete activity id responses verify", zap.Any("responses", len(responses)))
 	}
@@ -45,15 +45,15 @@ func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse
 		return
 	}
 
-	epochID := d.processNodeFailureResponse(context.Background(), responses)
+	epochID := d.processNodeInvalidResponse(context.Background(), responses)
 
 	zap.L().Info("complete activity responses verify", zap.Any("responses", len(responses)))
 
 	d.simpleEnforcer.VerifyPartialResponses(ctx, epochID, responses)
 }
 
-// processNodeFailureResponse finds the valid response data and saves the failure responses.
-func (d *Distributor) processNodeFailureResponse(ctx context.Context, responses []*model.DataResponse) uint64 {
+// processNodeInvalidResponse finds the valid response data and saves the invalid responses.
+func (d *Distributor) processNodeInvalidResponse(ctx context.Context, responses []*model.DataResponse) uint64 {
 	epochID, err := d.getLatestEpochID(ctx)
 	if err != nil {
 		zap.L().Error("get latest epoch event from database", zap.Error(err))
@@ -62,7 +62,7 @@ func (d *Distributor) processNodeFailureResponse(ctx context.Context, responses 
 
 	validatorNode, validatorRequest, validatorResponse := getValidResponseData(responses)
 
-	d.saveFailureResponses(ctx, epochID, validatorNode, validatorRequest, validatorResponse, responses)
+	d.saveInvalidResponses(ctx, epochID, validatorNode, validatorRequest, validatorResponse, responses)
 
 	return epochID
 }
@@ -92,13 +92,13 @@ func getValidResponseData(responses []*model.DataResponse) (common.Address, stri
 	return common.Address{}, "", nil
 }
 
-// saveFailureResponses saves the responses which invalid points are greater than 0 and status is challengeable.
-func (d *Distributor) saveFailureResponses(ctx context.Context, epochID uint64, validatorNode common.Address, validatorRequest string, validatorResponse json.RawMessage, responses []*model.DataResponse) {
+// saveInvalidResponses saves the responses which invalid points are greater than 0 and status is challengeable.
+func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, validatorNode common.Address, validatorRequest string, validatorResponse json.RawMessage, responses []*model.DataResponse) {
 	for _, response := range responses {
 		if response.InvalidPoint > 0 {
-			err := d.databaseClient.SaveNodeFailureResponse(ctx, &schema.NodeFailureResponse{
+			err := d.databaseClient.SaveNodeInvalidResponse(ctx, &schema.NodeInvalidResponse{
 				EpochID:           epochID,
-				Status:            schema.NodeFailureResponseStatusChallengeable,
+				Status:            schema.NodeInvalidResponseStatusChallengeable,
 				ValidatorNode:     validatorNode,
 				ValidatorRequest:  validatorRequest,
 				ValidatorResponse: validatorResponse,
@@ -107,7 +107,7 @@ func (d *Distributor) saveFailureResponses(ctx context.Context, epochID uint64, 
 				VerifiedResponse:  lo.Ternary(response.Err != nil, json.RawMessage(response.Err.Error()), response.Data),
 			})
 			if err != nil {
-				zap.L().Error("save node failure response", zap.Error(err))
+				zap.L().Error("save node invalid response", zap.Error(err))
 			}
 		}
 	}
