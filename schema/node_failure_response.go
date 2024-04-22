@@ -7,6 +7,7 @@ import (
 )
 
 type NodeFailureResponse struct {
+	ID                uint64                    `json:"id"`
 	EpochID           uint64                    `json:"epochID"`
 	Status            NodeFailureResponseStatus `json:"status"`
 	ValidatorNode     common.Address            `json:"validatorNode"`

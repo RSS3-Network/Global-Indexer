@@ -12,7 +12,8 @@ import (
 )
 
 type NodeFailureResponse struct {
-	EpochID           uint64                           `gorm:"column:epoch_id;primaryKey"`
+	ID                uint64                           `gorm:"id;primaryKey"`
+	EpochID           uint64                           `gorm:"column:epoch_id"`
 	Status            schema.NodeFailureResponseStatus `gorm:"column:status"`
 	ValidatorNode     common.Address                   `gorm:"column:validator_node"`
 	ValidatorRequest  string                           `gorm:"column:validator_request"`
@@ -51,6 +52,7 @@ func (n *NodeFailureResponse) Export() (*schema.NodeFailureResponse, error) {
 	}
 
 	return &schema.NodeFailureResponse{
+		ID:                n.ID,
 		EpochID:           n.EpochID,
 		Status:            n.Status,
 		ValidatorNode:     n.ValidatorNode,
