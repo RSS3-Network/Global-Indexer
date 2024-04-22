@@ -124,7 +124,7 @@ func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses 
 // verifyPartialActivities filter Activity based on the platform to perform a partial verification.
 func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID uint64, validResponse *model.DataResponse, activities []*model.Activity, workingNodes []common.Address) {
 	// platformMap is used to store the platform that has been verified
-	platformMap := make(map[string]struct{}, model.DefaultVerifyCount)
+	platformMap := make(map[string]struct{}, model.RequiredVerificationCount)
 	// statMap is used to store the stats that have been verified
 	statMap := make(map[string]struct{})
 
@@ -162,9 +162,9 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 		// Verify the activity by stats
 		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap, nodeInvalidResponse)
 
-		// If the platform count reaches the DefaultVerifyCount, exit the verification loop.
+		// If the platform count reaches the RequiredVerificationCount, exit the verification loop.
 		if _, exists := platformMap[activity.Platform]; !exists {
-			if len(platformMap) == model.DefaultVerifyCount {
+			if len(platformMap) == model.RequiredVerificationCount {
 				break
 			}
 		}
@@ -189,7 +189,7 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		AddressList:  nodeAddresses,
-		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
 		PointsOrder:  lo.ToPtr("DESC"),
 	})
 
