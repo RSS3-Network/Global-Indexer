@@ -15,12 +15,13 @@ CREATE TABLE IF NOT EXISTS "node_failure_response"
     "updated_at"         timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT "pkey" PRIMARY KEY ("id")
-
-    CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "node_failure_response" ("epoch_id" DESC);
-    CREATE INDEX IF NOT EXISTS "idx_validator_node" ON "node_failure_response" ("validator_node");
-    CREATE INDEX IF NOT EXISTS "idx_verified_node" ON "node_failure_response" ("verified_node");
-    CREATE INDEX IF NOT EXISTS "idx_status" ON "node_failure_response" ("status", "created_at" DESC);
 );
+
+CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "node_failure_response" ("epoch_id" DESC);
+CREATE INDEX IF NOT EXISTS "idx_validator_node" ON "node_failure_response" ("validator_node");
+CREATE INDEX IF NOT EXISTS "idx_verified_node" ON "node_failure_response" ("verified_node");
+CREATE INDEX IF NOT EXISTS "idx_status" ON "node_failure_response" ("status", "created_at" DESC);
+
 -- +goose StatementEnd
 
 -- +goose Down
