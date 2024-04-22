@@ -45,6 +45,7 @@ type Client interface {
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
 	SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error
 	DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error
+	SaveNodeFailureResponse(ctx context.Context, nodeResponseFailure *schema.NodeFailureResponse) error
 
 	FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error

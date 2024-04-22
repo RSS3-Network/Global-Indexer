@@ -32,8 +32,9 @@ type NodeEndpointCache struct {
 // DataResponse represents the response returned by a Node.
 // It is also used to store the verification result.
 type DataResponse struct {
-	Address common.Address
-	Data    []byte
+	Address  common.Address
+	Endpoint string
+	Data     []byte
 	// A valid response must be non-null and non-error
 	Valid bool
 	Err   error
