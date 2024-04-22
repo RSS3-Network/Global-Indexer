@@ -141,38 +141,40 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		zap.L().Error("get Node local error", zap.Error(err))
 	}
 
-	var (
-		nodeConfig NodeConfig
-		indexers   []*schema.Indexer
-	)
+	// Save Node to database.
+	if err = n.databaseClient.SaveNode(ctx, node); err != nil {
+		return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
+	}
 
-	if err = json.Unmarshal(request.Config, &nodeConfig); err != nil {
+	// TODO: The transitional implementation during the beta phase, which will soon be deprecated.
+	if !node.Alpha {
+		if err = n.updateBetaNodeStats(ctx, request.Config, node); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node) error {
+	var nodeConfig NodeConfig
+
+	if err := json.Unmarshal(config, &nodeConfig); err != nil {
 		return fmt.Errorf("unmarshal node config: %w", err)
 	}
 
-	fullNode, err := n.verifyFullNode(nodeConfig.Decentralized)
+	// Check if the Node is a full node.
+	fullNode, err := isFullNode(nodeConfig.Decentralized)
 	if err != nil {
 		return fmt.Errorf("check full node error: %w", err)
 	}
 
-	stat, err := n.updateNodeStat(ctx, request, nodeConfig, fullNode, nodeInfo.PublicGood)
+	stat, err := n.updateNodeStat(ctx, node, nodeConfig, fullNode)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
 	}
 
-	if !fullNode {
-		indexers = n.updateNodeIndexers(ctx, request.Address, nodeConfig)
-	}
-
-	// Save Node info to the database.
 	return n.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		// Save Node to database.
-		if err = client.SaveNode(ctx, node); err != nil {
-			return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
-		}
-
-		zap.L().Info("save Node", zap.Any("node", node.Address.String()))
-
 		// Save Node stat to database
 		if err = client.SaveNodeStat(ctx, stat); err != nil {
 			return fmt.Errorf("save Node stat: %s, %w", node.Address.String(), err)
@@ -187,7 +189,9 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 			return fmt.Errorf("delete node indexers: %s, %w", node.Address.String(), err)
 		}
 
+		// Save light node indexers to database.
 		if !fullNode {
+			indexers := updateNodeIndexers(node.Address, nodeConfig)
 			if err = client.SaveNodeIndexers(ctx, indexers); err != nil {
 				return fmt.Errorf("save Node indexers: %s, %w", node.Address.String(), err)
 			}
@@ -199,22 +203,61 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	})
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, request *nta.RegisterNodeRequest, nodeConfig NodeConfig, fullNode, publicNode bool) (*schema.Stat, error) {
+// isFullNode returns true if the Node is a full Node: has every worker on all possible networks.
+func isFullNode(workers []*NodeConfigModule) (bool, error) {
+	if len(workers) < len(model.WorkerToNetworksMap) {
+		return false, nil
+	}
+
+	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
+
+	for _, worker := range workers {
+		wid, err := filter.NameString(worker.Worker.String())
+
+		if err != nil {
+			return false, err
+		}
+
+		if _, exists := workerToNetworksMap[wid]; !exists {
+			workerToNetworksMap[wid] = make(map[string]struct{})
+		}
+
+		workerToNetworksMap[wid][worker.Network.String()] = struct{}{}
+	}
+
+	// Ensure all networks for each worker are present
+	for wid, requiredNetworks := range model.WorkerToNetworksMap {
+		networks, exists := workerToNetworksMap[wid]
+		if !exists || len(networks) != len(requiredNetworks) {
+			return false, nil
+		}
+
+		for _, network := range requiredNetworks {
+			if _, exists = networks[network]; !exists {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool) (*schema.Stat, error) {
 	var (
 		stat *schema.Stat
 		err  error
 	)
 
-	stat, err = n.databaseClient.FindNodeStat(ctx, request.Address)
+	stat, err = n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)
 	}
 
 	if stat == nil {
 		stat = &schema.Stat{
-			Address:      request.Address,
-			Endpoint:     request.Endpoint,
-			IsPublicGood: publicNode,
+			Address:      node.Address,
+			Endpoint:     node.Endpoint,
+			IsPublicGood: node.IsPublicGood,
 			ResetAt:      time.Now(),
 			IsFullNode:   fullNode,
 			IsRssNode:    len(nodeConfig.RSS) > 0,
@@ -225,8 +268,8 @@ func (n *NTA) updateNodeStat(ctx context.Context, request *nta.RegisterNodeReque
 			Indexer:          len(nodeConfig.Decentralized),
 		}
 	} else {
-		stat.Endpoint = request.Endpoint
-		stat.IsPublicGood = publicNode
+		stat.Endpoint = node.Endpoint
+		stat.IsPublicGood = node.IsPublicGood
 		stat.IsFullNode = fullNode
 		stat.IsRssNode = len(nodeConfig.RSS) > 0
 		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
@@ -239,7 +282,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, request *nta.RegisterNodeReque
 	return stat, nil
 }
 
-func (n *NTA) updateNodeIndexers(_ context.Context, address common.Address, nodeConfig NodeConfig) []*schema.Indexer {
+func updateNodeIndexers(address common.Address, nodeConfig NodeConfig) []*schema.Indexer {
 	indexers := make([]*schema.Indexer, 0, len(nodeConfig.Decentralized))
 
 	for _, indexer := range nodeConfig.Decentralized {
@@ -296,43 +339,6 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 
 	// Save Node to database.
 	return n.databaseClient.SaveNode(ctx, node)
-}
-
-func (n *NTA) verifyFullNode(indexers []*NodeConfigModule) (bool, error) {
-	if len(indexers) < len(model.WorkerToNetworksMap) {
-		return false, nil
-	}
-
-	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
-
-	for _, indexer := range indexers {
-		wid, err := filter.NameString(indexer.Worker.String())
-
-		if err != nil {
-			return false, err
-		}
-
-		if _, exists := workerToNetworksMap[wid]; !exists {
-			workerToNetworksMap[wid] = make(map[string]struct{})
-		}
-
-		workerToNetworksMap[wid][indexer.Network.String()] = struct{}{}
-	}
-
-	for wid, requiredNetworks := range model.WorkerToNetworksMap {
-		networks, exists := workerToNetworksMap[wid]
-		if !exists || len(networks) != len(requiredNetworks) {
-			return false, nil
-		}
-
-		for _, network := range requiredNetworks {
-			if _, exists = networks[network]; !exists {
-				return false, nil
-			}
-		}
-	}
-
-	return true, nil
 }
 
 func (n *NTA) checkSignature(_ context.Context, address common.Address, message string, signature []byte) error {

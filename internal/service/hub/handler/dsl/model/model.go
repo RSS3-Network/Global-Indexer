@@ -134,24 +134,30 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Fallback: {
 		filter.NetworkEthereum.String(),
-	},
-	filter.Mirror: {
-		filter.NetworkArweave.String(),
-	},
-	filter.Farcaster: {
-		filter.NetworkFarcaster.String(),
+		filter.NetworkVSL.String(),
+		filter.NetworkSatoshiVM.String(),
+		filter.Optimism.String(),
+		filter.NetworkPolygon.String(),
+		filter.NetworkArbitrum.String(),
+		filter.NetworkBase.String(),
+		filter.NetworkBinanceSmartChain.String(),
+		filter.NetworkGnosis.String(),
+		filter.NetworkLinea.String(),
 	},
 	filter.RSS3: {
 		filter.NetworkEthereum.String(),
+		filter.NetworkVSL.String(),
 	},
-	filter.Paragraph: {
-		filter.NetworkArweave.String(),
+	filter.Lens: {
+		filter.NetworkPolygon.String(),
 	},
 	filter.OpenSea: {
 		filter.NetworkEthereum.String(),
 	},
 	filter.Uniswap: {
 		filter.NetworkEthereum.String(),
+		filter.NetworkSatoshiVM.String(),
+		filter.NetworkLinea.String(),
 	},
 	filter.Optimism: {
 		filter.NetworkEthereum.String(),
@@ -159,8 +165,23 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Aavegotchi: {
 		filter.NetworkPolygon.String(),
 	},
-	filter.Lens: {
+	filter.Highlight: {
+		filter.NetworkEthereum.String(),
+		filter.NetworkArbitrum.String(),
 		filter.NetworkPolygon.String(),
+		filter.NetworkOptimism.String(),
+	},
+	filter.Crossbell: {
+		filter.NetworkCrossbell.String(),
+	},
+	filter.Farcaster: {
+		filter.NetworkFarcaster.String(),
+	},
+	filter.Mirror: {
+		filter.NetworkArweave.String(),
+	},
+	filter.Paragraph: {
+		filter.NetworkArweave.String(),
 	},
 	filter.Looksrare: {
 		filter.NetworkEthereum.String(),
@@ -171,9 +192,6 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Momoka: {
 		filter.NetworkArweave.String(),
 	},
-	filter.Highlight: {
-		filter.NetworkEthereum.String(),
-	},
 	filter.Aave: {
 		filter.NetworkPolygon.String(),
 		filter.NetworkEthereum.String(),
@@ -181,7 +199,6 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 		filter.NetworkBase.String(),
 		filter.NetworkOptimism.String(),
 		filter.NetworkArbitrum.String(),
-		filter.NetworkFantom.String(),
 	},
 	filter.IQWiki: {
 		filter.NetworkPolygon.String(),
@@ -189,14 +206,42 @@ var WorkerToNetworksMap = map[filter.Name][]string{
 	filter.Lido: {
 		filter.NetworkEthereum.String(),
 	},
-	filter.Crossbell: {
-		filter.NetworkCrossbell.String(),
-	},
 	filter.ENS: {
 		filter.NetworkEthereum.String(),
 	},
+	filter.Oneinch: {
+		filter.NetworkEthereum.String(),
+	},
+	filter.KiwiStand: {
+		filter.NetworkOptimism.String(),
+	},
+	filter.SAVM: {
+		filter.NetworkSatoshiVM.String(),
+	},
+	filter.VSL: {
+		filter.NetworkVSL.String(),
+	},
+	filter.Stargate: {
+		filter.NetworkEthereum.String(),
+		filter.NetworkArbitrum.String(),
+		filter.NetworkLinea.String(),
+		filter.NetworkBinanceSmartChain.String(),
+		filter.NetworkBase.String(),
+		filter.NetworkOptimism.String(),
+		filter.NetworkPolygon.String(),
+		filter.NetworkAvalanche.String(),
+	},
+	filter.Curve: {
+		filter.NetworkEthereum.String(),
+		filter.NetworkArbitrum.String(),
+		filter.NetworkAvalanche.String(),
+		filter.NetworkGnosis.String(),
+		filter.NetworkOptimism.String(),
+		filter.NetworkPolygon.String(),
+	},
 }
 
+// NetworkToWorkersMap is a map of network to workers.
 var NetworkToWorkersMap = map[filter.Network][]string{
 	filter.NetworkEthereum: {
 		filter.Fallback.String(),
@@ -209,6 +254,9 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 		filter.Aave.String(),
 		filter.Lido.String(),
 		filter.ENS.String(),
+		filter.Oneinch.String(),
+		filter.Stargate.String(),
+		filter.Curve.String(),
 	},
 	filter.NetworkArweave: {
 		filter.Mirror.String(),
@@ -224,24 +272,61 @@ var NetworkToWorkersMap = map[filter.Network][]string{
 		filter.Matters.String(),
 		filter.Aave.String(),
 		filter.IQWiki.String(),
+		filter.Fallback.String(),
+		filter.Highlight.String(),
+		filter.Stargate.String(),
+		filter.Curve.String(),
 	},
 	filter.NetworkCrossbell: {
 		filter.Crossbell.String(),
 	},
 	filter.NetworkAvalanche: {
 		filter.Aave.String(),
+		filter.Stargate.String(),
+		filter.Curve.String(),
 	},
 	filter.NetworkBase: {
 		filter.Aave.String(),
+		filter.Fallback.String(),
+		filter.Stargate.String(),
 	},
 	filter.NetworkOptimism: {
 		filter.Aave.String(),
+		filter.Fallback.String(),
+		filter.Highlight.String(),
+		filter.KiwiStand.String(),
+		filter.Stargate.String(),
+		filter.Curve.String(),
 	},
 	filter.NetworkArbitrum: {
 		filter.Aave.String(),
+		filter.Fallback.String(),
+		filter.Highlight.String(),
+		filter.Stargate.String(),
+		filter.Curve.String(),
 	},
-	filter.NetworkFantom: {
-		filter.Aave.String(),
+	filter.NetworkVSL: {
+		filter.Fallback.String(),
+		filter.RSS3.String(),
+		filter.VSL.String(),
+	},
+	filter.NetworkSatoshiVM: {
+		filter.Fallback.String(),
+		filter.Uniswap.String(),
+		filter.SAVM.String(),
+	},
+	filter.NetworkBinanceSmartChain: {
+		filter.Fallback.String(),
+		filter.Stargate.String(),
+	},
+	filter.NetworkGnosis: {
+		filter.Fallback.String(),
+		filter.Curve.String(),
+	},
+	filter.NetworkLinea: {
+		filter.Fallback.String(),
+		filter.Uniswap.String(),
+		filter.Stargate.String(),
 	},
 }
 
@@ -265,11 +350,21 @@ var PlatformToWorkerMap = map[filter.Platform]string{
 	filter.PlatformLido:       filter.Lido.String(),
 	filter.PlatformCrossbell:  filter.Crossbell.String(),
 	filter.PlatformENS:        filter.ENS.String(),
+	filter.Platform1inch:      filter.Oneinch.String(),
+	filter.PlatformKiwiStand:  filter.KiwiStand.String(),
+	filter.PlatformSAVM:       filter.SAVM.String(),
+	filter.PlatformVSL:        filter.VSL.String(),
+	filter.PlatformStargate:   filter.Stargate.String(),
+	filter.PlatformCurve:      filter.Curve.String(),
 }
 
+// TagToWorkersMap is a map of tag to workers.
 var TagToWorkersMap = map[filter.Tag][]string{
 	filter.TagTransaction: {
 		filter.Optimism.String(),
+		filter.SAVM.String(),
+		filter.VSL.String(),
+		filter.Stargate.String(),
 	},
 	filter.TagCollectible: {
 		filter.OpenSea.String(),
@@ -277,12 +372,15 @@ var TagToWorkersMap = map[filter.Tag][]string{
 		filter.Highlight.String(),
 		filter.Lido.String(),
 		filter.Looksrare.String(),
+		filter.KiwiStand.String(),
 	},
 	filter.TagExchange: {
 		filter.RSS3.String(),
 		filter.Uniswap.String(),
 		filter.Aave.String(),
 		filter.Lido.String(),
+		filter.Oneinch.String(),
+		filter.Curve.String(),
 	},
 	filter.TagSocial: {
 		filter.Farcaster.String(),
