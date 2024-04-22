@@ -13,9 +13,12 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
+	// RequiredQualifiedNodeCount the required number of qualified Nodes
 	RequiredQualifiedNodeCount = 3
-	DefaultSlashCount          = 4
-	DefaultVerifyCount         = 3
+	// RequiredVerificationCount the required number of verifications before a request is considered valid
+	RequiredVerificationCount = 3
+	// DemotionCountBeforeSlashing the number of demotions that trigger a slashing
+	DemotionCountBeforeSlashing = 4
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
