@@ -26,7 +26,7 @@ type NodeFailureResponse struct {
 }
 
 func (*NodeFailureResponse) TableName() string {
-	return "node_response_failure"
+	return "node_failure_response"
 }
 
 func (n *NodeFailureResponse) Import(nodeResponseFailure *schema.NodeFailureResponse) {
