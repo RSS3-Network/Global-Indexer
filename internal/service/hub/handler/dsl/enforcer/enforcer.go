@@ -122,7 +122,7 @@ func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses 
 }
 
 // verifyPartialActivities filter Activity based on the platform to perform a partial verification.
-func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID uint64, vaildResponse *model.DataResponse, activities []*model.Activity, workingNodes []common.Address) {
+func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID uint64, validResponse *model.DataResponse, activities []*model.Activity, workingNodes []common.Address) {
 	// platformMap is used to store the platform that has been verified
 	platformMap := make(map[string]struct{}, model.DefaultVerifyCount)
 	// statMap is used to store the stats that have been verified
@@ -131,9 +131,9 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 	nodeInvalidResponse := &schema.NodeInvalidResponse{
 		EpochID:           epochID,
 		Status:            schema.NodeInvalidResponseStatusChallengeable,
-		ValidatorNode:     vaildResponse.Address,
-		ValidatorRequest:  vaildResponse.Endpoint,
-		ValidatorResponse: vaildResponse.Data,
+		ValidatorNode:     validResponse.Address,
+		ValidatorRequest:  validResponse.Endpoint,
+		ValidatorResponse: validResponse.Data,
 	}
 
 	for _, activity := range activities {
