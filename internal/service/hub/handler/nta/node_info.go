@@ -54,18 +54,18 @@ func (n *NTA) GetNodes(c echo.Context) error {
 		cursor = nodes[len(nodes)-1].Address.String()
 	}
 
-	// If the score is the same, sort by staking pool size.
+	// If the ActiveScore is the same, sort by staking pool size.
 	// TODO: Since Node's StakingPoolTokens needs to be obtained from vsl.
 	//  Now only the Nodes of the current page can be sorted.
 	sort.Slice(nodes, func(i, j int) bool {
-		if nodes[i].Score.Cmp(nodes[j].Score) == 0 {
+		if nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) == 0 {
 			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
 			jTokens, _ := new(big.Int).SetString(nodes[j].StakingPoolTokens, 10)
 
 			return iTokens.Cmp(jTokens) > 0
 		}
 
-		return nodes[i].Score.Cmp(nodes[j].Score) > 0
+		return nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) > 0
 	})
 
 	return c.JSON(http.StatusOK, nta.Response{
