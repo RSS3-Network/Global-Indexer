@@ -23,6 +23,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -133,6 +134,17 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		return nil, fmt.Errorf("get Node from chain: %w", err)
 	}
 
+	var reliabilityScore decimal.Decimal
+
+	nodeStat, err := n.databaseClient.FindNodeStat(ctx, address)
+	if err != nil {
+		return nil, fmt.Errorf("get Node Stat %s: %w", address, err)
+	}
+
+	if nodeStat != nil {
+		reliabilityScore = decimal.NewFromFloat(nodeStat.Score)
+	}
+
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
 	node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
@@ -141,6 +153,7 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.TotalShares = nodeInfo.TotalShares.String()
 	node.SlashedTokens = nodeInfo.SlashedTokens.String()
 	node.Alpha = nodeInfo.Alpha
+	node.ReliabilityScore = reliabilityScore
 
 	return node, nil
 }
@@ -160,6 +173,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return node.Address
 	})
 
+	// Get node info from VSL.
 	nodeInfo, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
 	if err != nil {
 		return nil, fmt.Errorf("get Nodes from chain: %w", err)
@@ -169,7 +183,23 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return node.Account, node
 	})
 
+	// Get node stats from DB.
+	nodeStats, err := n.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		AddressList: addresses,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get Node Stats: %w", err)
+	}
+
+	nodeStatsMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (common.Address, float64) {
+		return stat.Address, stat.Score
+	})
+
 	for _, node := range nodes {
+		if score, exists := nodeStatsMap[node.Address]; exists {
+			node.ReliabilityScore = decimal.NewFromFloat(score)
+		}
+
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
 			node.Name = nodeInfo.Name
 			node.Description = nodeInfo.Description
