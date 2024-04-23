@@ -185,7 +185,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 
 	// Get node stats from DB.
 	nodeStats, err := n.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: addresses,
+		Addresses: addresses,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get Node Stats: %w", err)

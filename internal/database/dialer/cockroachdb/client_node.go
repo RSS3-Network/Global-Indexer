@@ -270,10 +270,10 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
-	if len(query.AddressList) > 0 {
+	if len(query.Addresses) > 0 {
 		databaseStatement = databaseStatement.Where(clause.IN{
 			Column: "address",
-			Values: lo.ToAnySlice(query.AddressList),
+			Values: lo.ToAnySlice(query.Addresses),
 		})
 	}
 
