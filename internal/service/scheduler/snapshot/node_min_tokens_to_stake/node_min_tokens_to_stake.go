@@ -48,7 +48,7 @@ func (s *server) Run(ctx context.Context) error {
 		// Query the latest epoch of the minToknsToStake snapshots.
 		snapshot, err := s.databaseClient.FindNodeMinTokensToStakeSnapshots(ctx, nil, false, lo.ToPtr(1))
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-			zap.L().Error("find node min tokens to stake snapshots", zap.Error(err))
+			zap.L().Error("find Node min tokens to stake snapshots", zap.Error(err))
 
 			return
 		}
@@ -107,7 +107,7 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 			continue
 		}
 
-		// Query the nodes from node table.
+		// Query the Nodes from node table.
 		var cursor *string
 
 		for {
@@ -120,7 +120,7 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 			}
 
 			if err != nil {
-				return fmt.Errorf("find nodes: %w", err)
+				return fmt.Errorf("find Nodes: %w", err)
 			}
 
 			snapshots := make([]*schema.NodeMinTokensToStakeSnapshot, 0, len(nodes))
@@ -152,9 +152,9 @@ func (s *server) saveMinTokensToStakeSnapshots(ctx context.Context, latestEpochS
 				})
 			}
 
-			// Save the node min tokens to snapshots.
+			// Save the Node min tokens to snapshots.
 			if err := s.databaseClient.SaveNodeMinTokensToStakeSnapshots(ctx, snapshots); err != nil {
-				return fmt.Errorf("save node min tokens to stake snapshots: %w", err)
+				return fmt.Errorf("save Node min tokens to stake snapshots: %w", err)
 			}
 
 			cursor = lo.ToPtr(nodes[len(nodes)-1].Address.String())

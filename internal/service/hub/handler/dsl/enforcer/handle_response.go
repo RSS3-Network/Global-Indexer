@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 // sortResponseByValidity sorts the responses based on the validity.
-func sortResponseByValidity(responses []distributor.DataResponse) {
+func sortResponseByValidity(responses []*model.DataResponse) {
 	sort.SliceStable(responses, func(i, j int) bool {
 		return (responses[i].Err == nil && responses[j].Err != nil) ||
 			(responses[i].Err == nil && responses[j].Err == nil && responses[i].Valid && !responses[j].Valid)
@@ -23,12 +23,12 @@ func sortResponseByValidity(responses []distributor.DataResponse) {
 }
 
 // updatePointsBasedOnIdentity updates both  based on responses identity.
-func updatePointsBasedOnIdentity(responses []distributor.DataResponse) {
+func updatePointsBasedOnIdentity(responses []*model.DataResponse) {
 	errResponseCount := countAndMarkErrorResponse(responses)
 
-	if len(responses) == distributor.DefaultNodeCount-1 {
+	if len(responses) == model.RequiredQualifiedNodeCount-1 {
 		handleTwoResponses(responses)
-	} else if len(responses) == distributor.DefaultNodeCount-2 {
+	} else if len(responses) == model.RequiredQualifiedNodeCount-2 {
 		handleSingleResponse(responses)
 	} else {
 		handleFullResponses(responses, errResponseCount)
@@ -37,15 +37,15 @@ func updatePointsBasedOnIdentity(responses []distributor.DataResponse) {
 
 // isResponseIdentical returns true if two byte slices (responses) are identical.
 func isResponseIdentical(src, des []byte) bool {
-	srcActivity := &distributor.ActivityResponse{}
-	desActivity := &distributor.ActivityResponse{}
+	srcActivity := &model.ActivityResponse{}
+	desActivity := &model.ActivityResponse{}
 
 	// check if the data is activity response
 	if isDataValid(src, srcActivity) && isDataValid(des, desActivity) {
 		if srcActivity.Data == nil && desActivity.Data == nil {
 			return true
 		} else if srcActivity.Data != nil && desActivity.Data != nil {
-			if _, exist := distributor.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
+			if _, exist := model.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
 				// TODO: if false, save the record to the database
 				return isActivityIdentical(srcActivity.Data, desActivity.Data)
 			}
@@ -54,8 +54,8 @@ func isResponseIdentical(src, des []byte) bool {
 		}
 	}
 
-	srcActivities := &distributor.ActivitiesResponse{}
-	desActivities := &distributor.ActivitiesResponse{}
+	srcActivities := &model.ActivitiesResponse{}
+	desActivities := &model.ActivitiesResponse{}
 	// check if the data is activities response
 	if isDataValid(src, srcActivities) && isDataValid(des, desActivities) {
 		if srcActivities.Data == nil && desActivities.Data == nil {
@@ -79,11 +79,11 @@ func isResponseIdentical(src, des []byte) bool {
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.
-func excludeMutableActivity(activities []*distributor.Activity) []*distributor.Activity {
-	var newActivities []*distributor.Activity
+func excludeMutableActivity(activities []*model.Activity) []*model.Activity {
+	var newActivities []*model.Activity
 
 	for i := range activities {
-		if _, exist := distributor.MutablePlatformMap[activities[i].Platform]; !exist {
+		if _, exist := model.MutablePlatformMap[activities[i].Platform]; !exist {
 			newActivities = append(newActivities, activities[i])
 		}
 	}
@@ -92,7 +92,7 @@ func excludeMutableActivity(activities []*distributor.Activity) []*distributor.A
 }
 
 // isActivityIdentical returns true if two Activity are identical.
-func isActivityIdentical(src, des *distributor.Activity) bool {
+func isActivityIdentical(src, des *model.Activity) bool {
 	if src.ID != des.ID ||
 		src.Network != des.Network ||
 		src.Index != des.Index ||
@@ -131,7 +131,7 @@ func isDataValid(data []byte, target any) bool {
 }
 
 // countAndMarkErrorResponse marks the error results and returns the count.
-func countAndMarkErrorResponse(responses []distributor.DataResponse) (errResponseCount int) {
+func countAndMarkErrorResponse(responses []*model.DataResponse) (errResponseCount int) {
 	for i := range responses {
 		if responses[i].Err != nil {
 			responses[i].InvalidPoint = invalidPointUnit
@@ -143,7 +143,7 @@ func countAndMarkErrorResponse(responses []distributor.DataResponse) (errRespons
 }
 
 // handleTwoResponses handles the case when there are two responses.
-func handleTwoResponses(responses []distributor.DataResponse) {
+func handleTwoResponses(responses []*model.DataResponse) {
 	if responses[0].Err == nil && responses[1].Err == nil {
 		updateRequestBasedOnComparison(responses)
 	} else {
@@ -152,7 +152,7 @@ func handleTwoResponses(responses []distributor.DataResponse) {
 }
 
 // handleSingleResponse handles the case when there is only one response.
-func handleSingleResponse(responses []distributor.DataResponse) {
+func handleSingleResponse(responses []*model.DataResponse) {
 	if responses[0].Err == nil {
 		responses[0].ValidPoint = validPointUnit
 	} else {
@@ -161,14 +161,14 @@ func handleSingleResponse(responses []distributor.DataResponse) {
 }
 
 // handleFullResponses handles the case when there are more than two results.
-func handleFullResponses(responses []distributor.DataResponse, errResponseCount int) {
+func handleFullResponses(responses []*model.DataResponse, errResponseCount int) {
 	if errResponseCount < len(responses) {
 		compareAndAssignPoints(responses, errResponseCount)
 	}
 }
 
 // updateRequestBasedOnComparison updates the requests based on the comparison of the data.
-func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
+func updateRequestBasedOnComparison(responses []*model.DataResponse) {
 	if isResponseIdentical(responses[0].Data, responses[1].Data) {
 		responses[0].ValidPoint = 2 * validPointUnit
 		responses[1].ValidPoint = validPointUnit
@@ -178,7 +178,7 @@ func updateRequestBasedOnComparison(responses []distributor.DataResponse) {
 }
 
 // markErrorResponse marks the error responses.
-func markErrorResponse(responses ...distributor.DataResponse) {
+func markErrorResponse(responses ...*model.DataResponse) {
 	for i, result := range responses {
 		if result.Err != nil {
 			responses[i].InvalidPoint = invalidPointUnit
@@ -189,7 +189,7 @@ func markErrorResponse(responses ...distributor.DataResponse) {
 }
 
 // compareAndAssignPoints compares the data for identity and assigns corresponding points.
-func compareAndAssignPoints(responses []distributor.DataResponse, errResponseCount int) {
+func compareAndAssignPoints(responses []*model.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
 	diff01, diff02, diff12 := isResponseIdentical(d0, d1), isResponseIdentical(d0, d2), isResponseIdentical(d1, d2)
 

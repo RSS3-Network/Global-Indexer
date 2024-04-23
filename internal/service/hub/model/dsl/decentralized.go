@@ -1,6 +1,7 @@
 package dsl
 
-type AccountActivitiesRequest struct {
+// ActivitiesRequest represents the request for activities by an account.
+type ActivitiesRequest struct {
 	Account        string   `param:"account"`
 	Limit          *int     `query:"limit" default:"100" min:"1" max:"100"`
 	ActionLimit    *int     `query:"action_limit" default:"10" min:"1" max:"20"`
@@ -15,6 +16,7 @@ type AccountActivitiesRequest struct {
 	Platform       []string `query:"platform"`
 }
 
+// ActivityRequest represents the request for an activity by its ID.
 type ActivityRequest struct {
 	ID          string `param:"id"`
 	ActionLimit int    `query:"action_limit" default:"10" min:"1" max:"20"`

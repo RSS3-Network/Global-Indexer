@@ -57,7 +57,7 @@ type TxCandidate struct {
 	Value *big.Int
 }
 
-// Send sends a candidate to the chain.
+// Send sends a candidate to the VSL.
 func (m *SimpleTxManager) Send(ctx context.Context, candidate TxCandidate) (*types.Receipt, error) {
 	receipt, err := m.send(ctx, candidate)
 	if err != nil {

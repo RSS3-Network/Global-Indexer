@@ -119,7 +119,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	// Update the node staking data from the chain.
+	// Update the Node staking data from the VSL.
 	if err := s.fetchNodePoolSizes(nodeAddresses, nodes); err != nil {
 		return nil, nil, nil, err
 	}
@@ -142,13 +142,13 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the operation rewards for the Nodes
-	requestCounts := prepareRequestCounts(nodeAddresses)
+	requestCount := prepareRequestCounts(nodeAddresses)
 
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
 		NodeAddress:      nodeAddresses,
 		OperationRewards: operationRewards,
-		RequestCounts:    requestCounts,
+		RequestCount:     requestCount,
 		IsFinal:          isFinal,
 	}, nodes, scores, nil
 }

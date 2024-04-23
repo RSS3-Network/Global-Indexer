@@ -34,7 +34,7 @@ func (n *NTA) GetNodeEvents(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get node events: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node events: %w", err))
 	}
 
 	var cursor string

@@ -47,7 +47,7 @@ func (s *server) Run(ctx context.Context) error {
 		}
 
 		if err := s.databaseClient.SaveNodeCountSnapshot(ctx, &nodeSnapshot); err != nil {
-			zap.L().Error("save node count snapshot error", zap.Error(err))
+			zap.L().Error("save Node count snapshot error", zap.Error(err))
 
 			return
 		}

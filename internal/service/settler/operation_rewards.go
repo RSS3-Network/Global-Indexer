@@ -27,9 +27,9 @@ func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Ad
 	return operationRewards, activeScores, nil
 }
 
-// prepareRequestCounts prepares the Request Counts for all Nodes
+// prepareRequestCounts prepares the request counts for all Nodes
 // For Alpha, there is no actual calculation logic, the counts are set to 0
-// TODO: Implement the actual logic to retrieve the counts from the database
+// TODO: Implement the actual logic to retrieve the count from the database
 func prepareRequestCounts(nodes []common.Address) []*big.Int {
 	slice := make([]*big.Int, len(nodes))
 

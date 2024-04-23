@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/distributor"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
@@ -43,6 +44,7 @@ const (
 	defaultLimit = 50
 )
 
+// getNodeStatsMap returns the current epoch.
 func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
@@ -66,7 +68,7 @@ func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.S
 }
 
 func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64) error {
-	// Retrieve all node addresses.
+	// Retrieve all Node addresses.
 	nodeAddresses := extractNodeAddresses(stats)
 
 	// Retrieve node information from the blockchain.
@@ -75,10 +77,10 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 		return err
 	}
 
-	// Check if the length of nodesInfo and stats is the same.
+	// Check if the length of NodesInfo and stats is the same.
 	// TODO: If not, consider to process the queried nodes as much as possible
 	if len(nodesInfo) != len(stats) {
-		return fmt.Errorf("get nodes info from blockchain: %d,%d", len(nodesInfo), len(stats))
+		return fmt.Errorf("get Nodes info from blockchain: %d,%d", len(nodesInfo), len(stats))
 	}
 
 	// Retrieve node information from the database.
@@ -87,11 +89,13 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 		return err
 	}
 
-	// Check if the length of nodes and stats is the same.
+	// Check if the length of Nodes and stats is the same.
 	// TODO: If not, consider to process the queried nodes as much as possible
 	if len(nodes) != len(stats) {
-		return fmt.Errorf("get nodes info from database: %d,%d", len(nodes), len(stats))
+		return fmt.Errorf("get Nodes info from database: %d,%d", len(nodes), len(stats))
 	}
+
+	nodes = sortNodes(nodeAddresses, nodes)
 
 	return updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch)
 }
@@ -104,48 +108,67 @@ func (e *SimpleEnforcer) getNodesInfoFromDatabase(ctx context.Context, nodeAddre
 	return e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{NodeAddresses: nodeAddresses})
 }
 
-// updateStatsInPool concurrently updates the stats of the nodes.
+// sortNodes sorts Nodes by address.
+func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.Node {
+	nodeMap := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, *schema.Node) {
+		return node.Address, node
+	})
+
+	sortedNodes := make([]*schema.Node, len(nodeAddresses))
+
+	for i, addr := range nodeAddresses {
+		sortedNodes[i] = nodeMap[addr]
+	}
+
+	return sortedNodes
+}
+
+// updateStatsInPool concurrently updates the stats of the Nodes.
 func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64) error {
 	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i, stat := range stats {
-		staking := float64(nodesInfo[i].StakingPoolTokens.Uint64())
-		status := nodes[i].Status
+		i := i
+		stat := stat
 
 		statsPool.Go(func(_ context.Context) error {
-			return updateNodeStat(stat, epoch, staking, status)
+			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 		})
 	}
 
 	return statsPool.Wait()
 }
 
-func updateNodeStat(stat *schema.Stat, epoch int64, staking float64, status schema.NodeStatus) error {
-	stat.Staking = staking
+// updateNodeStat updates Node's stat with Reliability Score.
+func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status schema.NodeStatus) error {
+	// Convert the staking to float64.
+	stat.Staking, _ = staking.Div(staking, big.NewInt(1e18)).Float64()
 
 	if status == schema.NodeStatusOnline {
-		// Update node epoch.
+		// Reset the epoch request and invalid request if the epoch changes.
 		if epoch != stat.Epoch {
 			stat.EpochRequest = 0
 			stat.EpochInvalidRequest = 0
 			stat.Epoch = epoch
 		}
 	} else {
-		// If node's status is not online, then reset the time.
+		// If Node's status is not online, then reset the alive time.
 		stat.ResetAt = time.Now()
 	}
 
-	// calculate score
-	return calculateScore(stat)
+	// calculate Reliability Score
+	return calculateReliabilityScore(stat)
 }
 
-func calculateScore(stat *schema.Stat) error {
+// calculateReliabilityScore calculates the Reliability Score σ of a given Node.
+// σ is used to determine the probability of a Node receiving a request on DSL.
+func calculateReliabilityScore(stat *schema.Stat) error {
 	// staking pool tokens
 	// maximum score is 0.2
 	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
 
 	// public good node
-	// If the node is a public good node, then the score is 0
+	// If the Node is a public good node, then the score is 0
 	// Otherwise, the score is 1
 	stat.Score += lo.Ternary(stat.IsPublicGood, nonExistScore, existScore)
 
@@ -170,8 +193,7 @@ func calculateScore(stat *schema.Stat) error {
 	stat.Score += math.Min(float64(stat.Indexer)*perIndexerScore, indexerMaxScore)
 
 	// epoch failure requests
-
-	if stat.EpochInvalidRequest >= int64(distributor.DefaultSlashCount) {
+	if stat.EpochInvalidRequest >= int64(model.DefaultSlashCount) {
 		// If the number of invalid requests in the epoch is greater than the threshold, then the score is 0.
 		stat.Score = 0
 	} else {
@@ -181,22 +203,23 @@ func calculateScore(stat *schema.Stat) error {
 	return nil
 }
 
-// UpdateNodeCache updates the cache for the node type.
+// UpdateNodeCache updates the cache for all Nodes.
 func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
-	if err := e.updateCacheForNodeType(ctx, distributor.RssNodeCacheKey); err != nil {
+	if err := e.updateCacheForNodeType(ctx, model.RssNodeCacheKey); err != nil {
 		return err
 	}
 
-	return e.updateCacheForNodeType(ctx, distributor.FullNodeCacheKey)
+	return e.updateCacheForNodeType(ctx, model.FullNodeCacheKey)
 }
 
+// updateCacheForNodeType updates the cache for different types of Nodes.
 func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
 	query := &schema.StatQuery{PointsOrder: lo.ToPtr("DESC")}
 
 	switch key {
-	case distributor.FullNodeCacheKey:
+	case model.FullNodeCacheKey:
 		query.IsFullNode = lo.ToPtr(true)
-	case distributor.RssNodeCacheKey:
+	case model.RssNodeCacheKey:
 		query.IsRssNode = lo.ToPtr(true)
 	}
 
@@ -217,7 +240,7 @@ func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string)
 func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.Stat) ([]*schema.Stat, error) {
 	nodeAddresses := extractNodeAddresses(stats)
 
-	// Retrieve the online nodes from the database.
+	// Retrieve the online Nodes from the database.
 	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
 		NodeAddresses: nodeAddresses,
 		Status:        lo.ToPtr(schema.NodeStatusOnline),
@@ -239,7 +262,7 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 			qualifiedNodes = append(qualifiedNodes, stat)
 		}
 
-		if len(qualifiedNodes) >= distributor.DefaultNodeCount {
+		if len(qualifiedNodes) >= model.RequiredQualifiedNodeCount {
 			break
 		}
 	}
@@ -247,10 +270,10 @@ func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.
 	return qualifiedNodes, nil
 }
 
-// setNodeCache sets the cache for the nodes.
+// setNodeCache sets the cache for the Nodes.
 func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) distributor.NodeEndpointCache {
-		return distributor.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
+	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.NodeEndpointCache {
+		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
 	})
 
 	return e.cacheClient.Set(ctx, key, nodesCache)
