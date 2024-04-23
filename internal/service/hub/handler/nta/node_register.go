@@ -147,7 +147,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	}
 
 	// TODO: The transitional implementation during the beta phase, which will soon be deprecated.
-	if !node.Alpha {
+	if !nodeInfo.Alpha {
 		if err = n.updateBetaNodeStats(ctx, request.Config, node); err != nil {
 			return err
 		}
