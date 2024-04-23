@@ -18,6 +18,12 @@ type Client struct {
 }
 
 func (c *Client) LookupNodeLocation(_ context.Context, endpoint string) ([]*schema.NodeLocation, error) {
+	if c == nil || c.reader == nil {
+		zap.L().Warn("geoip2 client is nil")
+
+		return nil, nil
+	}
+
 	ips := make([]net.IP, 0)
 
 	zap.L().Info("Looking up Node location", zap.String("endpoint", endpoint))
