@@ -160,7 +160,7 @@ func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, node
 	}
 
 	for i, node := range nodes {
-		node.Score = scoreDecimals[i]
+		node.ActiveScore = scoreDecimals[i]
 	}
 
 	return s.databaseClient.UpdateNodesScore(ctx, nodes)

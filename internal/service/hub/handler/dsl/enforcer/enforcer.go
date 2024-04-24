@@ -129,11 +129,8 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 	statMap := make(map[string]struct{})
 
 	nodeInvalidResponse := &schema.NodeInvalidResponse{
-		EpochID:           epochID,
-		Status:            schema.NodeInvalidResponseStatusChallengeable,
-		ValidatorNode:     validResponse.Address,
-		ValidatorRequest:  validResponse.Endpoint,
-		ValidatorResponse: validResponse.Data,
+		EpochID:        epochID,
+		ValidatorNodes: []common.Address{validResponse.Address},
 	}
 
 	for _, activity := range activities {
@@ -159,7 +156,6 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 			continue
 		}
 
-		// Verify the activity by stats
 		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap, nodeInvalidResponse)
 
 		// If the platform count reaches the RequiredVerificationCount, exit the verification loop.
@@ -171,7 +167,7 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 	}
 }
 
-// findStatsByPlatform finds the stats by platform.
+// findStatsByPlatform finds the required stats based on the platform.
 func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *model.Activity, workingNodes []common.Address) ([]*schema.Stat, error) {
 	pid, err := filter.PlatformString(activity.Platform)
 	if err != nil {
@@ -212,32 +208,32 @@ func excludeWorkingNodes(indexers []*schema.Indexer, workingNodes []common.Addre
 	})
 }
 
-// verifyActivityByStats verifies the activity by stats.
+// verifyActivityByStats verifies the activity based on stats nodes that meet specific criteria.
 func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *model.Activity, stats []*schema.Stat, statMap, platformMap map[string]struct{}, nodeInvalidResponse *schema.NodeInvalidResponse) {
 	for _, stat := range stats {
 		if _, exists := statMap[stat.Address.String()]; !exists {
 			statMap[stat.Address.String()] = struct{}{}
 
-			activityFetched, rawData, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
+			activityFetched, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
 
-			nodeInvalidResponse.VerifiedNode = stat.Address
-			nodeInvalidResponse.VerifiedRequest = stat.Endpoint + "/decentralized/tx/" + activity.ID
-
-			if err != nil {
+			if err != nil || activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
 				stat.EpochInvalidRequest += invalidPointUnit
-				nodeInvalidResponse.VerifiedResponse = json.RawMessage(err.Error())
+
+				nodeInvalidResponse.InvalidType = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeData)
+				nodeInvalidResponse.FaultyResponse = generateFaultyResponse(err, activityFetched)
 			} else {
-				if activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
-					stat.EpochInvalidRequest += invalidPointUnit
-					nodeInvalidResponse.VerifiedResponse = rawData
-				} else {
-					stat.TotalRequest++
-					stat.EpochRequest += validPointUnit
-				}
+				stat.TotalRequest++
+				stat.EpochRequest += validPointUnit
 			}
 
 			// If the request is invalid, save the invalid response to the database.
 			if stat.EpochInvalidRequest > 0 {
+				nodeInvalidResponse.FaultyNode = stat.Address
+				nodeInvalidResponse.Request = stat.Endpoint + "/decentralized/tx/" + activity.ID
+
+				validData, _ := json.Marshal(activity)
+				nodeInvalidResponse.ValidatorResponse = validData
+
 				if err = e.databaseClient.SaveNodeInvalidResponse(ctx, nodeInvalidResponse); err != nil {
 					zap.L().Error("save node invalid response", zap.Error(err))
 				}
@@ -254,26 +250,36 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 	}
 }
 
+func generateFaultyResponse(err error, activity *model.ActivityResponse) json.RawMessage {
+	if err != nil {
+		return json.RawMessage(err.Error())
+	}
+
+	rawData, _ := json.Marshal(activity.Data)
+
+	return rawData
+}
+
 // fetchActivityByTxID fetches the activity by txID from a Node.
-func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*model.ActivityResponse, []byte, error) {
+func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*model.ActivityResponse, error) {
 	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
 	body, err := e.httpClient.Fetch(ctx, fullURL)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	data, err := io.ReadAll(body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	activity := &model.ActivityResponse{}
 	if isDataValid(data, activity) {
-		return activity, data, nil
+		return activity, nil
 	}
 
-	return nil, data, fmt.Errorf("invalid data")
+	return nil, fmt.Errorf("invalid data")
 }
 
 // MaintainReliabilityScore maintains the Reliability Score σ for all Nodes.

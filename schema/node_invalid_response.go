@@ -7,26 +7,21 @@ import (
 )
 
 type NodeInvalidResponse struct {
-	ID                uint64                    `json:"id"`
-	EpochID           uint64                    `json:"epochID"`
-	Status            NodeInvalidResponseStatus `json:"status"`
-	ValidatorNode     common.Address            `json:"validatorNode"`
-	ValidatorRequest  string                    `json:"validatorRequest"`
-	ValidatorResponse json.RawMessage           `json:"validatorResponse"`
-	VerifiedNode      common.Address            `json:"verifiedNode"`
-	VerifiedRequest   string                    `json:"verifiedRequest"`
-	VerifiedResponse  json.RawMessage           `json:"verifiedResponse"`
-	CreatedAt         int64                     `json:"createdAt"`
+	ID                uint64                  `json:"id"`
+	EpochID           uint64                  `json:"epochID"`
+	InvalidType       NodeInvalidResponseType `json:"invalidType"`
+	Request           string                  `json:"request"`
+	ValidatorNodes    []common.Address        `json:"validatorNodes"`
+	ValidatorResponse json.RawMessage         `json:"validatorResponse"`
+	FaultyNode        common.Address          `json:"faultyNode"`
+	FaultyResponse    json.RawMessage         `json:"faultyResponse"`
+	CreatedAt         int64                   `json:"createdAt"`
 }
 
-//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeInvalidResponseStatus --linecomment --output node_invalid_response_status_string.go --json --yaml --sql
-type NodeInvalidResponseStatus int64
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeInvalidResponseType --linecomment --output node_invalid_response_type_string.go --json --yaml --sql
+type NodeInvalidResponseType int64
 
 const (
-	// NodeInvalidResponseStatusChallengeable
-	// A node is in this status, it is possible to initiate a challenge.
-	// Possible reasons :
-	// - Incorrect data submission by the node.
-	// - Errors encountered during the processing of node requests.
-	NodeInvalidResponseStatusChallengeable NodeInvalidResponseStatus = iota // challengeable
+	NodeInvalidResponseTypeData  NodeInvalidResponseType = iota // data
+	NodeInvalidResponseTypeError                                // error
 )
