@@ -6,6 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// NodeInvalidResponse records an alleged invalid response of a Node
+// A group of Nodes are selected as validators to verify the response returned by a Node
+// The response (with all responses from all validators) is saved in the database pending challenge by the penalized Node
 type NodeInvalidResponse struct {
 	ID                uint64                  `json:"id"`
 	EpochID           uint64                  `json:"epochID"`
