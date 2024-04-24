@@ -97,7 +97,7 @@ func (e *SimpleEnforcer) VerifyPartialResponses(ctx context.Context, epochID uin
 
 func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
+		Addresses: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
 			return response.Address
 		}),
 	})
@@ -174,8 +174,8 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 		return nil, err
 	}
 
-	worker := model.PlatformToWorkerMap[pid]
-	indexers, err := e.databaseClient.FindNodeIndexers(ctx, nil, []string{activity.Network}, []string{worker})
+	workerName := model.PlatformToWorkerMap[pid]
+	indexers, err := e.databaseClient.FindNodeWorkers(ctx, nil, []string{activity.Network}, []string{workerName})
 
 	if err != nil {
 		return nil, err
@@ -184,7 +184,7 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 	nodeAddresses := excludeWorkingNodes(indexers, workingNodes)
 
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList:  nodeAddresses,
+		Addresses:    nodeAddresses,
 		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
 		PointsOrder:  lo.ToPtr("DESC"),
 	})
@@ -197,8 +197,8 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 }
 
 // excludeWorkingNodes excludes the working Nodes from the indexers.
-func excludeWorkingNodes(indexers []*schema.Indexer, workingNodes []common.Address) []common.Address {
-	nodeAddresses := lo.Map(indexers, func(indexer *schema.Indexer, _ int) common.Address {
+func excludeWorkingNodes(indexers []*schema.Worker, workingNodes []common.Address) []common.Address {
+	nodeAddresses := lo.Map(indexers, func(indexer *schema.Worker, _ int) common.Address {
 		return indexer.Address
 	})
 

@@ -26,7 +26,7 @@ type Stat struct {
 
 type StatQuery struct {
 	Address      *common.Address  `query:"address" form:"address,omitempty"`
-	AddressList  []common.Address `query:"addressList" form:"addressList,omitempty"`
+	Addresses    []common.Address `query:"Addresses" form:"addresses,omitempty"`
 	IsFullNode   *bool            `query:"isFullNode" form:"isFullNode,omitempty"`
 	IsRssNode    *bool            `query:"isRssNode" form:"isRssNode,omitempty"`
 	PointsOrder  *string          `query:"pointsOrder" form:"pointsOrder,omitempty"`
