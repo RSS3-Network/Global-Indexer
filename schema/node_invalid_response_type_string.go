@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeInvalidResponseTypeName = "dataerror"
+const _NodeInvalidResponseTypeName = "inconsistenterror"
 
-var _NodeInvalidResponseTypeIndex = [...]uint8{0, 4, 9}
+var _NodeInvalidResponseTypeIndex = [...]uint8{0, 12, 17}
 
-const _NodeInvalidResponseTypeLowerName = "dataerror"
+const _NodeInvalidResponseTypeLowerName = "inconsistenterror"
 
 func (i NodeInvalidResponseType) String() string {
 	if i < 0 || i >= NodeInvalidResponseType(len(_NodeInvalidResponseTypeIndex)-1) {
@@ -30,22 +30,22 @@ func (NodeInvalidResponseType) Values() []string {
 // Re-run the stringer command to generate them again.
 func _NodeInvalidResponseTypeNoOp() {
 	var x [1]struct{}
-	_ = x[NodeInvalidResponseTypeData-(0)]
+	_ = x[NodeInvalidResponseTypeInconsistent-(0)]
 	_ = x[NodeInvalidResponseTypeError-(1)]
 }
 
-var _NodeInvalidResponseTypeValues = []NodeInvalidResponseType{NodeInvalidResponseTypeData, NodeInvalidResponseTypeError}
+var _NodeInvalidResponseTypeValues = []NodeInvalidResponseType{NodeInvalidResponseTypeInconsistent, NodeInvalidResponseTypeError}
 
 var _NodeInvalidResponseTypeNameToValueMap = map[string]NodeInvalidResponseType{
-	_NodeInvalidResponseTypeName[0:4]:      NodeInvalidResponseTypeData,
-	_NodeInvalidResponseTypeLowerName[0:4]: NodeInvalidResponseTypeData,
-	_NodeInvalidResponseTypeName[4:9]:      NodeInvalidResponseTypeError,
-	_NodeInvalidResponseTypeLowerName[4:9]: NodeInvalidResponseTypeError,
+	_NodeInvalidResponseTypeName[0:12]:       NodeInvalidResponseTypeInconsistent,
+	_NodeInvalidResponseTypeLowerName[0:12]:  NodeInvalidResponseTypeInconsistent,
+	_NodeInvalidResponseTypeName[12:17]:      NodeInvalidResponseTypeError,
+	_NodeInvalidResponseTypeLowerName[12:17]: NodeInvalidResponseTypeError,
 }
 
 var _NodeInvalidResponseTypeNames = []string{
-	_NodeInvalidResponseTypeName[0:4],
-	_NodeInvalidResponseTypeName[4:9],
+	_NodeInvalidResponseTypeName[0:12],
+	_NodeInvalidResponseTypeName[12:17],
 }
 
 // NodeInvalidResponseTypeString retrieves an enum value from the enum constants string name.

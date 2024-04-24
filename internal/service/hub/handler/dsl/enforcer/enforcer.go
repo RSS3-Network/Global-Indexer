@@ -219,7 +219,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 			if err != nil || activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
 				stat.EpochInvalidRequest += invalidPointUnit
 
-				nodeInvalidResponse.InvalidType = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeData)
+				nodeInvalidResponse.InvalidType = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeInconsistent)
 				nodeInvalidResponse.FaultyResponse = generateFaultyResponse(err, activityFetched)
 			} else {
 				stat.TotalRequest++

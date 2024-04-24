@@ -25,6 +25,8 @@ type NodeInvalidResponse struct {
 type NodeInvalidResponseType int64
 
 const (
-	NodeInvalidResponseTypeData  NodeInvalidResponseType = iota // data
-	NodeInvalidResponseTypeError                                // error
+	// NodeInvalidResponseTypeInconsistent when the Node's response differs from the majority of validators
+	NodeInvalidResponseTypeInconsistent NodeInvalidResponseType = iota // inconsistent
+	// NodeInvalidResponseTypeError when the Node returns an error
+	NodeInvalidResponseTypeError // error
 )
