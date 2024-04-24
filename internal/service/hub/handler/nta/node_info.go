@@ -23,6 +23,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -46,7 +47,7 @@ func (n *NTA) GetNodes(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get nodes: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Nodes: %w", err))
 	}
 
 	var cursor string
@@ -54,18 +55,18 @@ func (n *NTA) GetNodes(c echo.Context) error {
 		cursor = nodes[len(nodes)-1].Address.String()
 	}
 
-	// If the score is the same, sort by staking pool size.
-	// TODO: Since node's StakingPoolTokens needs to be obtained from vsl.
-	//  Now only the nodes of the current page can be sorted.
+	// If the ActiveScore is the same, sort by staking pool size.
+	// TODO: Since Node's StakingPoolTokens needs to be obtained from vsl.
+	//  Now only the Nodes of the current page can be sorted.
 	sort.Slice(nodes, func(i, j int) bool {
-		if nodes[i].Score.Cmp(nodes[j].Score) == 0 {
+		if nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) == 0 {
 			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
 			jTokens, _ := new(big.Int).SetString(nodes[j].StakingPoolTokens, 10)
 
 			return iTokens.Cmp(jTokens) > 0
 		}
 
-		return nodes[i].Score.Cmp(nodes[j].Score) > 0
+		return nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) > 0
 	})
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -91,7 +92,7 @@ func (n *NTA) GetNode(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get node: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -116,7 +117,7 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get node avatar: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("get Node avatar: %w", err))
 	}
 
 	return c.Blob(http.StatusOK, "image/svg+xml", avatar)
@@ -125,12 +126,23 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := n.databaseClient.FindNode(ctx, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node %s: %w", address, err)
+		return nil, fmt.Errorf("get Node %s: %w", address, err)
 	}
 
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node from chain: %w", err)
+		return nil, fmt.Errorf("get Node from chain: %w", err)
+	}
+
+	var reliabilityScore decimal.Decimal
+
+	nodeStat, err := n.databaseClient.FindNodeStat(ctx, address)
+	if err != nil {
+		return nil, fmt.Errorf("get Node Stat %s: %w", address, err)
+	}
+
+	if nodeStat != nil {
+		reliabilityScore = decimal.NewFromFloat(nodeStat.Score)
 	}
 
 	node.Name = nodeInfo.Name
@@ -141,6 +153,7 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.TotalShares = nodeInfo.TotalShares.String()
 	node.SlashedTokens = nodeInfo.SlashedTokens.String()
 	node.Alpha = nodeInfo.Alpha
+	node.ReliabilityScore = reliabilityScore
 
 	return node, nil
 }
@@ -153,23 +166,40 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		OrderByScore:  true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("get nodes: %w", err)
+		return nil, fmt.Errorf("get Nodes: %w", err)
 	}
 
 	addresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
 		return node.Address
 	})
 
+	// Get node info from VSL.
 	nodeInfo, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
 	if err != nil {
-		return nil, fmt.Errorf("get nodes from chain: %w", err)
+		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
 	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
 		return node.Account, node
 	})
 
+	// Get node stats from DB.
+	nodeStats, err := n.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses: addresses,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get Node Stats: %w", err)
+	}
+
+	nodeStatsMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (common.Address, float64) {
+		return stat.Address, stat.Score
+	})
+
 	for _, node := range nodes {
+		if score, exists := nodeStatsMap[node.Address]; exists {
+			node.ReliabilityScore = decimal.NewFromFloat(score)
+		}
+
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
 			node.Name = nodeInfo.Name
 			node.Description = nodeInfo.Description
@@ -188,7 +218,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte, error) {
 	avatar, err := n.databaseClient.FindNodeAvatar(ctx, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node avatar %s: %w", address, err)
+		return nil, fmt.Errorf("get Node avatar %s: %w", address, err)
 	}
 
 	data, ok := strings.CutPrefix(avatar.Image, "data:image/svg+xml;base64,")
@@ -227,7 +257,7 @@ func (n *NTA) parseRequestIP(c echo.Context) (net.IP, error) {
 func (n *NTA) buildNodeAvatar(_ context.Context, address common.Address) (*l2.ChipsTokenMetadata, error) {
 	avatar, err := n.stakingContract.GetNodeAvatar(&bind.CallOpts{}, address)
 	if err != nil {
-		return nil, fmt.Errorf("get node avatar from chain: %w", err)
+		return nil, fmt.Errorf("get Node avatar from chain: %w", err)
 	}
 
 	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")

@@ -54,7 +54,7 @@ func (d *Distributor) getQualifiedNodes(ctx context.Context, request dsl.Activit
 // generateQualifiedNodeCache generates an ordered qualified Node cache
 func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddresses []common.Address) ([]model.NodeEndpointCache, error) {
 	nodesOrderedByPoints, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: nodeAddresses,
+		Addresses:   nodeAddresses,
 		Limit:       lo.ToPtr(model.RequiredQualifiedNodeCount),
 		PointsOrder: lo.ToPtr("DESC"),
 	})
@@ -81,7 +81,7 @@ func (d *Distributor) retrieveQualifiedNodes(ctx context.Context, key string) ([
 	if err := d.cacheClient.Get(ctx, key, &nodesCache); err == nil {
 		return nodesCache, nil
 	} else if !errors.Is(err, redis.Nil) {
-		return nil, fmt.Errorf("get nodes from cache: %s, %w", key, err)
+		return nil, fmt.Errorf("get Nodes from cache: %s, %w", key, err)
 	}
 
 	zap.L().Info("nodes not in cache", zap.String("key", key))
@@ -100,15 +100,15 @@ func (d *Distributor) retrieveQualifiedNodes(ctx context.Context, key string) ([
 	return nodesCache, nil
 }
 
-// retrieveNodesFromDB retrieves nodes from the database.
+// retrieveNodesFromDB retrieves Nodes from the database.
 func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]model.NodeEndpointCache, error) {
 	var query schema.StatQuery
 
 	switch key {
 	case model.RssNodeCacheKey:
-		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	case model.FullNodeCacheKey:
-		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}

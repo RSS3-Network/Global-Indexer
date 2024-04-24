@@ -88,12 +88,12 @@ func calculateAlphaSpecialRewards(nodes []*schema.Node, recentStakers map[common
 	return rewards, finalScores, nil
 }
 
-// fetchNodePoolSizes retrieves node information from a staking contract
-// and updates the staking and operation pool sizes for each node.
+// fetchNodePoolSizes retrieves Node information from a staking contract
+// and updates the staking and operation pool sizes for each Node.
 func (s *Server) fetchNodePoolSizes(nodeAddresses []common.Address, nodes []*schema.Node) error {
 	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 	if err != nil {
-		return fmt.Errorf("get nodes from chain: %w", err)
+		return fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
 	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
@@ -164,7 +164,8 @@ func sumTotalStake(nodes []*schema.Node, recentStakers map[common.Address]*schem
 	return totalStake
 }
 
-// computeActiveScores calculates the scores for each node based on various factors.
+// computeActiveScores calculates active scores for all Nodes based on various factors.
+// Active score is used to calculate Alpha Operation Rewards, and will be deprecated in the future.
 func computeActiveScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, poolSizes []*big.Int, totalPoolSize *big.Int, totalStakeValue *big.Int, specialRewards *config.SpecialRewards) []*big.Float {
 	scores := make([]*big.Float, len(nodes))
 
@@ -194,7 +195,7 @@ func computeActiveScores(nodes []*schema.Node, recentStakers map[common.Address]
 	return scores
 }
 
-// computeOperationScores calculates the scores for each node based on the operation pool size.
+// computeOperationScores calculates the scores for each Node based on the operation pool size.
 func computeOperationScores(poolSizes []*big.Int, totalPoolSize *big.Int) []*big.Float {
 	scores := make([]*big.Float, len(poolSizes))
 

@@ -100,12 +100,12 @@ func (s *server) Run(ctx context.Context) error {
 }
 
 func (s *server) saveOperatorProfitSnapshots(ctx context.Context, latestEpochSnapshot, latestEpochEvent uint64) error {
-	// Query the array of nodes.
+	// Query the array of Nodes.
 	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{})
 	if err != nil {
-		zap.L().Error("find nodes", zap.Error(err))
+		zap.L().Error("find Nodes", zap.Error(err))
 
-		return fmt.Errorf("find nodes: %w", err)
+		return fmt.Errorf("find Nodes: %w", err)
 	}
 
 	for epochID := latestEpochSnapshot + 1; epochID <= latestEpochEvent; epochID++ {
@@ -131,12 +131,12 @@ func (s *server) saveOperatorProfitSnapshots(ctx context.Context, latestEpochSna
 			node := node
 
 			errorPool.Go(func(ctx context.Context) error {
-				// Query the node info from the staking contract.
+				// Query the Node info from the staking contract.
 				nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{Context: ctx, BlockNumber: epochItems[0].BlockNumber}, node.Address)
 				if err != nil {
-					zap.L().Error("get node from rpc", zap.Error(err))
+					zap.L().Error("get Node from rpc", zap.Error(err))
 
-					return fmt.Errorf("get node from rpc: %w", err)
+					return fmt.Errorf("get Node from rpc: %w", err)
 				}
 
 				if nodeInfo.Account == ethereum.AddressGenesis {
@@ -162,7 +162,7 @@ func (s *server) saveOperatorProfitSnapshots(ctx context.Context, latestEpochSna
 		}
 
 		if err := s.databaseClient.SaveOperatorProfitSnapshots(ctx, data); err != nil {
-			return fmt.Errorf("save node min tokens to stake snapshots: %w", err)
+			return fmt.Errorf("save Node min tokens to stake snapshots: %w", err)
 		}
 	}
 

@@ -34,7 +34,7 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 		return errorx.InternalError(c, fmt.Errorf("cache hide tax value: %w", err))
 	}
 
-	// If the node exists, update the hide tax rate status
+	// If the Node exists, update the hide tax rate status
 	if _, err := n.getNode(c.Request().Context(), request.Address); err == nil {
 		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
 			return errorx.InternalError(c, fmt.Errorf("confirmation to hide tax rate: %w", err))

@@ -47,7 +47,6 @@ func isResponseIdentical(src, des []byte) bool {
 			return true
 		} else if srcActivity.Data != nil && desActivity.Data != nil {
 			if _, exist := model.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
-				// TODO: if false, save the record to the database
 				return isActivityIdentical(srcActivity.Data, desActivity.Data)
 			}
 
@@ -67,7 +66,6 @@ func isResponseIdentical(src, des []byte) bool {
 
 			for i := range srcActivity {
 				if !isActivityIdentical(srcActivity[i], desActivity[i]) {
-					// TODO: if false, save the record to the database
 					return false
 				}
 			}

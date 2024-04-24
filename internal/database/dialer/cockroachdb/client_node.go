@@ -40,7 +40,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		var nodeCursor *table.Node
 
 		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
 		if query.OrderByScore {
@@ -236,11 +236,11 @@ func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]
 	databaseStatement, err := c.buildNodeStatQuery(ctx, query)
 
 	if err != nil {
-		return nil, fmt.Errorf("build find node stats: %w", err)
+		return nil, fmt.Errorf("build Find node stats: %w", err)
 	}
 
 	if err := databaseStatement.Find(&stats).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+		return nil, fmt.Errorf("find Nodes: %w", err)
 	}
 
 	return stats.Export()
@@ -253,13 +253,14 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		var statCursor *table.Stat
 
 		if err := databaseStatement.First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where(clause.Gt{
-			Column: "created_at",
-			Value:  statCursor.CreatedAt,
-		})
+		if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
+			databaseStatement = databaseStatement.Where("points < ? OR (points = ? AND created_at < ?)", statCursor.Points, statCursor.Points, statCursor.CreatedAt)
+		} else {
+			databaseStatement = databaseStatement.Where("created_at < ?", statCursor.CreatedAt)
+		}
 	}
 
 	if query.Address != nil {
@@ -269,10 +270,10 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
-	if len(query.AddressList) > 0 {
+	if len(query.Addresses) > 0 {
 		databaseStatement = databaseStatement.Where(clause.IN{
 			Column: "address",
-			Values: lo.ToAnySlice(query.AddressList),
+			Values: lo.ToAnySlice(query.Addresses),
 		})
 	}
 
@@ -301,27 +302,21 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
-	orderByPointsClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "points",
-		},
-	}
-
-	orderByCreatedAtClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "created_at",
-		},
-	}
-
 	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
-		orderByPointsClause.Desc = true
-
-		databaseStatement = databaseStatement.Order(orderByPointsClause)
+		databaseStatement = databaseStatement.Order("points DESC, created_at DESC")
 	} else {
-		databaseStatement = databaseStatement.Order(orderByCreatedAtClause)
+		databaseStatement = databaseStatement.Order("created_at DESC")
 	}
 
 	return databaseStatement, nil
+}
+
+func (c *client) SaveNodeInvalidResponse(ctx context.Context, nodeInvalidResponse *schema.NodeInvalidResponse) error {
+	var value table.NodeInvalidResponse
+
+	value.Import(nodeInvalidResponse)
+
+	return c.database.WithContext(ctx).Create(&value).Error
 }
 
 func (c *client) FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error) {
@@ -357,7 +352,7 @@ func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
 		return err
 	}
 
-	// Save node stat.
+	// Save Node stat.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -377,7 +372,7 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 		return err
 	}
 
-	// Save node indexers.
+	// Save Node indexers.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -390,12 +385,12 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
-func (c *client) DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error {
-	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Indexer{}).Error
+func (c *client) DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error {
+	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Worker{}).Error
 }
 
-func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error) {
-	var indexers table.Indexers
+func (c *client) FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error) {
+	var workers table.Workers
 
 	databaseStatement := c.database.WithContext(ctx)
 
@@ -407,25 +402,23 @@ func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Ad
 		databaseStatement = databaseStatement.Where("network IN ?", networks)
 	}
 
-	if len(workers) > 0 {
-		databaseStatement = databaseStatement.Where("worker IN ?", workers)
+	if len(names) > 0 {
+		databaseStatement = databaseStatement.Where("name IN ?", names)
 	}
 
-	if err := databaseStatement.Find(&indexers).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+	if err := databaseStatement.Find(&workers).Error; err != nil {
+		return nil, fmt.Errorf("find Nodes: %w", err)
 	}
 
-	return indexers.Export()
+	return workers.Export(), nil
 }
 
-func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error {
-	var tIndexers table.Indexers
+func (c *client) SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) error {
+	var tWorkers table.Workers
 
-	if err := tIndexers.Import(indexers); err != nil {
-		return err
-	}
+	tWorkers.Import(workers)
 
-	return c.database.WithContext(ctx).CreateInBatches(tIndexers, math.MaxUint8).Error
+	return c.database.WithContext(ctx).CreateInBatches(tWorkers, math.MaxUint8).Error
 }
 
 func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error {
@@ -435,7 +428,7 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 		return fmt.Errorf("import node event: %w", err)
 	}
 
-	// Save node stat.
+	// Save Node stat.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -469,7 +462,7 @@ func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address,
 			Where("transaction_index = ?", key[1]).
 			Where("log_index = ?", key[2]).
 			First(&nodeEvent).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
 		databaseStatement = databaseStatement.Where("block_number < ?", nodeEvent.BlockNumber).

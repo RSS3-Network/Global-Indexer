@@ -119,7 +119,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	// Update the node staking data from the chain.
+	// Update the Node staking data from the VSL.
 	if err := s.fetchNodePoolSizes(nodeAddresses, nodes); err != nil {
 		return nil, nil, nil, err
 	}
@@ -160,7 +160,7 @@ func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, node
 	}
 
 	for i, node := range nodes {
-		node.Score = scoreDecimals[i]
+		node.ActiveScore = scoreDecimals[i]
 	}
 
 	return s.databaseClient.UpdateNodesScore(ctx, nodes)
