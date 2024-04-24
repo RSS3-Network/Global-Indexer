@@ -142,7 +142,7 @@ func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []strin
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchNetwork(ctx context.Context, networks []string) ([]common.Address, error) {
 	// Find all indexers that match the networks.
-	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, networks, nil)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -158,16 +158,16 @@ type NetworkWorkersMap struct {
 }
 
 // generateNodeNetworkWorkersMap generates a map of Node addresses to network workers.
-func generateNodeNetworkWorkersMap(indexers []*schema.Indexer) map[common.Address]NetworkWorkersMap {
+func generateNodeNetworkWorkersMap(workers []*schema.Worker) map[common.Address]NetworkWorkersMap {
 	nodeNetworkWorkersMap := make(map[common.Address]NetworkWorkersMap)
 
-	for _, indexer := range indexers {
-		if _, exists := nodeNetworkWorkersMap[indexer.Address]; !exists {
-			nodeNetworkWorkersMap[indexer.Address] = NetworkWorkersMap{Workers: make(map[string][]string)}
+	for _, worker := range workers {
+		if _, exists := nodeNetworkWorkersMap[worker.Address]; !exists {
+			nodeNetworkWorkersMap[worker.Address] = NetworkWorkersMap{Workers: make(map[string][]string)}
 		}
 
-		networkWorkersMap := nodeNetworkWorkersMap[indexer.Address].Workers
-		networkWorkersMap[indexer.Network] = append(networkWorkersMap[indexer.Network], indexer.Worker)
+		networkWorkersMap := nodeNetworkWorkersMap[worker.Address].Workers
+		networkWorkersMap[worker.Network] = append(networkWorkersMap[worker.Network], worker.Name)
 	}
 
 	return nodeNetworkWorkersMap
@@ -213,7 +213,7 @@ type WorkerNetworksMap struct {
 // matchWorker matches nodes based on the given worker names,
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, nil, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, nil, workers)
 	if err != nil {
 		return nil, err
 	}
@@ -224,16 +224,16 @@ func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]comm
 }
 
 // generateNodeWorkerNetworksMap generates a map of Node addresses to worker networks.
-func generateNodeWorkerNetworksMap(indexers []*schema.Indexer) map[common.Address]WorkerNetworksMap {
+func generateNodeWorkerNetworksMap(workers []*schema.Worker) map[common.Address]WorkerNetworksMap {
 	nodeWorkerNetworksMap := make(map[common.Address]WorkerNetworksMap)
 
-	for _, indexer := range indexers {
-		if _, exists := nodeWorkerNetworksMap[indexer.Address]; !exists {
-			nodeWorkerNetworksMap[indexer.Address] = WorkerNetworksMap{Networks: make(map[string][]string)}
+	for _, worker := range workers {
+		if _, exists := nodeWorkerNetworksMap[worker.Address]; !exists {
+			nodeWorkerNetworksMap[worker.Address] = WorkerNetworksMap{Networks: make(map[string][]string)}
 		}
 
-		workerNetworksMap := nodeWorkerNetworksMap[indexer.Address].Networks
-		workerNetworksMap[indexer.Worker] = append(workerNetworksMap[indexer.Worker], indexer.Network)
+		workerNetworksMap := nodeWorkerNetworksMap[worker.Address].Networks
+		workerNetworksMap[worker.Name] = append(workerNetworksMap[worker.Name], worker.Network)
 	}
 
 	return nodeWorkerNetworksMap
@@ -272,7 +272,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 
 // matchWorkerAndNetwork matches nodes based on both worker and network.
 func (d *Distributor) matchWorkerAndNetwork(ctx context.Context, workers, networks []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeIndexers(ctx, nil, networks, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, workers)
 
 	if err != nil {
 		return nil, err

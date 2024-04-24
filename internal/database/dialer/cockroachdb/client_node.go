@@ -377,12 +377,12 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
-func (c *client) DeleteNodeIndexers(ctx context.Context, nodeAddress common.Address) error {
-	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Indexer{}).Error
+func (c *client) DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error {
+	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Worker{}).Error
 }
 
-func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Address, networks, workers []string) ([]*schema.Indexer, error) {
-	var indexers table.Indexers
+func (c *client) FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error) {
+	var workers table.Workers
 
 	databaseStatement := c.database.WithContext(ctx)
 
@@ -394,25 +394,23 @@ func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Ad
 		databaseStatement = databaseStatement.Where("network IN ?", networks)
 	}
 
-	if len(workers) > 0 {
-		databaseStatement = databaseStatement.Where("worker IN ?", workers)
+	if len(names) > 0 {
+		databaseStatement = databaseStatement.Where("name IN ?", names)
 	}
 
-	if err := databaseStatement.Find(&indexers).Error; err != nil {
+	if err := databaseStatement.Find(&workers).Error; err != nil {
 		return nil, fmt.Errorf("find Nodes: %w", err)
 	}
 
-	return indexers.Export()
+	return workers.Export(), nil
 }
 
-func (c *client) SaveNodeIndexers(ctx context.Context, indexers []*schema.Indexer) error {
-	var tIndexers table.Indexers
+func (c *client) SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) error {
+	var tWorkers table.Workers
 
-	if err := tIndexers.Import(indexers); err != nil {
-		return err
-	}
+	tWorkers.Import(workers)
 
-	return c.database.WithContext(ctx).CreateInBatches(tIndexers, math.MaxUint8).Error
+	return c.database.WithContext(ctx).CreateInBatches(tWorkers, math.MaxUint8).Error
 }
 
 func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error {

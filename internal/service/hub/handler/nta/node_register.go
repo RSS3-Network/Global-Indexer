@@ -184,19 +184,19 @@ func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, n
 
 		// If the Node is a full node,
 		// then delete the record from the table.
-		// Otherwise, add the indexers to the table.
-		if err = client.DeleteNodeIndexers(ctx, node.Address); err != nil {
-			return fmt.Errorf("delete node indexers: %s, %w", node.Address.String(), err)
+		// Otherwise, add the worker to the table.
+		if err = client.DeleteNodeWorkers(ctx, node.Address); err != nil {
+			return fmt.Errorf("delete node workers: %s, %w", node.Address.String(), err)
 		}
 
-		// Save light node indexers to database.
+		// Save light node workers to database.
 		if !fullNode {
-			indexers := updateNodeIndexers(node.Address, nodeConfig)
-			if err = client.SaveNodeIndexers(ctx, indexers); err != nil {
-				return fmt.Errorf("save Node indexers: %s, %w", node.Address.String(), err)
+			workers := updateNodeWorkers(node.Address, nodeConfig)
+			if err = client.SaveNodeWorkers(ctx, workers); err != nil {
+				return fmt.Errorf("save Node workers: %s, %w", node.Address.String(), err)
 			}
 
-			zap.L().Info("save Node indexer", zap.Any("node", node.Address.String()))
+			zap.L().Info("save Node worker", zap.Any("node", node.Address.String()))
 		}
 
 		return nil
@@ -282,18 +282,18 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 	return stat, nil
 }
 
-func updateNodeIndexers(address common.Address, nodeConfig NodeConfig) []*schema.Indexer {
-	indexers := make([]*schema.Indexer, 0, len(nodeConfig.Decentralized))
+func updateNodeWorkers(address common.Address, nodeConfig NodeConfig) []*schema.Worker {
+	workers := make([]*schema.Worker, 0, len(nodeConfig.Decentralized))
 
-	for _, indexer := range nodeConfig.Decentralized {
-		indexers = append(indexers, &schema.Indexer{
+	for _, worker := range nodeConfig.Decentralized {
+		workers = append(workers, &schema.Worker{
 			Address: address,
-			Network: indexer.Network.String(),
-			Worker:  indexer.Worker.String(),
+			Network: worker.Network.String(),
+			Name:    worker.Worker.String(),
 		})
 	}
 
-	return indexers
+	return workers
 }
 
 func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, requestIP string) error {
