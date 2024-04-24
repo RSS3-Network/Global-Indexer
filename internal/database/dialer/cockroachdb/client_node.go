@@ -311,6 +311,14 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	return databaseStatement, nil
 }
 
+func (c *client) SaveNodeInvalidResponse(ctx context.Context, nodeInvalidResponse *schema.NodeInvalidResponse) error {
+	var value table.NodeInvalidResponse
+
+	value.Import(nodeInvalidResponse)
+
+	return c.database.WithContext(ctx).Create(&value).Error
+}
+
 func (c *client) FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error) {
 	databaseClient := c.database.WithContext(ctx)
 

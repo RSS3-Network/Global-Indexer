@@ -95,7 +95,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 		go func(address common.Address, endpoint string) {
 			defer waitGroup.Done()
 
-			response := &model.DataResponse{Address: address}
+			response := &model.DataResponse{Address: address, Endpoint: endpoint}
 			// Fetch the data from the Node.
 			body, err := r.httpClient.Fetch(ctx, endpoint)
 

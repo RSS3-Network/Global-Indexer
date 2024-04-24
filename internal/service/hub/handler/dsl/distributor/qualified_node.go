@@ -106,9 +106,9 @@ func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]mo
 
 	switch key {
 	case model.RssNodeCacheKey:
-		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	case model.FullNodeCacheKey:
-		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}

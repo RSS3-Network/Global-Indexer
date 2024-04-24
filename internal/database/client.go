@@ -45,6 +45,7 @@ type Client interface {
 	FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error)
 	SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) error
 	DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error
+	SaveNodeInvalidResponse(ctx context.Context, nodeInvalidResponse *schema.NodeInvalidResponse) error
 
 	FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
