@@ -140,8 +140,8 @@ func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, 
 				ValidatorNodes:    validatorNodes,
 				Request:           request,
 				ValidatorResponse: validatorResponse,
-				FaultyNode:        response.Address,
-				FaultyResponse:    lo.Ternary(response.Err != nil, json.RawMessage(response.Err.Error()), response.Data),
+				Node:              response.Address,
+				InvalidResponse:   lo.Ternary(response.Err != nil, json.RawMessage(response.Err.Error()), response.Data),
 			})
 
 			if err != nil {

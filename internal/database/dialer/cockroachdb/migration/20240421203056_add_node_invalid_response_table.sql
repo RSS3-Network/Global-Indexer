@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS "node_invalid_response"
     "request"            TEXT        NOT NULL,
     "validator_nodes"    bytea[]     NOT NULL,
     "validator_response" json        NOT NULL,
-    "faulty_node"        bytea       NOT NULL,
-    "faulty_response"    json        NOT NULL,
+    "node"               bytea       NOT NULL,
+    "invalid_response"   json        NOT NULL,
     "created_at"         timestamptz NOT NULL DEFAULT now(),
     "updated_at"         timestamptz NOT NULL DEFAULT now(),
 
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "node_invalid_response"
 CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "node_invalid_response" ("epoch_id" DESC);
 CREATE INDEX IF NOT EXISTS "idx_invalid_type" ON "node_invalid_response" ("invalid_type", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "idx_request" ON "node_invalid_response" ("request", "created_at" DESC);
-CREATE INDEX IF NOT EXISTS "idx_faulty_node" ON "node_invalid_response" ("faulty_node", "created_at" DESC);
+CREATE INDEX IF NOT EXISTS "idx_node" ON "node_invalid_response" ("node", "created_at" DESC);
 
 -- +goose StatementEnd
 

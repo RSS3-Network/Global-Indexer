@@ -15,8 +15,8 @@ type NodeInvalidResponse struct {
 	Request           string                         `gorm:"column:request"`
 	ValidatorNodes    []common.Address               `gorm:"column:validator_nodes"`
 	ValidatorResponse json.RawMessage                `gorm:"column:validator_response"`
-	FaultyNode        common.Address                 `gorm:"column:faulty_node"`
-	FaultyResponse    json.RawMessage                `gorm:"column:faulty_response"`
+	Node              common.Address                 `gorm:"column:node"`
+	InvalidResponse   json.RawMessage                `gorm:"column:invalid_response"`
 	CreatedAt         time.Time                      `gorm:"column:created_at"`
 	UpdatedAt         time.Time                      `gorm:"column:updated_at"`
 }
@@ -31,8 +31,8 @@ func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResp
 	n.Request = nodeResponseFailure.Request
 	n.ValidatorNodes = nodeResponseFailure.ValidatorNodes
 	n.ValidatorResponse = nodeResponseFailure.ValidatorResponse
-	n.FaultyNode = nodeResponseFailure.FaultyNode
-	n.FaultyResponse = nodeResponseFailure.FaultyResponse
+	n.Node = nodeResponseFailure.Node
+	n.InvalidResponse = nodeResponseFailure.InvalidResponse
 }
 
 func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
@@ -43,8 +43,8 @@ func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
 		Request:           n.Request,
 		ValidatorNodes:    n.ValidatorNodes,
 		ValidatorResponse: n.ValidatorResponse,
-		FaultyNode:        n.FaultyNode,
-		FaultyResponse:    n.FaultyResponse,
+		Node:              n.Node,
+		InvalidResponse:   n.InvalidResponse,
 		CreatedAt:         n.CreatedAt.Unix(),
 	}
 }

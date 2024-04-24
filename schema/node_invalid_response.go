@@ -16,8 +16,8 @@ type NodeInvalidResponse struct {
 	Request           string                  `json:"request"`
 	ValidatorNodes    []common.Address        `json:"validatorNodes"`
 	ValidatorResponse json.RawMessage         `json:"validatorResponse"`
-	FaultyNode        common.Address          `json:"faultyNode"`
-	FaultyResponse    json.RawMessage         `json:"faultyResponse"`
+	Node              common.Address          `json:"ode"`
+	InvalidResponse   json.RawMessage         `json:"invalidResponse"`
 	CreatedAt         int64                   `json:"createdAt"`
 }
 

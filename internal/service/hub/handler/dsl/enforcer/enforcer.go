@@ -220,7 +220,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 				stat.EpochInvalidRequest += invalidPointUnit
 
 				nodeInvalidResponse.InvalidType = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeInconsistent)
-				nodeInvalidResponse.FaultyResponse = generateFaultyResponse(err, activityFetched)
+				nodeInvalidResponse.InvalidResponse = generateFaultyResponse(err, activityFetched)
 			} else {
 				stat.TotalRequest++
 				stat.EpochRequest += validPointUnit
@@ -228,7 +228,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 
 			// If the request is invalid, save the invalid response to the database.
 			if stat.EpochInvalidRequest > 0 {
-				nodeInvalidResponse.FaultyNode = stat.Address
+				nodeInvalidResponse.Node = stat.Address
 				nodeInvalidResponse.Request = stat.Endpoint + "/decentralized/tx/" + activity.ID
 
 				validData, _ := json.Marshal(activity)
