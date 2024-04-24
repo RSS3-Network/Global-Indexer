@@ -12,12 +12,12 @@ import (
 type NodeInvalidResponse struct {
 	ID                uint64                  `json:"id"`
 	EpochID           uint64                  `json:"epochID"`
-	InvalidType       NodeInvalidResponseType `json:"invalidType"`
+	Type              NodeInvalidResponseType `json:"type"`
 	Request           string                  `json:"request"`
 	ValidatorNodes    []common.Address        `json:"validatorNodes"`
 	ValidatorResponse json.RawMessage         `json:"validatorResponse"`
-	Node              common.Address          `json:"ode"`
-	InvalidResponse   json.RawMessage         `json:"invalidResponse"`
+	Node              common.Address          `json:"node"`
+	Response          json.RawMessage         `json:"response"`
 	CreatedAt         int64                   `json:"createdAt"`
 }
 
