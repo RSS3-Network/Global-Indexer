@@ -96,7 +96,7 @@ func (e *SimpleEnforcer) VerifyPartialResponses(ctx context.Context, responses [
 
 func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
+		Addresses: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
 			return response.Address
 		}),
 	})
@@ -179,7 +179,7 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 	nodeAddresses := excludeWorkingNodes(indexers, workingNodes)
 
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList:  nodeAddresses,
+		Addresses:    nodeAddresses,
 		ValidRequest: lo.ToPtr(model.DefaultSlashCount),
 		PointsOrder:  lo.ToPtr("DESC"),
 	})
