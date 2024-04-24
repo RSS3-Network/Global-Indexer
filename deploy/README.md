@@ -1,10 +1,9 @@
-## Configuration
-To configure the application:
+## config.yaml Setup
+
+Before running the Global Indexer, you need to set up the `config.yaml` file.
 
 1. Copy `config.example.yaml` to `config.yaml`:
   ```bash
   cp config.example.yaml config.yaml
   ```
-2. Edit `config.yaml` and fill in your specific settings.
-
-Note: Do not commit `config.yaml` to the version control system.
+1. Edit `config.yaml` and fill in all the environment variables.
