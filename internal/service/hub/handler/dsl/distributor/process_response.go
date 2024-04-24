@@ -136,7 +136,7 @@ func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, 
 		if response.InvalidPoint > 0 {
 			err := d.databaseClient.SaveNodeInvalidResponse(ctx, &schema.NodeInvalidResponse{
 				EpochID:           epochID,
-				InvalidType:       lo.Ternary(response.Err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeError),
+				InvalidType:       lo.Ternary(response.Err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeInconsistent),
 				ValidatorNodes:    validatorNodes,
 				Request:           request,
 				ValidatorResponse: validatorResponse,
