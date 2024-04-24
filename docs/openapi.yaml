@@ -1,6 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Global Indexer
+  title: Global Indexer - Network Transparency API
+  description: "Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
   version: 0.1.0
 servers:
   - url: https://gi.rss3.io
@@ -10,12 +11,12 @@ servers:
   - url: http://localhost
     description: Localhost
 tags:
-  - name: Default
   - name: Bridge
   - name: Stake
   - name: Chips
   - name: Snapshots
   - name: Node
+  - name: Epoch
 paths:
   /nta/bridge/transactions:
     get:
@@ -741,7 +742,114 @@ paths:
                        $ref: "#/components/schemas/OperationProfitPNL"
                       oneMonth:
                         $ref: "#/components/schemas/OperationProfitPNL"
-
+  /nta/epochs:
+    get:
+      description: "Get all epochs"
+      tags:
+        - Epoch
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BriefEpoch"
+                  cursor:
+                    type: string
+  /nta/epochs/{id}:
+    get:
+      description: "Get epoch by id"
+      tags:
+        - Epoch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Epoch"
+  /nta/epochs/distributions/{transaction}:
+    get:
+      description: "Get epoch transaction by hash"
+      tags:
+        - Epoch
+      parameters:
+        - name: transaction
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EpochDistribution"
+  /nta/epochs/{node}/rewards:
+    get:
+      description: "Get rewards by node address"
+      tags:
+        - Epoch
+      parameters:
+        - name: node
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Epoch"
+                  cursor:
+                    type: string
 components:
   schemas:
     BridgeTransaction:
@@ -1207,3 +1315,132 @@ components:
           type: string
         pnl:
           type: string
+    BriefEpoch:
+      type: object
+      properties:
+        id:
+          type: integer
+        startTimestamp:
+          type: integer
+        endTimestamp:
+          type: integer
+        totalOperationRewards:
+          type: string
+        totalStakingRewards:
+          type: string
+        totalRequestCounts:
+          type: string
+        totalRewardItems:
+          type: integer
+        distributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/BriefEpochDistribution"
+    Epoch:
+      type: object
+      properties:
+        id:
+          type: integer
+        startTimestamp:
+          type: integer
+        endTimestamp:
+            type: integer
+        totalOperationRewards:
+          type: string
+        totalStakingRewards:
+          type: string
+        totalRequestCounts:
+          type: string
+        totalRewardItems:
+          type: integer
+        distributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/EpochDistribution"
+    BriefEpochDistribution:
+      type: object
+      properties:
+        id:
+          type: integer
+        startTimestamp:
+          type: integer
+        endTimestamp:
+          type: integer
+        transaction:
+          type: object
+          properties:
+            hash:
+              type: string
+            index:
+              type: integer
+        block:
+          type: object
+          properties:
+            hash:
+              type: string
+            number:
+              type: integer
+            timestamp:
+              type: integer
+        totalOperationRewards:
+          type: string
+        totalStakingRewards:
+          type: string
+        totalRequestCounts:
+          type: string
+        totalRewardItems:
+          type: integer
+    EpochDistribution:
+      type: object
+      properties:
+        id:
+          type: integer
+        startTimestamp:
+          type: integer
+        endTimestamp:
+          type: integer
+        transaction:
+          type: object
+          properties:
+            hash:
+              type: string
+            index:
+              type: integer
+        block:
+          type: object
+          properties:
+            hash:
+              type: string
+            number:
+              type: integer
+            timestamp:
+              type: integer
+        totalOperationRewards:
+          type: string
+        totalStakingRewards:
+          type: string
+        totalRequestCounts:
+          type: string
+        totalRewardItems:
+          type: integer
+        rewardItems:
+          type: array
+          items:
+            type: object
+            properties:
+              epochID:
+                type: integer
+              index:
+                type: integer
+              transactionHash:
+                type: string
+              nodeAddress:
+                type: string
+              operationRewards:
+                type: string
+              stakingRewards:
+                type: string
+              taxAmounts:
+                type: string
+              requestCounts:
+                type: string

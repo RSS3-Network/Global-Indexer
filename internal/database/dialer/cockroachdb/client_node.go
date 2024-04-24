@@ -40,10 +40,14 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		var nodeCursor *table.Node
 
 		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where("score < ? OR (score = ? AND created_at < ?)", nodeCursor.Score, nodeCursor.Score, nodeCursor.CreatedAt)
+		if query.OrderByScore {
+			databaseStatement = databaseStatement.Where("score < ? OR (score = ? AND created_at < ?)", nodeCursor.Score, nodeCursor.Score, nodeCursor.CreatedAt)
+		} else {
+			databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
+		}
 	}
 
 	if query.Status != nil {
@@ -58,9 +62,15 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
 
+	if query.OrderByScore {
+		databaseStatement = databaseStatement.Order("score DESC, created_at DESC")
+	} else {
+		databaseStatement = databaseStatement.Order("created_at DESC")
+	}
+
 	var nodes table.Nodes
 
-	if err := databaseStatement.Order("score DESC, created_at DESC").Find(&nodes).Error; err != nil {
+	if err := databaseStatement.Find(&nodes).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -226,11 +236,11 @@ func (c *client) FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]
 	databaseStatement, err := c.buildNodeStatQuery(ctx, query)
 
 	if err != nil {
-		return nil, fmt.Errorf("build find node stats: %w", err)
+		return nil, fmt.Errorf("build Find node stats: %w", err)
 	}
 
 	if err := databaseStatement.Find(&stats).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+		return nil, fmt.Errorf("find Nodes: %w", err)
 	}
 
 	return stats.Export()
@@ -243,13 +253,14 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		var statCursor *table.Stat
 
 		if err := databaseStatement.First(&statCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
-		databaseStatement = databaseStatement.Where(clause.Gt{
-			Column: "created_at",
-			Value:  statCursor.CreatedAt,
-		})
+		if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
+			databaseStatement = databaseStatement.Where("points < ? OR (points = ? AND created_at < ?)", statCursor.Points, statCursor.Points, statCursor.CreatedAt)
+		} else {
+			databaseStatement = databaseStatement.Where("created_at < ?", statCursor.CreatedAt)
+		}
 	}
 
 	if query.Address != nil {
@@ -291,24 +302,10 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
-	orderByPointsClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "points",
-		},
-	}
-
-	orderByCreatedAtClause := clause.OrderByColumn{
-		Column: clause.Column{
-			Name: "created_at",
-		},
-	}
-
 	if query.PointsOrder != nil && strings.EqualFold(*query.PointsOrder, "DESC") {
-		orderByPointsClause.Desc = true
-
-		databaseStatement = databaseStatement.Order(orderByPointsClause)
+		databaseStatement = databaseStatement.Order("points DESC, created_at DESC")
 	} else {
-		databaseStatement = databaseStatement.Order(orderByCreatedAtClause)
+		databaseStatement = databaseStatement.Order("created_at DESC")
 	}
 
 	return databaseStatement, nil
@@ -347,7 +344,7 @@ func (c *client) SaveNodeStat(ctx context.Context, stat *schema.Stat) error {
 		return err
 	}
 
-	// Save node stat.
+	// Save Node stat.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -367,7 +364,7 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 		return err
 	}
 
-	// Save node indexers.
+	// Save Node indexers.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -402,7 +399,7 @@ func (c *client) FindNodeIndexers(ctx context.Context, nodeAddresses []common.Ad
 	}
 
 	if err := databaseStatement.Find(&indexers).Error; err != nil {
-		return nil, fmt.Errorf("find nodes: %w", err)
+		return nil, fmt.Errorf("find Nodes: %w", err)
 	}
 
 	return indexers.Export()
@@ -425,7 +422,7 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 		return fmt.Errorf("import node event: %w", err)
 	}
 
-	// Save node stat.
+	// Save Node stat.
 	onConflict := clause.OnConflict{
 		Columns: []clause.Column{
 			{
@@ -459,7 +456,7 @@ func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address,
 			Where("transaction_index = ?", key[1]).
 			Where("log_index = ?", key[2]).
 			First(&nodeEvent).Error; err != nil {
-			return nil, fmt.Errorf("get node cursor: %w", err)
+			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
 		databaseStatement = databaseStatement.Where("block_number < ?", nodeEvent.BlockNumber).

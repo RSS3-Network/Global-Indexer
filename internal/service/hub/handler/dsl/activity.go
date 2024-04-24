@@ -28,7 +28,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.InternalError(c, err)
 	}
 
-	activity, err := d.Distributor.RouterActivityData(c.Request().Context(), request)
+	activity, err := d.distributor.DistributeActivityRequest(c.Request().Context(), request)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}
@@ -37,13 +37,13 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 }
 
 func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
-	var request dsl.AccountActivitiesRequest
+	var request dsl.ActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if request.Type, err = d.parseParams(c.QueryParams(), request.Tag); err != nil {
+	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
@@ -55,14 +55,15 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.InternalError(c, err)
 	}
 
-	if !d.validEvmAddress(request.Account) {
+	// Resolve name to EVM address
+	if !validEvmAddress(request.Account) {
 		request.Account, err = d.nameService.Resolve(c.Request().Context(), request.Account)
 		if err != nil {
 			return errorx.InternalError(c, err)
 		}
 	}
 
-	activities, err := d.Distributor.RouterActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.DistributeActivitiesData(c.Request().Context(), request)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}
@@ -70,38 +71,41 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activities)
 }
 
-func (d *DSL) validEvmAddress(address string) bool {
+// validEvmAddress checks if the address is a valid EVM address.
+func validEvmAddress(address string) bool {
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 	return re.MatchString(address)
 }
 
-func (d *DSL) parseParams(params url.Values, tags []string) ([]string, error) {
+// parseParams parses the type parameter and returns the corresponding types.
+func parseParams(params url.Values, tags []string) ([]string, error) {
 	if len(tags) == 0 {
 		return nil, nil
 	}
 
 	types := make([]string, 0)
 
-	for _, typex := range params["type"] {
-		var (
-			value filter.Type
-			err   error
-		)
-
+	for _, typeX := range params["type"] {
 		for _, tag := range tags {
 			t, err := filter.TagString(tag)
-			if err == nil {
-				value, err = filter.TypeString(t, typex)
-				if err == nil {
-					types = append(types, value.Name())
 
-					break
-				}
+			if err != nil {
+				continue
 			}
+
+			value, err := filter.TypeString(t, typeX)
+
+			if err != nil {
+				continue
+			}
+
+			types = append(types, value.Name())
+
+			break
 		}
 
-		if err != nil {
-			return nil, fmt.Errorf("invalid type: %s", typex)
+		if len(types) == 0 {
+			return nil, fmt.Errorf("invalid type: %s", typeX)
 		}
 	}
 

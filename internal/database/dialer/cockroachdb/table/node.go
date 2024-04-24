@@ -48,7 +48,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Config = node.Config
 	n.MinTokensToStake = node.MinTokensToStake
 	n.APY = node.APY
-	n.Score = node.Score
+	n.Score = node.ActiveScore
 
 	n.Location, err = json.Marshal(node.Location)
 	if err != nil {
@@ -89,7 +89,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Avatar:                 avatar,
 		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
-		Score:                  n.Score,
+		ActiveScore:            n.Score,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }

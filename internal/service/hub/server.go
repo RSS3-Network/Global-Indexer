@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/docs"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -38,8 +39,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver) (service.Server, error) {
-	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService)
+func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver, httpClient httputil.Client) (service.Server, error) {
+	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService, httpClient)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
@@ -64,6 +65,9 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 
 	nta := instance.httpServer.Group("/nta")
 	{
+		nta.GET("/networks", instance.hub.nta.GetNetworks)
+		nta.GET("/networks/:network/workers", instance.hub.nta.GetWorkersByNetwork)
+
 		nta.GET("/nodes", instance.hub.nta.GetNodes)
 		nta.GET("/nodes/:id", instance.hub.nta.GetNode)
 		nta.GET("/nodes/:id/events", instance.hub.nta.GetNodeEvents)

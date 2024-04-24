@@ -46,7 +46,7 @@ type Epoch struct {
 	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
 	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
-	TotalRewardItems      int             `json:"totalRewardItems"`
+	TotalRewardedNodes    int             `json:"totalRewardedNodes"`
 
 	Distributions []*EpochTransaction `json:"distributions"`
 }
@@ -60,8 +60,8 @@ type EpochTransaction struct {
 	TotalOperationRewards decimal.Decimal             `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal             `json:"totalStakingRewards"`
 	TotalRequestCounts    decimal.Decimal             `json:"totalRequestCounts"`
-	TotalRewardItems      int                         `json:"totalRewardItems"`
-	RewardItems           []*schema.EpochItem         `json:"rewardItems,omitempty"`
+	TotalRewardedNodes    int                         `json:"totalRewardedNodes"`
+	RewardedNodes         []*schema.RewardedNode      `json:"rewardedNodes,omitempty"`
 	CreatedAt             int64                       `json:"-"`
 	UpdatedAt             int64                       `json:"-"`
 }
@@ -85,7 +85,7 @@ func NewEpochs(epochs []*schema.Epoch) GetEpochsResponseData {
 		epochMap[epoch.ID].TotalOperationRewards = epochMap[epoch.ID].TotalOperationRewards.Add(epoch.TotalOperationRewards)
 		epochMap[epoch.ID].TotalStakingRewards = epochMap[epoch.ID].TotalStakingRewards.Add(epoch.TotalStakingRewards)
 		epochMap[epoch.ID].TotalRequestCounts = epochMap[epoch.ID].TotalRequestCounts.Add(epoch.TotalRequestCounts)
-		epochMap[epoch.ID].TotalRewardItems += epoch.TotalRewardItems
+		epochMap[epoch.ID].TotalRewardedNodes += epoch.TotalRewardNodes
 		epochMap[epoch.ID].Distributions = append(epochMap[epoch.ID].Distributions, NewEpochTransaction(epoch))
 	}
 
@@ -117,7 +117,7 @@ func NewEpoch(id uint64, epochs []*schema.Epoch) *Epoch {
 		epoch.TotalOperationRewards = epoch.TotalOperationRewards.Add(distributions.TotalOperationRewards)
 		epoch.TotalStakingRewards = epoch.TotalStakingRewards.Add(distributions.TotalStakingRewards)
 		epoch.TotalRequestCounts = epoch.TotalRequestCounts.Add(distributions.TotalRequestCounts)
-		epoch.TotalRewardItems += distributions.TotalRewardItems
+		epoch.TotalRewardedNodes += distributions.TotalRewardNodes
 		epoch.Distributions = append(epoch.Distributions, NewEpochTransaction(distributions))
 	}
 
@@ -140,9 +140,9 @@ func NewEpochTransaction(epoch *schema.Epoch) *EpochTransaction {
 		},
 		TotalOperationRewards: epoch.TotalOperationRewards,
 		TotalStakingRewards:   epoch.TotalStakingRewards,
-		TotalRewardItems:      epoch.TotalRewardItems,
+		TotalRewardedNodes:    epoch.TotalRewardNodes,
 		TotalRequestCounts:    epoch.TotalRequestCounts,
-		RewardItems:           epoch.RewardItems,
+		RewardedNodes:         epoch.RewardedNodes,
 		CreatedAt:             epoch.CreatedAt,
 		UpdatedAt:             epoch.UpdatedAt,
 	}

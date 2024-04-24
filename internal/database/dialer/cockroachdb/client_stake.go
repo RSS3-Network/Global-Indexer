@@ -384,7 +384,7 @@ func (c *client) FindStakerCountRecentEpochs(ctx context.Context, recentEpochs i
 		return nil, err
 	}
 
-	// Converts the rows into a map of node address to their staker counts.
+	// Converts the rows into a map of Node address to their staker counts.
 	result := lo.SliceToMap(rows, func(row row) (common.Address, *schema.StakeRecentCount) {
 		return common.HexToAddress(row.Node), &schema.StakeRecentCount{
 			StakerCount: row.Count,
