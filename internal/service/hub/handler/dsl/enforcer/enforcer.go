@@ -220,7 +220,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 				stat.EpochInvalidRequest += invalidPointUnit
 
 				nodeInvalidResponse.InvalidType = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeInconsistent)
-				nodeInvalidResponse.InvalidResponse = generateFaultyResponse(err, activityFetched)
+				nodeInvalidResponse.InvalidResponse = generateInvalidResponse(err, activityFetched)
 			} else {
 				stat.TotalRequest++
 				stat.EpochRequest += validPointUnit
@@ -250,7 +250,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 	}
 }
 
-func generateFaultyResponse(err error, activity *model.ActivityResponse) json.RawMessage {
+func generateInvalidResponse(err error, activity *model.ActivityResponse) json.RawMessage {
 	if err != nil {
 		return json.RawMessage(err.Error())
 	}
