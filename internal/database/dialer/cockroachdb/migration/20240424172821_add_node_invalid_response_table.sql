@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS "node_invalid_response"
     "updated_at"         timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT "pkey" PRIMARY KEY ("id")
-);
+    );
 
 CREATE INDEX IF NOT EXISTS "idx_epoch_id" ON "node_invalid_response" ("epoch_id" DESC);
 CREATE INDEX IF NOT EXISTS "idx_type" ON "node_invalid_response" ("type", "created_at" DESC);
