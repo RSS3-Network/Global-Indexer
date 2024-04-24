@@ -32,4 +32,4 @@ go.work
 /build/*
 
 ### Configuration
-config.yaml
+./deploy/config.yaml
