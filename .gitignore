@@ -31,4 +31,5 @@ go.work
 ### Project
 /build/*
 
+### Configuration
 deploy/config.yaml
