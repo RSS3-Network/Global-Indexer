@@ -204,84 +204,28 @@ func calculateReliabilityScore(stat *schema.Stat) error {
 }
 
 // UpdateNodeCache updates the cache for all Nodes.
-func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
+func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, notify bool, epoch int64) error {
 	if err := e.updateCacheForNodeType(ctx, model.RssNodeCacheKey); err != nil {
 		return err
 	}
 
-	return e.updateCacheForNodeType(ctx, model.FullNodeCacheKey)
+	if err := e.updateCacheForNodeType(ctx, model.FullNodeCacheKey); err != nil {
+		return err
+	}
+
+	if notify {
+		return e.cacheClient.Set(ctx, model.NotifyKey, epoch)
+	}
+
+	return nil
 }
 
 // updateCacheForNodeType updates the cache for different types of Nodes.
 func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
-	query := &schema.StatQuery{PointsOrder: lo.ToPtr("DESC")}
-
-	switch key {
-	case model.FullNodeCacheKey:
-		query.IsFullNode = lo.ToPtr(true)
-	case model.RssNodeCacheKey:
-		query.IsRssNode = lo.ToPtr(true)
-	}
-
-	nodes, err := e.databaseClient.FindNodeStats(ctx, query)
+	nodesEndpointCache, err := retrieveNodeEndpointCache(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	qualifiedNodes, err := e.getQualifiedNodes(ctx, nodes)
-	if err != nil {
-		return err
-	}
-
-	return e.setNodeCache(ctx, key, qualifiedNodes)
-}
-
-// getQualifiedNodes filters the qualified nodes.
-func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.Stat) ([]*schema.Stat, error) {
-	nodeAddresses := extractNodeAddresses(stats)
-
-	// Retrieve the online Nodes from the database.
-	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		NodeAddresses: nodeAddresses,
-		Status:        lo.ToPtr(schema.NodeStatusOnline),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
-		return node.Address, struct{}{}
-	})
-
-	var qualifiedNodes []*schema.Stat
-
-	// Exclude the offline nodes.
-	for _, stat := range stats {
-		if _, exists := nodeMap[stat.Address]; exists {
-			qualifiedNodes = append(qualifiedNodes, stat)
-		}
-
-		if len(qualifiedNodes) >= model.RequiredQualifiedNodeCount {
-			break
-		}
-	}
-
-	return qualifiedNodes, nil
-}
-
-// setNodeCache sets the cache for the Nodes.
-func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.NodeEndpointCache {
-		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
-	})
-
-	return e.cacheClient.Set(ctx, key, nodesCache)
-}
-
-// extractNodeAddresses returns all Node addresses from stats.
-func extractNodeAddresses(stats []*schema.Stat) []common.Address {
-	return lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
-		return stat.Address
-	})
+	return e.setNodesEndpointCache(ctx, key, nodesEndpointCache)
 }

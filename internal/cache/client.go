@@ -10,6 +10,7 @@ import (
 type Client interface {
 	Get(ctx context.Context, key string, dest interface{}) error
 	Set(ctx context.Context, key string, value interface{}) error
+	PSubscribe(ctx context.Context, pattern string) *redis.PubSub
 }
 
 var _ Client = (*client)(nil)
@@ -34,6 +35,10 @@ func (c *client) Set(ctx context.Context, key string, value interface{}) error {
 	}
 
 	return c.redisClient.Set(ctx, key, data, 0).Err()
+}
+
+func (c *client) PSubscribe(ctx context.Context, pattern string) *redis.PubSub {
+	return c.redisClient.PSubscribe(ctx, pattern)
 }
 
 func New(redisClient *redis.Client) Client {

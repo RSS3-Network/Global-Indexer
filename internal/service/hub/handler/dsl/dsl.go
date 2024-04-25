@@ -18,11 +18,16 @@ type DSL struct {
 	nameService    *nameresolver.NameResolver
 }
 
-func NewDSL(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, nameService *nameresolver.NameResolver, stakingContract *l2.Staking, httpClient httputil.Client) *DSL {
+func NewDSL(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, nameService *nameresolver.NameResolver, stakingContract *l2.Staking, httpClient httputil.Client) (*DSL, error) {
+	distributor, err := distributor.NewDistributor(ctx, databaseClient, cacheClient, httpClient, stakingContract)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DSL{
-		distributor:    distributor.NewDistributor(ctx, databaseClient, cacheClient, httpClient, stakingContract),
+		distributor:    distributor,
 		databaseClient: databaseClient,
 		cacheClient:    cacheClient,
 		nameService:    nameService,
-	}
+	}, nil
 }

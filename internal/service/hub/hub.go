@@ -59,8 +59,13 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	cacheClient := cache.New(redisClient)
 
+	dsl, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("new dsl: %w", err)
+	}
+
 	return &Hub{
-		dsl: dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, httpClient),
+		dsl: dsl,
 		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient),
 	}, nil
 }

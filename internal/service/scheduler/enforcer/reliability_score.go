@@ -75,10 +75,16 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(databaseClient, cache.New(redis), stakingContract, nil, false)
+
+	if err != nil {
+		return nil, fmt.Errorf("new simple enforcer: %w", err)
+	}
+
 	instance := server{
 		cronJob: cronjob.New(redis, Name, 10*time.Second),
 
-		simpleEnforcer: enforcer.NewSimpleEnforcer(databaseClient, cache.New(redis), stakingContract, nil),
+		simpleEnforcer: simpleEnforcer,
 	}
 
 	return &instance, nil

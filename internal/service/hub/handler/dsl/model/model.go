@@ -13,6 +13,8 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
+	NotifyKey = "epoch"
+
 	// RequiredQualifiedNodeCount the required number of qualified Nodes
 	RequiredQualifiedNodeCount = 3
 	// RequiredVerificationCount the required number of verifications before a request is considered valid
@@ -26,10 +28,13 @@ var (
 	}
 )
 
-// NodeEndpointCache represents a cache of a Node.
+// NodeEndpointCache stores the elements in the heap.
 type NodeEndpointCache struct {
-	Address  string `json:"address"`
-	Endpoint string `json:"endpoint"`
+	Address      string `json:"address"`
+	Endpoint     string `json:"endpoint"`
+	Score        float64
+	InvalidCount int64
+	Index        int // Maintains the index in the heap
 }
 
 // DataResponse represents the response returned by a Node.

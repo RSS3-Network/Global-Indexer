@@ -26,7 +26,7 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+func (r *SimpleRouter) BuildPath(path string, query any, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
