@@ -28,6 +28,7 @@ type Node struct {
 	MinTokensToStake decimal.Decimal `gorm:"column:min_tokens_to_stake"`
 	APY              decimal.Decimal `gorm:"column:apy"`
 	Score            decimal.Decimal `gorm:"column:score"`
+	Type             string          `gorm:"column:type"`
 	CreatedAt        time.Time       `gorm:"column:created_at"`
 	UpdatedAt        time.Time       `gorm:"column:updated_at"`
 }
@@ -49,6 +50,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.MinTokensToStake = node.MinTokensToStake
 	n.APY = node.APY
 	n.Score = node.ActiveScore
+	n.Type = node.Type
 
 	n.Location, err = json.Marshal(node.Location)
 	if err != nil {
@@ -90,6 +92,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
 		ActiveScore:            n.Score,
+		Type:                   n.Type,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }
