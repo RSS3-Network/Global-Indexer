@@ -24,6 +24,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -229,16 +230,21 @@ func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 	return base64.StdEncoding.DecodeString(data)
 }
 
+// parseEndpoint parses the given endpoint string.
+// If it does not start with "https://" or "http://", it prepends "https://" to it.
+// Then, it parses the endpoint URL, ignoring any query parameters.
+// It returns the parsed URL as a string.
 func (n *NTA) parseEndpoint(_ context.Context, endpoint string) string {
-	if ip := net.ParseIP(endpoint); ip != nil {
-		return endpoint
+	if !strings.HasPrefix(endpoint, "https://") && !strings.HasPrefix(endpoint, "http://") {
+		endpoint = "https://" + endpoint
 	}
 
-	if uri, _ := url.Parse(endpoint); len(uri.Hostname()) > 0 {
-		return uri.Hostname()
+	u, err := url.Parse(strings.Split(endpoint, "?")[0])
+	if err != nil {
+		zap.L().Warn("parse endpoint", zap.Error(err))
 	}
 
-	return endpoint
+	return u.String()
 }
 
 func (n *NTA) parseRequestIP(c echo.Context) (net.IP, error) {
