@@ -214,7 +214,7 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, notify bool, epoch
 	}
 
 	if notify {
-		return e.cacheClient.Set(ctx, model.NotifyKey, epoch)
+		return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
 	}
 
 	return nil
@@ -222,10 +222,10 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, notify bool, epoch
 
 // updateCacheForNodeType updates the cache for different types of Nodes.
 func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCache, err := retrieveNodeEndpointCache(ctx, key, e.databaseClient)
+	nodesEndpointCache, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	return e.setNodesEndpointCache(ctx, key, nodesEndpointCache)
+	return e.cacheClient.Set(ctx, key, nodesEndpointCache)
 }

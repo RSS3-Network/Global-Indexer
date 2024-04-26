@@ -13,7 +13,7 @@ var (
 	RssNodeCacheKey  = "nodes:rss"
 	FullNodeCacheKey = "nodes:full"
 
-	NotifyKey = "epoch"
+	SubscribeNodeCacheKey = "epoch"
 
 	// RequiredQualifiedNodeCount the required number of qualified Nodes
 	RequiredQualifiedNodeCount = 3
@@ -34,7 +34,8 @@ type NodeEndpointCache struct {
 	Endpoint     string `json:"endpoint"`
 	Score        float64
 	InvalidCount int64
-	Index        int // Maintains the index in the heap
+	// Maintains the index in the heap
+	Index int
 }
 
 // DataResponse represents the response returned by a Node.

@@ -11,7 +11,8 @@ import (
 	"github.com/samber/lo"
 )
 
-func retrieveNodeEndpointCache(ctx context.Context, key string, databaseClient database.Client) ([]*model.NodeEndpointCache, error) {
+// retrieveNodeEndpointCaches retrieves the qualified Nodes from the database.
+func retrieveNodeEndpointCaches(ctx context.Context, key string, databaseClient database.Client) ([]*model.NodeEndpointCache, error) {
 	nodeStats, err := retrieveNodeStatsFromDB(ctx, key, databaseClient)
 	if err != nil {
 		return nil, err
@@ -33,6 +34,7 @@ func retrieveNodeEndpointCache(ctx context.Context, key string, databaseClient d
 	}), nil
 }
 
+// retrieveNodeStatsFromDB retrieves the Node stats from the database.
 func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient database.Client) ([]*schema.Stat, error) {
 	query := schema.StatQuery{
 		Limit:        lo.ToPtr(defaultLimit),
@@ -106,11 +108,6 @@ func getQualifiedNodes(ctx context.Context, stats []*schema.Stat, databaseClient
 	}
 
 	return qualifiedNodes, nil
-}
-
-// setNodesEndpointCache sets the cache for the Nodes.
-func (e *SimpleEnforcer) setNodesEndpointCache(ctx context.Context, key string, nodesEndpointCache []*model.NodeEndpointCache) error {
-	return e.cacheClient.Set(ctx, key, nodesEndpointCache)
 }
 
 // extractNodeAddresses returns all Node addresses from stats.

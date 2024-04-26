@@ -324,10 +324,10 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 			break
 		}
 
-		// If the cursor is nil, it means that the stats is the first batch of data.
+		// A nil cursor indicates that the stats represent the initial batch of data.
 		if query.Cursor == nil {
-			// If the current epoch is different from the epoch of the first stat,
-			// it means that the epoch has changed and the score queue needs to be notified.
+			// If the epoch of the current stat differs from that of the first stat,
+			// it indicates an epoch change, necessitating a notification to the score queue.
 			notify = currentEpoch != stats[0].Epoch
 		}
 
@@ -346,14 +346,15 @@ func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
 
+// RetrieveQualifiedNodes retrieves the qualified Nodes from the priority node queue.
 func (e *SimpleEnforcer) RetrieveQualifiedNodes(_ context.Context, key string) ([]*model.NodeEndpointCache, error) {
 	var nodesCache []*model.NodeEndpointCache
 
 	switch key {
 	case model.RssNodeCacheKey:
-		nodesCache = e.rssNodeScoreMaintainer.getQualifiedNodes(model.RequiredQualifiedNodeCount)
+		nodesCache = e.rssNodeScoreMaintainer.retrieveQualifiedNodes(model.RequiredQualifiedNodeCount)
 	case model.FullNodeCacheKey:
-		nodesCache = e.fullNodeScoreMaintainer.getQualifiedNodes(model.RequiredQualifiedNodeCount)
+		nodesCache = e.fullNodeScoreMaintainer.retrieveQualifiedNodes(model.RequiredQualifiedNodeCount)
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
@@ -361,6 +362,7 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(_ context.Context, key string) (
 	return nodesCache, nil
 }
 
+// MaintainQualifiedNode maintains the qualified Node in the priority node queue.
 func (e *SimpleEnforcer) MaintainQualifiedNode(_ context.Context, nodeEndpointCache model.NodeEndpointCache, key string) error {
 	switch key {
 	case model.RssNodeCacheKey:
@@ -374,14 +376,17 @@ func (e *SimpleEnforcer) MaintainQualifiedNode(_ context.Context, nodeEndpointCa
 	return nil
 }
 
-func subscribeCacheUpdate(ctx context.Context, cacheClient cache.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
+// subscribeNodeCacheUpdate subscribes to updates of the 'epoch' key.
+// Upon updating the 'epoch' key, the Node cache is refreshed.
+// This cache holds the initial reliability scores of the nodes for the new epoch.
+func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
 		//Subscribe to changes to 'epoch'
-		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@0__:%s", model.NotifyKey))
+		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@0__:%s", model.SubscribeNodeCacheKey))
 
-		// Wait for confirmation that subscription is created before proceeding
+		// Wait for confirmation that subscription is created before proceeding.
 		if _, err := pubsub.Receive(ctx); err != nil {
-			zap.L().Error("Subscribe failed:", zap.Error(err))
+			zap.L().Error("subscribe node cache failed:", zap.Error(err))
 
 			os.Exit(1)
 		}
@@ -391,10 +396,11 @@ func subscribeCacheUpdate(ctx context.Context, cacheClient cache.Client, fullNod
 
 		zap.L().Info("start listening to 'epoch'...")
 
+		// A message is received whenever the 'epoch' key is updated, indicating the start of a new epoch.
 		for msg := range ch {
 			zap.L().Info("received message from channel", zap.String("channel", msg.Channel), zap.String("payload", msg.Payload))
 
-			// get node cache from redis
+			// get node cache from redis.
 			var fullNodes []*model.NodeEndpointCache
 			if err := cacheClient.Get(ctx, model.FullNodeCacheKey, &fullNodes); err != nil {
 				zap.L().Error("get full nodes from cache", zap.Error(err))
@@ -412,30 +418,30 @@ func subscribeCacheUpdate(ctx context.Context, cacheClient cache.Client, fullNod
 	}()
 }
 
-func NewSimpleEnforcer(databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initSm bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initScoreMaintainer bool) (*SimpleEnforcer, error) {
 	var (
 		fullNodeScoreMaintainer *ScoreMaintainer
 		rssNodeScoreMaintainer  *ScoreMaintainer
 	)
 
-	ctx := context.Background()
-	// Initialize the score maintainers
-	if initSm {
-		fullNodes, err := retrieveNodeEndpointCache(ctx, model.FullNodeCacheKey, databaseClient)
+	// Check if the score maintainer needs to be initialized.
+	if initScoreMaintainer {
+		fullNodes, err := retrieveNodeEndpointCaches(ctx, model.FullNodeCacheKey, databaseClient)
 		if err != nil {
 			return nil, err
 		}
 
 		fullNodeScoreMaintainer = newScoreMaintainer(fullNodes)
 
-		rssNodes, err := retrieveNodeEndpointCache(ctx, model.RssNodeCacheKey, databaseClient)
+		rssNodes, err := retrieveNodeEndpointCaches(ctx, model.RssNodeCacheKey, databaseClient)
 		if err != nil {
 			return nil, err
 		}
 
 		rssNodeScoreMaintainer = newScoreMaintainer(rssNodes)
 
-		subscribeCacheUpdate(ctx, cacheClient, fullNodeScoreMaintainer, rssNodeScoreMaintainer)
+		// Subscribe to the node cache update.
+		subscribeNodeCacheUpdate(ctx, cacheClient, fullNodeScoreMaintainer, rssNodeScoreMaintainer)
 	}
 
 	return &SimpleEnforcer{

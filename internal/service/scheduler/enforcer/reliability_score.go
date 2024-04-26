@@ -75,7 +75,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(databaseClient, cache.New(redis), stakingContract, nil, false)
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, nil, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("new simple enforcer: %w", err)

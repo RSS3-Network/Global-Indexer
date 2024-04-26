@@ -9,6 +9,7 @@ import (
 )
 
 // priorityNodeQueue implements heap.Interface and holds NodeEndpointCaches.
+// It is used to maintain a priority queue of NodeEndpointCaches based on their scores and invalid counts.
 type priorityNodeQueue []*model.NodeEndpointCache
 
 func (pq priorityNodeQueue) Len() int {
@@ -48,13 +49,16 @@ func (pq *priorityNodeQueue) Pop() interface{} {
 	return nodeEndpointCache
 }
 
+// ScoreMaintainer is a structure that maintains a priority queue of NodeEndpointCaches
+// and a map for quick access.
 type ScoreMaintainer struct {
 	queue              *priorityNodeQueue
 	nodeEndpointCaches map[string]*model.NodeEndpointCache
 	lock               sync.Mutex
 }
 
-// AddOrUpdateScore updates or adds a nodeEndpointCache in the data structure
+// addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
+// If the invalidCount is greater than or equal to DemotionCountBeforeSlashing, the nodeEndpointCache is removed.
 func (sm *ScoreMaintainer) addOrUpdateScore(address string, score float64, invalidCount int64) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
@@ -86,7 +90,8 @@ func (sm *ScoreMaintainer) addOrUpdateScore(address string, score float64, inval
 	}
 }
 
-func (sm *ScoreMaintainer) getQualifiedNodes(n int) []*model.NodeEndpointCache {
+// retrieveQualifiedNodes returns the top n NodeEndpointCaches from the priority queue.
+func (sm *ScoreMaintainer) retrieveQualifiedNodes(n int) []*model.NodeEndpointCache {
 	var qualifiedNodes []*model.NodeEndpointCache
 	// Temporary storage to hold elements popped from the heap.
 	var tempHeap priorityNodeQueue
@@ -115,9 +120,14 @@ func (sm *ScoreMaintainer) getQualifiedNodes(n int) []*model.NodeEndpointCache {
 	return qualifiedNodes
 }
 
+// updateAllQualifiedNodes replaces the current priority queue and map with the provided priority queue.
 func (sm *ScoreMaintainer) updateAllQualifiedNodes(pq priorityNodeQueue) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
+
+	pq = lo.Filter(pq, func(n *model.NodeEndpointCache, _ int) bool {
+		return n.InvalidCount < int64(model.DemotionCountBeforeSlashing)
+	})
 
 	heap.Init(&pq)
 
@@ -127,7 +137,12 @@ func (sm *ScoreMaintainer) updateAllQualifiedNodes(pq priorityNodeQueue) {
 	})
 }
 
+// newScoreMaintainer creates a new ScoreMaintainer with the provided priority queue.
 func newScoreMaintainer(pq priorityNodeQueue) *ScoreMaintainer {
+	pq = lo.Filter(pq, func(n *model.NodeEndpointCache, _ int) bool {
+		return n.InvalidCount < int64(model.DemotionCountBeforeSlashing)
+	})
+
 	heap.Init(&pq)
 
 	return &ScoreMaintainer{

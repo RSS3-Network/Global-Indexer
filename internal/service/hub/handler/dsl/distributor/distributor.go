@@ -140,8 +140,8 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 }
 
 // NewDistributor creates a new distributor.
-func NewDistributor(_ context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.Staking) (*Distributor, error) {
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(database, cache, stakingContract, httpClient, true)
+func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.Staking) (*Distributor, error) {
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(ctx, database, cache, stakingContract, httpClient, true)
 
 	if err != nil {
 		return nil, err
