@@ -131,6 +131,11 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
 
+	// Check if the endpoint is available and contains the node's address before update the node's status to online.
+	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+		return fmt.Errorf("check endpoint available: %w", err)
+	}
+
 	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)
@@ -322,8 +327,8 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	// Check if the endpoint is available and contains the node's address.
-	if err := n.checkEndpoint(ctx, node.Endpoint, node.Address); err != nil {
-		return fmt.Errorf("check endpoint: %w", err)
+	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+		return fmt.Errorf("check endpoint available: %w", err)
 	}
 
 	// Get node local info.
@@ -376,26 +381,16 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 }
 
 // checkEndpoint checks if the endpoint is available and contains the node's address.
-func (n *NTA) checkEndpoint(ctx context.Context, endpoint string, address common.Address) error {
-	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://%s:81", endpoint), nil)
+func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address common.Address) error {
+	response, err := n.httpClient.Fetch(ctx, endpoint)
 	if err != nil {
-		return fmt.Errorf("build http request: %w", err)
+		return fmt.Errorf("fetch node endpoint %s: %w", endpoint, err)
 	}
 
-	// nolint:bodyclose // False positive.
-	httpResponse, err := http.DefaultClient.Do(httpRequest)
-	if err != nil {
-		return fmt.Errorf("send check endpoint request: %w", err)
-	}
-
-	defer lo.Try(httpResponse.Body.Close)
-
-	if httpResponse.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %d %s", httpResponse.StatusCode, httpResponse.Status)
-	}
+	defer lo.Try(response.Close)
 
 	// Use a limited reader to avoid reading too much data.
-	content, err := io.ReadAll(io.LimitReader(httpResponse.Body, 4096))
+	content, err := io.ReadAll(io.LimitReader(response, 4096))
 	if err != nil {
 		return fmt.Errorf("parse node response: %w", err)
 	}
