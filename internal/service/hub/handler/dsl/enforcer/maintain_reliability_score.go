@@ -192,8 +192,8 @@ func calculateReliabilityScore(stat *schema.Stat) error {
 	// maximum score is 0.2
 	stat.Score += math.Min(float64(stat.Indexer)*perIndexerScore, indexerMaxScore)
 
-	// epoch failure requests
-	if stat.EpochInvalidRequest >= int64(model.DefaultSlashCount) {
+	// invalid request count in the current Epoch
+	if stat.EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
 		// If the number of invalid requests in the epoch is greater than the threshold, then the score is 0.
 		stat.Score = 0
 	} else {

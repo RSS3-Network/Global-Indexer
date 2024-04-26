@@ -54,7 +54,7 @@ func (d *Distributor) getQualifiedNodes(ctx context.Context, request dsl.Activit
 // generateQualifiedNodeCache generates an ordered qualified Node cache
 func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddresses []common.Address) ([]model.NodeEndpointCache, error) {
 	nodesOrderedByPoints, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		AddressList: nodeAddresses,
+		Addresses:   nodeAddresses,
 		Limit:       lo.ToPtr(model.RequiredQualifiedNodeCount),
 		PointsOrder: lo.ToPtr("DESC"),
 	})
@@ -106,9 +106,9 @@ func (d *Distributor) retrieveNodesFromDB(ctx context.Context, key string) ([]mo
 
 	switch key {
 	case model.RssNodeCacheKey:
-		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsRssNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	case model.FullNodeCacheKey:
-		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DefaultSlashCount), PointsOrder: lo.ToPtr("DESC")}
+		query = schema.StatQuery{IsFullNode: lo.ToPtr(true), Limit: lo.ToPtr(model.RequiredQualifiedNodeCount), ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing), PointsOrder: lo.ToPtr("DESC")}
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}

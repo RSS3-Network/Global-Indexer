@@ -32,6 +32,7 @@ type Node struct {
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	APY                    decimal.Decimal        `json:"apy"`
 	ActiveScore            decimal.Decimal        `json:"activeScore"`
+	ReliabilityScore       decimal.Decimal        `json:"reliabilityScore"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 
