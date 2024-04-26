@@ -131,9 +131,12 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
 
-	// Check if the endpoint is available and contains the node's address before update the node's status to online.
-	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
-		return fmt.Errorf("check endpoint available: %w", err)
+	// Checks begin from the beta stage.
+	if !nodeInfo.Alpha {
+		// Check if the endpoint is available and contains the node's address before update the node's status to online.
+		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+			return fmt.Errorf("check endpoint available: %w", err)
+		}
 	}
 
 	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
