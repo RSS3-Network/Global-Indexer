@@ -59,7 +59,7 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 			return nil, err
 		}
 
-		if len(tempNodeStats) < defaultLimit {
+		if query.Cursor != nil && len(tempNodeStats) < defaultLimit {
 			break
 		}
 
@@ -100,10 +100,6 @@ func getQualifiedNodes(ctx context.Context, stats []*schema.Stat, databaseClient
 	for _, stat := range stats {
 		if _, exists := nodeMap[stat.Address]; exists {
 			qualifiedNodes = append(qualifiedNodes, stat)
-		}
-
-		if len(qualifiedNodes) >= model.RequiredQualifiedNodeCount {
-			break
 		}
 	}
 
