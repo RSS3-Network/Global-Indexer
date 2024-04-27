@@ -105,11 +105,6 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(n int) []*model.NodeEndpointCa
 
 		// Store the qualifiedNode to re-push later.
 		tempHeap = append(tempHeap, qualifiedNode)
-
-		// If we have enough qualifiedNodes, break.
-		if len(qualifiedNodes) == n {
-			break
-		}
 	}
 
 	// Push all item back to restore the heap
