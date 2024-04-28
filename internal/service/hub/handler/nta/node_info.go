@@ -24,7 +24,6 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	"go.uber.org/zap"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -231,20 +230,23 @@ func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 }
 
 // parseEndpoint parses the given endpoint string.
-// If it does not start with "https://" or "http://", it prepends "https://" to it.
+// If it does not start with "https://" or "http://", it returns an error.
 // Then, it parses the endpoint URL, ignoring any query parameters.
 // It returns the parsed URL as a string.
-func (n *NTA) parseEndpoint(_ context.Context, endpoint string) string {
-	if !strings.HasPrefix(endpoint, "https://") && !strings.HasPrefix(endpoint, "http://") {
-		endpoint = "https://" + endpoint
-	}
-
-	u, err := url.Parse(strings.Split(endpoint, "?")[0])
+func (n *NTA) parseEndpoint(_ context.Context, endpoint string) (string, error) {
+	u, err := url.Parse(endpoint)
 	if err != nil {
-		zap.L().Warn("parse endpoint", zap.Error(err))
+		return "", fmt.Errorf("parse endpoint: %w", err)
 	}
 
-	return u.String()
+	if (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+		return "", errors.New("invalid endpoint")
+	}
+
+	u.ForceQuery = false
+	u.Path, u.RawQuery = "", ""
+
+	return u.String(), nil
 }
 
 func (n *NTA) parseRequestIP(c echo.Context) (net.IP, error) {

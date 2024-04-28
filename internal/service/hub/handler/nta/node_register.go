@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/creasty/defaults"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -32,6 +34,10 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := defaults.Set(&request); err != nil {
+		return errorx.InternalError(c, fmt.Errorf("set default values for reqeust: %w", err))
 	}
 
 	if err := c.Validate(&request); err != nil {
@@ -117,12 +123,27 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	node.Endpoint = n.parseEndpoint(ctx, request.Endpoint)
+	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
+	if err != nil {
+		zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
+
+		return fmt.Errorf("parse endpoint: %w", err)
+	}
+
 	node.Stream = request.Stream
 	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
+	node.Type = request.Type
+
+	// Checks begin from the beta stage.
+	if !nodeInfo.Alpha {
+		// Check if the endpoint is available and contains the node's address before update the node's status to online.
+		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+			return fmt.Errorf("check endpoint available: %w", err)
+		}
+	}
 
 	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
 	if err != nil {
@@ -314,6 +335,11 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
+	// Check if the endpoint is available and contains the node's address.
+	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+		return fmt.Errorf("check endpoint available: %w", err)
+	}
+
 	// Get node local info.
 	if len(node.Location) == 0 {
 		node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
@@ -358,6 +384,31 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 
 	if address != result {
 		return fmt.Errorf("invalid signature")
+	}
+
+	return nil
+}
+
+// checkAvailable checks if the endpoint is available and contains the node's address.
+func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address common.Address) error {
+	response, err := n.httpClient.Fetch(ctx, endpoint)
+	if err != nil {
+		return fmt.Errorf("fetch node endpoint %s: %w", endpoint, err)
+	}
+
+	defer lo.Try(response.Close)
+
+	// Use a limited reader to avoid reading too much data.
+	content, err := io.ReadAll(io.LimitReader(response, 4096))
+	if err != nil {
+		return fmt.Errorf("parse node response: %w", err)
+	}
+
+	// Check if the node's address is in the response.
+	// This is a simple check to ensure the node is responding correctly.
+	// The content sample is: "This is an RSS3 Node operated by 0x0000000000000000000000000000000000000000.".
+	if !strings.Contains(string(content), address.String()) {
+		return fmt.Errorf("invalid node response")
 	}
 
 	return nil
