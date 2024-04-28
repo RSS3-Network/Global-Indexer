@@ -125,6 +125,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
 	if err != nil {
+		zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
+
 		return fmt.Errorf("parse endpoint: %w", err)
 	}
 

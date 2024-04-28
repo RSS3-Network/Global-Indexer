@@ -24,7 +24,6 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	"go.uber.org/zap"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -237,13 +236,11 @@ func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 func (n *NTA) parseEndpoint(_ context.Context, endpoint string) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		zap.L().Warn("parse endpoint", zap.Error(err))
-
-		return "", err
+		return "", fmt.Errorf("parse endpoint: %w", err)
 	}
 
 	if (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
-		return "", fmt.Errorf("invalid endpoint")
+		return "", errors.New("invalid endpoint")
 	}
 
 	u.ForceQuery = false
