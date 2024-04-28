@@ -66,6 +66,6 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	return &Hub{
 		dsl: dsl,
-		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient),
+		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient, httpClient),
 	}, nil
 }
