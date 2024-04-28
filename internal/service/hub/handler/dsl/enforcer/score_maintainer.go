@@ -12,23 +12,23 @@ import (
 // It is used to maintain a priority queue of NodeEndpointCaches based on their scores and invalid counts.
 type priorityNodeQueue []*model.NodeEndpointCache
 
-func (pq priorityNodeQueue) Len() int {
-	return len(pq)
+func (pq *priorityNodeQueue) Len() int {
+	return len(*pq)
 }
 
-func (pq priorityNodeQueue) Less(i, j int) bool {
-	if pq[i].Score == pq[j].Score {
+func (pq *priorityNodeQueue) Less(i, j int) bool {
+	if (*pq)[i].Score == (*pq)[j].Score {
 		// If Scores are the same, return true if pq[i] has a smaller InvalidCount than pq[j]
-		return pq[i].InvalidCount < pq[j].InvalidCount
+		return (*pq)[i].InvalidCount < (*pq)[j].InvalidCount
 	}
 	// Otherwise, return true if pq[i] has a greater score than pq[j]
-	return pq[i].Score > pq[j].Score
+	return (*pq)[i].Score > (*pq)[j].Score
 }
 
-func (pq priorityNodeQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].Index = i
-	pq[j].Index = j
+func (pq *priorityNodeQueue) Swap(i, j int) {
+	(*pq)[i], (*pq)[j] = (*pq)[j], (*pq)[i]
+	(*pq)[i].Index = i
+	(*pq)[j].Index = j
 }
 
 func (pq *priorityNodeQueue) Push(x interface{}) {
