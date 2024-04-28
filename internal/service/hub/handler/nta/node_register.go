@@ -123,7 +123,11 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	node.Endpoint = n.parseEndpoint(ctx, request.Endpoint)
+	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
+	if err != nil {
+		return fmt.Errorf("parse endpoint: %w", err)
+	}
+
 	node.Stream = request.Stream
 	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
