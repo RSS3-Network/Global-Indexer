@@ -9,12 +9,12 @@ import (
 )
 
 type AverageTaxRateSubmission struct {
-	ID              uint64          `gorm:"id"`
-	EpochID         uint64          `gorm:"epoch_id"`
-	AverageTaxRate  decimal.Decimal `gorm:"average_tax_rate"`
-	TransactionHash string          `gorm:"transaction_hash"`
-	CreatedAt       time.Time       `gorm:"created_at"`
-	UpdatedAt       time.Time       `gorm:"updated_at"`
+	EpochID         uint64          `gorm:"column:epoch_id;type:bigint;primaryKey;autoIncrement:false;"`
+	ID              uint64          `gorm:"column:id;type:serial;autoIncrement;not nul;index:average_tax_rate_submissions_id_idx,sort:desc;"`
+	AverageTaxRate  decimal.Decimal `gorm:"column:average_tax_rate;type:decimal;not null;"`
+	TransactionHash string          `gorm:"column:transaction_hash;type:text;not null;index:average_tax_rate_submissions_transaction_hash_idx;"`
+	CreatedAt       time.Time       `gorm:"autoCreateTime;not null;default:now();"`
+	UpdatedAt       time.Time       `gorm:"autoUpdateTime;not null;default:now();"`
 }
 
 func (a *AverageTaxRateSubmission) TableName() string {

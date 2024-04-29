@@ -1,6 +1,8 @@
 package table
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
@@ -9,16 +11,16 @@ import (
 // EpochItem stores information for a Node in an Epoch
 // TODO: we should probably rename this to NodeRewardRecord?
 type EpochItem struct {
-	EpochID          uint64          `gorm:"column:epoch_id;"`
-	Index            int             `gorm:"column:index;primaryKey"`
-	TransactionHash  string          `gorm:"column:transaction_hash;primaryKey"`
-	NodeAddress      string          `gorm:"column:node_address"`
-	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
-	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
-	// FIXME: correct the column names
-	TaxCollected decimal.Decimal `gorm:"column:tax_amounts"`
-	// FIXME: correct the column names
-	RequestCount decimal.Decimal `gorm:"column:request_counts"`
+	EpochID          uint64          `gorm:"column:epoch_id;type:bigint;not null;index:idx_epoch_item_epoch_id;"`
+	TransactionHash  string          `gorm:"column:transaction_hash;type:text;not null;primaryKey"`
+	Index            int             `gorm:"column:index;type:bigint;not null;primaryKey;autoIncrement:false;"`
+	NodeAddress      string          `gorm:"column:node_address;type:bytea;not null;index:idx_epoch_item_node_address;"`
+	OperationRewards decimal.Decimal `gorm:"column:operation_rewards;type:decimal;not null;"`
+	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards;type:decimal;not null;"`
+	TaxCollected     decimal.Decimal `gorm:"column:tax_collected;type:decimal;not null;"`
+	RequestCount     decimal.Decimal `gorm:"column:request_count;type:decimal;not null;default:0;"`
+	CreatedAt        time.Time       `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()"`
+	UpdatedAt        time.Time       `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()"`
 }
 
 func (e *EpochItem) TableName() string {

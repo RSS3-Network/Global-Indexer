@@ -13,8 +13,8 @@ var (
 )
 
 type NodeSnapshot struct {
-	Date  time.Time `gorm:"column:date"`
-	Count uint64    `gorm:"column:count"`
+	Date  time.Time `gorm:"column:date;type:date;primaryKey;"`
+	Count uint64    `gorm:"column:count;type:bigint;not null;default:0;"`
 }
 
 func (s *NodeSnapshot) TableName() string {

@@ -16,13 +16,13 @@ var (
 )
 
 type StakeChip struct {
-	ID             decimal.Decimal `gorm:"column:id"`
-	Owner          string          `gorm:"column:owner"`
-	Node           string          `gorm:"column:node"`
-	Value          decimal.Decimal `gorm:"column:value"`
-	Metadata       json.RawMessage `gorm:"column:metadata"`
-	BlockNumber    decimal.Decimal `gorm:"column:block_number"`
-	BlockTimestamp time.Time       `gorm:"column:block_timestamp"`
+	ID             decimal.Decimal `gorm:"column:id;type:decimal;primaryKey;autoIncrement:false;"`
+	Owner          string          `gorm:"column:owner;type:text;not null;index:idx_owner;"`
+	Node           string          `gorm:"column:node;type:text;not null;index:idx_node;"`
+	Value          decimal.Decimal `gorm:"column:value;type:decimal;"`
+	Metadata       json.RawMessage `gorm:"column:metadata;type:jsonb"`
+	BlockNumber    decimal.Decimal `gorm:"column:block_number;type:bigint;not null;"`
+	BlockTimestamp time.Time       `gorm:"column:block_timestamp;type:timestamp with time zone;not null;"`
 }
 
 func (s *StakeChip) TableName() string {

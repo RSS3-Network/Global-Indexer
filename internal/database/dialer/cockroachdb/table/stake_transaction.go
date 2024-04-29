@@ -18,15 +18,15 @@ var (
 )
 
 type StakeTransaction struct {
-	ID               string          `gorm:"column:id;primaryKey"`
-	Type             string          `gorm:"column:type;primaryKey"`
-	User             string          `gorm:"column:user"`
-	Node             string          `gorm:"column:node"`
-	Value            decimal.Decimal `gorm:"column:value"`
-	Chips            pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
-	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
-	BlockNumber      uint64          `gorm:"column:block_number"`
-	TransactionIndex uint            `gorm:"column:transaction_index"`
+	ID               string          `gorm:"column:id;type:text;not null;primaryKey;"`
+	Type             string          `gorm:"column:type;type:text;not null;primaryKey;"`
+	User             string          `gorm:"column:user;type:text;not null;index:idx_transactions_user;index:idx_transactions_address,priority:1;"`
+	Node             string          `gorm:"column:node;type:text;not null;index:idx_transactions_node;index:idx_transactions_address,priority:2;"`
+	Value            decimal.Decimal `gorm:"column:value;type:decimal;not null;"`
+	Chips            pq.Int64Array   `gorm:"column:chips;type:bigint[];not null;"`
+	BlockTimestamp   time.Time       `gorm:"column:block_timestamp;type:timestamp with time zone;not null;index:idx_transactions_order,priority:1,sort:desc;"`
+	BlockNumber      uint64          `gorm:"column:block_number;type:bigint;not null;index:idx_transactions_order,priority:2,sort:desc;"`
+	TransactionIndex uint            `gorm:"column:transaction_index;type:bigint;not null;index:idx_transactions_order,priority:3,sort:desc;"`
 }
 
 func (s *StakeTransaction) TableName() string {

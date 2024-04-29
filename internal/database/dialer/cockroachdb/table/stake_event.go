@@ -15,14 +15,14 @@ var (
 )
 
 type StakeEvent struct {
-	ID                string    `gorm:"column:id"`
-	Type              string    `gorm:"column:type"`
-	TransactionHash   string    `gorm:"column:transaction_hash;primaryKey"`
-	TransactionIndex  uint      `gorm:"column:transaction_index"`
-	TransactionStatus uint64    `gorm:"column:transaction_status"`
-	BlockHash         string    `gorm:"column:block_hash;primaryKey"`
-	BlockNumber       uint64    `gorm:"column:block_number"`
-	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
+	ID                string    `gorm:"column:id;type:text;not null;index:idx_id;"`
+	Type              string    `gorm:"column:type;type:text;not null;"`
+	TransactionHash   string    `gorm:"column:transaction_hash;type:text;not null;primaryKey;"`
+	TransactionIndex  uint      `gorm:"column:transaction_index;type:bigint;not null;"`
+	TransactionStatus uint64    `gorm:"column:transaction_status;type:bigint;not null;"`
+	BlockHash         string    `gorm:"column:block_hash;type:text;not null;primaryKey"`
+	BlockNumber       uint64    `gorm:"column:block_number;type:bigint;not null;"`
+	BlockTimestamp    time.Time `gorm:"column:block_timestamp;type:timestamp with time zone;not null;"`
 }
 
 func (b *StakeEvent) TableName() string {

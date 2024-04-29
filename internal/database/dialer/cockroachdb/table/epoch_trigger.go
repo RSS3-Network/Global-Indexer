@@ -9,11 +9,11 @@ import (
 )
 
 type EpochTrigger struct {
-	TransactionHash string          `gorm:"column:transaction_hash"`
-	EpochID         uint64          `gorm:"column:epoch_id"`
-	Data            json.RawMessage `gorm:"column:data"`
-	CreatedAt       time.Time       `gorm:"column:created_at"`
-	UpdatedAt       time.Time       `gorm:"column:updated_at"`
+	TransactionHash string          `gorm:"column:transaction_hash;type:text;not null;primaryKey;"`
+	EpochID         uint64          `gorm:"column:epoch_id;type:bigint;not null;index:idx_epoch_id;"`
+	Data            json.RawMessage `gorm:"column:data;type:jsonb;not null;"`
+	CreatedAt       time.Time       `gorm:"column:created_at;type:timestamp with time zone;not null;default:now();index:idx_created_at;"`
+	UpdatedAt       time.Time       `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()"`
 }
 
 func (e *EpochTrigger) TableName() string {

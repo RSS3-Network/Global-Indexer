@@ -10,22 +10,20 @@ import (
 )
 
 type Epoch struct {
-	ID                    uint64          `gorm:"column:id;primaryKey"`
-	StartTimestamp        time.Time       `gorm:"column:start_timestamp"`
-	EndTimestamp          time.Time       `gorm:"column:end_timestamp"`
-	TransactionHash       string          `gorm:"column:transaction_hash"`
-	TransactionIndex      uint            `gorm:"column:transaction_index"`
-	BlockHash             string          `gorm:"column:block_hash"`
-	BlockNumber           uint64          `gorm:"column:block_number"`
-	BlockTimestamp        time.Time       `gorm:"column:block_timestamp"`
-	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
-	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
-	// FIXME: update column name
-	TotalRewardedNodes int             `gorm:"column:total_reward_items"`
-	TotalRequestCounts decimal.Decimal `gorm:"column:total_request_counts"`
-
-	CreatedAt time.Time `gorm:"column:created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at"`
+	ID                    uint64          `gorm:"column:id;type:bigint;not null;index:idx_epoch_id,priority:1,sort:desc;"`
+	StartTimestamp        time.Time       `gorm:"column:start_timestamp;type:timestamp with time zone;not null;index:idx_timestamp,priority:1,sort:desc;"`
+	EndTimestamp          time.Time       `gorm:"column:end_timestamp;type:timestamp with time zone;not null;index:idx_timestamp,priority:2,sort:desc;"`
+	TransactionHash       string          `gorm:"column:transaction_hash;type:text;not null;primaryKey;"`
+	TransactionIndex      uint            `gorm:"column:transaction_index;type:bigint;not null;index:idx_epoch_id,priority:3,sort:desc;"`
+	BlockHash             string          `gorm:"column:block_hash;type:text;not null;"`
+	BlockNumber           uint64          `gorm:"column:block_number;type:bigint;not null;index:idx_epoch_id,priority:2,sort:desc;"`
+	BlockTimestamp        time.Time       `gorm:"column:block_timestamp;type:timestamp with time zone;not null;"`
+	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards;type:decimal;"`
+	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards;type:decimal;"`
+	TotalRewardedNodes    int             `gorm:"column:total_reward_nodes;type:bigint;"`
+	TotalRequestCounts    decimal.Decimal `gorm:"column:total_request_counts;type:decimal;default:0;"`
+	CreatedAt             time.Time       `gorm:"column:created_at;type:timestamp with time zone;not null;default:now()"`
+	UpdatedAt             time.Time       `gorm:"column:updated_at;type:timestamp with time zone;not null;default:now()"`
 }
 
 func (e *Epoch) TableName() string {

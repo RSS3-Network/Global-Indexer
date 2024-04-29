@@ -13,23 +13,22 @@ import (
 )
 
 type Node struct {
-	Address                common.Address    `gorm:"column:address;primaryKey"`
-	NodeID                 uint64            `gorm:"column:id"`
-	Endpoint               string            `gorm:"column:endpoint"`
-	HideTaxRate            bool              `gorm:"column:hide_tax_rate"`
-	IsPublicGood           bool              `gorm:"column:is_public_good"`
-	Stream                 json.RawMessage   `gorm:"column:stream"`
+	Address                common.Address    `gorm:"column:address;type:bytea;primaryKey;"`
+	NodeID                 uint64            `gorm:"column:id;type:bigint;not null;index:idx_id,unique;"`
+	Endpoint               string            `gorm:"column:endpoint;type:text;not null;index:idx_endpoint_unique,unique;"`
+	HideTaxRate            bool              `gorm:"column:hide_tax_rate;type:bool;default:false;"`
+	IsPublicGood           bool              `gorm:"column:is_public_good;type:bool;not null;index:idx_is_public,priority:1;"`
+	Stream                 json.RawMessage   `gorm:"column:stream;type:jsonb"`
 	Config                 json.RawMessage   `gorm:"column:config;type:jsonb"`
-	Status                 schema.NodeStatus `gorm:"column:status"`
-	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp"`
-	// TODO: rename column to Location in database once atlas is merged
-	Location         json.RawMessage `gorm:"column:local;type:jsonb"`
-	Avatar           json.RawMessage `gorm:"column:avatar;type:jsonb"`
-	MinTokensToStake decimal.Decimal `gorm:"column:min_tokens_to_stake"`
-	APY              decimal.Decimal `gorm:"column:apy"`
-	Score            decimal.Decimal `gorm:"column:score"`
-	CreatedAt        time.Time       `gorm:"column:created_at"`
-	UpdatedAt        time.Time       `gorm:"column:updated_at"`
+	Status                 schema.NodeStatus `gorm:"column:status;type:text;not null;default:'offline';index:idx_status;"`
+	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp;type:timestamp with time zone;index:idx_last_heartbeat_timestamp;"`
+	Location               json.RawMessage   `gorm:"column:location;type:jsonb;not null;default:'[]'"`
+	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake;type:decimal;"`
+	APY                    decimal.Decimal   `gorm:"column:apy;type:decimal;default:0;"`
+	Score                  decimal.Decimal   `gorm:"column:score;type:decimal;default:0;index:idx_score,sort:desc;"`
+	CreatedAt              time.Time         `gorm:"column:created_at;type:timestamp with time zone;autoCreateTime;not null;default:now();index:idx_is_public,priority:2,sort:desc;index:idx_created_at,sort:desc;"`
+	UpdatedAt              time.Time         `gorm:"column:updated_at;type:timestamp with time zone;autoUpdateTime;not null;default:now();"`
 }
 
 func (*Node) TableName() string {

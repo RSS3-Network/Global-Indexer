@@ -8,23 +8,23 @@ import (
 )
 
 type Stat struct {
-	Address              common.Address `gorm:"column:address;primaryKey"`
-	Endpoint             string         `gorm:"column:endpoint"`
-	Points               float64        `gorm:"column:points"`
-	IsPublicGood         bool           `gorm:"column:is_public_good"`
-	IsFullNode           bool           `gorm:"column:is_full_node"`
-	IsRssNode            bool           `gorm:"column:is_rss_node"`
-	Staking              float64        `gorm:"column:staking"`
-	Epoch                int64          `gorm:"column:epoch"`
-	TotalRequest         int64          `gorm:"column:total_request_count"`
-	EpochRequest         int64          `gorm:"column:epoch_request_count"`
-	EpochInvalidRequest  int64          `gorm:"column:epoch_invalid_request_count"`
-	DecentralizedNetwork int            `gorm:"column:decentralized_network_count"`
-	FederatedNetwork     int            `gorm:"column:federated_network_count"`
-	Indexer              int            `gorm:"column:indexer_count"`
-	ResetAt              time.Time      `gorm:"column:reset_at"`
-	CreatedAt            time.Time      `gorm:"column:created_at"`
-	UpdatedAt            time.Time      `gorm:"column:updated_at"`
+	Address              common.Address `gorm:"column:address;type:bytea;not null;primaryKey"`
+	Endpoint             string         `gorm:"column:endpoint;type:text;not null;"`
+	Points               float64        `gorm:"column:points;type:decimal;not null;index:idx_indexes_points,sort:desc;index:idx_indexes_is_full_node,priority:2,sort:desc;index:idx_indexes_is_rss_node,priority:2,sort:desc;"`
+	IsPublicGood         bool           `gorm:"column:is_public_good;type:bool;not null;"`
+	IsFullNode           bool           `gorm:"column:is_full_node;type:bool;not null;index:idx_indexes_is_full_node,priority:1;"`
+	IsRssNode            bool           `gorm:"column:is_rss_node;type:bool;not null;index:idx_indexes_is_rss_node,priority:1;"`
+	Staking              float64        `gorm:"column:staking;type:decimal;not null;"`
+	Epoch                int64          `gorm:"column:epoch;type:bigint;not null;"`
+	TotalRequest         int64          `gorm:"column:total_request_count;type:bigint;not null;"`
+	EpochRequest         int64          `gorm:"column:epoch_request_count;type:bigint;not null;"`
+	EpochInvalidRequest  int64          `gorm:"column:epoch_invalid_request_count;type:bigint;not null;index:idx_indexes_epoch_invalid_request_count,sort:asc;"`
+	DecentralizedNetwork int            `gorm:"column:decentralized_network_count;type:bigint;not null;"`
+	FederatedNetwork     int            `gorm:"column:federated_network_count;type:bigint;not null;"`
+	Indexer              int            `gorm:"column:indexer_count;type:bigint;not null;"`
+	ResetAt              time.Time      `gorm:"column:reset_at;type:timestamp with time zone;not null;"`
+	CreatedAt            time.Time      `gorm:"column:created_at;type:timestamp with time zone;autoCreateTime;not null;default:now();index:idx_indexes_created_at,sort:asc;"`
+	UpdatedAt            time.Time      `gorm:"column:updated_at;type:timestamp with time zone;autoUpdateTime;not null;default:now();"`
 }
 
 func (*Stat) TableName() string {

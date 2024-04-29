@@ -6,9 +6,9 @@ import (
 )
 
 type Worker struct {
-	Address common.Address `gorm:"column:address;primaryKey"`
-	Network string         `gorm:"column:network;primaryKey"`
-	Name    string         `gorm:"column:name;primaryKey"`
+	Address common.Address `gorm:"column:address;type:bytea;not null;primaryKey;"`
+	Network string         `gorm:"column:network;type:text;not null;primaryKey;"`
+	Name    string         `gorm:"column:name;type:text;not null;primaryKey;"`
 }
 
 func (*Worker) TableName() string {

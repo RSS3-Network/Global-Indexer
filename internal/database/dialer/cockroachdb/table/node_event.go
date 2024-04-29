@@ -11,18 +11,20 @@ import (
 )
 
 type NodeEvent struct {
-	TransactionHash  string               `gorm:"column:transaction_hash"`
-	TransactionIndex uint                 `gorm:"column:transaction_index"`
-	NodeID           uint64               `gorm:"column:node_id"`
-	AddressFrom      common.Address       `gorm:"column:address_from"`
-	AddressTo        common.Address       `gorm:"column:address_to"`
-	Type             schema.NodeEventType `gorm:"column:type"`
-	LogIndex         uint                 `gorm:"column:log_index"`
-	ChainID          uint64               `gorm:"column:chain_id"`
-	BlockHash        string               `gorm:"column:block_hash"`
-	BlockNumber      uint64               `gorm:"column:block_number"`
-	BlockTimestamp   time.Time            `gorm:"column:block_timestamp"`
-	Metadata         json.RawMessage      `gorm:"column:metadata"`
+	TransactionHash  string               `gorm:"column:transaction_hash;type:text;not null;primaryKey;"`
+	TransactionIndex uint                 `gorm:"column:transaction_index;type:bigint;not null;primaryKey;autoIncrement:false;index:events_index_block_number,priority:2,sort:desc;"`
+	NodeID           uint64               `gorm:"column:node_id;type:bigint;not null;index:events_index_node_id;"`
+	AddressFrom      common.Address       `gorm:"column:address_from;type:bytea;not null;index:events_index_address,priority:1;index:events_index_address_type,priority:1;"`
+	AddressTo        common.Address       `gorm:"column:address_to;type:bytea;not null;index:events_index_address,priority:2;:"`
+	Type             schema.NodeEventType `gorm:"column:type;type:text;not null;index:events_index_address_type,priority:2;"`
+	LogIndex         uint                 `gorm:"column:log_index;type:bigint;not null;primaryKey;autoIncrement:false;index:events_index_block_number,priority:3,sort:desc;"`
+	ChainID          uint64               `gorm:"column:chain_id;type:bigint;not null;"`
+	BlockHash        string               `gorm:"column:block_hash;type:text;not null;"`
+	BlockNumber      uint64               `gorm:"column:block_number;type:bigint;not null;index:events_index_block_number,priority:1,sort:desc;"`
+	BlockTimestamp   time.Time            `gorm:"column:block_timestamp;type:timestamp with time zone;not null;"`
+	Metadata         json.RawMessage      `gorm:"column:metadata;type:jsonb;not null;"`
+	CreatedAt        time.Time            `gorm:"column:created_at;type:timestamp with time zone;autoCreateTime;not null;default:now();"`
+	UpdatedAt        time.Time            `gorm:"column:updated_at;type:timestamp with time zone;autoUpdateTime;not null;default:now();"`
 }
 
 func (*NodeEvent) TableName() string {

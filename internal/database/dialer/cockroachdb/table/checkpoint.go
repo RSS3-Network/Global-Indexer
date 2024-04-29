@@ -14,11 +14,11 @@ var (
 )
 
 type Checkpoint struct {
-	ChainID     uint64    `gorm:"column:chain_id"`
-	BlockNumber uint64    `gorm:"column:block_number"`
-	BlockHash   string    `gorm:"column:block_hash"`
-	CreatedAt   time.Time `gorm:"column:created_at"`
-	UpdatedAt   time.Time `gorm:"column:updated_at"`
+	ChainID     uint64    `gorm:"column:chain_id;type:bigint;primaryKey;autoIncrement:false;not null;"`
+	BlockNumber uint64    `gorm:"column:block_number;type:bigint;not null;"`
+	BlockHash   string    `gorm:"column:block_hash;type:text;not null;"`
+	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp with time zone;autoCreateTime;not null;default:now();"`
+	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamp with time zone;autoUpdateTime;not null;default:now();"`
 }
 
 func (c *Checkpoint) TableName() string {
