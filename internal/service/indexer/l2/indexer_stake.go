@@ -444,7 +444,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		return fmt.Errorf("save epoch: %w", err)
 	}
 
-	// Skip if no reward nodes.
+	// Skip if no Nodes were rewarded in this Epoch.
 	if epoch.TotalRewardedNodes == 0 {
 		return nil
 	}
