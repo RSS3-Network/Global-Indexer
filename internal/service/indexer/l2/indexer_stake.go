@@ -444,6 +444,11 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		return fmt.Errorf("save epoch: %w", err)
 	}
 
+	// Skip if no reward nodes.
+	if epoch.TotalRewardNodes == 0 {
+		return nil
+	}
+
 	// Save Nodes
 	if err := s.saveEpochRelatedNodes(ctx, databaseTransaction, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch related nodes", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
