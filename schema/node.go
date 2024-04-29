@@ -33,6 +33,7 @@ type Node struct {
 	APY                    decimal.Decimal        `json:"apy"`
 	ActiveScore            decimal.Decimal        `json:"activeScore"`
 	ReliabilityScore       decimal.Decimal        `json:"reliabilityScore"`
+	Type                   string                 `json:"type"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 

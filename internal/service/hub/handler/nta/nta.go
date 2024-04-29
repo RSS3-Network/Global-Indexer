@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/common/geolite2"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -16,6 +17,7 @@ type NTA struct {
 	stakingContract *l2.Staking
 	geoLite2        *geolite2.Client
 	cacheClient     cache.Client
+	httpClient      httputil.Client
 }
 
 func (n *NTA) baseURL(c echo.Context) url.URL {
@@ -25,11 +27,12 @@ func (n *NTA) baseURL(c echo.Context) url.URL {
 	}
 }
 
-func NewNTA(_ context.Context, databaseClient database.Client, stakingContract *l2.Staking, geoLite2 *geolite2.Client, cacheClient cache.Client) *NTA {
+func NewNTA(_ context.Context, databaseClient database.Client, stakingContract *l2.Staking, geoLite2 *geolite2.Client, cacheClient cache.Client, httpClient httputil.Client) *NTA {
 	return &NTA{
 		databaseClient:  databaseClient,
 		stakingContract: stakingContract,
 		geoLite2:        geoLite2,
 		cacheClient:     cacheClient,
+		httpClient:      httpClient,
 	}
 }

@@ -27,6 +27,7 @@ type Node struct {
 	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake;type:decimal;"`
 	APY                    decimal.Decimal   `gorm:"column:apy;type:decimal;default:0;"`
 	Score                  decimal.Decimal   `gorm:"column:score;type:decimal;default:0;index:idx_score,sort:desc;"`
+	Type             string          `gorm:"column:type;type:text;"`
 	CreatedAt              time.Time         `gorm:"column:created_at;type:timestamp with time zone;autoCreateTime;not null;default:now();index:idx_is_public,priority:2,sort:desc;index:idx_created_at,sort:desc;"`
 	UpdatedAt              time.Time         `gorm:"column:updated_at;type:timestamp with time zone;autoUpdateTime;not null;default:now();"`
 }
@@ -48,6 +49,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.MinTokensToStake = node.MinTokensToStake
 	n.APY = node.APY
 	n.Score = node.ActiveScore
+	n.Type = node.Type
 
 	n.Location, err = json.Marshal(node.Location)
 	if err != nil {
@@ -89,6 +91,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
 		ActiveScore:            n.Score,
+		Type:                   n.Type,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil
 }
