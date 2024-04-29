@@ -18,7 +18,7 @@ type Epoch struct {
 	BlockTimestamp        int64           `json:"blockTimestamp"`
 	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
 	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
-	TotalRewardNodes      int             `json:"totalRewardNodes"`
+	TotalRewardedNodes    int             `json:"totalRewardedNodes"`
 	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
 	RewardedNodes         []*RewardedNode `json:"rewardedNodes,omitempty"`
 	CreatedAt             int64           `json:"-"`
