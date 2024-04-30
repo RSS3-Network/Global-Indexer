@@ -92,7 +92,10 @@ func (sm *ScoreMaintainer) addOrUpdateScore(address string, score float64, inval
 
 // retrieveQualifiedNodes returns the top n NodeEndpointCaches from the priority queue.
 func (sm *ScoreMaintainer) retrieveQualifiedNodes(n int) []*model.NodeEndpointCache {
-	qualifiedNodes := make([]*model.NodeEndpointCache, n)
+	sm.lock.Lock()
+	defer sm.lock.Unlock()
+
+	qualifiedNodes := make([]*model.NodeEndpointCache, 0, n)
 	// Temporary storage to hold elements popped from the heap.
 	var tempHeap priorityNodeQueue
 
