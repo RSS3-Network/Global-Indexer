@@ -20,9 +20,8 @@ type Epoch struct {
 	BlockTimestamp        time.Time       `gorm:"column:block_timestamp"`
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
-	// FIXME: update column name
-	TotalRewardedNodes int             `gorm:"column:total_reward_items"`
-	TotalRequestCounts decimal.Decimal `gorm:"column:total_request_counts"`
+	TotalRewardedNodes    int             `gorm:"column:total_reward_nodes"`
+	TotalRequestCounts    decimal.Decimal `gorm:"column:total_request_counts"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`

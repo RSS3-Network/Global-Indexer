@@ -15,10 +15,8 @@ type EpochItem struct {
 	NodeAddress      string          `gorm:"column:node_address"`
 	OperationRewards decimal.Decimal `gorm:"column:operation_rewards"`
 	StakingRewards   decimal.Decimal `gorm:"column:staking_rewards"`
-	// FIXME: correct the column names
-	TaxCollected decimal.Decimal `gorm:"column:tax_amounts"`
-	// FIXME: correct the column names
-	RequestCount decimal.Decimal `gorm:"column:request_counts"`
+	TaxCollected     decimal.Decimal `gorm:"column:tax_collected"`
+	RequestCount     decimal.Decimal `gorm:"column:request_count"`
 }
 
 func (e *EpochItem) TableName() string {
