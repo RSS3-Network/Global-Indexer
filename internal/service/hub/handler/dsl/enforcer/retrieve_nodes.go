@@ -18,11 +18,6 @@ func retrieveNodeEndpointCaches(ctx context.Context, key string, databaseClient 
 		return nil, err
 	}
 
-	nodeStats, err = getQualifiedNodes(ctx, nodeStats, databaseClient)
-	if err != nil {
-		return nil, err
-	}
-
 	return lo.Map(nodeStats, func(stat *schema.Stat, i int) *model.NodeEndpointCache {
 		return &model.NodeEndpointCache{
 			Address:      stat.Address.String(),
