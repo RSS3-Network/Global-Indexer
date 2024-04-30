@@ -402,25 +402,25 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 	}
 
 	epoch := schema.Epoch{
-		ID:               event.Epoch.Uint64(),
-		StartTimestamp:   event.StartTimestamp.Int64(),
-		EndTimestamp:     event.EndTimestamp.Int64(),
-		TransactionHash:  transaction.Hash(),
-		BlockHash:        header.Hash(),
-		BlockNumber:      header.Number,
-		BlockTimestamp:   int64(header.Time),
-		TransactionIndex: receipt.TransactionIndex,
-		TotalRewardNodes: len(event.NodeAddrs),
-		RewardedNodes:    make([]*schema.RewardedNode, len(event.NodeAddrs)),
+		ID:                 event.Epoch.Uint64(),
+		StartTimestamp:     event.StartTimestamp.Int64(),
+		EndTimestamp:       event.EndTimestamp.Int64(),
+		TransactionHash:    transaction.Hash(),
+		BlockHash:          header.Hash(),
+		BlockNumber:        header.Number,
+		BlockTimestamp:     int64(header.Time),
+		TransactionIndex:   receipt.TransactionIndex,
+		TotalRewardedNodes: len(event.NodeAddrs),
+		RewardedNodes:      make([]*schema.RewardedNode, len(event.NodeAddrs)),
 	}
 
-	if epoch.TotalRewardNodes != len(event.StakingRewards) || epoch.TotalRewardNodes != len(event.OperationRewards) || epoch.TotalRewardNodes != len(event.TaxAmounts) {
-		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
+	if epoch.TotalRewardedNodes != len(event.StakingRewards) || epoch.TotalRewardedNodes != len(event.OperationRewards) || epoch.TotalRewardedNodes != len(event.TaxAmounts) {
+		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardedNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("length not match")
 	}
 
-	for i := 0; i < epoch.TotalRewardNodes; i++ {
+	for i := 0; i < epoch.TotalRewardedNodes; i++ {
 		epoch.RewardedNodes[i] = &schema.RewardedNode{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
@@ -442,6 +442,11 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		zap.L().Error("indexRewardDistributedLog: save epoch", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch: %w", err)
+	}
+
+	// Skip if no Nodes were rewarded in this Epoch.
+	if epoch.TotalRewardedNodes == 0 {
+		return nil
 	}
 
 	// Save Nodes
@@ -581,7 +586,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 	)
 
-	for i := 0; i < epoch.TotalRewardNodes; i++ {
+	for i := 0; i < epoch.TotalRewardedNodes; i++ {
 		i := i
 
 		errorPool.Go(func(_ context.Context) error {

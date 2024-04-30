@@ -229,16 +229,24 @@ func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte
 	return base64.StdEncoding.DecodeString(data)
 }
 
-func (n *NTA) parseEndpoint(_ context.Context, endpoint string) string {
-	if ip := net.ParseIP(endpoint); ip != nil {
-		return endpoint
+// parseEndpoint parses the given endpoint string.
+// If it does not start with "https://" or "http://", it returns an error.
+// Then, it parses the endpoint URL, ignoring any query parameters.
+// It returns the parsed URL as a string.
+func (n *NTA) parseEndpoint(_ context.Context, endpoint string) (string, error) {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("parse endpoint: %w", err)
 	}
 
-	if uri, _ := url.Parse(endpoint); len(uri.Hostname()) > 0 {
-		return uri.Hostname()
+	if (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+		return "", errors.New("invalid endpoint")
 	}
 
-	return endpoint
+	u.ForceQuery = false
+	u.Path, u.RawQuery = "", ""
+
+	return u.String(), nil
 }
 
 func (n *NTA) parseRequestIP(c echo.Context) (net.IP, error) {
