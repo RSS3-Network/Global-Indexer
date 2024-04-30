@@ -325,18 +325,15 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 		}
 
 		// A nil cursor indicates that the stats represent the initial batch of data.
-		if query.Cursor == nil {
-			// If the epoch of the current stat differs from that of the first stat,
-			// it indicates an epoch change, necessitating a notification to the score queue.
-			notify = currentEpoch != stats[0].Epoch
-		}
+		// If the epoch of the current stat differs from that of the first stat,
+		// it indicates an epoch change, necessitating a notification to the score queue.
+		notify = query.Cursor == nil && currentEpoch != stats[0].Epoch
 
 		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
 			return err
 		}
 
-		lastStat := stats[len(stats)-1]
-		query.Cursor = lo.ToPtr(lastStat.Address.String())
+		query.Cursor = lo.ToPtr(stats[len(stats)-1].Address.String())
 	}
 
 	return e.updateNodeCache(ctx, notify, currentEpoch)

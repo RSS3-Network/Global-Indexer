@@ -55,22 +55,21 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 
 	for {
 		tempNodeStats, err := databaseClient.FindNodeStats(ctx, &query)
+		if err != nil || len(tempNodeStats) == 0 {
+			return nodeStats, err
+		}
+
+		qualifiedNodeStats, err := getQualifiedNodes(ctx, tempNodeStats, databaseClient)
 		if err != nil {
 			return nil, err
 		}
 
-		if query.Cursor != nil && len(tempNodeStats) < defaultLimit {
+		nodeStats = append(nodeStats, qualifiedNodeStats...)
+		query.Cursor = lo.ToPtr(tempNodeStats[len(tempNodeStats)-1].Address.String())
+
+		if len(tempNodeStats) < defaultLimit {
 			break
 		}
-
-		tempNodeStats, err = getQualifiedNodes(ctx, tempNodeStats, databaseClient)
-		if err != nil {
-			return nil, err
-		}
-
-		nodeStats = append(nodeStats, tempNodeStats...)
-
-		query.Cursor = lo.ToPtr(tempNodeStats[len(tempNodeStats)-1].Address.String())
 	}
 
 	return nodeStats, nil
