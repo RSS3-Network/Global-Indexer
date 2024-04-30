@@ -43,7 +43,7 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	e.BlockTimestamp = time.Unix(epoch.BlockTimestamp, 0)
 	e.TotalOperationRewards = epoch.TotalOperationRewards
 	e.TotalStakingRewards = epoch.TotalStakingRewards
-	e.TotalRewardedNodes = epoch.TotalRewardNodes
+	e.TotalRewardedNodes = epoch.TotalRewardedNodes
 	e.TotalRequestCounts = epoch.TotalRequestCounts
 
 	return nil
@@ -61,7 +61,7 @@ func (e *Epoch) Export(epochItems []*schema.RewardedNode) (*schema.Epoch, error)
 		BlockNumber:           new(big.Int).SetUint64(e.BlockNumber),
 		TotalOperationRewards: e.TotalOperationRewards,
 		TotalStakingRewards:   e.TotalStakingRewards,
-		TotalRewardNodes:      e.TotalRewardedNodes,
+		TotalRewardedNodes:    e.TotalRewardedNodes,
 		TotalRequestCounts:    e.TotalRequestCounts,
 		RewardedNodes:         epochItems,
 	}
