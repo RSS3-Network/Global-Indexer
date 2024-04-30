@@ -379,7 +379,8 @@ func (e *SimpleEnforcer) MaintainQualifiedNode(_ context.Context, nodeEndpointCa
 func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
 		//Subscribe to changes to 'epoch'
-		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@0__:%s", model.SubscribeNodeCacheKey))
+		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@*__:%s", model.SubscribeNodeCacheKey))
+		defer pubsub.Close()
 
 		// Wait for confirmation that subscription is created before proceeding.
 		if _, err := pubsub.Receive(ctx); err != nil {
@@ -397,20 +398,22 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, ful
 		for msg := range ch {
 			zap.L().Info("received message from channel", zap.String("channel", msg.Channel), zap.String("payload", msg.Payload))
 
-			// get node cache from redis.
-			var fullNodes []*model.NodeEndpointCache
-			if err := cacheClient.Get(ctx, model.FullNodeCacheKey, &fullNodes); err != nil {
-				zap.L().Error("get full nodes from cache", zap.Error(err))
+			if msg.Payload == "set" {
+				// get node cache from redis.
+				var fullNodes []*model.NodeEndpointCache
+				if err := cacheClient.Get(ctx, model.FullNodeCacheKey, &fullNodes); err != nil {
+					zap.L().Error("get full nodes from cache", zap.Error(err))
+				}
+
+				fullNodeScoreMaintainer.updateAllQualifiedNodes(fullNodes)
+
+				var rssNodes []*model.NodeEndpointCache
+				if err := cacheClient.Get(ctx, model.RssNodeCacheKey, &rssNodes); err != nil {
+					zap.L().Error("get full nodes from cache", zap.Error(err))
+				}
+
+				rssNodeScoreMaintainer.updateAllQualifiedNodes(rssNodes)
 			}
-
-			fullNodeScoreMaintainer.updateAllQualifiedNodes(fullNodes)
-
-			var rssNodes []*model.NodeEndpointCache
-			if err := cacheClient.Get(ctx, model.RssNodeCacheKey, &rssNodes); err != nil {
-				zap.L().Error("get full nodes from cache", zap.Error(err))
-			}
-
-			rssNodeScoreMaintainer.updateAllQualifiedNodes(rssNodes)
 		}
 	}()
 }
