@@ -553,8 +553,8 @@ func (c *client) SaveNodeMinTokensToStakeSnapshots(ctx context.Context, snapshot
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
 }
 
-func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error) {
-	databaseClient := c.database.WithContext(ctx).Table((*table.OperatorProfitSnapshot).TableName(nil))
+func (c *client) FindOperationPoolSnapshots(ctx context.Context, query schema.OperationPoolSnapshotsQuery) ([]*schema.OperationPoolSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx).Table((*table.OperationPoolSnapshot).TableName(nil))
 
 	if query.Operator != nil {
 		databaseClient = databaseClient.Where("operator = ?", *query.Operator)
@@ -613,7 +613,7 @@ func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.O
 	return snapshots.Export()
 }
 
-func (c *client) SaveOperatorProfitSnapshots(ctx context.Context, snapshots []*schema.OperatorProfitSnapshot) error {
+func (c *client) SaveOperationPoolSnapshots(ctx context.Context, snapshots []*schema.OperationPoolSnapshot) error {
 	var value table.OperatorProfitSnapshots
 
 	if err := value.Import(snapshots); err != nil {

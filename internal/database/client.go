@@ -56,8 +56,8 @@ type Client interface {
 	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)
 	SaveStakerProfitSnapshots(ctx context.Context, stakerProfitSnapshots []*schema.StakerProfitSnapshot) error
 	FindStakerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]*schema.StakeRecentCount, error)
-	FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error)
-	SaveOperatorProfitSnapshots(ctx context.Context, operatorProfitSnapshots []*schema.OperatorProfitSnapshot) error
+	FindOperationPoolSnapshots(ctx context.Context, query schema.OperationPoolSnapshotsQuery) ([]*schema.OperationPoolSnapshot, error)
+	SaveOperationPoolSnapshots(ctx context.Context, operatorProfitSnapshots []*schema.OperationPoolSnapshot) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)

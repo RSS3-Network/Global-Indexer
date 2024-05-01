@@ -35,7 +35,7 @@ type BatchGetNodeMinTokensToStakeSnapshotsResponseData []*NodeMinTokensToStakeSn
 
 type GetStakerProfitSnapshotsResponseData []*CountSnapshot
 
-type GetOperatorProfitsSnapshotsResponseData []*schema.OperatorProfitSnapshot
+type GetOperatorProfitsSnapshotsResponseData []*schema.OperationPoolSnapshot
 
 type CountSnapshot struct {
 	Date  string `json:"date"`

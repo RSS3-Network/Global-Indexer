@@ -115,7 +115,7 @@ func (n *NTA) GetOperatorProfitsSnapshots(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	query := schema.OperatorProfitSnapshotsQuery{
+	query := schema.OperationPoolSnapshotsQuery{
 		Operator:   lo.ToPtr(request.Operator),
 		Limit:      request.Limit,
 		Cursor:     request.Cursor,
@@ -123,7 +123,7 @@ func (n *NTA) GetOperatorProfitsSnapshots(c echo.Context) error {
 		AfterDate:  request.AfterDate,
 	}
 
-	operatorProfitSnapshots, err := n.databaseClient.FindOperatorProfitSnapshots(c.Request().Context(), query)
+	operatorProfitSnapshots, err := n.databaseClient.FindOperationPoolSnapshots(c.Request().Context(), query)
 	if err != nil {
 		zap.L().Error("find operator profit snapshots", zap.Error(err))
 
