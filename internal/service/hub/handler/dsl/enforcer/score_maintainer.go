@@ -43,7 +43,7 @@ func (pq *priorityNodeQueue) Pop() interface{} {
 	n := len(old)
 	nodeEndpointCache := old[n-1]
 	old[n-1] = nil
-	nodeEndpointCache.InvalidCount = -1
+	nodeEndpointCache.Index = -1
 	*pq = old[:n-1]
 
 	return nodeEndpointCache
