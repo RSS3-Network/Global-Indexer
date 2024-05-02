@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/lib/pq"
 	"github.com/rss3-network/global-indexer/schema"
 )
 
@@ -13,7 +14,7 @@ type NodeInvalidResponse struct {
 	EpochID           uint64                         `gorm:"column:epoch_id"`
 	Type              schema.NodeInvalidResponseType `gorm:"column:type"`
 	Request           string                         `gorm:"column:request"`
-	ValidatorNodes    []common.Address               `gorm:"column:validator_nodes;type:bytea[]"`
+	ValidatorNodes    pq.ByteaArray                  `gorm:"column:validator_nodes;type:bytea[]"`
 	ValidatorResponse json.RawMessage                `gorm:"column:validator_response;type:jsonb"`
 	Node              common.Address                 `gorm:"column:node"`
 	Response          json.RawMessage                `gorm:"column:response;type:jsonb"`
@@ -29,19 +30,29 @@ func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResp
 	n.EpochID = nodeResponseFailure.EpochID
 	n.Type = nodeResponseFailure.Type
 	n.Request = nodeResponseFailure.Request
-	n.ValidatorNodes = nodeResponseFailure.ValidatorNodes
+
+	for _, validatorNode := range nodeResponseFailure.ValidatorNodes {
+		n.ValidatorNodes = append(n.ValidatorNodes, validatorNode.Bytes())
+	}
+
 	n.ValidatorResponse = nodeResponseFailure.ValidatorResponse
 	n.Node = nodeResponseFailure.Node
 	n.Response = nodeResponseFailure.Response
 }
 
 func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
+	var validatorNodes = make([]common.Address, len(n.ValidatorNodes))
+
+	for _, validatorNode := range n.ValidatorNodes {
+		validatorNodes = append(validatorNodes, common.BytesToAddress(validatorNode))
+	}
+
 	return &schema.NodeInvalidResponse{
 		ID:                n.ID,
 		EpochID:           n.EpochID,
 		Type:              n.Type,
 		Request:           n.Request,
-		ValidatorNodes:    n.ValidatorNodes,
+		ValidatorNodes:    validatorNodes,
 		ValidatorResponse: n.ValidatorResponse,
 		Node:              n.Node,
 		Response:          n.Response,
