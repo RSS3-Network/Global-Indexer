@@ -122,7 +122,7 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model
 func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []*model.DataResponse) {
 	for _, response := range responses {
 		if stat, exists := statsMap[response.Address]; exists {
-			stat.TotalRequest++
+			stat.TotalRequest += int64(response.ValidPoint)
 			stat.EpochRequest += int64(response.ValidPoint)
 			stat.EpochInvalidRequest += int64(response.InvalidPoint)
 		}
@@ -251,7 +251,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 				validData, _ := json.Marshal(activity)
 				nodeInvalidResponse.ValidatorResponse = validData
 
-				if err = e.databaseClient.SaveNodeInvalidResponse(ctx, nodeInvalidResponse); err != nil {
+				if err = e.databaseClient.SaveNodeInvalidResponses(ctx, []*schema.NodeInvalidResponse{nodeInvalidResponse}); err != nil {
 					zap.L().Error("save node invalid response", zap.Error(err))
 				}
 			}
@@ -354,6 +354,11 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(_ context.Context, key string) (
 		nodesCache = e.fullNodeScoreMaintainer.retrieveQualifiedNodes(model.RequiredQualifiedNodeCount)
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
+	}
+
+	// TODO: If there are no qualified nodes, how should the request be handled
+	if len(nodesCache) == 0 {
+		return nil, fmt.Errorf("no qualified nodes in the current epoch")
 	}
 
 	return nodesCache, nil
