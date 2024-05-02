@@ -123,7 +123,7 @@ func (c *client) FindEpochTransactions(ctx context.Context, id uint64, itemsLimi
 
 	var items table.EpochItems
 
-	databaseStatement = c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("transaction_hash IN (?)", hashes).Where("index <= ?", itemsLimit)
+	databaseStatement = c.database.WithContext(ctx).Model(&table.NodeRewardRecord{}).Where("transaction_hash IN (?)", hashes).Where("index <= ?", itemsLimit)
 
 	if err := databaseStatement.Order("index ASC").Limit(itemsLimit).Find(&items).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -163,7 +163,7 @@ func (c *client) FindEpochTransaction(ctx context.Context, transactionHash commo
 	// Find epoch items by transaction_hash.
 	var items table.EpochItems
 
-	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("transaction_hash = ?", transactionHash.String())
+	databaseStatement := c.database.WithContext(ctx).Model(&table.NodeRewardRecord{}).Where("transaction_hash = ?", transactionHash.String())
 
 	if cursor != nil {
 		databaseStatement = databaseStatement.Where("index > ?", cursor)
@@ -189,7 +189,7 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	// Find epoch items by nodeAddress.
 	var items table.EpochItems
 
-	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochItem{}).Where("node_address = ?", nodeAddress.String())
+	databaseStatement := c.database.WithContext(ctx).Model(&table.NodeRewardRecord{}).Where("node_address = ?", nodeAddress.String())
 
 	if cursor != nil {
 		databaseStatement = databaseStatement.Where("epoch_id < ?", cursor)
