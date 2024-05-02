@@ -137,7 +137,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 	waitGroup.Wait()
 	// Process the responses to calculate the actual request of each node
-	processResponses(responses)
+	go processResponses(responses)
 }
 
 // sendResponse sends the first valid response to the firstResponse channel
