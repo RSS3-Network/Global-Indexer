@@ -131,7 +131,7 @@ func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses 
 
 func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStatsMap map[common.Address]*schema.Stat) {
 	for _, stat := range nodeStatsMap {
-		_ = calculateReliabilityScore(stat)
+		_ = CalculateReliabilityScore(stat)
 
 		if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, stat.Address.String(), stat.Score, stat.EpochInvalidRequest); err != nil {
 			zap.L().Error("failed to update full node score", zap.Error(err))

@@ -158,12 +158,12 @@ func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status sch
 	}
 
 	// calculate Reliability Score
-	return calculateReliabilityScore(stat)
+	return CalculateReliabilityScore(stat)
 }
 
-// calculateReliabilityScore calculates the Reliability Score σ of a given Node.
+// CalculateReliabilityScore calculates the Reliability Score σ of a given Node.
 // σ is used to determine the probability of a Node receiving a request on DSL.
-func calculateReliabilityScore(stat *schema.Stat) error {
+func CalculateReliabilityScore(stat *schema.Stat) error {
 	// staking pool tokens
 	// maximum score is 0.2
 	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
