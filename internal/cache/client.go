@@ -11,6 +11,9 @@ type Client interface {
 	Get(ctx context.Context, key string, dest interface{}) error
 	Set(ctx context.Context, key string, value interface{}) error
 	PSubscribe(ctx context.Context, pattern string) *redis.PubSub
+	ZAdd(ctx context.Context, key string, members ...redis.Z) error
+	ZRem(ctx context.Context, key string, members ...interface{}) error
+	ZRevRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error)
 }
 
 var _ Client = (*client)(nil)
@@ -39,6 +42,18 @@ func (c *client) Set(ctx context.Context, key string, value interface{}) error {
 
 func (c *client) PSubscribe(ctx context.Context, pattern string) *redis.PubSub {
 	return c.redisClient.PSubscribe(ctx, pattern)
+}
+
+func (c *client) ZAdd(ctx context.Context, key string, members ...redis.Z) error {
+	return c.redisClient.ZAdd(ctx, key, members...).Err()
+}
+
+func (c *client) ZRem(ctx context.Context, key string, members ...interface{}) error {
+	return c.redisClient.ZRem(ctx, key, members...).Err()
+}
+
+func (c *client) ZRevRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error) {
+	return c.redisClient.ZRevRangeWithScores(ctx, key, start, stop).Result()
 }
 
 func New(redisClient *redis.Client) Client {

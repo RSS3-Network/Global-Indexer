@@ -18,13 +18,12 @@ func retrieveNodeEndpointCaches(ctx context.Context, key string, databaseClient 
 		return nil, err
 	}
 
-	return lo.Map(nodeStats, func(stat *schema.Stat, i int) *model.NodeEndpointCache {
+	return lo.Map(nodeStats, func(stat *schema.Stat, _ int) *model.NodeEndpointCache {
 		return &model.NodeEndpointCache{
 			Address:      stat.Address.String(),
 			Endpoint:     stat.Endpoint,
 			Score:        stat.Score,
 			InvalidCount: stat.EpochInvalidRequest,
-			Index:        i,
 		}
 	}), nil
 }

@@ -34,8 +34,6 @@ type NodeEndpointCache struct {
 	Endpoint     string `json:"endpoint"`
 	Score        float64
 	InvalidCount int64
-	// Maintains the index in the heap
-	Index int
 }
 
 // DataResponse represents the response returned by a Node.

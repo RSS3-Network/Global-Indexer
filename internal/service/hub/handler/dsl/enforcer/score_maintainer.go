@@ -1,152 +1,143 @@
 package enforcer
 
 import (
-	"container/heap"
+	"context"
 	"sync"
 
+	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
-	"github.com/samber/lo"
 )
 
-// priorityNodeQueue implements heap.Interface and holds NodeEndpointCaches.
-// It is used to maintain a priority queue of NodeEndpointCaches based on their scores and invalid counts.
-type priorityNodeQueue []*model.NodeEndpointCache
-
-func (pq *priorityNodeQueue) Len() int {
-	return len(*pq)
-}
-
-func (pq *priorityNodeQueue) Less(i, j int) bool {
-	if (*pq)[i].Score == (*pq)[j].Score {
-		// If Scores are the same, return true if pq[i] has a smaller InvalidCount than pq[j]
-		return (*pq)[i].InvalidCount < (*pq)[j].InvalidCount
-	}
-	// Otherwise, return true if pq[i] has a greater score than pq[j]
-	return (*pq)[i].Score > (*pq)[j].Score
-}
-
-func (pq *priorityNodeQueue) Swap(i, j int) {
-	(*pq)[i], (*pq)[j] = (*pq)[j], (*pq)[i]
-	(*pq)[i].Index = i
-	(*pq)[j].Index = j
-}
-
-func (pq *priorityNodeQueue) Push(x interface{}) {
-	n := len(*pq)
-	nodeEndpointCache := x.(*model.NodeEndpointCache)
-	nodeEndpointCache.Index = n
-	*pq = append(*pq, nodeEndpointCache)
-}
-
-func (pq *priorityNodeQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	nodeEndpointCache := old[n-1]
-	old[n-1] = nil
-	nodeEndpointCache.Index = -1
-	*pq = old[:n-1]
-
-	return nodeEndpointCache
-}
-
-// ScoreMaintainer is a structure that maintains a priority queue of NodeEndpointCaches
-// and a map for quick access.
+// ScoreMaintainer is a structure that maintains a map for quick access.
 type ScoreMaintainer struct {
-	queue              *priorityNodeQueue
+	cacheClient        cache.Client
 	nodeEndpointCaches map[string]*model.NodeEndpointCache
 	lock               sync.Mutex
 }
 
 // addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
 // If the invalidCount is greater than or equal to DemotionCountBeforeSlashing, the nodeEndpointCache is removed.
-func (sm *ScoreMaintainer) addOrUpdateScore(address string, score float64, invalidCount int64) {
+func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, address string, score float64, invalidCount int64) error {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
 	nodeEndpointCache, ok := sm.nodeEndpointCaches[address]
 	if invalidCount >= int64(model.DemotionCountBeforeSlashing) {
 		if ok {
-			// Remove from heap.
-			heap.Remove(sm.queue, nodeEndpointCache.Index)
+			// Remove from Redis.
+			if err := sm.cacheClient.ZRem(ctx, setKey, address); err != nil {
+				return err
+			}
 			// Remove from map.
 			delete(sm.nodeEndpointCaches, address)
 		}
 
-		return
+		return nil
 	}
 
-	if !ok {
-		newNodeEndpointCache := &model.NodeEndpointCache{
+	if ok {
+		nodeEndpointCache.Score = score
+		nodeEndpointCache.InvalidCount = invalidCount
+	} else {
+		sm.nodeEndpointCaches[address] = &model.NodeEndpointCache{
 			Address:      address,
 			Score:        score,
 			InvalidCount: invalidCount,
 		}
-		heap.Push(sm.queue, newNodeEndpointCache)
-		sm.nodeEndpointCaches[address] = newNodeEndpointCache
-	} else {
-		nodeEndpointCache.Score = score
-		nodeEndpointCache.InvalidCount = invalidCount
-		heap.Fix(sm.queue, nodeEndpointCache.Index)
 	}
+
+	if err := sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
+		Member: address,
+		Score:  score,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// retrieveQualifiedNodes returns the top n NodeEndpointCaches from the priority queue.
-func (sm *ScoreMaintainer) retrieveQualifiedNodes(n int) []*model.NodeEndpointCache {
+// retrieveQualifiedNodes returns the top n NodeEndpointCaches from the sorted set.
+func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey string, n int) ([]*model.NodeEndpointCache, error) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
+
+	result, err := sm.cacheClient.ZRevRangeWithScores(ctx, setKey, 0, int64(n-1))
+	if err != nil {
+		return nil, err
+	}
 
 	qualifiedNodes := make([]*model.NodeEndpointCache, 0, n)
-	// Temporary storage to hold elements popped from the heap.
-	var tempHeap priorityNodeQueue
 
-	// Continue until we have enough qualifiedNodes or the heap is empty
-	for len(qualifiedNodes) < n && sm.queue.Len() > 0 {
-		// Pop the highest score node from the heap
-		qualifiedNode := heap.Pop(sm.queue).(*model.NodeEndpointCache)
-
-		qualifiedNodes = append(qualifiedNodes, qualifiedNode)
-
-		// Store the qualifiedNode to re-push later.
-		tempHeap = append(tempHeap, qualifiedNode)
+	for _, item := range result {
+		qualifiedNodes = append(qualifiedNodes, sm.nodeEndpointCaches[item.Member.(string)])
 	}
 
-	// Push all item back to restore the heap
-	for _, item := range tempHeap {
-		heap.Push(sm.queue, item)
-	}
-
-	return qualifiedNodes
+	return qualifiedNodes, nil
 }
 
-// updateAllQualifiedNodes replaces the current priority queue and map with the provided priority queue.
-func (sm *ScoreMaintainer) updateAllQualifiedNodes(pq priorityNodeQueue) {
+// updateAllQualifiedNodes replaces the current nodeEndpointCaches and redis sorted set.
+func (sm *ScoreMaintainer) updateAllQualifiedNodes(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache) error {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
-	pq = lo.Filter(pq, func(n *model.NodeEndpointCache, _ int) bool {
-		return n.InvalidCount < int64(model.DemotionCountBeforeSlashing)
-	})
+	validCaches := make(map[string]*model.NodeEndpointCache)
+	members := make([]redis.Z, 0, len(nodeCaches))
 
-	heap.Init(&pq)
+	for _, nodeCache := range nodeCaches {
+		if nodeCache.InvalidCount < int64(model.DemotionCountBeforeSlashing) {
+			validCaches[nodeCache.Address] = nodeCache
+			members = append(members, redis.Z{
+				Member: nodeCache.Address,
+				Score:  nodeCache.Score,
+			})
+		}
+	}
 
-	sm.queue = &pq
-	sm.nodeEndpointCaches = lo.SliceToMap(pq, func(n *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return n.Address, n
-	})
+	if err := sm.cacheClient.ZAdd(ctx, setKey, members...); err != nil {
+		return err
+	}
+
+	tempCaches := sm.nodeEndpointCaches
+	sm.nodeEndpointCaches = validCaches
+
+	// Remove the invalid node caches.
+	var needRemoveMembers []string
+
+	for address := range tempCaches {
+		if _, ok := validCaches[address]; !ok {
+			needRemoveMembers = append(needRemoveMembers, address)
+		}
+	}
+
+	if err := sm.cacheClient.ZRem(ctx, setKey, needRemoveMembers); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// newScoreMaintainer creates a new ScoreMaintainer with the provided priority queue.
-func newScoreMaintainer(pq priorityNodeQueue) *ScoreMaintainer {
-	pq = lo.Filter(pq, func(n *model.NodeEndpointCache, _ int) bool {
-		return n.InvalidCount < int64(model.DemotionCountBeforeSlashing)
-	})
+// newScoreMaintainer creates a new ScoreMaintainer with the nodeEndpointCaches and redis sorted set.
+func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache, cacheClient cache.Client) (*ScoreMaintainer, error) {
+	validCaches := make(map[string]*model.NodeEndpointCache)
+	members := make([]redis.Z, 0, len(nodeCaches))
 
-	heap.Init(&pq)
+	for _, nodeCache := range nodeCaches {
+		if nodeCache.InvalidCount < int64(model.DemotionCountBeforeSlashing) {
+			validCaches[nodeCache.Address] = nodeCache
+			members = append(members, redis.Z{
+				Member: nodeCache.Address,
+				Score:  nodeCache.Score,
+			})
+		}
+	}
+
+	if err := cacheClient.ZAdd(ctx, setKey, members...); err != nil {
+		return nil, err
+	}
 
 	return &ScoreMaintainer{
-		queue: &pq,
-		nodeEndpointCaches: lo.SliceToMap(pq, func(n *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-			return n.Address, n
-		}),
-	}
+		cacheClient:        cacheClient,
+		nodeEndpointCaches: validCaches,
+	}, nil
 }
