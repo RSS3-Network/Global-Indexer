@@ -20,11 +20,11 @@ import (
 )
 
 type Enforcer interface {
-	VerifyResponses(ctx context.Context, responses []model.DataResponse) error
-	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []model.DataResponse)
-	MaintainScore(ctx context.Context) error
+	VerifyResponses(ctx context.Context, responses []*model.DataResponse) error
+	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
+	MaintainReliabilityScore(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
-	RetrieveQualifiedNodes(ctx context.Context, key string) ([]model.NodeEndpointCache, error)
+	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
 	MaintainQualifiedNode(ctx context.Context, nodeEndpointCache model.NodeEndpointCache, key string) error
 }
 
