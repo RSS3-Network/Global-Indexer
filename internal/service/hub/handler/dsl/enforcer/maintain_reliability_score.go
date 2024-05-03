@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -204,28 +205,53 @@ func calculateReliabilityScore(stat *schema.Stat) error {
 }
 
 // UpdateNodeCache updates the cache for all Nodes.
-func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, notify bool, epoch int64) error {
-	if err := e.updateCacheForNodeType(ctx, model.RssNodeCacheKey); err != nil {
-		return err
+// 1. update the sorted set nodes.
+// 2. update the cache for the Node subscription.
+func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
+	for _, key := range []string{model.RssNodeCacheKey, model.FullNodeCacheKey} {
+		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
+			return err
+		}
 	}
 
-	if err := e.updateCacheForNodeType(ctx, model.FullNodeCacheKey); err != nil {
-		return err
-	}
-
-	if notify {
-		return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
-	}
-
-	return nil
+	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
 }
 
-// updateCacheForNodeType updates the cache for different types of Nodes.
-func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCache, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+// updateSortedSetForNodeType updates the sorted set for different types of Nodes.
+func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
+	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	return e.cacheClient.Set(ctx, key, nodesEndpointCache)
+	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
+		return node.Address, node
+	})
+
+	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
+	if err != nil {
+		return err
+	}
+
+	membersToRemove := make([]string, 0)
+	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
+
+	for _, member := range members {
+		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
+			membersToRemove = append(membersToRemove, member.Member.(string))
+		}
+	}
+
+	for _, node := range nodesEndpointCaches {
+		membersToAdd = append(membersToAdd, redis.Z{
+			Member: node.Address,
+			Score:  node.Score,
+		})
+	}
+
+	if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
+		return err
+	}
+
+	return e.cacheClient.ZRem(ctx, key, membersToRemove)
 }

@@ -118,14 +118,9 @@ func TestScoreMaintainer(t *testing.T) {
 		InvalidCount: 1,
 	}
 	newNodeCaches = append(newNodeCaches, node3)
-	err = sm.updateAllQualifiedNodes(context.Background(), setKey, newNodeCaches)
+	sm.updateQualifiedNodesMap(newNodeCaches)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(sm.nodeEndpointCaches))
-
-	nodes, err = sm.retrieveQualifiedNodes(context.Background(), setKey, 10)
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(nodes))
-	assert.Equal(t, "addr5", nodes[0].Address)
 }
 
 func createContainer(ctx context.Context) (container *gnomock.Container, err error) {

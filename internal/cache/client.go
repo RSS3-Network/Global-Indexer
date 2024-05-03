@@ -14,6 +14,7 @@ type Client interface {
 	ZAdd(ctx context.Context, key string, members ...redis.Z) error
 	ZRem(ctx context.Context, key string, members ...interface{}) error
 	ZRevRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error)
+	Exists(ctx context.Context, key string) (int64, error)
 }
 
 var _ Client = (*client)(nil)
@@ -54,6 +55,10 @@ func (c *client) ZRem(ctx context.Context, key string, members ...interface{}) e
 
 func (c *client) ZRevRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error) {
 	return c.redisClient.ZRevRangeWithScores(ctx, key, start, stop).Result()
+}
+
+func (c *client) Exists(ctx context.Context, key string) (int64, error) {
+	return c.redisClient.Exists(ctx, key).Result()
 }
 
 func New(redisClient *redis.Client) Client {

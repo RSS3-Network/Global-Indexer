@@ -25,7 +25,7 @@ func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, 
 	nodeEndpointCache, ok := sm.nodeEndpointCaches[address]
 	if invalidCount >= int64(model.DemotionCountBeforeSlashing) {
 		if ok {
-			// Remove from Redis.
+			// Remove from sorted set.
 			if err := sm.cacheClient.ZRem(ctx, setKey, address); err != nil {
 				return err
 			}
@@ -47,14 +47,10 @@ func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, 
 		}
 	}
 
-	if err := sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
+	return sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
 		Member: address,
 		Score:  score,
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 // retrieveQualifiedNodes returns the top n NodeEndpointCaches from the sorted set.
@@ -76,63 +72,27 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 	return qualifiedNodes, nil
 }
 
-// updateAllQualifiedNodes replaces the current nodeEndpointCaches and redis sorted set.
-func (sm *ScoreMaintainer) updateAllQualifiedNodes(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache) error {
+// updateQualifiedNodesMap replaces the current nodeEndpointCaches.
+func (sm *ScoreMaintainer) updateQualifiedNodesMap(nodeCaches []*model.NodeEndpointCache) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
-	validCaches := make(map[string]*model.NodeEndpointCache)
-	members := make([]redis.Z, 0, len(nodeCaches))
+	validCaches := make(map[string]*model.NodeEndpointCache, len(nodeCaches))
 
 	for _, nodeCache := range nodeCaches {
 		if nodeCache.InvalidCount < int64(model.DemotionCountBeforeSlashing) {
 			validCaches[nodeCache.Address] = nodeCache
-			members = append(members, redis.Z{
-				Member: nodeCache.Address,
-				Score:  nodeCache.Score,
-			})
 		}
 	}
 
-	if err := sm.cacheClient.ZAdd(ctx, setKey, members...); err != nil {
-		return err
-	}
-
-	tempCaches := sm.nodeEndpointCaches
 	sm.nodeEndpointCaches = validCaches
-
-	// Remove the invalid node caches.
-	var needRemoveMembers []string
-
-	for address := range tempCaches {
-		if _, ok := validCaches[address]; !ok {
-			needRemoveMembers = append(needRemoveMembers, address)
-		}
-	}
-
-	if err := sm.cacheClient.ZRem(ctx, setKey, needRemoveMembers); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // newScoreMaintainer creates a new ScoreMaintainer with the nodeEndpointCaches and redis sorted set.
 func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache, cacheClient cache.Client) (*ScoreMaintainer, error) {
-	validCaches := make(map[string]*model.NodeEndpointCache)
-	members := make([]redis.Z, 0, len(nodeCaches))
+	validCaches, members := prepareCachesAndMembers(nodeCaches)
 
-	for _, nodeCache := range nodeCaches {
-		if nodeCache.InvalidCount < int64(model.DemotionCountBeforeSlashing) {
-			validCaches[nodeCache.Address] = nodeCache
-			members = append(members, redis.Z{
-				Member: nodeCache.Address,
-				Score:  nodeCache.Score,
-			})
-		}
-	}
-
-	if err := cacheClient.ZAdd(ctx, setKey, members...); err != nil {
+	if err := addMembersToSortedSet(ctx, setKey, cacheClient, members); err != nil {
 		return nil, err
 	}
 
@@ -140,4 +100,38 @@ func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.
 		cacheClient:        cacheClient,
 		nodeEndpointCaches: validCaches,
 	}, nil
+}
+
+// prepareCachesAndMembers filters out invalid caches and prepares the members for the sorted set.
+func prepareCachesAndMembers(nodeCaches []*model.NodeEndpointCache) (map[string]*model.NodeEndpointCache, []redis.Z) {
+	validCaches := make(map[string]*model.NodeEndpointCache)
+	members := make([]redis.Z, 0, len(nodeCaches))
+
+	for _, nodeCache := range nodeCaches {
+		if nodeCache.InvalidCount < int64(model.DemotionCountBeforeSlashing) {
+			validCaches[nodeCache.Address] = nodeCache
+			members = append(members, redis.Z{
+				Member: nodeCache.Address,
+				Score:  nodeCache.Score,
+			})
+		}
+	}
+
+	return validCaches, members
+}
+
+// addMembersToSortedSet adds members to the sorted set if it does not exist.
+func addMembersToSortedSet(ctx context.Context, setKey string, cacheClient cache.Client, members []redis.Z) error {
+	exists, err := cacheClient.Exists(ctx, setKey)
+	if err != nil {
+		return err
+	}
+
+	if exists == 0 {
+		if err = cacheClient.ZAdd(ctx, setKey, members...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
