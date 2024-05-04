@@ -253,5 +253,9 @@ func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key str
 		return err
 	}
 
+	if len(membersToRemove) == 0 {
+		return nil
+	}
+
 	return e.cacheClient.ZRem(ctx, key, membersToRemove)
 }
