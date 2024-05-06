@@ -25,7 +25,6 @@ type Enforcer interface {
 	MaintainReliabilityScore(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
-	MaintainQualifiedNode(ctx context.Context, nodeEndpointCache model.NodeEndpointCache, key string) error
 }
 
 type SimpleEnforcer struct {
@@ -133,11 +132,18 @@ func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStatsMap
 	for _, stat := range nodeStatsMap {
 		_ = CalculateReliabilityScore(stat)
 
-		if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, stat.Address.String(), stat.Score, stat.EpochInvalidRequest); err != nil {
+		nodeCache := &model.NodeEndpointCache{
+			Address:      stat.Address.String(),
+			Score:        stat.Score,
+			Endpoint:     stat.Endpoint,
+			InvalidCount: stat.EpochInvalidRequest,
+		}
+
+		if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, nodeCache); err != nil {
 			zap.L().Error("failed to update full node score", zap.Error(err))
 		}
 
-		if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, stat.Address.String(), stat.Score, stat.EpochInvalidRequest); err != nil {
+		if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, nodeCache); err != nil {
 			zap.L().Error("failed to update rss node score", zap.Error(err))
 		}
 	}
@@ -354,7 +360,7 @@ func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
 
-// RetrieveQualifiedNodes retrieves the qualified Nodes from the priority node queue.
+// RetrieveQualifiedNodes retrieves the qualified Nodes from the sorted set.
 func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error) {
 	var (
 		nodesCache []*model.NodeEndpointCache
@@ -376,22 +382,6 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	}
 
 	return nodesCache, err
-}
-
-// MaintainQualifiedNode maintains the qualified Node in the priority node queue.
-func (e *SimpleEnforcer) MaintainQualifiedNode(ctx context.Context, nodeEndpointCache model.NodeEndpointCache, key string) error {
-	var err error
-
-	switch key {
-	case model.RssNodeCacheKey:
-		err = e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, key, nodeEndpointCache.Address, nodeEndpointCache.Score, nodeEndpointCache.InvalidCount)
-	case model.FullNodeCacheKey:
-		err = e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, key, nodeEndpointCache.Address, nodeEndpointCache.Score, nodeEndpointCache.InvalidCount)
-	default:
-		return fmt.Errorf("unknown cache key: %s", key)
-	}
-
-	return err
 }
 
 // subscribeNodeCacheUpdate subscribes to updates of the 'epoch' key.
@@ -427,6 +417,7 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, dat
 	}()
 }
 
+// updateQualifiedNodesMap retrieves the node endpoint caches from the database and updates the score maintainer's map of qualified nodes.
 func updateQualifiedNodesMap(ctx context.Context, key string, databaseClient database.Client, scoreMaintainer *ScoreMaintainer) {
 	nodes, err := retrieveNodeEndpointCaches(ctx, key, databaseClient)
 	if err != nil {
@@ -449,14 +440,14 @@ func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {
 	return nil
 }
 
-func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, key string) (*ScoreMaintainer, error) {
-	nodes, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, nodeType string) (*ScoreMaintainer, error) {
+	nodes, err := retrieveNodeEndpointCaches(ctx, nodeType, e.databaseClient)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return newScoreMaintainer(ctx, key, nodes, e.cacheClient)
+	return newScoreMaintainer(ctx, nodeType, nodes, e.cacheClient)
 }
 
 func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initScoreMaintainer bool) (*SimpleEnforcer, error) {

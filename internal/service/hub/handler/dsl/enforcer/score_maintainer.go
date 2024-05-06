@@ -9,7 +9,10 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 )
 
-// ScoreMaintainer is a structure that maintains a map for quick access.
+// ScoreMaintainer is a structure used to maintain a sorted set and a quick lookup map.
+// It uses Redis to keep a sorted set based on node scores,
+// and a map in memory for fast access to each node endpoint's cached data.
+// This structure helps in quickly and efficiently updating and retrieving scores and statuses of nodes in distributed systems.
 type ScoreMaintainer struct {
 	cacheClient        cache.Client
 	nodeEndpointCaches map[string]*model.NodeEndpointCache
@@ -18,38 +21,28 @@ type ScoreMaintainer struct {
 
 // addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
 // If the invalidCount is greater than or equal to DemotionCountBeforeSlashing, the nodeEndpointCache is removed.
-func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, address string, score float64, invalidCount int64) error {
+func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, nodeCache *model.NodeEndpointCache) error {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 
-	nodeEndpointCache, ok := sm.nodeEndpointCaches[address]
-	if invalidCount >= int64(model.DemotionCountBeforeSlashing) {
-		if ok {
+	if nodeCache.InvalidCount >= int64(model.DemotionCountBeforeSlashing) {
+		if _, ok := sm.nodeEndpointCaches[nodeCache.Address]; ok {
 			// Remove from sorted set.
-			if err := sm.cacheClient.ZRem(ctx, setKey, address); err != nil {
+			if err := sm.cacheClient.ZRem(ctx, setKey, nodeCache.Address); err != nil {
 				return err
 			}
 			// Remove from map.
-			delete(sm.nodeEndpointCaches, address)
+			delete(sm.nodeEndpointCaches, nodeCache.Address)
 		}
 
 		return nil
 	}
 
-	if ok {
-		nodeEndpointCache.Score = score
-		nodeEndpointCache.InvalidCount = invalidCount
-	} else {
-		sm.nodeEndpointCaches[address] = &model.NodeEndpointCache{
-			Address:      address,
-			Score:        score,
-			InvalidCount: invalidCount,
-		}
-	}
+	sm.nodeEndpointCaches[nodeCache.Address] = nodeCache
 
 	return sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
-		Member: address,
-		Score:  score,
+		Member: nodeCache.Address,
+		Score:  nodeCache.Score,
 	})
 }
 
@@ -90,7 +83,7 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(nodeCaches []*model.NodeEndpo
 
 // newScoreMaintainer creates a new ScoreMaintainer with the nodeEndpointCaches and redis sorted set.
 func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache, cacheClient cache.Client) (*ScoreMaintainer, error) {
-	validCaches, members := prepareCachesAndMembers(nodeCaches)
+	validCaches, members := prepareNodeCachesAndMembers(nodeCaches)
 
 	if err := addMembersToSortedSet(ctx, setKey, cacheClient, members); err != nil {
 		return nil, err
@@ -102,8 +95,8 @@ func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.
 	}, nil
 }
 
-// prepareCachesAndMembers filters out invalid caches and prepares the members for the sorted set.
-func prepareCachesAndMembers(nodeCaches []*model.NodeEndpointCache) (map[string]*model.NodeEndpointCache, []redis.Z) {
+// prepareNodeCachesAndMembers filters out invalid node caches and prepares the members for the sorted set.
+func prepareNodeCachesAndMembers(nodeCaches []*model.NodeEndpointCache) (map[string]*model.NodeEndpointCache, []redis.Z) {
 	validCaches := make(map[string]*model.NodeEndpointCache)
 	members := make([]redis.Z, 0, len(nodeCaches))
 

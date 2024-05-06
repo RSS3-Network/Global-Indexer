@@ -79,10 +79,19 @@ func TestScoreMaintainer(t *testing.T) {
 	assert.Equal(t, 4, len(sm.nodeEndpointCaches))
 
 	// Add a new node
-	err = sm.addOrUpdateScore(context.Background(), setKey, "addr4", 5.0, 0)
+	err = sm.addOrUpdateScore(context.Background(), setKey, &model.NodeEndpointCache{
+		Address:      "addr4",
+		Score:        5.0,
+		InvalidCount: 0,
+	})
 	require.NoError(t, err)
 	// Update the score of an existing node
-	err = sm.addOrUpdateScore(context.Background(), setKey, "addr0", 6.0, 1)
+
+	err = sm.addOrUpdateScore(context.Background(), setKey, &model.NodeEndpointCache{
+		Address:      "addr0",
+		Score:        6.0,
+		InvalidCount: 1,
+	})
 	require.NoError(t, err)
 	assert.Equal(t, 5, len(sm.nodeEndpointCaches))
 	assert.Equal(t, 6.0, sm.nodeEndpointCaches["addr0"].Score)
@@ -97,7 +106,11 @@ func TestScoreMaintainer(t *testing.T) {
 	assert.Equal(t, "addr1", nodes[4].Address)
 
 	// Add a new node with invalid count greater than DemotionCountBeforeSlashing
-	err = sm.addOrUpdateScore(context.Background(), setKey, "addr4", 7.0, int64(model.DemotionCountBeforeSlashing))
+	err = sm.addOrUpdateScore(context.Background(), setKey, &model.NodeEndpointCache{
+		Address:      "addr4",
+		Score:        7.0,
+		InvalidCount: int64(model.DemotionCountBeforeSlashing),
+	})
 	require.NoError(t, err)
 	assert.Equal(t, 4, len(sm.nodeEndpointCaches))
 
