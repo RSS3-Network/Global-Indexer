@@ -211,6 +211,10 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 
 	nodeAddresses := excludeWorkingNodes(indexers, workingNodes)
 
+	if len(nodeAddresses) == 0 {
+		return nil, nil
+	}
+
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		Addresses:    nodeAddresses,
 		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
