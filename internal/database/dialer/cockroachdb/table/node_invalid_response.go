@@ -43,8 +43,8 @@ func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResp
 func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
 	var verifierNodes = make([]common.Address, len(n.VerifierNodes))
 
-	for _, verifierNode := range n.VerifierNodes {
-		verifierNodes = append(verifierNodes, common.BytesToAddress(verifierNode))
+	for i, verifierNode := range n.VerifierNodes {
+		verifierNodes[i] = common.BytesToAddress(verifierNode)
 	}
 
 	return &schema.NodeInvalidResponse{

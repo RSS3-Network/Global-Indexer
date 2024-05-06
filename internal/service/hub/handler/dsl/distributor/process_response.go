@@ -99,7 +99,7 @@ func (d *Distributor) getLatestEpochID(ctx context.Context) (uint64, error) {
 // getValidResponseData returns the valid response data which valid points are greater than 0.
 func getValidResponseData(responses []*model.DataResponse) ([]common.Address, string, json.RawMessage, error) {
 	var (
-		verifierNodes = make([]common.Address, 0)
+		verifierNodes = make([]common.Address, 0, len(responses))
 		data          = json.RawMessage("{}")
 	)
 
