@@ -157,8 +157,8 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 	statMap := make(map[string]struct{})
 
 	nodeInvalidResponse := &schema.NodeInvalidResponse{
-		EpochID:        epochID,
-		ValidatorNodes: []common.Address{validResponse.Address},
+		EpochID:       epochID,
+		VerifierNodes: []common.Address{validResponse.Address},
 	}
 
 	for _, activity := range activities {
@@ -264,7 +264,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 				nodeInvalidResponse.Request = stat.Endpoint + "/decentralized/tx/" + activity.ID
 
 				validData, _ := json.Marshal(activity)
-				nodeInvalidResponse.ValidatorResponse = validData
+				nodeInvalidResponse.VerifierResponse = validData
 
 				if err = e.databaseClient.SaveNodeInvalidResponses(ctx, []*schema.NodeInvalidResponse{nodeInvalidResponse}); err != nil {
 					zap.L().Error("save node invalid response", zap.Error(err))

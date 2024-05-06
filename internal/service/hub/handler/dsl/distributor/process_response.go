@@ -60,14 +60,14 @@ func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse
 
 // processNodeInvalidResponse finds the valid response data and saves the invalid responses.
 func (d *Distributor) processNodeInvalidResponse(ctx context.Context, responses []*model.DataResponse) uint64 {
-	validatorNodes, request, validatorResponse, err := getValidResponseData(responses)
+	verifierNodes, request, verifierResponse, err := getValidResponseData(responses)
 	if err != nil {
 		zap.L().Error("get valid response data", zap.Error(err))
 		return 0
 	}
 
 	// If all responses are valid, return 0.
-	if len(validatorNodes) == len(responses) {
+	if len(verifierNodes) == len(responses) {
 		return 0
 	}
 
@@ -77,7 +77,7 @@ func (d *Distributor) processNodeInvalidResponse(ctx context.Context, responses 
 		return 0
 	}
 
-	d.saveInvalidResponses(ctx, epochID, validatorNodes, request, validatorResponse, responses)
+	d.saveInvalidResponses(ctx, epochID, verifierNodes, request, verifierResponse, responses)
 
 	return epochID
 }
@@ -99,13 +99,13 @@ func (d *Distributor) getLatestEpochID(ctx context.Context) (uint64, error) {
 // getValidResponseData returns the valid response data which valid points are greater than 0.
 func getValidResponseData(responses []*model.DataResponse) ([]common.Address, string, json.RawMessage, error) {
 	var (
-		validatorNodes = make([]common.Address, 0)
-		data           = json.RawMessage("{}")
+		verifierNodes = make([]common.Address, 0)
+		data          = json.RawMessage("{}")
 	)
 
 	for _, response := range responses {
 		if response.ValidPoint > 0 {
-			validatorNodes = append(validatorNodes, response.Address)
+			verifierNodes = append(verifierNodes, response.Address)
 			data = response.Data
 		}
 	}
@@ -115,7 +115,7 @@ func getValidResponseData(responses []*model.DataResponse) ([]common.Address, st
 		return nil, "", nil, err
 	}
 
-	return validatorNodes, request, data, nil
+	return verifierNodes, request, data, nil
 }
 
 // extractPathAndParams extracts the path and params from the endpoint.
@@ -130,7 +130,7 @@ func extractPathAndParams(endpoint string) (string, error) {
 }
 
 // saveInvalidResponses saves the responses which invalid points are greater than 0.
-func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, validatorNodes []common.Address, request string, validatorResponse json.RawMessage, responses []*model.DataResponse) {
+func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, verifierNodes []common.Address, request string, verifierResponse json.RawMessage, responses []*model.DataResponse) {
 	var (
 		nodeInvalidResponses = make([]*schema.NodeInvalidResponse, 0, len(responses))
 		err                  error
@@ -156,13 +156,13 @@ func (d *Distributor) saveInvalidResponses(ctx context.Context, epochID uint64, 
 		}
 
 		nodeInvalidResponse := &schema.NodeInvalidResponse{
-			EpochID:           epochID,
-			Type:              typeValue,
-			ValidatorNodes:    validatorNodes,
-			Request:           request,
-			ValidatorResponse: validatorResponse,
-			Node:              response.Address,
-			Response:          responseValue,
+			EpochID:          epochID,
+			Type:             typeValue,
+			VerifierNodes:    verifierNodes,
+			Request:          request,
+			VerifierResponse: verifierResponse,
+			Node:             response.Address,
+			Response:         responseValue,
 		}
 
 		nodeInvalidResponses = append(nodeInvalidResponses, nodeInvalidResponse)

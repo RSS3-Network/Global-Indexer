@@ -10,16 +10,16 @@ import (
 )
 
 type NodeInvalidResponse struct {
-	ID                uint64                         `gorm:"id;primaryKey"`
-	EpochID           uint64                         `gorm:"column:epoch_id"`
-	Type              schema.NodeInvalidResponseType `gorm:"column:type"`
-	Request           string                         `gorm:"column:request"`
-	ValidatorNodes    pq.ByteaArray                  `gorm:"column:validator_nodes;type:bytea[]"`
-	ValidatorResponse json.RawMessage                `gorm:"column:validator_response;type:jsonb"`
-	Node              common.Address                 `gorm:"column:node"`
-	Response          json.RawMessage                `gorm:"column:response;type:jsonb"`
-	CreatedAt         time.Time                      `gorm:"column:created_at"`
-	UpdatedAt         time.Time                      `gorm:"column:updated_at"`
+	ID               uint64                         `gorm:"id;primaryKey"`
+	EpochID          uint64                         `gorm:"column:epoch_id"`
+	Type             schema.NodeInvalidResponseType `gorm:"column:type"`
+	Request          string                         `gorm:"column:request"`
+	VerifierNodes    pq.ByteaArray                  `gorm:"column:verifier_nodes;type:bytea[]"`
+	VerifierResponse json.RawMessage                `gorm:"column:verifier_response;type:jsonb"`
+	Node             common.Address                 `gorm:"column:node"`
+	Response         json.RawMessage                `gorm:"column:response;type:jsonb"`
+	CreatedAt        time.Time                      `gorm:"column:created_at"`
+	UpdatedAt        time.Time                      `gorm:"column:updated_at"`
 }
 
 func (*NodeInvalidResponse) TableName() string {
@@ -31,32 +31,32 @@ func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResp
 	n.Type = nodeResponseFailure.Type
 	n.Request = nodeResponseFailure.Request
 
-	for _, validatorNode := range nodeResponseFailure.ValidatorNodes {
-		n.ValidatorNodes = append(n.ValidatorNodes, validatorNode.Bytes())
+	for _, verifierNode := range nodeResponseFailure.VerifierNodes {
+		n.VerifierNodes = append(n.VerifierNodes, verifierNode.Bytes())
 	}
 
-	n.ValidatorResponse = nodeResponseFailure.ValidatorResponse
+	n.VerifierResponse = nodeResponseFailure.VerifierResponse
 	n.Node = nodeResponseFailure.Node
 	n.Response = nodeResponseFailure.Response
 }
 
 func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
-	var validatorNodes = make([]common.Address, len(n.ValidatorNodes))
+	var verifierNodes = make([]common.Address, len(n.VerifierNodes))
 
-	for _, validatorNode := range n.ValidatorNodes {
-		validatorNodes = append(validatorNodes, common.BytesToAddress(validatorNode))
+	for _, verifierNode := range n.VerifierNodes {
+		verifierNodes = append(verifierNodes, common.BytesToAddress(verifierNode))
 	}
 
 	return &schema.NodeInvalidResponse{
-		ID:                n.ID,
-		EpochID:           n.EpochID,
-		Type:              n.Type,
-		Request:           n.Request,
-		ValidatorNodes:    validatorNodes,
-		ValidatorResponse: n.ValidatorResponse,
-		Node:              n.Node,
-		Response:          n.Response,
-		CreatedAt:         n.CreatedAt.Unix(),
+		ID:               n.ID,
+		EpochID:          n.EpochID,
+		Type:             n.Type,
+		Request:          n.Request,
+		VerifierNodes:    verifierNodes,
+		VerifierResponse: n.VerifierResponse,
+		Node:             n.Node,
+		Response:         n.Response,
+		CreatedAt:        n.CreatedAt.Unix(),
 	}
 }
 
