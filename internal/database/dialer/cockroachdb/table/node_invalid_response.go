@@ -26,18 +26,18 @@ func (*NodeInvalidResponse) TableName() string {
 	return "node_invalid_response"
 }
 
-func (n *NodeInvalidResponse) Import(nodeResponseFailure *schema.NodeInvalidResponse) {
-	n.EpochID = nodeResponseFailure.EpochID
-	n.Type = nodeResponseFailure.Type
-	n.Request = nodeResponseFailure.Request
+func (n *NodeInvalidResponse) Import(nodeInvalidResponse *schema.NodeInvalidResponse) {
+	n.EpochID = nodeInvalidResponse.EpochID
+	n.Type = nodeInvalidResponse.Type
+	n.Request = nodeInvalidResponse.Request
 
-	for _, verifierNode := range nodeResponseFailure.VerifierNodes {
+	for _, verifierNode := range nodeInvalidResponse.VerifierNodes {
 		n.VerifierNodes = append(n.VerifierNodes, verifierNode.Bytes())
 	}
 
-	n.VerifierResponse = nodeResponseFailure.VerifierResponse
-	n.Node = nodeResponseFailure.Node
-	n.Response = nodeResponseFailure.Response
+	n.VerifierResponse = nodeInvalidResponse.VerifierResponse
+	n.Node = nodeInvalidResponse.Node
+	n.Response = nodeInvalidResponse.Response
 }
 
 func (n *NodeInvalidResponse) Export() *schema.NodeInvalidResponse {
