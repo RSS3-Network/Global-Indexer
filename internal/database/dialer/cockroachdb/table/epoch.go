@@ -20,7 +20,7 @@ type Epoch struct {
 	BlockTimestamp        time.Time       `gorm:"column:block_timestamp"`
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
-	TotalRewardedNodes    int             `gorm:"column:total_reward_nodes"`
+	TotalRewardedNodes    int             `gorm:"column:total_rewarded_nodes"`
 	TotalRequestCounts    decimal.Decimal `gorm:"column:total_request_counts"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
