@@ -6,9 +6,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// EpochItem stores information for a Node in an Epoch
-// TODO: we should probably rename this to NodeRewardRecord?
-type EpochItem struct {
+// NodeRewardRecord stores rewards information for a Node in an Epoch
+type NodeRewardRecord struct {
 	EpochID          uint64          `gorm:"column:epoch_id;"`
 	Index            int             `gorm:"column:index;primaryKey"`
 	TransactionHash  string          `gorm:"column:transaction_hash;primaryKey"`
@@ -19,11 +18,11 @@ type EpochItem struct {
 	RequestCount     decimal.Decimal `gorm:"column:request_count"`
 }
 
-func (e *EpochItem) TableName() string {
-	return "epoch_item"
+func (e *NodeRewardRecord) TableName() string {
+	return "node_reward_record"
 }
 
-func (e *EpochItem) Import(nodeToReward *schema.RewardedNode) error {
+func (e *NodeRewardRecord) Import(nodeToReward *schema.RewardedNode) error {
 	e.EpochID = nodeToReward.EpochID
 	e.Index = nodeToReward.Index
 	e.TransactionHash = nodeToReward.TransactionHash.String()
@@ -36,7 +35,7 @@ func (e *EpochItem) Import(nodeToReward *schema.RewardedNode) error {
 	return nil
 }
 
-func (e *EpochItem) Export() (*schema.RewardedNode, error) {
+func (e *NodeRewardRecord) Export() (*schema.RewardedNode, error) {
 	return &schema.RewardedNode{
 		EpochID:          e.EpochID,
 		Index:            e.Index,
@@ -49,13 +48,13 @@ func (e *EpochItem) Export() (*schema.RewardedNode, error) {
 	}, nil
 }
 
-type EpochItems []*EpochItem
+type EpochItems []*NodeRewardRecord
 
 func (e *EpochItems) Import(nodesToReward []*schema.RewardedNode) error {
-	*e = make([]*EpochItem, 0, len(nodesToReward))
+	*e = make([]*NodeRewardRecord, 0, len(nodesToReward))
 
 	for index, nodeToReward := range nodesToReward {
-		epochItem := &EpochItem{}
+		epochItem := &NodeRewardRecord{}
 		if err := epochItem.Import(nodeToReward); err != nil {
 			return err
 		}

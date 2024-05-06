@@ -414,7 +414,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		RewardedNodes:      make([]*schema.RewardedNode, len(event.NodeAddrs)),
 	}
 
-	if epoch.TotalRewardedNodes != len(event.StakingRewards) || epoch.TotalRewardedNodes != len(event.OperationRewards) || epoch.TotalRewardedNodes != len(event.TaxAmounts) {
+	if epoch.TotalRewardedNodes != len(event.StakingRewards) || epoch.TotalRewardedNodes != len(event.OperationRewards) || epoch.TotalRewardedNodes != len(event.TaxCollected) {
 		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardedNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("length not match")
@@ -428,7 +428,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 			NodeAddress:      event.NodeAddrs[i],
 			OperationRewards: decimal.NewFromBigInt(event.OperationRewards[i], 0),
 			StakingRewards:   decimal.NewFromBigInt(event.StakingRewards[i], 0),
-			TaxCollected:     decimal.NewFromBigInt(event.TaxAmounts[i], 0),
+			TaxCollected:     decimal.NewFromBigInt(event.TaxCollected[i], 0),
 			RequestCount:     decimal.NewFromBigInt(event.RequestCounts[i], 0),
 		}
 
