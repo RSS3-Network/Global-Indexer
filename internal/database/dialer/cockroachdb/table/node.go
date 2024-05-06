@@ -22,15 +22,14 @@ type Node struct {
 	Config                 json.RawMessage   `gorm:"column:config;type:jsonb"`
 	Status                 schema.NodeStatus `gorm:"column:status"`
 	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp"`
-	// TODO: rename column to Location in database once atlas is merged
-	Location         json.RawMessage `gorm:"column:local;type:jsonb"`
-	Avatar           json.RawMessage `gorm:"column:avatar;type:jsonb"`
-	MinTokensToStake decimal.Decimal `gorm:"column:min_tokens_to_stake"`
-	APY              decimal.Decimal `gorm:"column:apy"`
-	Score            decimal.Decimal `gorm:"column:score"`
-	Type             string          `gorm:"column:type"`
-	CreatedAt        time.Time       `gorm:"column:created_at"`
-	UpdatedAt        time.Time       `gorm:"column:updated_at"`
+	Location               json.RawMessage   `gorm:"column:location;type:jsonb"`
+	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
+	APY                    decimal.Decimal   `gorm:"column:apy"`
+	Score                  decimal.Decimal   `gorm:"column:score"`
+	Type                   string            `gorm:"column:type"`
+	CreatedAt              time.Time         `gorm:"column:created_at"`
+	UpdatedAt              time.Time         `gorm:"column:updated_at"`
 }
 
 func (*Node) TableName() string {
