@@ -85,8 +85,10 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(nodeCaches []*model.NodeEndpo
 func newScoreMaintainer(ctx context.Context, setKey string, nodeCaches []*model.NodeEndpointCache, cacheClient cache.Client) (*ScoreMaintainer, error) {
 	validCaches, members := prepareNodeCachesAndMembers(nodeCaches)
 
-	if err := addMembersToSortedSet(ctx, setKey, cacheClient, members); err != nil {
-		return nil, err
+	if len(members) > 0 {
+		if err := addMembersToSortedSet(ctx, setKey, cacheClient, members); err != nil {
+			return nil, err
+		}
 	}
 
 	return &ScoreMaintainer{

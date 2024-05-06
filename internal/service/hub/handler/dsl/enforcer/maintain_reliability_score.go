@@ -249,8 +249,10 @@ func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key str
 		})
 	}
 
-	if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
-		return err
+	if len(membersToAdd) > 0 {
+		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
+			return err
+		}
 	}
 
 	if len(membersToRemove) == 0 {
