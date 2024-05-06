@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -157,12 +158,12 @@ func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status sch
 	}
 
 	// calculate Reliability Score
-	return calculateReliabilityScore(stat)
+	return CalculateReliabilityScore(stat)
 }
 
-// calculateReliabilityScore calculates the Reliability Score σ of a given Node.
+// CalculateReliabilityScore calculates the Reliability Score σ of a given Node.
 // σ is used to determine the probability of a Node receiving a request on DSL.
-func calculateReliabilityScore(stat *schema.Stat) error {
+func CalculateReliabilityScore(stat *schema.Stat) error {
 	// staking pool tokens
 	// maximum score is 0.2
 	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
@@ -204,84 +205,59 @@ func calculateReliabilityScore(stat *schema.Stat) error {
 }
 
 // UpdateNodeCache updates the cache for all Nodes.
-func (e *SimpleEnforcer) updateNodeCache(ctx context.Context) error {
-	if err := e.updateCacheForNodeType(ctx, model.RssNodeCacheKey); err != nil {
-		return err
-	}
-
-	return e.updateCacheForNodeType(ctx, model.FullNodeCacheKey)
-}
-
-// updateCacheForNodeType updates the cache for different types of Nodes.
-func (e *SimpleEnforcer) updateCacheForNodeType(ctx context.Context, key string) error {
-	query := &schema.StatQuery{PointsOrder: lo.ToPtr("DESC")}
-
-	switch key {
-	case model.FullNodeCacheKey:
-		query.IsFullNode = lo.ToPtr(true)
-	case model.RssNodeCacheKey:
-		query.IsRssNode = lo.ToPtr(true)
-	}
-
-	nodes, err := e.databaseClient.FindNodeStats(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	qualifiedNodes, err := e.getQualifiedNodes(ctx, nodes)
-	if err != nil {
-		return err
-	}
-
-	return e.setNodeCache(ctx, key, qualifiedNodes)
-}
-
-// getQualifiedNodes filters the qualified nodes.
-func (e *SimpleEnforcer) getQualifiedNodes(ctx context.Context, stats []*schema.Stat) ([]*schema.Stat, error) {
-	nodeAddresses := extractNodeAddresses(stats)
-
-	// Retrieve the online Nodes from the database.
-	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		NodeAddresses: nodeAddresses,
-		Status:        lo.ToPtr(schema.NodeStatusOnline),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap := lo.SliceToMap(nodes, func(node *schema.Node) (common.Address, struct{}) {
-		return node.Address, struct{}{}
-	})
-
-	var qualifiedNodes []*schema.Stat
-
-	// Exclude the offline nodes.
-	for _, stat := range stats {
-		if _, exists := nodeMap[stat.Address]; exists {
-			qualifiedNodes = append(qualifiedNodes, stat)
-		}
-
-		if len(qualifiedNodes) >= model.RequiredQualifiedNodeCount {
-			break
+// 1. update the sorted set nodes.
+// 2. update the cache for the Node subscription.
+func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
+	for _, key := range []string{model.RssNodeCacheKey, model.FullNodeCacheKey} {
+		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
+			return err
 		}
 	}
 
-	return qualifiedNodes, nil
+	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
 }
 
-// setNodeCache sets the cache for the Nodes.
-func (e *SimpleEnforcer) setNodeCache(ctx context.Context, key string, stats []*schema.Stat) error {
-	nodesCache := lo.Map(stats, func(n *schema.Stat, _ int) model.NodeEndpointCache {
-		return model.NodeEndpointCache{Address: n.Address.String(), Endpoint: n.Endpoint}
+// updateSortedSetForNodeType updates the sorted set for different types of Nodes.
+func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
+	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+	if err != nil {
+		return err
+	}
+
+	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
+		return node.Address, node
 	})
 
-	return e.cacheClient.Set(ctx, key, nodesCache)
-}
+	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
+	if err != nil {
+		return err
+	}
 
-// extractNodeAddresses returns all Node addresses from stats.
-func extractNodeAddresses(stats []*schema.Stat) []common.Address {
-	return lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
-		return stat.Address
-	})
+	membersToRemove := make([]string, 0)
+	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
+
+	for _, member := range members {
+		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
+			membersToRemove = append(membersToRemove, member.Member.(string))
+		}
+	}
+
+	for _, node := range nodesEndpointCaches {
+		membersToAdd = append(membersToAdd, redis.Z{
+			Member: node.Address,
+			Score:  node.Score,
+		})
+	}
+
+	if len(membersToAdd) > 0 {
+		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
+			return err
+		}
+	}
+
+	if len(membersToRemove) == 0 {
+		return nil
+	}
+
+	return e.cacheClient.ZRem(ctx, key, membersToRemove)
 }
