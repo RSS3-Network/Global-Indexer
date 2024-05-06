@@ -49,10 +49,15 @@ func (d *Distributor) getQualifiedNodes(ctx context.Context, request dsl.Activit
 
 // generateQualifiedNodeCache generates an ordered qualified Node cache
 func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddresses []common.Address) ([]*model.NodeEndpointCache, error) {
+	if len(nodeAddresses) == 0 {
+		return nil, nil
+	}
+
 	nodesOrderedByPoints, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		Addresses:   nodeAddresses,
-		Limit:       lo.ToPtr(model.RequiredQualifiedNodeCount),
-		PointsOrder: lo.ToPtr("DESC"),
+		Addresses:    nodeAddresses,
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+		Limit:        lo.ToPtr(model.RequiredQualifiedNodeCount),
+		PointsOrder:  lo.ToPtr("DESC"),
 	})
 
 	if err != nil {
