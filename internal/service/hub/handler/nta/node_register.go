@@ -141,7 +141,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.Type = request.Type
 
 	// Checks begin from the beta stage.
-	if !nodeInfo.Alpha {
+	if node.Type == "beta" {
 		// Check if the endpoint is available and contains the node's address before update the node's status to online.
 		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
 			return fmt.Errorf("check endpoint available: %w", err)
@@ -346,9 +346,11 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	// Check if the endpoint is available and contains the node's address.
-	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
-		return fmt.Errorf("check endpoint available: %w", err)
+	if node.Type == "beta" {
+		// Check if the endpoint is available and contains the node's address.
+		if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+			return fmt.Errorf("check endpoint available: %w", err)
+		}
 	}
 
 	// Get node local info.
