@@ -126,13 +126,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
-	if err != nil {
-		zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
-
-		return fmt.Errorf("parse endpoint: %w", err)
-	}
-
+	node.Endpoint = request.Endpoint
 	node.Stream = request.Stream
 	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
@@ -142,6 +136,13 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 	// Checks begin from the beta stage.
 	if node.Type == "beta" {
+		node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
+		if err != nil {
+			zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
+
+			return fmt.Errorf("parse endpoint: %w", err)
+		}
+
 		// Check if the endpoint is available and contains the node's address before update the node's status to online.
 		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
 			return fmt.Errorf("check endpoint available: %w", err)
