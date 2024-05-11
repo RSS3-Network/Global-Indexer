@@ -323,7 +323,7 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 		return err
 	}
 
-	var notify bool
+	var lastStatEpoch int64
 
 	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
 
@@ -340,9 +340,9 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 		}
 
 		// A nil cursor indicates that the stats represent the initial batch of data.
-		// If the epoch of the current stat differs from that of the first stat,
-		// it indicates an epoch change, necessitating a notification to the score queue.
-		notify = query.Cursor == nil && currentEpoch != stats[0].Epoch
+		if query.Cursor == nil {
+			lastStatEpoch = stats[0].Epoch
+		}
 
 		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
 			return err
@@ -351,11 +351,17 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 		query.Cursor = lo.ToPtr(stats[len(stats)-1].Address.String())
 	}
 
-	if notify {
+	// If the epoch of the current stat differs from that of the first stat,
+	// it indicates an epoch change, necessitating a notification to the score queue.
+	if currentEpoch != lastStatEpoch {
 		if err = e.updateNodeCache(ctx, currentEpoch); err != nil {
 			return err
 		}
+
+		zap.L().Info("update node cache for the latest epoch", zap.Int64("epoch", currentEpoch))
 	}
+
+	zap.L().Info("maintain reliability score completed")
 
 	return nil
 }
