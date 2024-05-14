@@ -65,39 +65,62 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 
 	nta := instance.httpServer.Group("/nta")
 	{
-		nta.GET("/networks", instance.hub.nta.GetNetworks)
-		nta.GET("/networks/:network/workers", instance.hub.nta.GetWorkersByNetwork)
+		{
+			bridge := nta.Group("/bridge")
+			bridge.GET("/transactions", instance.hub.nta.GetBridgeTransactions)
+			bridge.GET("/transactions/:id", instance.hub.nta.GetBridgeTransaction)
+		}
 
-		nta.GET("/nodes", instance.hub.nta.GetNodes)
-		nta.GET("/nodes/:id", instance.hub.nta.GetNode)
-		nta.GET("/nodes/:id/events", instance.hub.nta.GetNodeEvents)
-		nta.GET("/nodes/:id/challenge", instance.hub.nta.GetNodeChallenge)
-		nta.POST("/nodes/:id/hideTaxRate", instance.hub.nta.PostNodeHideTaxRate)
-		nta.GET("/nodes/:id/avatar.svg", instance.hub.nta.GetNodeAvatar)
-		nta.GET("/operation/:operator/profits", instance.hub.nta.GetOperatorProfit)
+		{
+			chips := nta.Group("/chips")
+			chips.GET("", instance.hub.nta.GetStakeChips)
+			chips.GET("/:id", instance.hub.nta.GetStakeChip)
+			chips.GET("/:id/image.svg", instance.hub.nta.GetStakeChipImage)
+		}
 
-		nta.GET("/bridge/transactions", instance.hub.nta.GetBridgeTransactions)
-		nta.GET("/bridge/transactions/:id", instance.hub.nta.GetBridgeTransaction)
+		{
+			epochs := nta.Group("/epochs")
+			epochs.GET("", instance.hub.nta.GetEpochs)
+			epochs.GET("/:id", instance.hub.nta.GetEpoch)
+			epochs.GET("/:node/rewards", instance.hub.nta.GetEpochNodeRewards)
+			epochs.GET("/distributions/:transaction", instance.hub.nta.GetEpochDistribution)
+		}
 
-		nta.GET("/stake/transactions", instance.hub.nta.GetStakeTransactions)
-		nta.GET("/stake/transactions/:id", instance.hub.nta.GetStakeTransaction)
-		nta.GET("/stake/stakings", instance.hub.nta.GetStakeStakings)
-		nta.GET("/stake/:owner/profits", instance.hub.nta.GetStakeOwnerProfit)
+		{
+			networks := nta.Group("/networks")
+			networks.GET("/", instance.hub.nta.GetNetworks)
+			networks.GET("/:network/list-workers", instance.hub.nta.GetWorkersByNetwork)
+			networks.GET("/:network/workers/:worker", instance.hub.nta.GetWorkerDetail)
+		}
 
-		nta.GET("/chips", instance.hub.nta.GetStakeChips)
-		nta.GET("/chips/:id", instance.hub.nta.GetStakeChip)
-		nta.GET("/chips/:id/image.svg", instance.hub.nta.GetStakeChipImage)
+		{
+			nodes := nta.Group("/nodes")
+			nodes.GET("", instance.hub.nta.GetNodes)
+			nodes.GET("/:id", instance.hub.nta.GetNode)
+			nodes.GET("/:id/avatar.svg", instance.hub.nta.GetNodeAvatar)
+			nodes.GET("/:id/challenge", instance.hub.nta.GetNodeChallenge)
+			nodes.GET("/:id/events", instance.hub.nta.GetNodeEvents)
+			nodes.POST("/:id/hideTaxRate", instance.hub.nta.PostNodeHideTaxRate)
+		}
 
-		nta.GET("/epochs", instance.hub.nta.GetEpochs)
-		nta.GET("/epochs/:id", instance.hub.nta.GetEpoch)
-		nta.GET("/epochs/distributions/:transaction", instance.hub.nta.GetEpochDistribution)
-		nta.GET("/epochs/:node/rewards", instance.hub.nta.GetEpochNodeRewards)
+		nta.GET("/operation/:operator/profit", instance.hub.nta.GetOperatorProfit)
 
-		nta.GET("/snapshots/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
-		nta.POST("/snapshots/nodes/minTokensToStake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
-		nta.GET("/snapshots/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
-		nta.GET("/snapshots/stakers/profits", instance.hub.nta.GetStakerProfitsSnapshots)
-		nta.GET("/snapshots/operators/profits", instance.hub.nta.GetOperatorProfitsSnapshots)
+		{
+			snapshots := nta.Group("/snapshots")
+			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
+			snapshots.POST("/nodes/minTokensToStake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
+			snapshots.GET("/operators/profit", instance.hub.nta.GetOperatorProfitsSnapshots)
+			snapshots.GET("/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
+			snapshots.GET("/stakers/profit", instance.hub.nta.GetStakerProfitSnapshots)
+		}
+
+		{
+			stake := nta.Group("/stake")
+			stake.GET("/:owner/profit", instance.hub.nta.GetStakeOwnerProfit)
+			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
+			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
+			stake.GET("/transactions/:id", instance.hub.nta.GetStakeTransaction)
+		}
 	}
 
 	dsl := instance.httpServer.Group("")

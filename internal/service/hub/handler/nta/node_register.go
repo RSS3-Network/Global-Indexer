@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -18,7 +19,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
@@ -123,13 +126,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
-	if err != nil {
-		zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
-
-		return fmt.Errorf("parse endpoint: %w", err)
-	}
-
+	node.Endpoint = request.Endpoint
 	node.Stream = request.Stream
 	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
@@ -138,7 +135,14 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.Type = request.Type
 
 	// Checks begin from the beta stage.
-	if !nodeInfo.Alpha {
+	if node.Type == "beta" {
+		node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
+		if err != nil {
+			zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
+
+			return fmt.Errorf("parse endpoint: %w", err)
+		}
+
 		// Check if the endpoint is available and contains the node's address before update the node's status to online.
 		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
 			return fmt.Errorf("check endpoint available: %w", err)
@@ -169,7 +173,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 
 	// TODO: The transitional implementation during the beta phase, which will soon be deprecated.
 	if !nodeInfo.Alpha {
-		if err = n.updateBetaNodeStats(ctx, request.Config, node); err != nil {
+		if err = n.updateBetaNodeStats(ctx, request.Config, node, nodeInfo); err != nil {
 			return err
 		}
 	}
@@ -177,7 +181,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	return nil
 }
 
-func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node) error {
+func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo l2.DataTypesNode) error {
 	var nodeConfig NodeConfig
 
 	if err := json.Unmarshal(config, &nodeConfig); err != nil {
@@ -190,7 +194,7 @@ func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, n
 		return fmt.Errorf("check full node error: %w", err)
 	}
 
-	stat, err := n.updateNodeStat(ctx, node, nodeConfig, fullNode)
+	stat, err := n.updateNodeStat(ctx, node, nodeConfig, fullNode, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
 	}
@@ -263,7 +267,7 @@ func isFullNode(workers []*NodeConfigModule) (bool, error) {
 	return true, nil
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
 	var (
 		stat *schema.Stat
 		err  error
@@ -274,11 +278,15 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 		return nil, fmt.Errorf("find Node stat: %w", err)
 	}
 
+	// Convert the staking to float64.
+	staking, _ := nodeInfo.StakingPoolTokens.Div(nodeInfo.StakingPoolTokens, big.NewInt(1e18)).Float64()
+
 	if stat == nil {
 		stat = &schema.Stat{
 			Address:      node.Address,
 			Endpoint:     node.Endpoint,
 			IsPublicGood: node.IsPublicGood,
+			Staking:      staking,
 			ResetAt:      time.Now(),
 			IsFullNode:   fullNode,
 			IsRssNode:    len(nodeConfig.RSS) > 0,
@@ -291,6 +299,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 	} else {
 		stat.Endpoint = node.Endpoint
 		stat.IsPublicGood = node.IsPublicGood
+		stat.Staking = staking
 		stat.IsFullNode = fullNode
 		stat.IsRssNode = len(nodeConfig.RSS) > 0
 		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
@@ -299,6 +308,9 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 		stat.FederatedNetwork = len(nodeConfig.Federated)
 		stat.Indexer = len(nodeConfig.Decentralized)
 	}
+
+	// Calculate the reliability score.
+	_ = enforcer.CalculateReliabilityScore(stat)
 
 	return stat, nil
 }
@@ -335,9 +347,11 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	// Check if the endpoint is available and contains the node's address.
-	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
-		return fmt.Errorf("check endpoint available: %w", err)
+	if node.Type == "beta" {
+		// Check if the endpoint is available and contains the node's address.
+		if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+			return fmt.Errorf("check endpoint available: %w", err)
+		}
 	}
 
 	// Get node local info.

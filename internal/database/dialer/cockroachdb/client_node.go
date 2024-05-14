@@ -311,12 +311,12 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 	return databaseStatement, nil
 }
 
-func (c *client) SaveNodeInvalidResponse(ctx context.Context, nodeInvalidResponse *schema.NodeInvalidResponse) error {
-	var value table.NodeInvalidResponse
+func (c *client) SaveNodeInvalidResponses(ctx context.Context, nodeInvalidResponse []*schema.NodeInvalidResponse) error {
+	var tNodeInvalidResponses table.NodeInvalidResponses
 
-	value.Import(nodeInvalidResponse)
+	tNodeInvalidResponses.Import(nodeInvalidResponse)
 
-	return c.database.WithContext(ctx).Create(&value).Error
+	return c.database.WithContext(ctx).CreateInBatches(tNodeInvalidResponses, math.MaxUint8).Error
 }
 
 func (c *client) FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error) {

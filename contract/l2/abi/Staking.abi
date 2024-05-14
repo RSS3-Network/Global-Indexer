@@ -1427,7 +1427,7 @@
                 "internalType": "uint256[]"
             },
             {
-                "name": "taxAmounts",
+                "name": "taxCollected",
                 "type": "uint256[]",
                 "indexed": false,
                 "internalType": "uint256[]"
