@@ -12,15 +12,16 @@ servers:
     description: Localhost
 tags:
   - name: Bridge
-  - name: Stake
   - name: Chips
-  - name: Snapshots
-  - name: Node
   - name: Epoch
+  - name: Networks
+  - name: Node
+  - name: Snapshots
+  - name: Stake
 paths:
   /nta/bridge/transactions:
     get:
-      description: "Get bridge transactions"
+      description: "Get bridging transactions"
       tags:
         - Bridge
       parameters:
@@ -95,7 +96,7 @@ paths:
                 cursor: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
   /nta/bridge/transactions/{id}:
     get:
-      description: "Get bridge transaction by id"
+      description: "Get bridging transaction by id"
       tags:
         - Bridge
       parameters:
@@ -144,7 +145,7 @@ paths:
                           index: 1
   /nta/stake/transactions:
     get:
-      description: "Get stake transactions"
+      description: "Get staking transactions"
       tags:
         - Stake
       parameters:
@@ -202,7 +203,7 @@ paths:
                         owner: "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944"
                         metadata:
                           name: "Chip #2105"
-                          description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                          description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                           image: "https://gi.rss3.dev/chips/2105/image.svg"
                     event:
                       deposit:
@@ -217,7 +218,7 @@ paths:
                 cursor: "0xbfbb8cbffc01c13c1f849ecfb53099309e189b362fd621addbfa9f5d03dcd0c1"
   /nta/stake/transactions/{id}:
     get:
-      description: "Get stake transaction by id"
+      description: "Get staking transaction by id"
       tags:
         - Stake
       parameters:
@@ -238,7 +239,7 @@ paths:
                     $ref: "#/components/schemas/StakeTransaction"
   /nta/stake/stakings:
     get:
-      description: "Get a list of stakers and nodes"
+      description: "Get a list of stakers and Nodes"
       tags:
         - Stake
       parameters:
@@ -286,12 +287,12 @@ paths:
                           owner: "0x827431510a5d249ce4fdb7f00c83a3353f471848"
                           metadata:
                             name: "Chip #21"
-                            description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                            description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
-  /nta/stake/{owner}/profits:
+  /nta/stake/{owner}/profit:
     get:
-      description: "Get the profit of the staker"
+      description: "Get staking profit of a staker"
       tags:
         - Stake
       parameters:
@@ -325,7 +326,7 @@ paths:
                         $ref: "#/components/schemas/ChipPNL"
   /nta/chips:
     get:
-      description: "Get all chips by chips id"
+      description: "Get all chips"
       tags:
         - Chips
       parameters:
@@ -368,7 +369,7 @@ paths:
                     type: string
   /nta/chips/{id}:
     get:
-      description: "Get chips by chips id"
+      description: "Get Chips by id"
       tags:
         - Chips
       parameters:
@@ -387,9 +388,8 @@ paths:
         404:
           description: "Not found"
   /nta/chips/{id}/image.svg:
-    description: "Not found"
     get:
-      description: "Get image by chips id"
+      description: "Get Chips image by id"
       tags:
         - Chips
       parameters:
@@ -409,7 +409,7 @@ paths:
           description: "Not found"
   /nta/snapshots/nodes/count:
     get:
-      description: "Get snapshots of the number of nodes"
+      description: "Get snapshots of Node count"
       tags:
         - Snapshots
       responses:
@@ -435,7 +435,7 @@ paths:
                     count: 2
   /nta/snapshots/nodes/minTokensToStake:
     post:
-        description: "Get snapshots of the minimum number of tokens to stake"
+        description: "Get snapshots of the minimum staking amount for Nodes"
         tags:
             - Snapshots
         requestBody:
@@ -470,7 +470,7 @@ paths:
                           $ref: "#/components/schemas/NodeMinTokensToStakeSnapshot"
   /nta/snapshots/stakers/count:
     get:
-      description: "Get snapshots of the number of stakers"
+      description: "Get snapshots of total staker count"
       tags:
         - Snapshots
       responses:
@@ -494,7 +494,7 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-  /nta/snapshots/stakers/profits:
+  /nta/snapshots/stakers/profit:
     get:
         description: "Get snapshots of the profit of stakers"
         tags:
@@ -540,7 +540,7 @@ paths:
                         $ref: "#/components/schemas/StakerProfitSnapshot"
                     cursor:
                       type: string
-  /nta/snapshots/operators/profits:
+  /nta/snapshots/operators/profit:
     get:
         description: "Get snapshots of the profit of operators"
         tags:
@@ -588,7 +588,7 @@ paths:
                       type: string
   /nta/nodes:
     get:
-      description: "Get all nodes"
+      description: "Get all Nodes"
       tags:
         - Node
       parameters:
@@ -599,7 +599,7 @@ paths:
             type: string
         - name: limit
           in: query
-          description: "The number of nodes to return, default is 10, maximum is 50"
+          description: "The number of Nodes to return, default is 10, maximum is 50"
           required: false
           schema:
             type: integer
@@ -629,7 +629,7 @@ paths:
           description: "Internal Server Error"
   /nta/nodes/{address}:
     get:
-      description: "Get node by address"
+      description: "Get Node by address"
       tags:
         - Node
       parameters:
@@ -651,7 +651,7 @@ paths:
           description: "Internal Server Error"
   /nta/nodes/{address}/avatar.svg:
     get:
-      description: "Get avatar by node address"
+      description: "Get Node avatar by address"
       tags:
         - Node
       parameters:
@@ -673,7 +673,7 @@ paths:
           description: "Internal Server Error"
   /nta/nodes/{address}/events:
     get:
-      description: "Get transaction events by node address"
+      description: "Get Node transaction events by address"
       tags:
         - Node
       parameters:
@@ -710,9 +710,9 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
-  /nta/operation/{operator}/profits:
+  /nta/operation/{operator}/profit:
     get:
-      description: "Get the operation profit of the node"
+      description: "Get Node operation profit by operator"
       tags:
         - Node
       parameters:
@@ -816,7 +816,7 @@ paths:
                       $ref: "#/components/schemas/EpochDistribution"
   /nta/epochs/{node}/rewards:
     get:
-      description: "Get rewards by node address"
+      description: "Get Node rewards by epoch"
       tags:
         - Epoch
       parameters:
@@ -850,6 +850,80 @@ paths:
                       $ref: "#/components/schemas/Epoch"
                   cursor:
                     type: string
+  /nta/networks:
+    get:
+      description: "Get all compatible networks"
+      tags:
+        - Networks
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+  /nta/networks/{network}/list-workers:
+    get:
+      description: "Get available workers by network"
+      tags:
+        - Networks
+      parameters:
+        - name: network
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
+  /nta/networks/{network}/workers/{worker}:
+    get:
+      description: "Get config by network and worker"
+      tags:
+        - Networks
+      parameters:
+        - name: network
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: worker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NetworkWorker"
+        404:
+          description: "Not found"
+        500:
+          description: "Internal Server Error"
 components:
   schemas:
     BridgeTransaction:
@@ -977,7 +1051,7 @@ components:
             owner: "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944"
             metadata:
               name: "Chip #2105"
-              description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+              description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
               image: "https://gi.rss3.dev/chips/2105/image.svg"
         event:
           deposit:
@@ -1043,35 +1117,35 @@ components:
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #275"
-                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 276
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #276"
-                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 277
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #277"
-                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 278
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #278"
-                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/chips/275/image.svg"
             - id: 279
               node: "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
               owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
               metadata:
                 name: "Chip #279"
-                description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+                description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                 image: "https://gi.rss3.dev/chips/275/image.svg"
     Chips:
       type: object
@@ -1103,7 +1177,7 @@ components:
         owner: "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
         metadata:
           name: "Chip #474"
-          description: "Chip is a unique NFT that represents a node in the network. It is generated based on the node's address and token ID."
+          description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
           image: "https://gi.rss3.dev/chips/474/image.svg"
         value: "5000000000000000000000"
         latestValue: "5500000000000000000000"
@@ -1169,7 +1243,7 @@ components:
           type: string
         createAt:
           type: integer
-          description: "The timestamp of the node creation"
+          description: "The timestamp of the Node creation"
       example:
         id: 1
         address: "0xc5999271b01afc77ed7a6738b40c34677c2a581c"
@@ -1444,3 +1518,94 @@ components:
                 type: string
               requestCounts:
                 type: string
+    WorkerDetail:
+      type: object
+      properties:
+        isRequired:
+          type: boolean
+        type:
+          type: string
+        value:
+          type: string
+        description:
+          type: string
+    NetworkWorker:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/WorkerDetail"
+        network:
+          $ref: "#/components/schemas/WorkerDetail"
+        worker:
+            $ref: "#/components/schemas/WorkerDetail"
+        endpoint:
+            $ref: "#/components/schemas/WorkerDetail"
+        parameters:
+            type: object
+            properties:
+              block_number_start:
+                $ref: "#/components/schemas/WorkerDetail"
+              block_number_target:
+                $ref: "#/components/schemas/WorkerDetail"
+              rpc_thread_blocks:
+                $ref: "#/components/schemas/WorkerDetail"
+              rpc_batch_blocks:
+                $ref: "#/components/schemas/WorkerDetail"
+              rpc_batch_receipts:
+                $ref: "#/components/schemas/WorkerDetail"
+              rpc_batch_block_receipts:
+                $ref: "#/components/schemas/WorkerDetail"
+      example:
+        id:
+          isRequired: true
+          type: "string"
+          value: "ethereum-core"
+          description: "You can define your own worker id, you are recommended to use `[network]-[worker]`"
+        network:
+            isRequired: true
+            type: "string"
+            value: "ethereum"
+            description: "Your worker is running on the defined network"
+        worker:
+            isRequired: true
+            type: "string"
+            value: "core"
+            description: "Your worker is running the defined worker"
+        endpoint:
+            isRequired: true
+            type: "string"
+            value: "https://rpc.ankr.com/eth"
+            description: "You can fill this field with a global endpoint id (should be pre-defined in endpoints part) or a url"
+        parameters:
+          block_number_start:
+            isRequired: false
+            type: "big.Int"
+            value: "null"
+            description: "Your worker will start from this block number, if it's not defined, we will use the recommended one(~3 months)"
+          block_number_target:
+            isRequired: false
+            type: "big.Int"
+            value: "null"
+            description: "The block number to target the worker"
+          rpc_thread_blocks:
+            isRequired: false
+            type: "uint"
+            value: "8"
+            description: "The number of blocks to process in a thread"
+          rpc_batch_blocks:
+            isRequired: false
+            type: "uint"
+            value: "8"
+            description: "The number of blocks to process in a batch"
+          rpc_batch_receipts:
+            isRequired: false
+            type: "uint"
+            value: "200"
+            description: "The number of receipts to process in a batch"
+          rpc_batch_block_receipts:
+            isRequired: false
+            type: "uint"
+            value: "8"
+            description: "The number of block receipts to process in a batch"
+
+

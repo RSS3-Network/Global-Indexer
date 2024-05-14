@@ -31,4 +31,8 @@ go.work
 ### Project
 /build/*
 
+### lint-doc report
 docs/report.html
+
+### Configuration
+deploy/config.yaml

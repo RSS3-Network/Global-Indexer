@@ -20,9 +20,8 @@ type Epoch struct {
 	BlockTimestamp        time.Time       `gorm:"column:block_timestamp"`
 	TotalOperationRewards decimal.Decimal `gorm:"column:total_operation_rewards"`
 	TotalStakingRewards   decimal.Decimal `gorm:"column:total_staking_rewards"`
-	// FIXME: update column name
-	TotalRewardedNodes int             `gorm:"column:total_reward_items"`
-	TotalRequestCounts decimal.Decimal `gorm:"column:total_request_counts"`
+	TotalRewardedNodes    int             `gorm:"column:total_rewarded_nodes"`
+	TotalRequestCounts    decimal.Decimal `gorm:"column:total_request_counts"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
@@ -43,7 +42,7 @@ func (e *Epoch) Import(epoch *schema.Epoch) error {
 	e.BlockTimestamp = time.Unix(epoch.BlockTimestamp, 0)
 	e.TotalOperationRewards = epoch.TotalOperationRewards
 	e.TotalStakingRewards = epoch.TotalStakingRewards
-	e.TotalRewardedNodes = epoch.TotalRewardNodes
+	e.TotalRewardedNodes = epoch.TotalRewardedNodes
 	e.TotalRequestCounts = epoch.TotalRequestCounts
 
 	return nil
@@ -61,7 +60,7 @@ func (e *Epoch) Export(epochItems []*schema.RewardedNode) (*schema.Epoch, error)
 		BlockNumber:           new(big.Int).SetUint64(e.BlockNumber),
 		TotalOperationRewards: e.TotalOperationRewards,
 		TotalStakingRewards:   e.TotalStakingRewards,
-		TotalRewardNodes:      e.TotalRewardedNodes,
+		TotalRewardedNodes:    e.TotalRewardedNodes,
 		TotalRequestCounts:    e.TotalRequestCounts,
 		RewardedNodes:         epochItems,
 	}

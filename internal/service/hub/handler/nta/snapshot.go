@@ -15,7 +15,7 @@ import (
 func (n *NTA) GetNodeCountSnapshots(c echo.Context) error {
 	nodeSnapshots, err := n.databaseClient.FindNodeCountSnapshots(c.Request().Context())
 	if err != nil {
-		zap.L().Error("find node snapshots", zap.Error(err))
+		zap.L().Error("find Node snapshots", zap.Error(err))
 
 		return c.NoContent(http.StatusInternalServerError)
 	}
@@ -40,9 +40,9 @@ func (n *NTA) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 
 	nodeMinTokensToStakeSnapshots, err := n.databaseClient.FindNodeMinTokensToStakeSnapshots(c.Request().Context(), request.NodeAddresses, request.OnlyStartAndEnd, nil)
 	if err != nil {
-		zap.L().Error("find node min tokens to stake snapshots", zap.Error(err))
+		zap.L().Error("find Node min tokens to stake snapshots", zap.Error(err))
 
-		return errorx.InternalError(c, fmt.Errorf("find node min tokens to stake snapshots: %w", err))
+		return errorx.InternalError(c, fmt.Errorf("find Node min tokens to stake snapshots: %w", err))
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -65,7 +65,7 @@ func (n *NTA) GetStakerCountSnapshots(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (n *NTA) GetStakerProfitsSnapshots(c echo.Context) error {
+func (n *NTA) GetStakerProfitSnapshots(c echo.Context) error {
 	var request nta.GetStakerProfitSnapshotsRequest
 
 	if err := c.Bind(&request); err != nil {

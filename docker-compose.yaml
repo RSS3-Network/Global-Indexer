@@ -16,6 +16,7 @@ services:
   redis:
     container_name: redis
     image: redis:7.2.4
+    command: sh -c "redis-server --notify-keyspace-events K$"
     networks:
       - default
     ports:

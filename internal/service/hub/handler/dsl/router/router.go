@@ -16,9 +16,9 @@ import (
 )
 
 type Router interface {
-	// BuildPath builds the path for the request and returns a map of node addresses to their respective paths
+	// BuildPath builds the path for the request and returns a map of Node addresses to their respective paths
 	BuildPath(path string, query any, nodes []model.NodeEndpointCache) (map[common.Address]string, error)
-	// DistributeRequest sends the request to the nodes and processes the results
+	// DistributeRequest sends the request to the Nodes and processes the results
 	DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResults func([]model.DataResponse)) (model.DataResponse, error)
 }
 
@@ -26,7 +26,7 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(path string, query any, nodes []model.NodeEndpointCache) (map[common.Address]string, error) {
+func (r *SimpleRouter) BuildPath(path string, query any, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
 	if query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
@@ -60,7 +60,7 @@ func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common
 	// firstResponse is a channel that will be used to send the first response
 	var firstResponse = make(chan model.DataResponse, 1)
 
-	// Distribute the request to the nodes
+	// Distribute the request to the Nodes
 	r.distribute(ctx, nodeMap, processResponses, firstResponse)
 
 	select {
@@ -72,7 +72,7 @@ func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common
 	}
 }
 
-// distribute sends the request to the nodes and processes the responses
+// distribute sends the request to the Nodes and processes the responses
 func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
 	var (
 		waitGroup sync.WaitGroup
@@ -95,8 +95,8 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 		go func(address common.Address, endpoint string) {
 			defer waitGroup.Done()
 
-			response := &model.DataResponse{Address: address}
-			// Fetch the data from the node.
+			response := &model.DataResponse{Address: address, Endpoint: endpoint}
+			// Fetch the data from the Node.
 			body, err := r.httpClient.Fetch(ctx, endpoint)
 
 			if err != nil {
@@ -115,7 +115,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 					activity := &model.ActivityResponse{}
 					activities := &model.ActivitiesResponse{}
 
-					// Check if the node's data is valid.
+					// Check if the Node's data is valid.
 					if !validateData(data, activity) && !validateData(data, activities) {
 						zap.L().Error("failed to parse response", zap.String("node", address.String()))
 
@@ -137,7 +137,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 	waitGroup.Wait()
 	// Process the responses to calculate the actual request of each node
-	processResponses(responses)
+	go processResponses(responses)
 }
 
 // sendResponse sends the first valid response to the firstResponse channel

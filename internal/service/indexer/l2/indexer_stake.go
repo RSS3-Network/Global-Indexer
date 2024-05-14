@@ -402,25 +402,25 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 	}
 
 	epoch := schema.Epoch{
-		ID:               event.Epoch.Uint64(),
-		StartTimestamp:   event.StartTimestamp.Int64(),
-		EndTimestamp:     event.EndTimestamp.Int64(),
-		TransactionHash:  transaction.Hash(),
-		BlockHash:        header.Hash(),
-		BlockNumber:      header.Number,
-		BlockTimestamp:   int64(header.Time),
-		TransactionIndex: receipt.TransactionIndex,
-		TotalRewardNodes: len(event.NodeAddrs),
-		RewardedNodes:    make([]*schema.RewardedNode, len(event.NodeAddrs)),
+		ID:                 event.Epoch.Uint64(),
+		StartTimestamp:     event.StartTimestamp.Int64(),
+		EndTimestamp:       event.EndTimestamp.Int64(),
+		TransactionHash:    transaction.Hash(),
+		BlockHash:          header.Hash(),
+		BlockNumber:        header.Number,
+		BlockTimestamp:     int64(header.Time),
+		TransactionIndex:   receipt.TransactionIndex,
+		TotalRewardedNodes: len(event.NodeAddrs),
+		RewardedNodes:      make([]*schema.RewardedNode, len(event.NodeAddrs)),
 	}
 
-	if epoch.TotalRewardNodes != len(event.StakingRewards) || epoch.TotalRewardNodes != len(event.OperationRewards) || epoch.TotalRewardNodes != len(event.TaxAmounts) {
-		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
+	if epoch.TotalRewardedNodes != len(event.StakingRewards) || epoch.TotalRewardedNodes != len(event.OperationRewards) || epoch.TotalRewardedNodes != len(event.TaxCollected) {
+		zap.L().Error("indexRewardDistributedLog: length not match", zap.Int("length", epoch.TotalRewardedNodes), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("length not match")
 	}
 
-	for i := 0; i < epoch.TotalRewardNodes; i++ {
+	for i := 0; i < epoch.TotalRewardedNodes; i++ {
 		epoch.RewardedNodes[i] = &schema.RewardedNode{
 			EpochID:          event.Epoch.Uint64(),
 			Index:            i,
@@ -428,7 +428,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 			NodeAddress:      event.NodeAddrs[i],
 			OperationRewards: decimal.NewFromBigInt(event.OperationRewards[i], 0),
 			StakingRewards:   decimal.NewFromBigInt(event.StakingRewards[i], 0),
-			TaxCollected:     decimal.NewFromBigInt(event.TaxAmounts[i], 0),
+			TaxCollected:     decimal.NewFromBigInt(event.TaxCollected[i], 0),
 			RequestCount:     decimal.NewFromBigInt(event.RequestCounts[i], 0),
 		}
 
@@ -444,7 +444,12 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		return fmt.Errorf("save epoch: %w", err)
 	}
 
-	// Save nodes
+	// Skip if no Nodes were rewarded in this Epoch.
+	if epoch.TotalRewardedNodes == 0 {
+		return nil
+	}
+
+	// Save Nodes
 	if err := s.saveEpochRelatedNodes(ctx, databaseTransaction, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch related nodes", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
@@ -501,7 +506,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
-		return fmt.Errorf("save node event: %w", err)
+		return fmt.Errorf("save Node event: %w", err)
 	}
 
 	// if node already exists, skip
@@ -521,7 +526,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		Status:             schema.NodeStatusRegistered,
 	}
 
-	// Get from redis if the tax rate of the node needs to be hidden.
+	// Get from redis if the tax rate of the Node needs to be hidden.
 	if err := s.cacheClient.Get(ctx, s.buildNodeHideTaxRateKey(node.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
 		return fmt.Errorf("get hide tax rate: %w", err)
 	}
@@ -534,10 +539,10 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 
 	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 
-	// Save node avatar
+	// Save Node avatar
 	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
-		return fmt.Errorf("get node avatar: %w", err)
+		return fmt.Errorf("get Node avatar: %w", err)
 	}
 
 	encodedMetadata, ok := strings.CutPrefix(avatar, "data:application/json;base64,")
@@ -555,7 +560,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	if err := databaseTransaction.SaveNode(ctx, node); err != nil {
-		return fmt.Errorf("save node: %w", err)
+		return fmt.Errorf("save Node: %w", err)
 	}
 
 	return nil
@@ -581,7 +586,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 		errorPool = pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 	)
 
-	for i := 0; i < epoch.TotalRewardNodes; i++ {
+	for i := 0; i < epoch.TotalRewardedNodes; i++ {
 		i := i
 
 		errorPool.Go(func(_ context.Context) error {
@@ -593,9 +598,9 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 			// Calculate node APY
 			node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
 			if err != nil {
-				zap.L().Error("indexRewardDistributedLog: get node from rpc", zap.Error(err), zap.String("address", address.String()))
+				zap.L().Error("indexRewardDistributedLog: Get node from rpc", zap.Error(err), zap.String("address", address.String()))
 
-				return fmt.Errorf("get node: %w", err)
+				return fmt.Errorf("get Node: %w", err)
 			}
 
 			// APY = (operationRewards + stakingRewards) / (stakingPoolTokens) * (1 - tax) * number of epochs in a year
@@ -609,7 +614,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 					Mul(decimal.NewFromFloat(486.6666666666667))
 			}
 
-			// Query the minTokensToStake of the node
+			// Query the minTokensToStake of the Node
 			minTokens, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
 			if err != nil {
 				zap.L().Error("indexRewardDistributedLog: get min tokens to stake", zap.Error(err), zap.String("address", address.String()))
@@ -633,7 +638,7 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 		return fmt.Errorf("wait error pool: %w", err)
 	}
 
-	// Save nodes
+	// Save Nodes
 	if err := databaseTransaction.BatchUpdateNodes(ctx, data); err != nil {
 		zap.L().Error("batch update epoch-related nodes", zap.Error(err), zap.Any("epoch", epoch), zap.Any("data", data))
 

@@ -31,7 +31,9 @@ type Node struct {
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
 	APY                    decimal.Decimal        `json:"apy"`
-	Score                  decimal.Decimal        `json:"score"`
+	ActiveScore            decimal.Decimal        `json:"activeScore"`
+	ReliabilityScore       decimal.Decimal        `json:"reliabilityScore"`
+	Type                   string                 `json:"type"`
 	CreatedAt              int64                  `json:"createdAt"`
 }
 

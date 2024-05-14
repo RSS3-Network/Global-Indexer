@@ -261,7 +261,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 
 	server := &Server{
 		chainID:         chainID,
-		mutex:           rs.NewMutex("epoch", redsync.WithExpiry(5*time.Minute)),
+		mutex:           rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
 		settlerConfig:   config.Settler,
 		ethereumClient:  ethereumClient,
 		databaseClient:  databaseClient,

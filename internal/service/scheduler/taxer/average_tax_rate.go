@@ -64,7 +64,7 @@ func (s *Server) submitAverageTaxRate(ctx context.Context, epochID uint64) error
 		return fmt.Errorf("calculate average tax rate: %w", err)
 	}
 
-	// Submit the average tax to the chain.
+	// Submit the average tax to the VSL.
 	transactionHash, err := s.invokeSettlementContract(ctx, *averageTax)
 	if err != nil {
 		return fmt.Errorf("invoke settlement contract: %w", err)
@@ -97,7 +97,7 @@ func (s *Server) calculateAverageTaxRate(ctx context.Context) (*decimal.Decimal,
 			Limit:  lo.ToPtr(100),
 		})
 		if err != nil {
-			zap.L().Error("find nodes", zap.Error(err))
+			zap.L().Error("find Nodes", zap.Error(err))
 
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func (s *Server) calculateAverageTaxRate(ctx context.Context) (*decimal.Decimal,
 		// Query the VSL to complement the Node info.
 		nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{Context: ctx}, nodeAddresses)
 		if err != nil {
-			zap.L().Error("get nodes on the chain by staking contract", zap.Error(err))
+			zap.L().Error("get Nodes on the VSL by staking contract", zap.Error(err))
 
 			return nil, err
 		}
@@ -151,7 +151,7 @@ func (s *Server) invokeSettlementContract(ctx context.Context, tax decimal.Decim
 		return nil, fmt.Errorf("prepare input data: %w", err)
 	}
 
-	// Send the transaction to the chain.
+	// Send the transaction to the VSL.
 	transactionHash, err := s.sendTransaction(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("send transaction: %w", err)
@@ -170,7 +170,7 @@ func (s *Server) prepareInputData(taxRateBasisPoints uint64) ([]byte, error) {
 	return input, nil
 }
 
-// sendTransaction sends the transaction to the chain.
+// sendTransaction sends the transaction to the VSL.
 func (s *Server) sendTransaction(ctx context.Context, input []byte) (*common.Hash, error) {
 	txCandidate := txmgr.TxCandidate{
 		TxData:   input,
