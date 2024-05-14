@@ -326,7 +326,7 @@ paths:
                         $ref: "#/components/schemas/ChipPNL"
   /nta/chips:
     get:
-      description: "Get all chips by chips id"
+      description: "Get all chips"
       tags:
         - Chips
       parameters:
@@ -369,7 +369,7 @@ paths:
                     type: string
   /nta/chips/{id}:
     get:
-      description: "Get chips by chips id"
+      description: "Get Chips by id"
       tags:
         - Chips
       parameters:
@@ -388,9 +388,8 @@ paths:
         404:
           description: "Not found"
   /nta/chips/{id}/image.svg:
-    description: "Not found"
     get:
-      description: "Get image by chips id"
+      description: "Get Chips image by id"
       tags:
         - Chips
       parameters:
@@ -410,7 +409,7 @@ paths:
           description: "Not found"
   /nta/snapshots/nodes/count:
     get:
-      description: "Get snapshots of the number of Nodes"
+      description: "Get snapshots of Node count"
       tags:
         - Snapshots
       responses:
@@ -436,7 +435,7 @@ paths:
                     count: 2
   /nta/snapshots/nodes/minTokensToStake:
     post:
-        description: "Get snapshots of the minimum number of tokens to stake"
+        description: "Get snapshots of the minimum staking amount for Nodes"
         tags:
             - Snapshots
         requestBody:
@@ -471,7 +470,7 @@ paths:
                           $ref: "#/components/schemas/NodeMinTokensToStakeSnapshot"
   /nta/snapshots/stakers/count:
     get:
-      description: "Get snapshots of the number of stakers"
+      description: "Get snapshots of the total staker count"
       tags:
         - Snapshots
       responses:
@@ -817,7 +816,7 @@ paths:
                       $ref: "#/components/schemas/EpochDistribution"
   /nta/epochs/{node}/rewards:
     get:
-      description: "Get rewards by Node address"
+      description: "Get Node rewards by epoch"
       tags:
         - Epoch
       parameters:
@@ -853,7 +852,7 @@ paths:
                     type: string
   /nta/networks:
     get:
-      description: "Get all networks that the Node can support"
+      description: "Get all compatible networks"
       tags:
         - Networks
       responses:
