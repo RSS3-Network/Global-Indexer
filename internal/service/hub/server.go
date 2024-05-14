@@ -103,20 +103,20 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.POST("/:id/hideTaxRate", instance.hub.nta.PostNodeHideTaxRate)
 		}
 
-		nta.GET("/operation/:operator/profits", instance.hub.nta.GetOperatorProfit)
+		nta.GET("/operation/:operator/profit", instance.hub.nta.GetOperatorProfit)
 
 		{
 			snapshots := nta.Group("/snapshots")
 			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
-			snapshots.GET("/operators/profits", instance.hub.nta.GetOperatorProfitsSnapshots)
-			snapshots.GET("/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
-			snapshots.GET("/stakers/profits", instance.hub.nta.GetStakerProfitsSnapshots)
 			snapshots.POST("/nodes/minTokensToStake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
+			snapshots.GET("/operators/profit", instance.hub.nta.GetOperatorProfitsSnapshots)
+			snapshots.GET("/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
+			snapshots.GET("/stakers/profit", instance.hub.nta.GetStakerProfitSnapshots)
 		}
 
 		{
 			stake := nta.Group("/stake")
-			stake.GET("/:owner/profits", instance.hub.nta.GetStakeOwnerProfit)
+			stake.GET("/:owner/profit", instance.hub.nta.GetStakeOwnerProfit)
 			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
 			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
 			stake.GET("/transactions/:id", instance.hub.nta.GetStakeTransaction)

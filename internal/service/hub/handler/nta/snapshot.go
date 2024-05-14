@@ -65,7 +65,7 @@ func (n *NTA) GetStakerCountSnapshots(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (n *NTA) GetStakerProfitsSnapshots(c echo.Context) error {
+func (n *NTA) GetStakerProfitSnapshots(c echo.Context) error {
 	var request nta.GetStakerProfitSnapshotsRequest
 
 	if err := c.Bind(&request); err != nil {
