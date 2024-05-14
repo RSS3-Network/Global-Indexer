@@ -12,12 +12,12 @@ servers:
     description: Localhost
 tags:
   - name: Bridge
-  - name: Stake
   - name: Chips
-  - name: Snapshots
-  - name: Node
   - name: Epoch
   - name: Networks
+  - name: Node
+  - name: Snapshots
+  - name: Stake
 paths:
   /nta/bridge/transactions:
     get:
@@ -290,9 +290,9 @@ paths:
                             description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
-  /nta/stake/{owner}/profits:
+  /nta/stake/{owner}/profit:
     get:
-      description: "Get the profit of the staker"
+      description: "Get staking profit of a staker"
       tags:
         - Stake
       parameters:
@@ -470,7 +470,7 @@ paths:
                           $ref: "#/components/schemas/NodeMinTokensToStakeSnapshot"
   /nta/snapshots/stakers/count:
     get:
-      description: "Get snapshots of the total staker count"
+      description: "Get snapshots of total staker count"
       tags:
         - Snapshots
       responses:
@@ -494,7 +494,7 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-  /nta/snapshots/stakers/profits:
+  /nta/snapshots/stakers/profit:
     get:
         description: "Get snapshots of the profit of stakers"
         tags:
@@ -540,7 +540,7 @@ paths:
                         $ref: "#/components/schemas/StakerProfitSnapshot"
                     cursor:
                       type: string
-  /nta/snapshots/operators/profits:
+  /nta/snapshots/operators/profit:
     get:
         description: "Get snapshots of the profit of operators"
         tags:
@@ -651,7 +651,7 @@ paths:
           description: "Internal Server Error"
   /nta/nodes/{address}/avatar.svg:
     get:
-      description: "Get avatar by Node address"
+      description: "Get Node avatar by address"
       tags:
         - Node
       parameters:
@@ -673,7 +673,7 @@ paths:
           description: "Internal Server Error"
   /nta/nodes/{address}/events:
     get:
-      description: "Get transaction events by Node address"
+      description: "Get Node transaction events by address"
       tags:
         - Node
       parameters:
@@ -710,9 +710,9 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
-  /nta/operation/{operator}/profits:
+  /nta/operation/{operator}/profit:
     get:
-      description: "Get the operation profit of the node"
+      description: "Get Node operation profit by operator"
       tags:
         - Node
       parameters:
@@ -870,7 +870,7 @@ paths:
           description: "Internal Server Error"
   /nta/networks/{network}/list-workers:
     get:
-      description: "Get workers by network"
+      description: "Get available workers by network"
       tags:
         - Networks
       parameters:
@@ -894,7 +894,7 @@ paths:
           description: "Internal Server Error"
   /nta/networks/{network}/workers/{worker}:
     get:
-      description: "Get specified worker config"
+      description: "Get config by network and worker"
       tags:
         - Networks
       parameters:
