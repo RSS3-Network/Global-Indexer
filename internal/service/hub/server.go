@@ -66,7 +66,8 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	nta := instance.httpServer.Group("/nta")
 	{
 		nta.GET("/networks", instance.hub.nta.GetNetworks)
-		nta.GET("/networks/:network/workers", instance.hub.nta.GetWorkersByNetwork)
+		nta.GET("/networks/:network/list-workers", instance.hub.nta.GetWorkersByNetwork)
+		nta.GET("/networks/:network/workers/:worker", instance.hub.nta.GetWorkerDetail)
 
 		nta.GET("/nodes", instance.hub.nta.GetNodes)
 		nta.GET("/nodes/:id", instance.hub.nta.GetNode)
