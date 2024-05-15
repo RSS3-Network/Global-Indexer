@@ -16,14 +16,16 @@ import (
 )
 
 // processRSSHubResults processes responses for RSSHub requests.
-func (d *Distributor) processRSSHubResponses(responses []*model.DataResponse) {
-	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
-		zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
-	} else {
-		_ = d.processNodeInvalidResponse(context.Background(), responses)
+func (d *Distributor) processRSSHubResponses(_ []*model.DataResponse) {
+	// No rewards or slash for RSS responses due to unstable RSSHub server.
 
-		zap.L().Info("complete rss hub responses verify", zap.Any("responses", len(responses)))
-	}
+	//if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
+	//	zap.L().Error("fail to verify rss hub responses", zap.Any("responses", len(responses)))
+	//} else {
+	//	_ = d.processNodeInvalidResponse(context.Background(), responses)
+	//
+	//	zap.L().Info("complete rss hub responses verify", zap.Any("responses", len(responses)))
+	//}
 }
 
 // processActivityResults processes responses for Activity requests.
