@@ -43,6 +43,10 @@ func (s *server) indexStakingLog(ctx context.Context, header *types.Header, tran
 		return s.indexStakingRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case l2.EventHashStakingNodeCreated:
 		return s.indexStakingNodeCreated(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashStakingNodeUpdated:
+		return s.indexStakingNodeUpdated(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashStakingNodeUpdated2PublicGood:
+		return s.indexStakingNodeUpdated2PublicGood(ctx, header, transaction, receipt, log, databaseTransaction)
 	default: // Discard all unsupported events.
 		return nil
 	}
@@ -561,6 +565,127 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 
 	if err := databaseTransaction.SaveNode(ctx, node); err != nil {
 		return fmt.Errorf("save Node: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeUpdated")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
+	// Parse NodeUpdated event
+	event, err := s.contractStaking.ParseNodeUpdated(*log)
+	if err != nil {
+		return fmt.Errorf("parse NodeUpdated event: %w", err)
+	}
+
+	// Query the Node from the contract
+	node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	if err != nil {
+		return fmt.Errorf("get Node: %w", err)
+	}
+
+	addressTo := transaction.To()
+	if addressTo == nil {
+		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
+	}
+
+	// Save NodeUpdated event
+	nodeEvent := schema.NodeEvent{
+		TransactionHash:  transaction.Hash(),
+		TransactionIndex: receipt.TransactionIndex,
+		NodeID:           node.NodeId,
+		AddressFrom:      event.NodeAddr,
+		AddressTo:        lo.FromPtr(addressTo),
+		Type:             schema.NodeEventNodeUpdated,
+		LogIndex:         log.Index,
+		ChainID:          s.chainID.Uint64(),
+		BlockHash:        header.Hash(),
+		BlockNumber:      header.Number,
+		BlockTimestamp:   int64(header.Time),
+		Metadata: schema.NodeEventMetadata{
+			NodeUpdatedMetadata: &schema.NodeUpdatedMetadata{
+				Address:     event.NodeAddr,
+				Name:        event.Name,
+				Description: event.Description,
+			},
+		},
+	}
+
+	// Only save the event
+	// Don't need to update the NodeInfo, because the fields are not stored in the database
+	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
+		return fmt.Errorf("save Node event: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) indexStakingNodeUpdated2PublicGood(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeUpdated2PublicGood")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
+	// Parse NodeUpdated2PublicGood event
+	event, err := s.contractStaking.ParseNodeUpdated2PublicGood(*log)
+	if err != nil {
+		return fmt.Errorf("parse NodeUpdated2PublicGood event: %w", err)
+	}
+
+	// Query the Node from the contract
+	node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	if err != nil {
+		return fmt.Errorf("get Node: %w", err)
+	}
+
+	addressTo := transaction.To()
+	if addressTo == nil {
+		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
+	}
+
+	// Build Node event
+	nodeEvent := schema.NodeEvent{
+		TransactionHash:  transaction.Hash(),
+		TransactionIndex: receipt.TransactionIndex,
+		NodeID:           node.NodeId,
+		AddressFrom:      event.NodeAddr,
+		AddressTo:        lo.FromPtr(addressTo),
+		Type:             schema.NodeEventNodeUpdated2PublicGood,
+		LogIndex:         log.Index,
+		ChainID:          s.chainID.Uint64(),
+		BlockHash:        header.Hash(),
+		BlockNumber:      header.Number,
+		BlockTimestamp:   int64(header.Time),
+		Metadata: schema.NodeEventMetadata{
+			NodeUpdated2PublicGoodMetadata: &schema.NodeUpdated2PublicGoodMetadata{
+				Address:    event.NodeAddr,
+				PublicGood: true,
+			},
+		},
+	}
+
+	// Save NodeUpdated2PublicGood event to the database
+	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
+		return fmt.Errorf("save Node event: %w", err)
+	}
+
+	// Update the Node's public good status
+	if err := databaseTransaction.UpdateNodePublicGood(ctx, event.NodeAddr, true); err != nil {
+		return fmt.Errorf("update Node public good status: %w", err)
 	}
 
 	return nil

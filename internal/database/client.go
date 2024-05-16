@@ -33,6 +33,7 @@ type Client interface {
 	UpdateNodesStatusOffline(ctx context.Context, lastHeartbeatTimestamp int64) error
 	UpdateNodesHideTaxRate(ctx context.Context, nodeAddress common.Address, hideTaxRate bool) error
 	UpdateNodesScore(ctx context.Context, nodes []*schema.Node) error
+	UpdateNodePublicGood(ctx context.Context, nodeAddress common.Address, isPublicGood bool) error
 
 	BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
