@@ -216,6 +216,15 @@ func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdat
 	return c.database.WithContext(ctx).Exec(rawSQL, values...).Error
 }
 
+func (c *client) UpdateNodePublicGood(ctx context.Context, nodeAddress common.Address, isPublicGood bool) error {
+	return c.database.
+		WithContext(ctx).
+		Model((*table.Node)(nil)).
+		Where("address = ?", nodeAddress).
+		Update("is_public_good", isPublicGood).
+		Error
+}
+
 func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {
 	var stat table.Stat
 
