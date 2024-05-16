@@ -56,7 +56,7 @@ var (
 	EventHashStakingRewardDistributed      = crypto.Keccak256Hash([]byte("RewardDistributed(uint256,uint256,uint256,address[],uint256[],uint256[],uint256[],uint256[])"))
 	EventHashStakingNodeCreated            = crypto.Keccak256Hash([]byte("NodeCreated(uint256,address,string,string,uint64,bool,bool)"))
 	EventHashStakingNodeUpdated            = crypto.Keccak256Hash([]byte("NodeUpdated(address,string,string)"))
-	EventHashStakingNodeUpdated2PublicGood = crypto.Keccak256Hash([]byte("NodeUpdated(address)"))
+	EventHashStakingNodeUpdated2PublicGood = crypto.Keccak256Hash([]byte("NodeUpdated2PublicGood(address)"))
 
 	EventHashChipsTransfer = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 )
