@@ -22,11 +22,11 @@ type GetStakeChipsRequest struct {
 }
 
 type GetStakeChipRequest struct {
-	Chip *big.Int `param:"chip_id"`
+	ChipID *big.Int `param:"chip_id"`
 }
 
 type GetStakeChipsImageRequest struct {
-	Chip *big.Int `param:"chip_id"`
+	ChipID *big.Int `param:"chip_id"`
 }
 
 type GetStakeChipsResponseData []*StakeChip

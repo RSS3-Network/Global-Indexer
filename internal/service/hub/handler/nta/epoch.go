@@ -64,7 +64,7 @@ func (n *NTA) GetEpoch(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	epoch, err := n.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.ItemLimit, request.Cursor)
+	epoch, err := n.databaseClient.FindEpochTransactions(c.Request().Context(), request.EpochID, request.ItemLimit, request.Cursor)
 	if errors.Is(err, database.ErrorRowNotFound) || len(epoch) == 0 {
 		return c.NoContent(http.StatusNotFound)
 	}
