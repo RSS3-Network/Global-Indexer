@@ -10,11 +10,11 @@ import (
 
 type BatchNodeMinTokensToStakeRequest struct {
 	NodeAddresses   []*common.Address `json:"node_addresses" validate:"required"`
-	OnlyStartAndEnd bool              `json:"onlyStartAndEnd"`
+	OnlyStartAndEnd bool              `json:"only_start_and_end"`
 }
 
 type GetStakerProfitSnapshotsRequest struct {
-	StakerAddress common.Address `query:"owner_address" validate:"required"`
+	StakerAddress common.Address `query:"staker_address" validate:"required"`
 	Limit         *int           `query:"limit"`
 	Cursor        *string        `query:"cursor"`
 	BeforeDate    *time.Time     `query:"before_date"`

@@ -94,13 +94,13 @@ paths:
                             hash: "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb"
                             index: 1
                 cursor: "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
-  /nta/bridge/transactions/{id}:
+  /nta/bridge/transactions/{transaction_hash}:
     get:
-      description: "Get bridging transaction by id"
+      description: "Get bridging transaction by transaction hash"
       tags:
         - Bridge
       parameters:
-        - name: id
+        - name: transaction_hash
           in: path
           required: true
           schema:
@@ -216,13 +216,13 @@ paths:
                             hash: "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833"
                             index: 1
                 cursor: "0xbfbb8cbffc01c13c1f849ecfb53099309e189b362fd621addbfa9f5d03dcd0c1"
-  /nta/stake/transactions/{id}:
+  /nta/stake/transactions/{transaction_hash}:
     get:
-      description: "Get staking transaction by id"
+      description: "Get staking transaction by transaction hash"
       tags:
         - Stake
       parameters:
-        - name: id
+        - name: transaction_hash
           in: path
           required: true
           schema:
@@ -243,11 +243,11 @@ paths:
       tags:
         - Stake
       parameters:
-        - name: staker
+        - name: staker_address
           in: query
           schema:
             type: string
-        - name: node
+        - name: node_address
           in: query
           schema:
             type: string
@@ -290,13 +290,13 @@ paths:
                             description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
                             image: "https://gi.rss3.dev/chips/21/image.svg"
                 cursor: "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
-  /nta/stake/{owner}/profit:
+  /nta/stake/{staker_address}/profit:
     get:
       description: "Get staking profit of a staker"
       tags:
         - Stake
       parameters:
-        - name: owner
+        - name: staker_address
           in: path
           required: true
           schema:
@@ -367,13 +367,13 @@ paths:
                       $ref: "#/components/schemas/Chips"
                   cursor:
                     type: string
-  /nta/chips/{id}:
+  /nta/chips/{chip_id}:
     get:
-      description: "Get Chips by id"
+      description: "Get Chips by chip id"
       tags:
         - Chips
       parameters:
-        - name: id
+        - name: chip_id
           in: path
           required: true
           schema:
@@ -387,13 +387,13 @@ paths:
                 $ref: "#/components/schemas/Chips"
         404:
           description: "Not found"
-  /nta/chips/{id}/image.svg:
+  /nta/chips/{chip_id}/image.svg:
     get:
-      description: "Get Chips image by id"
+      description: "Get Chips image by chip id"
       tags:
         - Chips
       parameters:
-        - name: id
+        - name: chip_id
           in: path
           required: true
           schema:
@@ -448,14 +448,14 @@ paths:
                       type: array
                       items:
                           type: string
-                    onlyStartAndEnd:
+                    only_start_and_end:
                       type: boolean
                       description: "If true, only return the start and end min_tokens_to_stake"
                   example:
                     node_addresses:
                       - "0x9c29e25d7e475caee73d4b7006f3b10e977773ac"
                       - "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-                    onlyStartAndEnd: true
+                    only_start_and_end: true
         responses:
             200:
               description: "OK"
@@ -500,7 +500,7 @@ paths:
         tags:
             - Snapshots
         parameters:
-          - name: ownerAddress
+          - name: staker_address
             in: query
             required: true
             schema:
@@ -540,13 +540,13 @@ paths:
                         $ref: "#/components/schemas/StakerProfitSnapshot"
                     cursor:
                       type: string
-  /nta/snapshots/operators/profit:
+  /nta/snapshots/nodes/operation/profit:
     get:
-        description: "Get snapshots of the profit of operators"
+        description: "Get snapshots of operation profit of a Node"
         tags:
             - Snapshots
         parameters:
-          - name: operator
+          - name: node_address
             in: query
             required: true
             schema:
@@ -710,13 +710,13 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
-  /nta/operation/{operator}/profit:
+  /nta/nodes/{node_address}/operation/profit:
     get:
-      description: "Get Node operation profit by operator"
+      description: "Get Node operation profit by Node address"
       tags:
         - Node
       parameters:
-        - name: operator
+        - name: node_address
           in: path
           required: true
           schema:
@@ -773,13 +773,13 @@ paths:
                       $ref: "#/components/schemas/BriefEpoch"
                   cursor:
                     type: string
-  /nta/epochs/{id}:
+  /nta/epochs/{epoch_id}:
     get:
-      description: "Get epoch by id"
+      description: "Get epoch by epoch id"
       tags:
         - Epoch
       parameters:
-        - name: id
+        - name: epoch_id
           in: path
           required: true
           schema:
@@ -791,13 +791,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Epoch"
-  /nta/epochs/distributions/{transaction}:
+  /nta/epochs/distributions/{transaction_hash}:
     get:
       description: "Get epoch transaction by hash"
       tags:
         - Epoch
       parameters:
-        - name: transaction
+        - name: transaction_hash
           in: path
           required: true
           schema:
@@ -814,13 +814,13 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/EpochDistribution"
-  /nta/epochs/{node}/rewards:
+  /nta/epochs/{node_address}/rewards:
     get:
       description: "Get Node rewards by epoch"
       tags:
         - Epoch
       parameters:
-        - name: node
+        - name: node_address
           in: path
           required: true
           schema:
@@ -868,13 +868,13 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
-  /nta/networks/{network}/list-workers:
+  /nta/networks/{network_name}/list_workers:
     get:
       description: "Get available workers by network"
       tags:
         - Networks
       parameters:
-        - name: network
+        - name: network_name
           in: path
           required: true
           schema:
@@ -892,18 +892,18 @@ paths:
           description: "Not found"
         500:
           description: "Internal Server Error"
-  /nta/networks/{network}/workers/{worker}:
+  /nta/networks/{network_name}/workers/{worker_name}:
     get:
       description: "Get config by network and worker"
       tags:
         - Networks
       parameters:
-        - name: network
+        - name: network_name
           in: path
           required: true
           schema:
             type: string
-        - name: worker
+        - name: worker_name
           in: path
           required: true
           schema:
@@ -1351,7 +1351,7 @@ components:
               date:
                 type: string
                 example: "2024-03-13T00:08:38+08:00"
-              epochID:
+              epoch_id:
                 type: integer
               node_address:
                 type: string
@@ -1369,7 +1369,7 @@ components:
         date:
           type: string
           example: "2024-03-13T00:08:38+08:00"
-        epochID:
+        epoch_id:
           type: integer
         total_chip_amount:
           type: string
@@ -1389,12 +1389,12 @@ components:
     OperationProfit:
       type: object
       properties:
-        operator:
+        node_address:
           type: string
         date:
           type: string
           example: "2024-03-13T00:08:38+08:00"
-        epochID:
+        epoch_id:
           type: integer
         operation_pool:
           type: string
@@ -1520,7 +1520,7 @@ components:
           items:
             type: object
             properties:
-              epochID:
+              epoch_id:
                 type: integer
               index:
                 type: integer
