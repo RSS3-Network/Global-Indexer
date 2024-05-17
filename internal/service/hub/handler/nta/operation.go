@@ -89,7 +89,7 @@ func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator c
 		data[index] = &nta.GetOperatorProfitChangesSinceResponseData{
 			Date:          snapshot.Date,
 			OperationPool: snapshot.OperationPool,
-			PNL:           profit.OperationPool.Sub(snapshot.OperationPool).Div(snapshot.OperationPool),
+			ProfitAndLoss: profit.OperationPool.Sub(snapshot.OperationPool).Div(snapshot.OperationPool),
 		}
 	}
 

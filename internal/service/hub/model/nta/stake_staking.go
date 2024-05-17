@@ -36,7 +36,7 @@ type GetStakeOwnerProfitChangesSinceResponseData struct {
 	Date            time.Time       `json:"date"`
 	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
 	TotalChipValue  decimal.Decimal `json:"total_chip_value"`
-	PNL             decimal.Decimal `json:"pnl"`
+	ProfitAndLoss   decimal.Decimal `json:"profit_and_loss"`
 }
 
 type StakeStaking struct {

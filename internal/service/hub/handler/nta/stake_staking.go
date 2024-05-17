@@ -169,7 +169,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 			Date:            snapshot.Date,
 			TotalChipAmount: snapshot.TotalChipAmount,
 			TotalChipValue:  snapshot.TotalChipValue,
-			PNL:             profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+			ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
 		}
 	}
 

@@ -22,5 +22,5 @@ type GetOperatorProfitRepsonseData struct {
 type GetOperatorProfitChangesSinceResponseData struct {
 	Date          time.Time       `json:"date"`
 	OperationPool decimal.Decimal `json:"operation_pool"`
-	PNL           decimal.Decimal `json:"pnl"`
+	ProfitAndLoss decimal.Decimal `json:"profit_and_loss"`
 }
