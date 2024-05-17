@@ -12,7 +12,7 @@ type ErrorCode int
 
 const (
 	ErrorCodeBadRequest ErrorCode = iota + 1
-	ErrorCodeValidateFailed
+	ErrorCodeValidationFailed
 	ErrorCodeBadParams
 	ErrorCodeInternalError
 )
@@ -29,9 +29,9 @@ func BadRequestError(c echo.Context, err error) error {
 	})
 }
 
-func ValidateFailedError(c echo.Context, err error) error {
+func ValidationFailedError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
-		ErrorCode: ErrorCodeValidateFailed,
+		ErrorCode: ErrorCodeValidationFailed,
 		Error:     fmt.Sprintf("Please check your request validation and try again, err: %s", err),
 	})
 }

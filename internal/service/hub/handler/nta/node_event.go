@@ -25,7 +25,7 @@ func (n *NTA) GetNodeEvents(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
 	events, err := n.databaseClient.FindNodeEvents(c.Request().Context(), request.Address, request.Cursor, request.Limit)
