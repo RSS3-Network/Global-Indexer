@@ -134,7 +134,7 @@ func (n *NTA) GetStakeChipImage(c echo.Context) error {
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
-		ID: request.ID,
+		ID: request.ChipID,
 	}
 
 	chip, err := n.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)

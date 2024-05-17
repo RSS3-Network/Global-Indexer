@@ -160,7 +160,7 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 
 func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*schema.Node, error) {
 	nodes, err := n.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		NodeAddresses: request.NodeAddress,
+		NodeAddresses: request.NodeAddresses,
 		Cursor:        request.Cursor,
 		Limit:         lo.ToPtr(request.Limit),
 		OrderByScore:  true,
