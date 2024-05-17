@@ -329,7 +329,7 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 
 	if err := databaseClient.
 		Order(`"date" DESC`).
-		Limit(100). // TODO Replace this constant with a query parameter.
+		Limit(100). // FIXME: Replace this constant with a query parameter.
 		Find(&stakeSnapshots).Error; err != nil {
 		return nil, err
 	}

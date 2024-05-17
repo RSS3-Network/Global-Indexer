@@ -8,6 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// FIXME: OperatorProfit -> NodeOperationProfit
 type OperatorProfitSnapshot struct {
 	ID            uint64          `gorm:"column:id"`
 	Date          time.Time       `gorm:"column:date"`

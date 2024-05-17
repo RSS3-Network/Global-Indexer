@@ -88,7 +88,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 
 func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string) error {
 	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	message := fmt.Sprintf(registrationMessage, strings.ToLower(request.Address.String()))
 
 	if err := n.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
 		return err
@@ -149,7 +149,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	err = nta.updateNodeStatus(node, schema.NodeStatusOnline)
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)
 	}
@@ -331,7 +331,7 @@ func updateNodeWorkers(address common.Address, nodeConfig NodeConfig) []*schema.
 
 func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, requestIP string) error {
 	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	message := fmt.Sprintf(registrationMessage, strings.ToLower(request.Address.String()))
 
 	if err := n.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
 		return fmt.Errorf("check signature: %w", err)
@@ -371,7 +371,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	err = nta.updateNodeStatus(node, schema.NodeStatusOnline)
 
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)
