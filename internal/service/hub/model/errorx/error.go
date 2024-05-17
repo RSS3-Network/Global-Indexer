@@ -47,9 +47,11 @@ func BadParamsError(c echo.Context, err error) error {
 	})
 }
 
-func InternalError(c echo.Context, err error) error {
+// InternalError should not return the error details to the client
+// FIXME: Log the error details to the server logs instead
+func InternalError(c echo.Context, _ error) error {
 	return c.JSON(http.StatusInternalServerError, &ErrorResponse{
 		ErrorCode: ErrorCodeInternalError,
-		Error:     fmt.Sprintf("An internal error has occurred, please try again later, err: %s", err),
+		Error:     "An internal error has occurred, please try again later.",
 	})
 }
