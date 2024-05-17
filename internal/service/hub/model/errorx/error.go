@@ -20,26 +20,30 @@ const (
 type ErrorResponse struct {
 	Error     string    `json:"error"`
 	ErrorCode ErrorCode `json:"error_code"`
+	Details   string    `json:"details,omitempty"`
 }
 
 func BadRequestError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeBadRequest,
-		Error:     fmt.Sprintf("Please check your request and try again, err: %s", err),
+		Error:     "Invalid request. Please check your input and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
 func ValidationFailedError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeValidationFailed,
-		Error:     fmt.Sprintf("Please check your request validation and try again, err: %s", err),
+		Error:     "Validation failed. Ensure all fields meet the required criteria and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
 func BadParamsError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeBadParams,
-		Error:     fmt.Sprintf("Please check your param combination and try again, err: %s", err),
+		Error:     "Invalid parameter combination. Verify the combination and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
