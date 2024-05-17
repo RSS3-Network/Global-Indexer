@@ -30,9 +30,9 @@ func (n *NTA) GetNodeChallenge(c echo.Context) error {
 
 	switch request.Type {
 	case "":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String())))
+		data = nta.NodeChallengeResponseData(fmt.Sprintf(registerMessage, strings.ToLower(request.NodeAddress.String())))
 	case "hideTaxRate":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String())))
+		data = nta.NodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String())))
 	default:
 		return errorx.BadRequestError(c, fmt.Errorf("invalid challenge type: %s", request.Type))
 	}

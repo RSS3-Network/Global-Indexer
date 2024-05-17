@@ -36,7 +36,7 @@ func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
 		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/list-workers", endpoint, request.Network))
+	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/list-workers", endpoint, request.NetworkName))
 }
 
 // GetWorkerDetail returns worker with detail configuration.
@@ -53,7 +53,7 @@ func (n *NTA) GetWorkerDetail(c echo.Context) error {
 		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/workers/%s", endpoint, request.Network, request.Worker))
+	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/workers/%s", endpoint, request.NetworkName, request.WorkerName))
 }
 
 // bindAndValidateRequest binds and validates the request.

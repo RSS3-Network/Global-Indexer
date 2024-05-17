@@ -77,7 +77,7 @@ func (n *NTA) GetStakerProfitSnapshots(c echo.Context) error {
 	}
 
 	query := schema.StakerProfitSnapshotsQuery{
-		OwnerAddress: lo.ToPtr(request.OwnerAddress),
+		OwnerAddress: lo.ToPtr(request.StakerAddress),
 		Limit:        request.Limit,
 		Cursor:       request.Cursor,
 		BeforeDate:   request.BeforeDate,

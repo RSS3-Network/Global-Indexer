@@ -34,7 +34,7 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 		return errorx.InternalError(c, fmt.Errorf("get Node from rpc: %w", err))
 	}
 
-	data := nta.GetOperatorProfitRepsonseData{
+	data := nta.GetOperatorProfitResponseData{
 		Operator:      request.Operator,
 		OperationPool: decimal.NewFromBigInt(node.OperationPoolTokens, 0),
 	}
@@ -51,7 +51,7 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 	})
 }
 
-func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetOperatorProfitRepsonseData) ([]*nta.GetOperatorProfitChangesSinceResponseData, error) {
+func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetOperatorProfitResponseData) ([]*nta.GetOperatorProfitChangesSinceResponseData, error) {
 	if profit == nil {
 		return nil, nil
 	}

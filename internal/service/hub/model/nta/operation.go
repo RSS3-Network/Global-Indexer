@@ -8,10 +8,10 @@ import (
 )
 
 type GetOperatorProfitRequest struct {
-	Operator common.Address `param:"operator" validate:"required"`
+	Operator common.Address `param:"operator_address" validate:"required"`
 }
 
-type GetOperatorProfitRepsonseData struct {
+type GetOperatorProfitResponseData struct {
 	Operator      common.Address                             `json:"operator"`
 	OperationPool decimal.Decimal                            `json:"operation_pool"`
 	OneDay        *GetOperatorProfitChangesSinceResponseData `json:"one_day"`

@@ -11,14 +11,14 @@ import (
 )
 
 type GetStakeStakingsRequest struct {
-	Cursor *string         `query:"cursor"`
-	Staker *common.Address `query:"staker"`
-	Node   *common.Address `query:"node"`
-	Limit  int             `query:"limit" default:"10" min:"1" max:"20"`
+	Cursor        *string         `query:"cursor"`
+	StakerAddress *common.Address `query:"staker_address"`
+	NodeAddress   *common.Address `query:"node_address"`
+	Limit         int             `query:"limit" default:"10" min:"1" max:"20"`
 }
 
 type GetStakeOwnerProfitRequest struct {
-	Owner common.Address `param:"owner" validate:"required"`
+	StakerAddress common.Address `param:"staker_address" validate:"required"`
 }
 
 type GetStakeStakingsResponseData []*StakeStaking

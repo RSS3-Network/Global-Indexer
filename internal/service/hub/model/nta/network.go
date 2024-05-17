@@ -1,11 +1,11 @@
 package nta
 
 type NetworkRequest struct {
-	Network string `param:"network" validate:"required"`
+	NetworkName string `param:"network_name" validate:"required"`
 }
 
 type WorkerRequest struct {
 	NetworkRequest
 
-	Worker string `param:"worker" validate:"required"`
+	WorkerName string `param:"worker_name" validate:"required"`
 }

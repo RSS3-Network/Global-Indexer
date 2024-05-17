@@ -14,19 +14,19 @@ type GetEpochsRequest struct {
 }
 
 type GetEpochRequest struct {
-	ID         uint64  `param:"id" validate:"required"`
-	ItemsLimit int     `query:"itemsLimit" validate:"min=1,max=50" default:"10"`
-	Cursor     *string `query:"cursor"`
+	EpochID   uint64  `param:"epoch_id" validate:"required"`
+	ItemLimit int     `query:"item_limit" validate:"min=1,max=50" default:"10"`
+	Cursor    *string `query:"cursor"`
 }
 
 type GetEpochDistributionRequest struct {
-	TransactionHash common.Hash `param:"transaction" validate:"required"`
-	ItemsLimit      int         `query:"itemsLimit" validate:"min=1,max=50" default:"10"`
+	TransactionHash common.Hash `param:"transaction_hash" validate:"required"`
+	ItemLimit       int         `query:"item_limit" validate:"min=1,max=50" default:"10"`
 	Cursor          *string     `query:"cursor"`
 }
 
 type GetEpochNodeRewardsRequest struct {
-	NodeAddress common.Address `param:"node" validate:"required"`
+	NodeAddress common.Address `param:"node_address" validate:"required"`
 	Limit       int            `query:"limit" validate:"min=1,max=50" default:"10"`
 	Cursor      *string        `query:"cursor"`
 }

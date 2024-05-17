@@ -64,7 +64,7 @@ func (n *NTA) GetEpoch(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	epoch, err := n.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.ItemsLimit, request.Cursor)
+	epoch, err := n.databaseClient.FindEpochTransactions(c.Request().Context(), request.ID, request.ItemLimit, request.Cursor)
 	if errors.Is(err, database.ErrorRowNotFound) || len(epoch) == 0 {
 		return c.NoContent(http.StatusNotFound)
 	}
@@ -74,7 +74,7 @@ func (n *NTA) GetEpoch(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
-		Data: nta.NewEpoch(request.ID, epoch),
+		Data: nta.NewEpoch(request.EpochID, epoch),
 	})
 }
 
@@ -93,7 +93,7 @@ func (n *NTA) GetEpochDistribution(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	epoch, err := n.databaseClient.FindEpochTransaction(c.Request().Context(), request.TransactionHash, request.ItemsLimit, request.Cursor)
+	epoch, err := n.databaseClient.FindEpochTransaction(c.Request().Context(), request.TransactionHash, request.ItemLimit, request.Cursor)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -103,7 +103,7 @@ func (n *NTA) GetEpochDistribution(c echo.Context) error {
 	}
 
 	var cursor string
-	if len(epoch.RewardedNodes) > 0 && len(epoch.RewardedNodes) == request.ItemsLimit {
+	if len(epoch.RewardedNodes) > 0 && len(epoch.RewardedNodes) == request.ItemLimit {
 		cursor = fmt.Sprintf("%d", epoch.RewardedNodes[len(epoch.RewardedNodes)-1].Index)
 	}
 

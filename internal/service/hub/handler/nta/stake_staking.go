@@ -36,8 +36,8 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 
 	stakeStakingsQuery := schema.StakeStakingsQuery{
 		Cursor: request.Cursor,
-		Staker: request.Staker,
-		Node:   request.Node,
+		Staker: request.StakerAddress,
+		Node:   request.NodeAddress,
 		Limit:  request.Limit,
 	}
 
@@ -57,6 +57,7 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// FIXME: what is stake owner?
 func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	var request nta.GetStakeOwnerProfitRequest
 
@@ -69,13 +70,13 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	}
 
 	// Find all stake chips
-	data, err := n.findChipsByOwner(c.Request().Context(), request.Owner)
+	data, err := n.findChipsByOwner(c.Request().Context(), request.StakerAddress)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}
 
 	// Find history profit snapshots
-	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.Owner, data)
+	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.StakerAddress, data)
 	if err != nil {
 		return errorx.InternalError(c, err)
 	}

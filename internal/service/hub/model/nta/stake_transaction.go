@@ -20,8 +20,8 @@ type GetStakeTransactionsRequest struct {
 }
 
 type GetStakeTransactionRequest struct {
-	ID   *common.Hash                 `param:"id"`
-	Type *schema.StakeTransactionType `query:"type"`
+	TransactionHash *common.Hash                 `param:"transaction_hash"`
+	Type            *schema.StakeTransactionType `query:"type"`
 }
 
 type GetStakeTransactionsResponseData []*StakeTransaction

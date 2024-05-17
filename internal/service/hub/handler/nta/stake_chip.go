@@ -94,7 +94,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
-		ID: request.ID,
+		ID: request.Chip,
 	}
 
 	stakeChip, err := n.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)

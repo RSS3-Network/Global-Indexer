@@ -14,19 +14,19 @@ type BatchNodeMinTokensToStakeRequest struct {
 }
 
 type GetStakerProfitSnapshotsRequest struct {
-	OwnerAddress common.Address `query:"ownerAddress" validate:"required"`
-	Limit        *int           `query:"limit"`
-	Cursor       *string        `query:"cursor"`
-	BeforeDate   *time.Time     `query:"beforeDate"`
-	AfterDate    *time.Time     `query:"afterDate"`
+	StakerAddress common.Address `query:"owner_address" validate:"required"`
+	Limit         *int           `query:"limit"`
+	Cursor        *string        `query:"cursor"`
+	BeforeDate    *time.Time     `query:"before_date"`
+	AfterDate     *time.Time     `query:"after_date"`
 }
 
 type GetOperatorProfitSnapshotsRequest struct {
 	Operator   common.Address `query:"operator" validate:"required"`
 	Limit      *int           `query:"limit"`
 	Cursor     *string        `query:"cursor"`
-	BeforeDate *time.Time     `query:"beforeDate"`
-	AfterDate  *time.Time     `query:"afterDate"`
+	BeforeDate *time.Time     `query:"before_date"`
+	AfterDate  *time.Time     `query:"after_date"`
 }
 
 type GetNodeCountSnapshotsResponseData []*CountSnapshot
