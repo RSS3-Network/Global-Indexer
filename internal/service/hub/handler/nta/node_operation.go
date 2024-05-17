@@ -11,7 +11,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (n *NTA) GetOperatorProfit(c echo.Context) error {
+func (n *NTA) GetNodeOperationProfit(c echo.Context) error {
 	var request nta.GetNodeOperationProfitRequest
 
 	if err := c.Bind(&request); err != nil {

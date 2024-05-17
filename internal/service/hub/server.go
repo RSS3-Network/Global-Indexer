@@ -104,7 +104,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.GET("/:node_address/avatar.svg", instance.hub.nta.GetNodeAvatar)
 			nodes.GET("/:node_address/challenge", instance.hub.nta.GetNodeChallenge)
 			nodes.GET("/:node_address/events", instance.hub.nta.GetNodeEvents)
-			nodes.GET("/:node_address/operation/profit", instance.hub.nta.GetOperatorProfit)
+			nodes.GET("/:node_address/operation/profit", instance.hub.nta.GetNodeOperationProfit)
 
 			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 		}
