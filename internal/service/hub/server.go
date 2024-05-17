@@ -105,10 +105,8 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.GET("/:node_address/challenge", instance.hub.nta.GetNodeChallenge)
 			nodes.GET("/:node_address/events", instance.hub.nta.GetNodeEvents)
 			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
+			nodes.GET("/:node_address/operation/profit", instance.hub.nta.GetOperatorProfit)
 		}
-
-		// FIXME: this should be /nodes/:node_address/operation/profit
-		nta.GET("/operation/:operator_address/profit", instance.hub.nta.GetOperatorProfit)
 
 		{
 			snapshots := nta.Group("/snapshots")
