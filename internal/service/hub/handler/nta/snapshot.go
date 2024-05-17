@@ -104,8 +104,8 @@ func (n *NTA) GetStakerProfitSnapshots(c echo.Context) error {
 	})
 }
 
-func (n *NTA) GetOperatorProfitsSnapshots(c echo.Context) error {
-	var request nta.GetOperatorProfitSnapshotsRequest
+func (n *NTA) GetNodeOperationProfitSnapshots(c echo.Context) error {
+	var request nta.GetNodeOperationProfitSnapshotsRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
@@ -116,7 +116,7 @@ func (n *NTA) GetOperatorProfitsSnapshots(c echo.Context) error {
 	}
 
 	query := schema.OperatorProfitSnapshotsQuery{
-		Operator:   lo.ToPtr(request.Operator),
+		Operator:   lo.ToPtr(request.NodeAddress),
 		Limit:      request.Limit,
 		Cursor:     request.Cursor,
 		BeforeDate: request.BeforeDate,

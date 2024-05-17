@@ -104,17 +104,19 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.GET("/:node_address/avatar.svg", instance.hub.nta.GetNodeAvatar)
 			nodes.GET("/:node_address/challenge", instance.hub.nta.GetNodeChallenge)
 			nodes.GET("/:node_address/events", instance.hub.nta.GetNodeEvents)
-			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 			nodes.GET("/:node_address/operation/profit", instance.hub.nta.GetOperatorProfit)
+
+			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 		}
 
 		{
 			snapshots := nta.Group("/snapshots")
 			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
-			snapshots.POST("/nodes/min_tokens_to_stake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
-			snapshots.GET("/operators/profit", instance.hub.nta.GetOperatorProfitsSnapshots)
+			snapshots.GET("/nodes/operation/profit", instance.hub.nta.GetNodeOperationProfitSnapshots)
 			snapshots.GET("/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
 			snapshots.GET("/stakers/profit", instance.hub.nta.GetStakerProfitSnapshots)
+
+			snapshots.POST("/nodes/min_tokens_to_stake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
 		}
 
 		{

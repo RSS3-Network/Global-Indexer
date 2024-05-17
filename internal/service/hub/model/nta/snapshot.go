@@ -21,12 +21,12 @@ type GetStakerProfitSnapshotsRequest struct {
 	AfterDate     *time.Time     `query:"after_date"`
 }
 
-type GetOperatorProfitSnapshotsRequest struct {
-	Operator   common.Address `query:"operator" validate:"required"`
-	Limit      *int           `query:"limit"`
-	Cursor     *string        `query:"cursor"`
-	BeforeDate *time.Time     `query:"before_date"`
-	AfterDate  *time.Time     `query:"after_date"`
+type GetNodeOperationProfitSnapshotsRequest struct {
+	NodeAddress common.Address `query:"node_address" validate:"required"`
+	Limit       *int           `query:"limit"`
+	Cursor      *string        `query:"cursor"`
+	BeforeDate  *time.Time     `query:"before_date"`
+	AfterDate   *time.Time     `query:"after_date"`
 }
 
 type GetNodeCountSnapshotsResponseData []*CountSnapshot
