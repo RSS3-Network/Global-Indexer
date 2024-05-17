@@ -39,7 +39,7 @@ type StakeChip struct {
 	Owner       common.Address  `json:"owner"`
 	Metadata    json.RawMessage `json:"metadata"`
 	Value       decimal.Decimal `json:"value"`
-	LatestValue decimal.Decimal `json:"latestValue"`
+	LatestValue decimal.Decimal `json:"latest_value"`
 }
 
 func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) GetStakeChipResponseData {

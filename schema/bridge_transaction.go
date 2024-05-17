@@ -32,14 +32,14 @@ type BridgeTransaction struct {
 	Type             BridgeTransactionType `json:"type"`
 	Sender           common.Address        `json:"sender"`
 	Receiver         common.Address        `json:"receiver"`
-	TokenAddressL1   *common.Address       `json:"tokenAddressL1"`
-	TokenAddressL2   *common.Address       `json:"tokenAddressL2"`
-	TokenValue       *big.Int              `json:"tokenValue"`
+	TokenAddressL1   *common.Address       `json:"token_address_l1"`
+	TokenAddressL2   *common.Address       `json:"token_address_l2"`
+	TokenValue       *big.Int              `json:"token_value"`
 	Data             string                `json:"data"`
-	ChainID          uint64                `json:"chainID"`
-	BlockTimestamp   time.Time             `json:"blockTimestamp"`
-	BlockNumber      uint64                `json:"blockNumber"`
-	TransactionIndex uint                  `json:"transactionIndex"`
+	ChainID          uint64                `json:"chain_id"`
+	BlockTimestamp   time.Time             `json:"block_timestamp"`
+	BlockNumber      uint64                `json:"block_number"`
+	TransactionIndex uint                  `json:"transaction_index"`
 }
 
 type BridgeTransactionQuery struct {

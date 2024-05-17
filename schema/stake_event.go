@@ -37,12 +37,12 @@ type StakeEventTransformer interface {
 type StakeEvent struct {
 	ID                common.Hash    `json:"id"`
 	Type              StakeEventType `json:"type"`
-	TransactionHash   common.Hash    `json:"transactionHash"`
-	TransactionIndex  uint           `json:"transactionIndex"`
-	TransactionStatus uint64         `json:"transactionStatus"`
-	BlockHash         common.Hash    `json:"blockHash"`
-	BlockNumber       *big.Int       `json:"blockNumber"`
-	BlockTimestamp    time.Time      `json:"blockTimestamp"`
+	TransactionHash   common.Hash    `json:"transaction_hash"`
+	TransactionIndex  uint           `json:"transaction_index"`
+	TransactionStatus uint64         `json:"transaction_status"`
+	BlockHash         common.Hash    `json:"block_hash"`
+	BlockNumber       *big.Int       `json:"block_number"`
+	BlockTimestamp    time.Time      `json:"block_timestamp"`
 }
 
 type StakeEventQuery struct {

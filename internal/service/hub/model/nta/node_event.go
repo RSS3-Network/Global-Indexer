@@ -18,12 +18,12 @@ type NodeEventsResponseData []*NodeEvent
 type NodeEvent struct {
 	Transaction TransactionEventTransaction `json:"transaction"`
 	Block       TransactionEventBlock       `json:"block"`
-	AddressFrom common.Address              `json:"addressFrom"`
-	AddressTo   common.Address              `json:"addressTo"`
-	NodeID      uint64                      `json:"nodeID"`
+	AddressFrom common.Address              `json:"address_from"`
+	AddressTo   common.Address              `json:"address_to"`
+	NodeID      uint64                      `json:"node_id"`
 	Type        schema.NodeEventType        `json:"type"`
-	LogIndex    uint                        `json:"logIndex"`
-	ChainID     uint64                      `json:"chainID"`
+	LogIndex    uint                        `json:"log_index"`
+	ChainID     uint64                      `json:"chain_id"`
 	Metadata    schema.NodeEventMetadata    `json:"metadata"`
 }
 

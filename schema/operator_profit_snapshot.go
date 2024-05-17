@@ -9,9 +9,9 @@ import (
 
 type OperatorProfitSnapshot struct {
 	Date          time.Time       `json:"date"`
-	EpochID       uint64          `json:"epochID"`
+	EpochID       uint64          `json:"epoch_id"`
 	Operator      common.Address  `json:"operator"`
-	OperationPool decimal.Decimal `json:"operationPool"`
+	OperationPool decimal.Decimal `json:"operation_pool"`
 	ID            uint64          `json:"-"`
 	CreatedAt     time.Time       `json:"-"`
 	UpdatedAt     time.Time       `json:"-"`
@@ -21,7 +21,7 @@ type OperatorProfitSnapshotsQuery struct {
 	Operator   *common.Address `json:"operator"`
 	Limit      *int            `json:"limit"`
 	Cursor     *string         `json:"cursor"`
-	BeforeDate *time.Time      `json:"BeforeDate"`
-	AfterDate  *time.Time      `json:"AfterDate"`
+	BeforeDate *time.Time      `json:"before_date"`
+	AfterDate  *time.Time      `json:"after_date"`
 	Dates      []time.Time     `json:"dates"`
 }

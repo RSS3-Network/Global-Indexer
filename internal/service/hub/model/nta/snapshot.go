@@ -9,7 +9,7 @@ import (
 )
 
 type BatchNodeMinTokensToStakeRequest struct {
-	NodeAddresses   []*common.Address `json:"nodeAddresses" validate:"required"`
+	NodeAddresses   []*common.Address `json:"node_addresses" validate:"required"`
 	OnlyStartAndEnd bool              `json:"onlyStartAndEnd"`
 }
 
@@ -43,7 +43,7 @@ type CountSnapshot struct {
 }
 
 type NodeMinTokensToStakeSnapshots struct {
-	NodeAddress common.Address                         `json:"nodeAddress"`
+	NodeAddress common.Address                         `json:"node_address"`
 	Snapshots   []*schema.NodeMinTokensToStakeSnapshot `json:"snapshots"`
 }
 

@@ -24,19 +24,19 @@ type GetStakeOwnerProfitRequest struct {
 type GetStakeStakingsResponseData []*StakeStaking
 
 type GetStakeOwnerProfitResponseData struct {
-	Owner            common.Address                               `json:"owner"`
-	TotalChipAmounts decimal.Decimal                              `json:"totalChipAmounts"`
-	TotalChipValues  decimal.Decimal                              `json:"totalChipValues"`
-	OneDay           *GetStakeOwnerProfitChangesSinceResponseData `json:"oneDay"`
-	OneWeek          *GetStakeOwnerProfitChangesSinceResponseData `json:"oneWeek"`
-	OneMonth         *GetStakeOwnerProfitChangesSinceResponseData `json:"oneMonth"`
+	Owner           common.Address                               `json:"owner"`
+	TotalChipAmount decimal.Decimal                              `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal                              `json:"total_chip_value"`
+	OneDay          *GetStakeOwnerProfitChangesSinceResponseData `json:"one_day"`
+	OneWeek         *GetStakeOwnerProfitChangesSinceResponseData `json:"one_week"`
+	OneMonth        *GetStakeOwnerProfitChangesSinceResponseData `json:"one_month"`
 }
 
 type GetStakeOwnerProfitChangesSinceResponseData struct {
-	Date             time.Time       `json:"date"`
-	TotalChipAmounts decimal.Decimal `json:"totalChipAmounts"`
-	TotalChipValues  decimal.Decimal `json:"totalChipValues"`
-	PNL              decimal.Decimal `json:"pnl"`
+	Date            time.Time       `json:"date"`
+	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal `json:"total_chip_value"`
+	PNL             decimal.Decimal `json:"pnl"`
 }
 
 type StakeStaking struct {
