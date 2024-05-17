@@ -314,9 +314,9 @@ paths:
                     properties:
                       owner:
                         type: string
-                      totalChipAmounts:
+                      total_chip_amount:
                         type: string
-                      totalChipValues:
+                      total_chip_value:
                         type: string
                       oneDay:
                         $ref: "#/components/schemas/ChipPNL"
@@ -433,7 +433,7 @@ paths:
                 data:
                   - date: "2024-02-19"
                     count: 2
-  /nta/snapshots/nodes/minTokensToStake:
+  /nta/snapshots/nodes/min_tokens_to_stake:
     post:
         description: "Get snapshots of the minimum staking amount for Nodes"
         tags:
@@ -444,15 +444,15 @@ paths:
                 schema:
                   type: object
                   properties:
-                    nodeAddresses:
+                    node_addresses:
                       type: array
                       items:
                           type: string
                     onlyStartAndEnd:
                       type: boolean
-                      description: "If true, only return the start and end minTokensToStake"
+                      description: "If true, only return the start and end min_tokens_to_stake"
                   example:
-                    nodeAddresses:
+                    node_addresses:
                       - "0x9c29e25d7e475caee73d4b7006f3b10e977773ac"
                       - "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
                     onlyStartAndEnd: true
@@ -606,7 +606,7 @@ paths:
             default: 10
             minimum: 1
             maximum: 50
-        - name: nodeAddress
+        - name: node_address
           in: query
           required: false
           schema:
@@ -734,7 +734,7 @@ paths:
                     properties:
                       address:
                         type: string
-                      operationPool:
+                      operation_pool:
                         type: string
                       oneDay:
                         $ref: "#/components/schemas/OperationProfitPNL"
@@ -1168,7 +1168,7 @@ components:
         value:
           type: string
           description: "the value at time of minting"
-        latestValue:
+        latest_value:
           type: string
           description: "The latest value of the chip"
       example:
@@ -1180,7 +1180,7 @@ components:
           description: "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID."
           image: "https://gi.rss3.dev/chips/474/image.svg"
         value: "5000000000000000000000"
-        latestValue: "5500000000000000000000"
+        latest_value: "5500000000000000000000"
     Node:
       type: object
       properties:
@@ -1192,18 +1192,18 @@ components:
           type: string
         description:
           type: string
-        taxRateBasisPoints:
+        tax_rate_basis_points:
           type: integer
           nullable: true
-        isPublicGood:
+        is_public_good:
           type: boolean
-        operationPoolTokens:
+        operation_poolTokens:
           type: string
-        stakingPoolTokens:
+        staking_pool_tokens:
           type: string
-        totalShares:
+        total_shares:
           type: string
-        slashedTokens:
+        slashed_tokens:
           type: string
         status:
           type: string
@@ -1212,7 +1212,7 @@ components:
             - online
             - offline
             - exited
-        lastHeartbeat:
+        last_heartbeat:
           type: integer
           description: "The timestamp of the last heartbeat"
         local:
@@ -1239,9 +1239,9 @@ components:
               type: string
             description:
               type: string
-        minTokensToStake:
+        min_tokens_to_stake:
           type: string
-        createAt:
+        created_at:
           type: integer
           description: "The timestamp of the Node creation"
       example:
@@ -1249,14 +1249,14 @@ components:
         address: "0xc5999271b01afc77ed7a6738b40c34677c2a581c"
         name: "RSS3 Node"
         description: "Get started with RSS3 Node with symphonia"
-        taxRateBasisPoints: 1000
-        isPublicGood: false
-        operationPoolTokens: "10000000000000000000000"
-        stakingPoolTokens: "0"
-        totalShares: "0"
-        slashedTokens: "0"
+        tax_rate_basis_points: 1000
+        is_public_good: false
+        operation_poolTokens: "10000000000000000000000"
+        staking_pool_tokens: "0"
+        total_shares: "0"
+        slashed_tokens: "0"
         status: "online"
-        lastHeartbeat: 1709117916
+        last_heartbeat: 1709117916
         local:
           - country: "CN"
             region: "GD"
@@ -1267,26 +1267,26 @@ components:
           - name: "Node Avatar"
             description: ""
             image: "http://127.0.0.1/nodes/0xC5999271b01AfC77ED7a6738b40C34677C2A581c/avatar.svg"
-        minTokensToStake: "0"
-        createdAt: 1709087910
+        min_tokens_to_stake: "0"
+        created_at: 1709087910
     NodeEvent:
       type: object
       properties:
-        addressFrom:
+        address_from:
           type: string
-        addressTo:
+        address_to:
           type: string
-        nodeID:
+        node_id:
           type: integer
         type:
           type: string
           enum:
-              - nodeCreated
+              - node_created
               - nodeUpdated
               - nodeUpdated2PublicGood
-        logIndex:
+        log_index:
           type: integer
-        chainID:
+        chain_id:
           type: integer
         block:
           type: object
@@ -1307,10 +1307,10 @@ components:
         metadata:
           type: object
           properties:
-            nodeCreated:
+            node_created:
               type: object
               properties:
-                nodeID:
+                node_id:
                   type: integer
                 address:
                   type: string
@@ -1318,9 +1318,9 @@ components:
                   type: string
                 description:
                   type: string
-                taxRateBasisPoints:
+                tax_rate_basis_points:
                   type: integer
-                isPublicGood:
+                is_public_good:
                   type: boolean
             nodeUpdated:
               type: object
@@ -1336,12 +1336,12 @@ components:
               properties:
                 address:
                   type: string
-                isPublicGood:
+                is_public_good:
                   type: boolean
     NodeMinTokensToStakeSnapshot:
       type: object
       properties:
-        nodeAddress:
+        node_address:
           type: string
         snapshots:
           type: array
@@ -1353,11 +1353,11 @@ components:
                 example: "2024-03-13T00:08:38+08:00"
               epochID:
                 type: integer
-              nodeAddress:
+              node_address:
                 type: string
-              minTokensToStake:
+              min_tokens_to_stake:
                 type: string
-              createdAt:
+              created_at:
                 type: string
               updatedAt:
                 type: string
@@ -1371,20 +1371,20 @@ components:
           example: "2024-03-13T00:08:38+08:00"
         epochID:
           type: integer
-        totalChipAmounts:
+        total_chip_amount:
           type: string
-        totalChipValues:
+        total_chip_value:
           type: string
     ChipPNL:
       type: object
       properties:
         date:
           type: string
-        totalChipAmounts:
+        total_chip_amount:
           type: string
-        totalChipValues:
+        total_chip_value:
           type: string
-        pnl:
+        profit_and_loss:
           type: string
     OperationProfit:
       type: object
@@ -1396,33 +1396,33 @@ components:
           example: "2024-03-13T00:08:38+08:00"
         epochID:
           type: integer
-        operationPool:
+        operation_pool:
           type: string
     OperationProfitPNL:
       type: object
       properties:
         date:
           type: string
-        operationPool:
+        operation_pool:
           type: string
-        pnl:
+        profit_and_loss:
           type: string
     BriefEpoch:
       type: object
       properties:
         id:
           type: integer
-        startTimestamp:
+        start_timestamp:
           type: integer
-        endTimestamp:
+        end_timestamp:
           type: integer
-        totalOperationRewards:
+        total_operation_rewards:
           type: string
-        totalStakingRewards:
+        total_staking_rewards:
           type: string
-        totalRequestCounts:
+        total_request_counts:
           type: string
-        totalRewardItems:
+        total_reward_items:
           type: integer
         distributions:
           type: array
@@ -1433,17 +1433,17 @@ components:
       properties:
         id:
           type: integer
-        startTimestamp:
+        start_timestamp:
           type: integer
-        endTimestamp:
+        end_timestamp:
             type: integer
-        totalOperationRewards:
+        total_operation_rewards:
           type: string
-        totalStakingRewards:
+        total_staking_rewards:
           type: string
-        totalRequestCounts:
+        total_request_counts:
           type: string
-        totalRewardItems:
+        total_reward_items:
           type: integer
         distributions:
           type: array
@@ -1454,9 +1454,9 @@ components:
       properties:
         id:
           type: integer
-        startTimestamp:
+        start_timestamp:
           type: integer
-        endTimestamp:
+        end_timestamp:
           type: integer
         transaction:
           type: object
@@ -1474,22 +1474,22 @@ components:
               type: integer
             timestamp:
               type: integer
-        totalOperationRewards:
+        total_operation_rewards:
           type: string
-        totalStakingRewards:
+        total_staking_rewards:
           type: string
-        totalRequestCounts:
+        total_request_counts:
           type: string
-        totalRewardItems:
+        total_reward_items:
           type: integer
     EpochDistribution:
       type: object
       properties:
         id:
           type: integer
-        startTimestamp:
+        start_timestamp:
           type: integer
-        endTimestamp:
+        end_timestamp:
           type: integer
         transaction:
           type: object
@@ -1507,13 +1507,13 @@ components:
               type: integer
             timestamp:
               type: integer
-        totalOperationRewards:
+        total_operation_rewards:
           type: string
-        totalStakingRewards:
+        total_staking_rewards:
           type: string
-        totalRequestCounts:
+        total_request_counts:
           type: string
-        totalRewardItems:
+        total_reward_items:
           type: integer
         rewardItems:
           type: array
@@ -1524,22 +1524,22 @@ components:
                 type: integer
               index:
                 type: integer
-              transactionHash:
+              transaction_hash:
                 type: string
-              nodeAddress:
+              node_address:
                 type: string
-              operationRewards:
+              operation_rewards:
                 type: string
-              stakingRewards:
+              staking_rewards:
                 type: string
-              taxAmounts:
+              tax_collected:
                 type: string
-              requestCounts:
+              request_counts:
                 type: string
     WorkerDetail:
       type: object
       properties:
-        isRequired:
+        is_required:
           type: boolean
         type:
           type: string
@@ -1575,53 +1575,53 @@ components:
                 $ref: "#/components/schemas/WorkerDetail"
       example:
         id:
-          isRequired: true
+          is_required: true
           type: "string"
           value: "ethereum-core"
           description: "You can define your own worker id, you are recommended to use `[network]-[worker]`"
         network:
-            isRequired: true
+            is_required: true
             type: "string"
             value: "ethereum"
             description: "Your worker is running on the defined network"
         worker:
-            isRequired: true
+            is_required: true
             type: "string"
             value: "core"
             description: "Your worker is running the defined worker"
         endpoint:
-            isRequired: true
+            is_required: true
             type: "string"
             value: "https://rpc.ankr.com/eth"
             description: "You can fill this field with a global endpoint id (should be pre-defined in endpoints part) or a url"
         parameters:
           block_number_start:
-            isRequired: false
+            is_required: false
             type: "big.Int"
             value: "null"
             description: "Your worker will start from this block number, if it's not defined, we will use the recommended one(~3 months)"
           block_number_target:
-            isRequired: false
+            is_required: false
             type: "big.Int"
             value: "null"
             description: "The block number to target the worker"
           rpc_thread_blocks:
-            isRequired: false
+            is_required: false
             type: "uint"
             value: "8"
             description: "The number of blocks to process in a thread"
           rpc_batch_blocks:
-            isRequired: false
+            is_required: false
             type: "uint"
             value: "8"
             description: "The number of blocks to process in a batch"
           rpc_batch_receipts:
-            isRequired: false
+            is_required: false
             type: "uint"
             value: "200"
             description: "The number of receipts to process in a batch"
           rpc_batch_block_receipts:
-            isRequired: false
+            is_required: false
             type: "uint"
             value: "8"
             description: "The number of block receipts to process in a batch"
