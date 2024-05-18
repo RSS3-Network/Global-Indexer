@@ -12,7 +12,7 @@ type ErrorCode int
 
 const (
 	ErrorCodeBadRequest ErrorCode = iota + 1
-	ErrorCodeValidateFailed
+	ErrorCodeValidationFailed
 	ErrorCodeBadParams
 	ErrorCodeInternalError
 )
@@ -20,32 +20,38 @@ const (
 type ErrorResponse struct {
 	Error     string    `json:"error"`
 	ErrorCode ErrorCode `json:"error_code"`
+	Details   string    `json:"details,omitempty"`
 }
 
 func BadRequestError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeBadRequest,
-		Error:     fmt.Sprintf("Please check your request and try again, err: %s", err),
+		Error:     "Invalid request. Please check your input and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
-func ValidateFailedError(c echo.Context, err error) error {
+func ValidationFailedError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
-		ErrorCode: ErrorCodeValidateFailed,
-		Error:     fmt.Sprintf("Please check your request validation and try again, err: %s", err),
+		ErrorCode: ErrorCodeValidationFailed,
+		Error:     "Validation failed. Ensure all fields meet the required criteria and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
 func BadParamsError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeBadParams,
-		Error:     fmt.Sprintf("Please check your param combination and try again, err: %s", err),
+		Error:     "Invalid parameter combination. Verify the combination and try again.",
+		Details:   fmt.Sprintf("%v", err),
 	})
 }
 
-func InternalError(c echo.Context, err error) error {
+// InternalError should not return the error details to the client
+// FIXME: Log the error details to the server logs instead
+func InternalError(c echo.Context, _ error) error {
 	return c.JSON(http.StatusInternalServerError, &ErrorResponse{
 		ErrorCode: ErrorCodeInternalError,
-		Error:     fmt.Sprintf("An internal error has occurred, please try again later, err: %s", err),
+		Error:     "An internal error has occurred, please try again later.",
 	})
 }

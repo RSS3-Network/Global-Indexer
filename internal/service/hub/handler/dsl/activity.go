@@ -21,7 +21,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 	}
 
 	if err = c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err = defaults.Set(&request); err != nil {
@@ -48,7 +48,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	}
 
 	if err = c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err = defaults.Set(&request); err != nil {

@@ -63,7 +63,7 @@ func (n *NTA) bindAndValidateRequest(c echo.Context, request interface{}) error 
 	}
 
 	if err := c.Validate(request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	return nil

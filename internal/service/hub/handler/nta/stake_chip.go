@@ -27,7 +27,7 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err := defaults.Set(&request); err != nil {
@@ -86,7 +86,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err := defaults.Set(&request); err != nil {
@@ -126,7 +126,7 @@ func (n *NTA) GetStakeChipImage(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err := defaults.Set(&request); err != nil {
