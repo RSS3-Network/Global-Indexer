@@ -31,18 +31,18 @@ func (ErrorCode) Values() []string {
 func _ErrorCodeNoOp() {
 	var x [1]struct{}
 	_ = x[ErrorCodeBadRequest-(1)]
-	_ = x[ErrorCodeValidateFailed-(2)]
+	_ = x[ErrorCodeValidationFailed-(2)]
 	_ = x[ErrorCodeBadParams-(3)]
 	_ = x[ErrorCodeInternalError-(4)]
 }
 
-var _ErrorCodeValues = []ErrorCode{ErrorCodeBadRequest, ErrorCodeValidateFailed, ErrorCodeBadParams, ErrorCodeInternalError}
+var _ErrorCodeValues = []ErrorCode{ErrorCodeBadRequest, ErrorCodeValidationFailed, ErrorCodeBadParams, ErrorCodeInternalError}
 
 var _ErrorCodeNameToValueMap = map[string]ErrorCode{
 	_ErrorCodeName[0:11]:       ErrorCodeBadRequest,
 	_ErrorCodeLowerName[0:11]:  ErrorCodeBadRequest,
-	_ErrorCodeName[11:26]:      ErrorCodeValidateFailed,
-	_ErrorCodeLowerName[11:26]: ErrorCodeValidateFailed,
+	_ErrorCodeName[11:26]:      ErrorCodeValidationFailed,
+	_ErrorCodeLowerName[11:26]: ErrorCodeValidationFailed,
 	_ErrorCodeName[26:36]:      ErrorCodeBadParams,
 	_ErrorCodeLowerName[26:36]: ErrorCodeBadParams,
 	_ErrorCodeName[36:50]:      ErrorCodeInternalError,

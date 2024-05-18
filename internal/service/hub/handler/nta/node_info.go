@@ -38,7 +38,7 @@ func (n *NTA) GetNodes(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	nodes, err := n.getNodes(c.Request().Context(), &request)
@@ -83,7 +83,7 @@ func (n *NTA) GetNode(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	node, err := n.getNode(c.Request().Context(), request.NodeAddress)
@@ -108,7 +108,7 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	avatar, err := n.getNodeAvatar(c.Request().Context(), request.NodeAddress)

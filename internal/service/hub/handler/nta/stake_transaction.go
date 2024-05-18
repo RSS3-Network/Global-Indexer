@@ -25,7 +25,7 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	if err := defaults.Set(&request); err != nil {
