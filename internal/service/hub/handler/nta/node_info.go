@@ -76,7 +76,7 @@ func (n *NTA) GetNodes(c echo.Context) error {
 }
 
 func (n *NTA) GetNode(c echo.Context) error {
-	var request nta.NodeRequest
+	var request nta.GetNodeRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
@@ -86,7 +86,7 @@ func (n *NTA) GetNode(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	node, err := n.getNode(c.Request().Context(), request.Address)
+	node, err := n.getNode(c.Request().Context(), request.NodeAddress)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -101,7 +101,7 @@ func (n *NTA) GetNode(c echo.Context) error {
 }
 
 func (n *NTA) GetNodeAvatar(c echo.Context) error {
-	var request nta.NodeRequest
+	var request nta.GetNodeRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
@@ -111,7 +111,7 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	avatar, err := n.getNodeAvatar(c.Request().Context(), request.Address)
+	avatar, err := n.getNodeAvatar(c.Request().Context(), request.NodeAddress)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)

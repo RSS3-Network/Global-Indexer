@@ -8,8 +8,8 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-type NodeRequest struct {
-	Address common.Address `param:"id" validate:"required"`
+type GetNodeRequest struct {
+	NodeAddress common.Address `param:"node_address" validate:"required"`
 }
 
 type BatchNodeRequest struct {
@@ -18,11 +18,11 @@ type BatchNodeRequest struct {
 	NodeAddresses []common.Address `query:"node_addresses"`
 }
 
-type NodeResponseData *schema.Node
+type GetNodeResponseData *schema.Node
 
-type NodesResponseData []*schema.Node
+type GetNodesResponseData []*schema.Node
 
-func NewNode(node *schema.Node, baseURL url.URL) NodeResponseData {
+func NewNode(node *schema.Node, baseURL url.URL) GetNodeResponseData {
 	if node.Avatar != nil {
 		node.Avatar.Image = baseURL.JoinPath(fmt.Sprintf("/nta/nodes/%s/avatar.svg", node.Address)).String()
 	}
@@ -34,7 +34,7 @@ func NewNode(node *schema.Node, baseURL url.URL) NodeResponseData {
 	return node
 }
 
-func NewNodes(nodes []*schema.Node, baseURL url.URL) NodesResponseData {
+func NewNodes(nodes []*schema.Node, baseURL url.URL) GetNodesResponseData {
 	nodeModels := make([]*schema.Node, 0, len(nodes))
 	for _, node := range nodes {
 		nodeModels = append(nodeModels, NewNode(node, baseURL))

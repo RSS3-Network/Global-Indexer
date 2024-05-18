@@ -14,7 +14,7 @@ import (
 )
 
 func (n *NTA) GetNodeEvents(c echo.Context) error {
-	var request nta.NodeEventsRequest
+	var request nta.GetNodeEventsRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))

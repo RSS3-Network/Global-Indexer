@@ -16,7 +16,7 @@ var (
 )
 
 func (n *NTA) GetNodeChallenge(c echo.Context) error {
-	var request nta.NodeChallengeRequest
+	var request nta.GetNodeChallengeRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
@@ -26,13 +26,13 @@ func (n *NTA) GetNodeChallenge(c echo.Context) error {
 		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
 	}
 
-	var data nta.NodeChallengeResponseData
+	var data nta.GetNodeChallengeResponseData
 
 	switch request.Type {
 	case "":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(registrationMessage, strings.ToLower(request.NodeAddress.String())))
+		data = nta.GetNodeChallengeResponseData(fmt.Sprintf(registrationMessage, strings.ToLower(request.NodeAddress.String())))
 	case "hideTaxRate":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String())))
+		data = nta.GetNodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String())))
 	default:
 		return errorx.BadRequestError(c, fmt.Errorf("invalid challenge type: %s", request.Type))
 	}

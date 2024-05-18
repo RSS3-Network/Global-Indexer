@@ -13,7 +13,7 @@ import (
 )
 
 func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
-	var request nta.NodeHideTaxRateRequest
+	var request nta.PostNodeHideTaxRateRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))

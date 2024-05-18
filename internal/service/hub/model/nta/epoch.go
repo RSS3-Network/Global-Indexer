@@ -124,7 +124,7 @@ func NewEpoch(id uint64, epochs []*schema.Epoch) *Epoch {
 	return epoch
 }
 
-func NewEpochTransaction(epoch *schema.Epoch) *EpochTransaction {
+func NewEpochTransaction(epoch *schema.Epoch) GetEpochDistributionResponseData {
 	return &EpochTransaction{
 		ID:             epoch.ID,
 		StartTimestamp: epoch.StartTimestamp,

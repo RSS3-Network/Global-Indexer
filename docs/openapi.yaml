@@ -1625,5 +1625,3 @@ components:
             type: "uint"
             value: "8"
             description: "The number of block receipts to process in a batch"
-
-

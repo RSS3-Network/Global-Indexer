@@ -37,7 +37,7 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 	stakeChipsQuery := schema.StakeChipsQuery{
 		Cursor: request.Cursor,
 		IDs:    request.IDs,
-		Node:   request.Node,
+		Node:   request.NodeAddress,
 		Owner:  request.Owner,
 		Limit:  &request.Limit,
 	}

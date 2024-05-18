@@ -7,16 +7,16 @@ import (
 )
 
 type GetBridgeTransactionsRequest struct {
-	Cursor   *common.Hash                  `query:"cursor"`
-	Sender   *common.Address               `query:"sender"`
-	Receiver *common.Address               `query:"receiver"`
-	Address  *common.Address               `query:"address"`
-	Type     *schema.BridgeTransactionType `query:"type"`
-	Limit    int                           `query:"limit" default:"20" min:"1" max:"20"`
+	Cursor   *common.Hash                  `query:"cursor" description:"cursor for pagination"`
+	Sender   *common.Address               `query:"sender" description:"sender address"`
+	Receiver *common.Address               `query:"receiver" description:"receiver address"`
+	Address  *common.Address               `query:"address" description:"token address"`
+	Type     *schema.BridgeTransactionType `query:"type" description:"transaction type"`
+	Limit    int                           `query:"limit" default:"20" min:"1" max:"20" description:"limit the number of results"`
 }
 
 type GetBridgeTransactionRequest struct {
-	TransactionHash *common.Hash `param:"transaction_hash"`
+	TransactionHash *common.Hash `param:"transaction_hash" description:"transaction hash"`
 }
 
 type GetBridgeTransactionsResponseData []*BridgeTransaction

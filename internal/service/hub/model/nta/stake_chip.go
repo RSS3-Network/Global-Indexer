@@ -14,11 +14,11 @@ import (
 )
 
 type GetStakeChipsRequest struct {
-	Cursor *big.Int        `query:"cursor"`
-	IDs    []*big.Int      `query:"id"`
-	Node   *common.Address `query:"node"`
-	Owner  *common.Address `query:"owner"`
-	Limit  int             `query:"limit" default:"10" min:"1" max:"10"`
+	Cursor      *big.Int        `query:"cursor"`
+	IDs         []*big.Int      `query:"id" description:"list of Chip IDs"`
+	NodeAddress *common.Address `query:"node_address" description:"Node's address"`
+	Owner       *common.Address `query:"owner" description:"Chip owner's address"`
+	Limit       int             `query:"limit" default:"10" min:"1" max:"10"`
 }
 
 type GetStakeChipRequest struct {

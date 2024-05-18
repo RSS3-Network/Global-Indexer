@@ -5,15 +5,15 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-type NodeEventsRequest struct {
+type GetNodeEventsRequest struct {
 	NodeAddress common.Address `param:"node_address" validate:"required"`
 	Cursor      *string        `query:"cursor"`
 	Limit       int            `query:"limit" validate:"min=1,max=100" default:"20"`
 }
 
-type NodeEventResponseData *NodeEvent
+type GetNodeEventResponseData *NodeEvent
 
-type NodeEventsResponseData []*NodeEvent
+type GetNodeEventsResponseData []*NodeEvent
 
 type NodeEvent struct {
 	Transaction TransactionEventTransaction `json:"transaction"`
@@ -27,7 +27,7 @@ type NodeEvent struct {
 	Metadata    schema.NodeEventMetadata    `json:"metadata"`
 }
 
-func NewNodeEvent(event *schema.NodeEvent) NodeEventResponseData {
+func NewNodeEvent(event *schema.NodeEvent) GetNodeEventResponseData {
 	return &NodeEvent{
 		Transaction: TransactionEventTransaction{
 			Hash:  event.TransactionHash,
@@ -48,7 +48,7 @@ func NewNodeEvent(event *schema.NodeEvent) NodeEventResponseData {
 	}
 }
 
-func NewNodeEvents(events []*schema.NodeEvent) NodeEventsResponseData {
+func NewNodeEvents(events []*schema.NodeEvent) GetNodeEventsResponseData {
 	result := make([]*NodeEvent, len(events))
 	for i, event := range events {
 		result[i] = NewNodeEvent(event)

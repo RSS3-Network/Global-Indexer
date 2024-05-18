@@ -25,7 +25,7 @@ func (n *NTA) GetNetworks(c echo.Context) error {
 
 // GetWorkersByNetwork returns workers by Network.
 func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
-	var request nta.NetworkRequest
+	var request nta.GetNetworkRequest
 
 	if err := n.bindAndValidateRequest(c, &request); err != nil {
 		return err
@@ -41,7 +41,7 @@ func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
 
 // GetWorkerDetail returns worker with detail configuration.
 func (n *NTA) GetWorkerDetail(c echo.Context) error {
-	var request nta.WorkerRequest
+	var request nta.GetWorkerRequest
 
 	if err := n.bindAndValidateRequest(c, &request); err != nil {
 		return err
