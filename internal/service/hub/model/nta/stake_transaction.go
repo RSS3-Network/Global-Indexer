@@ -116,7 +116,7 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 				Index: event.TransactionIndex,
 			},
 		}
-
+		// nolint: gocritic
 		switch transaction.Type {
 		case schema.StakeTransactionTypeDeposit:
 			switch event.Type {

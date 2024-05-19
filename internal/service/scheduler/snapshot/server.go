@@ -11,7 +11,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service"
 	nodecount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_count"
 	nodemintokenstostake "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
-	operatorprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/operator_profit"
+	operationPool "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/operator_profit"
 	stakercount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_count"
 	stakerprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/sourcegraph/conc/pool"
@@ -69,7 +69,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 			stakercount.New(databaseClient, redis),
 			nodemintokenstostake.New(databaseClient, redis, stakingContract),
 			stakerprofit.New(databaseClient, redis, stakingContract),
-			operatorprofit.New(databaseClient, redis, stakingContract),
+			operationPool.New(databaseClient, redis, stakingContract),
 		},
 	}, nil
 }

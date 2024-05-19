@@ -8,7 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type OperatorProfitSnapshot struct {
+type OperationPoolSnapshot struct {
 	ID            uint64          `gorm:"column:id"`
 	Date          time.Time       `gorm:"column:date"`
 	EpochID       uint64          `gorm:"column:epoch_id"`
@@ -18,11 +18,12 @@ type OperatorProfitSnapshot struct {
 	UpdatedAt     time.Time       `gorm:"column:updated_at"`
 }
 
-func (s *OperatorProfitSnapshot) TableName() string {
+// FIXME: update table name to `node.operation_pool_snapshots`
+func (s *OperationPoolSnapshot) TableName() string {
 	return "node.operator_profit_snapshots"
 }
 
-func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) error {
+func (s *OperationPoolSnapshot) Import(snapshot schema.OperationPoolSnapshot) error {
 	s.Date = snapshot.Date
 	s.EpochID = snapshot.EpochID
 	s.Operator = snapshot.Operator
@@ -33,8 +34,8 @@ func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) 
 	return nil
 }
 
-func (s *OperatorProfitSnapshot) Export() (*schema.OperatorProfitSnapshot, error) {
-	return &schema.OperatorProfitSnapshot{
+func (s *OperationPoolSnapshot) Export() (*schema.OperationPoolSnapshot, error) {
+	return &schema.OperationPoolSnapshot{
 		ID:            s.ID,
 		Date:          s.Date,
 		EpochID:       s.EpochID,
@@ -45,11 +46,11 @@ func (s *OperatorProfitSnapshot) Export() (*schema.OperatorProfitSnapshot, error
 	}, nil
 }
 
-type OperatorProfitSnapshots []OperatorProfitSnapshot
+type OperatorProfitSnapshots []OperationPoolSnapshot
 
-func (s *OperatorProfitSnapshots) Import(snapshots []*schema.OperatorProfitSnapshot) error {
+func (s *OperatorProfitSnapshots) Import(snapshots []*schema.OperationPoolSnapshot) error {
 	for _, snapshot := range snapshots {
-		var imported OperatorProfitSnapshot
+		var imported OperationPoolSnapshot
 
 		if err := imported.Import(*snapshot); err != nil {
 			return err
@@ -61,8 +62,8 @@ func (s *OperatorProfitSnapshots) Import(snapshots []*schema.OperatorProfitSnaps
 	return nil
 }
 
-func (s *OperatorProfitSnapshots) Export() ([]*schema.OperatorProfitSnapshot, error) {
-	snapshots := make([]*schema.OperatorProfitSnapshot, 0)
+func (s *OperatorProfitSnapshots) Export() ([]*schema.OperationPoolSnapshot, error) {
+	snapshots := make([]*schema.OperationPoolSnapshot, 0)
 
 	for _, snapshot := range *s {
 		exported, err := snapshot.Export()

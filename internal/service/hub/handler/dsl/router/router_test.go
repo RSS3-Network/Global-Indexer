@@ -204,7 +204,7 @@ func TestDistributeRequest(t *testing.T) {
 
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8070").Return(io.NopCloser(bytes.NewBufferString(validActivityData)), nil)
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(validActivityData)), nil)
-	//mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8090"))
+	// mockClient.On("Fetch", mock.Anything, "http://localhost:8080").Return(io.NopCloser(bytes.NewBufferString(errResponse)), errors.New("error 8090"))
 	mockClient.On("Fetch", mock.Anything, "http://localhost:8090").Return(io.NopCloser(bytes.NewBufferString(validActivityData)), nil)
 
 	response, err := r.DistributeRequest(context.Background(), nodeMap, process)

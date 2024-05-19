@@ -7,7 +7,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type OperatorProfitSnapshot struct {
+// OperationPoolSnapshot stores a Node's operation pool size at a specific epoch.
+type OperationPoolSnapshot struct {
 	Date          time.Time       `json:"date"`
 	EpochID       uint64          `json:"epochID"`
 	Operator      common.Address  `json:"operator"`
@@ -17,7 +18,7 @@ type OperatorProfitSnapshot struct {
 	UpdatedAt     time.Time       `json:"-"`
 }
 
-type OperatorProfitSnapshotsQuery struct {
+type OperationPoolSnapshotsQuery struct {
 	Operator   *common.Address `json:"operator"`
 	Limit      *int            `json:"limit"`
 	Cursor     *string         `json:"cursor"`

@@ -57,7 +57,7 @@ func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator c
 	}
 
 	now := time.Now()
-	query := schema.OperatorProfitSnapshotsQuery{
+	query := schema.OperationPoolSnapshotsQuery{
 		Operator: lo.ToPtr(operator),
 		Dates: []time.Time{
 			now.Add(-24 * time.Hour),      // 1 day
@@ -66,7 +66,7 @@ func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator c
 		},
 	}
 
-	snapshots, err := n.databaseClient.FindOperatorProfitSnapshots(ctx, query)
+	snapshots, err := n.databaseClient.FindOperationPoolSnapshots(ctx, query)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, fmt.Errorf("find operator profit snapshots: %w", err)
 	}
