@@ -110,6 +110,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 		}
 
+		snapshots := nta.Group("/snapshots")
 		{
 			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
 			snapshots.GET("/nodes/operation/profit", instance.hub.nta.GetNodeOperationProfitSnapshots)
@@ -122,7 +123,6 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 
 		stake := nta.Group("/stake")
 		{
-			stake := nta.Group("/stake")
 			stake.GET("/:staker_address/profit", instance.hub.nta.GetStakeOwnerProfit)
 			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
 			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
