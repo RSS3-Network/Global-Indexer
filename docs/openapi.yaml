@@ -1663,12 +1663,12 @@ components:
       properties:
         date:
           type: string
-        epochID:
+        epoch_id:
           type: integer
         apy:
           type: string
       example:
         date: "2024-03-13T00:08:38+08:00"
-        epochID: 1
+        epoch_id: 1
         apy: "0.1"
 
