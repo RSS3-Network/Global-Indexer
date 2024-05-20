@@ -1197,7 +1197,7 @@ components:
           nullable: true
         is_public_good:
           type: boolean
-        operation_poolTokens:
+        operation_pool_tokens:
           type: string
         staking_pool_tokens:
           type: string
@@ -1251,7 +1251,7 @@ components:
         description: "Get started with RSS3 Node with symphonia"
         tax_rate_basis_points: 1000
         is_public_good: false
-        operation_poolTokens: "10000000000000000000000"
+        operation_pool_tokens: "10000000000000000000000"
         staking_pool_tokens: "0"
         total_shares: "0"
         slashed_tokens: "0"
@@ -1282,8 +1282,8 @@ components:
           type: string
           enum:
               - node_created
-              - nodeUpdated
-              - nodeUpdated2PublicGood
+              - node_updated
+              - node_updated_to_public_good
         log_index:
           type: integer
         chain_id:
@@ -1322,7 +1322,7 @@ components:
                   type: integer
                 is_public_good:
                   type: boolean
-            nodeUpdated:
+            node_updated:
               type: object
               properties:
                 address:
@@ -1331,7 +1331,7 @@ components:
                   type: string
                 description:
                   type: string
-            nodeUpdated2PublicGood:
+            node_updated_to_public_good:
               type: object
               properties:
                 address:
