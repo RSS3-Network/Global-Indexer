@@ -26,7 +26,7 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	node, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Operator)

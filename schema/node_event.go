@@ -9,7 +9,9 @@ import (
 type NodeEventType string
 
 const (
-	NodeEventNodeCreated NodeEventType = "nodeCreated"
+	NodeEventNodeCreated            NodeEventType = "nodeCreated"
+	NodeEventNodeUpdated            NodeEventType = "nodeUpdated"
+	NodeEventNodeUpdated2PublicGood NodeEventType = "nodeUpdated2PublicGood"
 )
 
 type NodeEvent struct {
@@ -28,7 +30,9 @@ type NodeEvent struct {
 }
 
 type NodeEventMetadata struct {
-	NodeCreatedMetadata *NodeCreatedMetadata `json:"nodeCreated"`
+	NodeCreatedMetadata            *NodeCreatedMetadata            `json:"nodeCreated,omitempty"`
+	NodeUpdatedMetadata            *NodeUpdatedMetadata            `json:"nodeUpdated,omitempty"`
+	NodeUpdated2PublicGoodMetadata *NodeUpdated2PublicGoodMetadata `json:"nodeUpdated2PublicGood,omitempty"`
 }
 
 type NodeCreatedMetadata struct {
@@ -38,4 +42,15 @@ type NodeCreatedMetadata struct {
 	Description        string         `json:"description"`
 	TaxRateBasisPoints uint64         `json:"taxRateBasisPoints"`
 	PublicGood         bool           `json:"publicGood"`
+}
+
+type NodeUpdatedMetadata struct {
+	Address     common.Address `json:"address"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+}
+
+type NodeUpdated2PublicGoodMetadata struct {
+	Address    common.Address `json:"address"`
+	PublicGood bool           `json:"publicGood"`
 }

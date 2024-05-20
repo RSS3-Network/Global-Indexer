@@ -1315,6 +1315,8 @@ components:
           type: string
           enum:
               - nodeCreated
+              - nodeUpdated
+              - nodeUpdated2PublicGood
         logIndex:
           type: integer
         chainID:
@@ -1351,6 +1353,22 @@ components:
                   type: string
                 taxRateBasisPoints:
                   type: integer
+                isPublicGood:
+                  type: boolean
+            nodeUpdated:
+              type: object
+              properties:
+                address:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+            nodeUpdated2PublicGood:
+              type: object
+              properties:
+                address:
+                  type: string
                 isPublicGood:
                   type: boolean
     NodeMinTokensToStakeSnapshot:
