@@ -10,6 +10,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
+	snapshot "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
+	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetEpochs(c echo.Context) error {
@@ -24,7 +26,7 @@ func (n *NTA) GetEpochs(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	epochs, err := n.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
@@ -61,7 +63,7 @@ func (n *NTA) GetEpoch(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	epoch, err := n.databaseClient.FindEpochTransactions(c.Request().Context(), request.EpochID, request.ItemLimit, request.Cursor)
@@ -90,7 +92,7 @@ func (n *NTA) GetEpochDistribution(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	epoch, err := n.databaseClient.FindEpochTransaction(c.Request().Context(), request.TransactionHash, request.ItemLimit, request.Cursor)
@@ -125,7 +127,7 @@ func (n *NTA) GetEpochNodeRewards(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	epochs, err := n.databaseClient.FindEpochNodeRewards(c.Request().Context(), request.NodeAddress, request.Limit, request.Cursor)
@@ -145,5 +147,27 @@ func (n *NTA) GetEpochNodeRewards(c echo.Context) error {
 	return c.JSON(http.StatusOK, nta.Response{
 		Data:   nta.NewEpochs(epochs),
 		Cursor: cursor,
+	})
+}
+
+func (n *NTA) GetEpochsAPY(c echo.Context) error {
+	var apy decimal.Decimal
+
+	// Get from cache if available
+	err := n.cacheClient.Get(c.Request().Context(), snapshot.CacheKeyEpochAverageAPY, &apy)
+	if err == nil && !apy.IsZero() {
+		return c.JSON(http.StatusOK, nta.Response{
+			Data: apy,
+		})
+	}
+
+	// Query the database for the epoch APY
+	apy, err = n.databaseClient.FindEpochAPYSnapshotsAverage(c.Request().Context())
+	if err != nil {
+		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: apy,
 	})
 }

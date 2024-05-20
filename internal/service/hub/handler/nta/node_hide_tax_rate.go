@@ -20,7 +20,7 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String()))

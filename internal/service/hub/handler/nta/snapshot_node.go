@@ -25,7 +25,7 @@ func (n *NTA) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	nodeMinTokensToStakeSnapshots, err := n.databaseClient.FindNodeMinTokensToStakeSnapshots(c.Request().Context(), request.NodeAddresses, request.OnlyStartAndEnd, nil)
@@ -48,7 +48,7 @@ func (n *NTA) GetNodeOperationProfitSnapshots(c echo.Context) error {
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return errorx.ValidateFailedError(c, fmt.Errorf("validate failed: %w", err))
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 	// FIXME: OperatorProfit -> NodeOperationProfit
 	query := schema.OperatorProfitSnapshotsQuery{
@@ -137,4 +137,17 @@ func (n *NTA) findNodeOperationProfitSnapshots(ctx context.Context, operator com
 	}
 
 	return data, nil
+}
+
+func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
+	epochAPYSnapshots, err := n.databaseClient.FindEpochAPYSnapshots(c.Request().Context(), schema.EpochAPYSnapshotQuery{})
+	if err != nil {
+		zap.L().Error("find epoch APY snapshots", zap.Error(err))
+
+		return errorx.InternalError(c, errors.New("find epoch APY snapshots err"))
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: epochAPYSnapshots,
+	})
 }

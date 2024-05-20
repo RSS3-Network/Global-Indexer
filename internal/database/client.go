@@ -10,6 +10,7 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -59,6 +60,10 @@ type Client interface {
 	FindStakerCountRecentEpochs(ctx context.Context, recentEpochs int) (map[common.Address]*schema.StakeRecentCount, error)
 	FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error)
 	SaveOperatorProfitSnapshots(ctx context.Context, operatorProfitSnapshots []*schema.OperatorProfitSnapshot) error
+	SaveNodeAPYSnapshots(ctx context.Context, nodeAPYSnapshots []*schema.NodeAPYSnapshot) error
+	FindEpochAPYSnapshots(ctx context.Context, query schema.EpochAPYSnapshotQuery) ([]*schema.EpochAPYSnapshot, error)
+	SaveEpochAPYSnapshot(ctx context.Context, epochAPYSnapshots *schema.EpochAPYSnapshot) error
+	FindEpochAPYSnapshotsAverage(ctx context.Context) (decimal.Decimal, error)
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
