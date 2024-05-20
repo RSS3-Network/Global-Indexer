@@ -643,3 +643,25 @@ func (c *client) SaveOperatorProfitSnapshots(ctx context.Context, snapshots []*s
 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(value, math.MaxUint8).Error
 }
+
+func (c *client) SaveNodeAPYSnapshots(ctx context.Context, nodeAPYSnapshots []*schema.NodeAPYSnapshot) error {
+	var value table.NodeAPYSnapshots
+
+	if err := value.Import(nodeAPYSnapshots); err != nil {
+		return fmt.Errorf("import node APY snapshots: %w", err)
+	}
+
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "node_address",
+			},
+			{
+				Name: "epoch_id",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(value, math.MaxUint8).Error
+}

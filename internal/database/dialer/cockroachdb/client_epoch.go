@@ -10,6 +10,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database/dialer/cockroachdb/table"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -281,4 +282,61 @@ func (c *client) FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigg
 	}
 
 	return data.Export()
+}
+
+func (c *client) FindEpochAPYSnapshots(ctx context.Context, query schema.EpochAPYSnapshotQuery) ([]*schema.EpochAPYSnapshot, error) {
+	var data table.EpochAPYSnapshots
+
+	databaseStatement := c.database.WithContext(ctx).Model(&table.EpochAPYSnapshot{})
+
+	if query.EpochID != nil {
+		databaseStatement = databaseStatement.Where("epoch_id = ?", *query.EpochID)
+	}
+
+	if query.Limit != nil {
+		databaseStatement = databaseStatement.Limit(*query.Limit)
+	}
+
+	if err := databaseStatement.Order("epoch_id DESC").Find(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		zap.L().Error("find epoch apy snapshots", zap.Error(err), zap.Any("query", query))
+
+		return nil, err
+	}
+
+	return data.Export()
+}
+
+func (c *client) SaveEpochAPYSnapshot(ctx context.Context, epochAPYSnapshot *schema.EpochAPYSnapshot) error {
+	// Save epoch APY snapshot.
+	var data table.EpochAPYSnapshot
+	if err := data.Import(epochAPYSnapshot); err != nil {
+		zap.L().Error("import epoch APY snapshot", zap.Error(err), zap.Any("epochAPYSnapshot", epochAPYSnapshot))
+
+		return err
+	}
+
+	if err := c.database.WithContext(ctx).Create(&data).Error; err != nil {
+		zap.L().Error("insert epoch APY snapshot", zap.Error(err), zap.Any("epochAPYSnapshot", epochAPYSnapshot))
+
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) FindEpochAPYSnapshotsAverage(ctx context.Context) (decimal.Decimal, error) {
+	var avgAPY decimal.Decimal
+
+	if err := c.database.WithContext(ctx).Model(&table.EpochAPYSnapshot{}).
+		Select("AVG(apy) as avg_apy").Row().Scan(&avgAPY); err != nil {
+		zap.L().Error("retrieve and calculate average APY", zap.Error(err))
+
+		return decimal.Zero, fmt.Errorf("retrieve and calculate average APY: %w", err)
+	}
+
+	return avgAPY, nil
 }

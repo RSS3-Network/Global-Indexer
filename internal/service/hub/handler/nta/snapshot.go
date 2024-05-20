@@ -1,6 +1,7 @@
 package nta
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -140,5 +141,18 @@ func (n *NTA) GetOperatorProfitsSnapshots(c echo.Context) error {
 	return c.JSON(http.StatusOK, nta.Response{
 		Data:   operatorProfitSnapshots,
 		Cursor: cursor,
+	})
+}
+
+func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
+	epochAPYSnapshots, err := n.databaseClient.FindEpochAPYSnapshots(c.Request().Context(), schema.EpochAPYSnapshotQuery{})
+	if err != nil {
+		zap.L().Error("find epoch APY snapshots", zap.Error(err))
+
+		return errorx.InternalError(c, errors.New("find epoch APY snapshots err"))
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: epochAPYSnapshots,
 	})
 }
