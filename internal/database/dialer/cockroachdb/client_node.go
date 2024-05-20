@@ -216,6 +216,15 @@ func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdat
 	return c.database.WithContext(ctx).Exec(rawSQL, values...).Error
 }
 
+func (c *client) UpdateNodePublicGood(ctx context.Context, nodeAddress common.Address, isPublicGood bool) error {
+	return c.database.
+		WithContext(ctx).
+		Model((*table.Node)(nil)).
+		Where("address = ?", nodeAddress).
+		Update("is_public_good", isPublicGood).
+		Error
+}
+
 func (c *client) FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error) {
 	var stat table.Stat
 
@@ -624,6 +633,28 @@ func (c *client) SaveOperatorProfitSnapshots(ctx context.Context, snapshots []*s
 		Columns: []clause.Column{
 			{
 				Name: "operator",
+			},
+			{
+				Name: "epoch_id",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(value, math.MaxUint8).Error
+}
+
+func (c *client) SaveNodeAPYSnapshots(ctx context.Context, nodeAPYSnapshots []*schema.NodeAPYSnapshot) error {
+	var value table.NodeAPYSnapshots
+
+	if err := value.Import(nodeAPYSnapshots); err != nil {
+		return fmt.Errorf("import node APY snapshots: %w", err)
+	}
+
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "node_address",
 			},
 			{
 				Name: "epoch_id",

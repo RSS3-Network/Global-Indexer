@@ -10,6 +10,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
+	snapshot "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
+	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetEpochs(c echo.Context) error {
@@ -145,5 +147,27 @@ func (n *NTA) GetEpochNodeRewards(c echo.Context) error {
 	return c.JSON(http.StatusOK, nta.Response{
 		Data:   nta.NewEpochs(epochs),
 		Cursor: cursor,
+	})
+}
+
+func (n *NTA) GetEpochsAPY(c echo.Context) error {
+	var apy decimal.Decimal
+
+	// Get from cache if available
+	err := n.cacheClient.Get(c.Request().Context(), snapshot.CacheKeyEpochAverageAPY, &apy)
+	if err == nil && !apy.IsZero() {
+		return c.JSON(http.StatusOK, nta.Response{
+			Data: apy,
+		})
+	}
+
+	// Query the database for the epoch APY
+	apy, err = n.databaseClient.FindEpochAPYSnapshotsAverage(c.Request().Context())
+	if err != nil {
+		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: apy,
 	})
 }

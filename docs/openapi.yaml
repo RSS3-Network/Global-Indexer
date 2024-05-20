@@ -586,6 +586,24 @@ paths:
                         $ref: "#/components/schemas/OperationProfit"
                     cursor:
                       type: string
+  /nta/snapshots/epochs/apy:
+    get:
+        description: "Get the apy of epoch snapshots"
+        tags:
+            - Snapshots
+        responses:
+          200:
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/EpochAPYSnapshot"
+
   /nta/nodes:
     get:
       description: "Get all Nodes"
@@ -849,6 +867,21 @@ paths:
                     items:
                       $ref: "#/components/schemas/Epoch"
                   cursor:
+                    type: string
+  /nta/epochs/apy:
+    get:
+      description: "Get the average of epochs APY"
+      tags:
+        - Epoch
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
                     type: string
   /nta/networks:
     get:
@@ -1607,5 +1640,17 @@ components:
             type: "uint"
             value: "8"
             description: "The number of block receipts to process in a batch"
-
+    EpochAPYSnapshot:
+      type: object
+      properties:
+        date:
+          type: string
+        epochID:
+          type: integer
+        apy:
+          type: string
+      example:
+        date: "2024-03-13T00:08:38+08:00"
+        epochID: 1
+        apy: "0.1"
 
