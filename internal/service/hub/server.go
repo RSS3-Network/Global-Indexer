@@ -9,7 +9,7 @@ import (
 
 	"github.com/a-h/rest"
 	"github.com/a-h/rest/swaggerui"
-	echo "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/geolite2"
