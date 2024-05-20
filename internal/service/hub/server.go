@@ -92,6 +92,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			networks.GET("", instance.hub.nta.GetNetworks)
 			networks.GET("/:network/list-workers", instance.hub.nta.GetWorkersByNetwork)
 			networks.GET("/:network/workers/:worker", instance.hub.nta.GetWorkerDetail)
+			networks.GET("/get_endpoint_config", instance.hub.nta.GetEndpointConfig)
 		}
 
 		nodes := nta.Group("/nodes")
