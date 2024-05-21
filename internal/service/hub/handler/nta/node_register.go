@@ -90,7 +90,12 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	// Check signature.
 	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
 
-	if err := n.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
+	signature, err := hexutil.Decode(request.Signature)
+	if err != nil {
+		return fmt.Errorf("decode signature: %w", err)
+	}
+
+	if err := n.checkSignature(ctx, request.Address, message, signature); err != nil {
 		return err
 	}
 
