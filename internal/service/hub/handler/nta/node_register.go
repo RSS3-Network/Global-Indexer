@@ -104,7 +104,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String()))
 	}
 
-	if strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
