@@ -150,10 +150,15 @@ func (s *server) saveAPYToSnapshots(ctx context.Context, latestEpochSnapshot uin
 			return fmt.Errorf("save node APY snapshots: %w", err)
 		}
 
+		var apy decimal.Decimal
+		if len(nodeAPYSnapshots) > 0 {
+			apy = sum.Div(decimal.NewFromInt(int64(len(nodeAPYSnapshots))))
+		}
+
 		epochAPYSnapshot := schema.EpochAPYSnapshot{
 			Date:    time.Unix(transactions[0].EndTimestamp, 0),
 			EpochID: id,
-			APY:     sum.Div(decimal.NewFromInt(int64(len(nodeAPYSnapshots)))),
+			APY:     apy,
 		}
 
 		// Save the epoch APY snapshot.
