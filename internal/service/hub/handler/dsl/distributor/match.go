@@ -8,7 +8,9 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/protocol-go/schema/network"
+	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
 )
 
@@ -41,8 +43,8 @@ type WorkerSet map[string]struct{}
 
 // getNetworks returns a slice of networks based on the given network names.
 func getNetworks(networks []string) ([]string, error) {
-	for i, network := range networks {
-		nid, err := filter.NetworkString(network)
+	for i, n := range networks {
+		nid, err := network.NetworkString(n)
 		if err != nil {
 			return nil, err
 		}
@@ -57,8 +59,8 @@ func getNetworks(networks []string) ([]string, error) {
 func getWorkersByTag(tags []string) (WorkerSet, error) {
 	tagWorkers := make(WorkerSet)
 
-	for _, tag := range tags {
-		tid, err := filter.TagString(tag)
+	for _, tagX := range tags {
+		tid, err := tag.TagString(tagX)
 		if err != nil {
 			return nil, err
 		}
@@ -68,8 +70,8 @@ func getWorkersByTag(tags []string) (WorkerSet, error) {
 			return nil, fmt.Errorf("no workers found for tag: %s", tid)
 		}
 
-		for _, worker := range tagWorker {
-			tagWorkers[worker] = struct{}{}
+		for _, w := range tagWorker {
+			tagWorkers[w] = struct{}{}
 		}
 	}
 
@@ -81,17 +83,19 @@ func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
 	platformWorkers := make(WorkerSet)
 
 	for _, platform := range platforms {
-		pid, err := filter.PlatformString(platform)
+		pid, err := worker.PlatformString(platform)
 		if err != nil {
 			return nil, err
 		}
 
-		platformWorker, exists := model.PlatformToWorkerMap[pid]
+		workers, exists := model.PlatformToWorkersMap[pid]
 		if !exists {
 			return nil, fmt.Errorf("no worker found for platform: %s", pid)
 		}
 
-		platformWorkers[platformWorker] = struct{}{}
+		for _, w := range workers {
+			platformWorkers[w] = struct{}{}
+		}
 	}
 
 	return platformWorkers, nil
@@ -193,8 +197,8 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 		return false
 	}
 
-	for network, workers := range networkWorkersMap.Workers {
-		nid, _ := filter.NetworkString(network)
+	for n, workers := range networkWorkersMap.Workers {
+		nid, _ := network.NetworkString(n)
 
 		// Check if the workers match the required workers for the network.
 		requiredWorkers := model.NetworkToWorkersMap[nid]
@@ -258,8 +262,8 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 		return false
 	}
 
-	for worker, networks := range workerNetworksMap.Networks {
-		wid, _ := filter.NameString(worker)
+	for w, networks := range workerNetworksMap.Networks {
+		wid, _ := worker.WorkerString(w)
 
 		requiredNetworks := model.WorkerToNetworksMap[wid]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
@@ -302,8 +306,8 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 		return false
 	}
 
-	for worker, networks := range workerNetworksMap.Networks {
-		wid, _ := filter.NameString(worker)
+	for w, networks := range workerNetworksMap.Networks {
+		wid, _ := worker.WorkerString(w)
 
 		workerRequiredNetworks := model.WorkerToNetworksMap[wid]
 

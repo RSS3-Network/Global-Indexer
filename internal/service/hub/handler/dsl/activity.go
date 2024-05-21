@@ -10,7 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
-	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/protocol-go/schema"
+	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
 func (d *DSL) GetActivity(c echo.Context) (err error) {
@@ -86,14 +87,14 @@ func parseParams(params url.Values, tags []string) ([]string, error) {
 	types := make([]string, 0)
 
 	for _, typeX := range params["type"] {
-		for _, tag := range tags {
-			t, err := filter.TagString(tag)
+		for _, tagX := range tags {
+			t, err := tag.TagString(tagX)
 
 			if err != nil {
 				continue
 			}
 
-			value, err := filter.TypeString(t, typeX)
+			value, err := schema.ParseTypeFromString(t, typeX)
 
 			if err != nil {
 				continue

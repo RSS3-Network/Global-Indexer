@@ -26,7 +26,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -239,10 +240,10 @@ func isFullNode(workers []*NodeConfigModule) (bool, error) {
 		return false, nil
 	}
 
-	workerToNetworksMap := make(map[filter.Name]map[string]struct{})
+	workerToNetworksMap := make(map[worker.Worker]map[string]struct{})
 
-	for _, worker := range workers {
-		wid, err := filter.NameString(worker.Worker.String())
+	for _, w := range workers {
+		wid, err := worker.WorkerString(w.Worker.String())
 
 		if err != nil {
 			return false, err
@@ -252,7 +253,7 @@ func isFullNode(workers []*NodeConfigModule) (bool, error) {
 			workerToNetworksMap[wid] = make(map[string]struct{})
 		}
 
-		workerToNetworksMap[wid][worker.Network.String()] = struct{}{}
+		workerToNetworksMap[wid][w.Network.String()] = struct{}{}
 	}
 
 	// Ensure all networks for each worker are present
@@ -262,8 +263,8 @@ func isFullNode(workers []*NodeConfigModule) (bool, error) {
 			return false, nil
 		}
 
-		for _, network := range requiredNetworks {
-			if _, exists = networks[network]; !exists {
+		for _, n := range requiredNetworks {
+			if _, exists = networks[n]; !exists {
 				return false, nil
 			}
 		}
@@ -295,7 +296,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 			ResetAt:      time.Now(),
 			IsFullNode:   fullNode,
 			IsRssNode:    len(nodeConfig.RSS) > 0,
-			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
+			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) network.Network {
 				return module.Network
 			})),
 			FederatedNetwork: len(nodeConfig.Federated),
@@ -307,7 +308,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 		stat.Staking = staking
 		stat.IsFullNode = fullNode
 		stat.IsRssNode = len(nodeConfig.RSS) > 0
-		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) filter.Network {
+		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) network.Network {
 			return module.Network
 		}))
 		stat.FederatedNetwork = len(nodeConfig.Federated)
@@ -323,11 +324,11 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 func updateNodeWorkers(address common.Address, nodeConfig NodeConfig) []*schema.Worker {
 	workers := make([]*schema.Worker, 0, len(nodeConfig.Decentralized))
 
-	for _, worker := range nodeConfig.Decentralized {
+	for _, w := range nodeConfig.Decentralized {
 		workers = append(workers, &schema.Worker{
 			Address: address,
-			Network: worker.Network.String(),
-			Name:    worker.Worker.String(),
+			Network: w.Network.String(),
+			Name:    w.Worker.String(),
 		})
 	}
 
@@ -440,7 +441,6 @@ type NodeConfig struct {
 }
 
 type NodeConfigModule struct {
-	Network  filter.Network `json:"network"`
-	Endpoint string         `json:"endpoint"`
-	Worker   filter.Name    `json:"worker"`
+	Network network.Network `json:"network"`
+	Worker  worker.Worker   `json:"worker"`
 }
