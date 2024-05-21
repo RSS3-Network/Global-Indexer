@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// GetNetworks returns all networks.
+// GetNetworks returns all networks supported by the DSL.
 func (n *NTA) GetNetworks(c echo.Context) error {
 	endpoint, err := n.getNodeEndpoint(c)
 	if err != nil {
@@ -23,7 +23,7 @@ func (n *NTA) GetNetworks(c echo.Context) error {
 	return n.fetchResponse(c, fmt.Sprintf("%s/networks", endpoint))
 }
 
-// GetWorkersByNetwork returns workers by Network.
+// GetWorkersByNetwork returns all available workers on a specific Network.
 func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
 	var request nta.NetworkRequest
 
@@ -36,10 +36,10 @@ func (n *NTA) GetWorkersByNetwork(c echo.Context) error {
 		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/list-workers", endpoint, request.NetworkName))
+	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/list_workers", endpoint, request.NetworkName))
 }
 
-// GetWorkerDetail returns worker with detail configuration.
+// GetWorkerDetail returns a worker's detail and possible configuration.
 func (n *NTA) GetWorkerDetail(c echo.Context) error {
 	var request nta.WorkerRequest
 
@@ -54,6 +54,17 @@ func (n *NTA) GetWorkerDetail(c echo.Context) error {
 	}
 
 	return n.fetchResponse(c, fmt.Sprintf("%s/networks/%s/workers/%s", endpoint, request.NetworkName, request.WorkerName))
+}
+
+// GetEndpointConfig returns possible configurations for an endpoint.
+func (n *NTA) GetEndpointConfig(c echo.Context) error {
+	endpoint, err := n.getNodeEndpoint(c)
+
+	if err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
+	}
+
+	return n.fetchResponse(c, fmt.Sprintf("%s/networks/get_endpoint_config", endpoint))
 }
 
 // bindAndValidateRequest binds and validates the request.
