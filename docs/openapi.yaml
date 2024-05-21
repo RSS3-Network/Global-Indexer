@@ -1392,7 +1392,7 @@ components:
                 type: string
               created_at:
                 type: string
-              updatedAt:
+              updated_at:
                 type: string
     StakerProfitSnapshot:
       type: object
@@ -1548,7 +1548,7 @@ components:
           type: string
         total_reward_items:
           type: integer
-        rewardItems:
+        reward_items:
           type: array
           items:
             type: object
@@ -1594,10 +1594,10 @@ components:
         parameters:
             type: object
             properties:
-              block_number_start:
-                $ref: "#/components/schemas/WorkerDetail"
-              block_number_target:
-                $ref: "#/components/schemas/WorkerDetail"
+#              block_number_start:
+#                $ref: "#/components/schemas/WorkerDetail"
+#              block_number_target:
+#                $ref: "#/components/schemas/WorkerDetail"
               rpc_thread_blocks:
                 $ref: "#/components/schemas/WorkerDetail"
               rpc_batch_blocks:
@@ -1628,16 +1628,16 @@ components:
             value: "https://rpc.ankr.com/eth"
             description: "You can fill this field with a global endpoint id (should be pre-defined in endpoints part) or a url"
         parameters:
-          block_number_start:
-            is_required: false
-            type: "big.Int"
-            value: "null"
-            description: "Your worker will start from this block number, if it's not defined, we will use the recommended one(~3 months)"
-          block_number_target:
-            is_required: false
-            type: "big.Int"
-            value: "null"
-            description: "The block number to target the worker"
+#          block_number_start:
+#            is_required: false
+#            type: "big.Int"
+#            value: "null"
+#            description: "Your worker will start from this block number, if it's not defined, we will use the recommended one(~3 months)"
+#          block_number_target:
+#            is_required: false
+#            type: "big.Int"
+#            value: "null"
+#            description: "The block number to target the worker"
           rpc_thread_blocks:
             is_required: false
             type: "uint"
