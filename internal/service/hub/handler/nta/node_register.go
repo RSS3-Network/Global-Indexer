@@ -90,7 +90,12 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	// Check signature.
 	message := fmt.Sprintf(registrationMessage, strings.ToLower(request.Address.String()))
 
-	if err := n.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
+	signature, err := hexutil.Decode(request.Signature)
+	if err != nil {
+		return fmt.Errorf("decode signature: %w", err)
+	}
+
+	if err := n.checkSignature(ctx, request.Address, message, signature); err != nil {
 		return err
 	}
 
@@ -104,7 +109,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String()))
 	}
 
-	if strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
 		return fmt.Errorf("insufficient operation pool tokens")
 	}
 
