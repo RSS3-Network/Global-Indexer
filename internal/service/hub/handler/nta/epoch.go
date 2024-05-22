@@ -12,6 +12,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	snapshot "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetEpochs(c echo.Context) error {
@@ -35,7 +36,9 @@ func (n *NTA) GetEpochs(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+		zap.L().Error("get epochs failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	data := nta.NewEpochs(epochs)
@@ -72,7 +75,9 @@ func (n *NTA) GetEpoch(c echo.Context) error {
 	}
 
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+		zap.L().Error("get epoch failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -101,7 +106,9 @@ func (n *NTA) GetEpochDistribution(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+		zap.L().Error("get epoch distribution failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	var cursor string
@@ -136,7 +143,9 @@ func (n *NTA) GetEpochNodeRewards(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+		zap.L().Error("get epoch node rewards failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	var cursor string
@@ -164,7 +173,9 @@ func (n *NTA) GetEpochsAPY(c echo.Context) error {
 	// Query the database for the epoch APY
 	apy, err = n.databaseClient.FindEpochAPYSnapshotsAverage(c.Request().Context())
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("get failed: %w", err))
+		zap.L().Error("get epoch apy failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{

@@ -31,7 +31,7 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	stakeChipsQuery := schema.StakeChipsQuery{
@@ -90,7 +90,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
@@ -130,7 +130,7 @@ func (n *NTA) GetStakeChipImage(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
