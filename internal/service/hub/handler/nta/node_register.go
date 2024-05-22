@@ -41,7 +41,9 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, fmt.Errorf("set default values for reqeust: %w", err))
+		zap.L().Error("set default values for request", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	if err := c.Validate(&request); err != nil {
@@ -50,11 +52,36 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("parse request ip: %w", err))
+		zap.L().Error("parse request ip", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
-	if err := n.register(c.Request().Context(), &request, ip.String()); err != nil {
-		return errorx.InternalError(c, fmt.Errorf("register failed: %w", err))
+	// Check signature.
+	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
+	}
+
+	// Check Node from the VSL.
+	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
+	if err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("get Node from chain: %w", err))
+	}
+
+	if nodeInfo.Account == ethereum.AddressGenesis {
+		return errorx.ValidationFailedError(c, fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String())))
+	}
+
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+		return errorx.ValidationFailedError(c, fmt.Errorf("insufficient operation pool tokens"))
+	}
+
+	// Register Node.
+	if err := n.register(c.Request().Context(), &request, ip.String(), nodeInfo); err != nil {
+		zap.L().Error("register failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -75,11 +102,22 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("parse request ip: %w", err))
+		zap.L().Error("parse request ip", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
+	// Check signature.
+	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
+	}
+
+	// Save Node heartbeat.
 	if err := n.heartbeat(c.Request().Context(), &request, ip.String()); err != nil {
-		return errorx.InternalError(c, fmt.Errorf("heartbeat failed: %w", err))
+		zap.L().Error("heartbeat failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -87,33 +125,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string) error {
-	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
-
-	signature, err := hexutil.Decode(request.Signature)
-	if err != nil {
-		return fmt.Errorf("decode signature: %w", err)
-	}
-
-	if err := n.checkSignature(ctx, request.Address, message, signature); err != nil {
-		return err
-	}
-
-	// Check Node from the VSL.
-	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get Node from chain: %w", err)
-	}
-
-	if nodeInfo.Account == ethereum.AddressGenesis {
-		return fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String()))
-	}
-
-	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
-		return fmt.Errorf("insufficient operation pool tokens")
-	}
-
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo l2.DataTypesNode) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -336,14 +348,7 @@ func updateNodeWorkers(address common.Address, nodeConfig NodeConfig) []*schema.
 }
 
 func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, requestIP string) error {
-	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
-
-	if err := n.checkSignature(ctx, request.Address, message, hexutil.MustDecode(request.Signature)); err != nil {
-		return fmt.Errorf("check signature: %w", err)
-	}
-
-	// Check Node from database.
+	// Get Node from database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
 		return fmt.Errorf("get Node %s from database: %w", request.Address, err)
@@ -387,7 +392,12 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	return n.databaseClient.SaveNode(ctx, node)
 }
 
-func (n *NTA) checkSignature(_ context.Context, address common.Address, message string, signature []byte) error {
+func (n *NTA) checkSignature(_ context.Context, address common.Address, message string, param string) error {
+	signature, err := hexutil.Decode(param)
+	if err != nil {
+		return fmt.Errorf("decode signature: %w", err)
+	}
+
 	data := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
 	hash := crypto.Keccak256Hash([]byte(data)).Bytes()
 
@@ -401,7 +411,6 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 	}
 
 	result := crypto.PubkeyToAddress(*pubKey)
-
 	if address != result {
 		return fmt.Errorf("invalid signature")
 	}

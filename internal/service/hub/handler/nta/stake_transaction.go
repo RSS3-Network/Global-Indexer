@@ -29,7 +29,7 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	databaseTransactionOptions := sql.TxOptions{

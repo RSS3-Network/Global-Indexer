@@ -1,7 +1,6 @@
 package nta
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -43,7 +42,7 @@ func (n *NTA) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 	if err != nil {
 		zap.L().Error("find Node min tokens to stake snapshots", zap.Error(err))
 
-		return errorx.InternalError(c, fmt.Errorf("find Node min tokens to stake snapshots: %w", err))
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -149,7 +148,7 @@ func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
 	if err != nil {
 		zap.L().Error("find epoch APY snapshots", zap.Error(err))
 
-		return errorx.InternalError(c, errors.New("find epoch APY snapshots err"))
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{

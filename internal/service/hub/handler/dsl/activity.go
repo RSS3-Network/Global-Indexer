@@ -12,6 +12,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/tag"
+	"go.uber.org/zap"
 )
 
 func (d *DSL) GetActivity(c echo.Context) (err error) {
@@ -26,12 +27,14 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 	}
 
 	if err = defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.BadRequestError(c, err)
 	}
 
 	activity, err := d.distributor.DistributeActivityRequest(c.Request().Context(), request)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("distribute activity request error", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSONBlob(http.StatusOK, activity)
@@ -53,20 +56,24 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	}
 
 	if err = defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	// Resolve name to EVM address
 	if !validEvmAddress(request.Account) {
 		request.Account, err = d.nameService.Resolve(c.Request().Context(), request.Account)
 		if err != nil {
-			return errorx.InternalError(c, err)
+			zap.L().Error("name service resolve error", zap.Error(err), zap.String("account", request.Account))
+
+			return errorx.InternalError(c)
 		}
 	}
 
 	activities, err := d.distributor.DistributeActivitiesData(c.Request().Context(), request)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("distribute activities data error", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSONBlob(http.StatusOK, activities)

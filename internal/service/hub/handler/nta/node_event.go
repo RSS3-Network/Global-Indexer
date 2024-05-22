@@ -11,6 +11,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetNodeEvents(c echo.Context) error {
@@ -34,7 +35,9 @@ func (n *NTA) GetNodeEvents(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get Node events: %w", err))
+		zap.L().Error("get Node events failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	var cursor string

@@ -16,6 +16,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetOperatorProfit(c echo.Context) error {
@@ -31,7 +32,9 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 
 	node, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Operator)
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("get Node from rpc: %w", err))
+		zap.L().Error("get Node from rpc", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	data := nta.GetOperatorProfitRepsonseData{
@@ -41,7 +44,9 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 
 	changes, err := n.findOperatorHistoryProfitSnapshots(c.Request().Context(), request.Operator, &data)
 	if err != nil {
-		return errorx.InternalError(c, fmt.Errorf("find operator history profit snapshots: %w", err))
+		zap.L().Error("find operator history profit snapshots", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
