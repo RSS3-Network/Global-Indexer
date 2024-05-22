@@ -17,6 +17,21 @@ import (
 	"go.uber.org/zap"
 )
 
+func (n *NTA) GetNodeCountSnapshots(c echo.Context) error {
+	nodeSnapshots, err := n.databaseClient.FindNodeCountSnapshots(c.Request().Context())
+	if err != nil {
+		zap.L().Error("find Node snapshots", zap.Error(err))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	var response nta.Response
+
+	response.Data = nta.NewNodeCountSnapshots(nodeSnapshots)
+
+	return c.JSON(http.StatusOK, response)
+}
+
 func (n *NTA) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
 	var request nta.BatchNodeMinTokensToStakeRequest
 
@@ -79,22 +94,20 @@ func (n *NTA) GetNodeOperationProfitSnapshots(c echo.Context) error {
 	})
 }
 
-func (n *NTA) GetNodeCountSnapshots(c echo.Context) error {
-	nodeSnapshots, err := n.databaseClient.FindNodeCountSnapshots(c.Request().Context())
+func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
+	epochAPYSnapshots, err := n.databaseClient.FindEpochAPYSnapshots(c.Request().Context(), schema.EpochAPYSnapshotQuery{})
 	if err != nil {
-		zap.L().Error("find Node snapshots", zap.Error(err))
+		zap.L().Error("find epoch APY snapshots", zap.Error(err))
 
-		return c.NoContent(http.StatusInternalServerError)
+		return errorx.InternalError(c)
 	}
 
-	var response nta.Response
-
-	response.Data = nta.NewNodeCountSnapshots(nodeSnapshots)
-
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: epochAPYSnapshots,
+	})
 }
 
-func (n *NTA) findNodeOperationProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetNodeOperationProfitResponse) ([]*nta.NodeProfitChangeDetail, error) {
+func (n *NTA) FindNodeOperationProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetNodeOperationProfitResponse) ([]*nta.NodeProfitChangeDetail, error) {
 	if profit == nil {
 		return nil, nil
 	}
@@ -137,17 +150,4 @@ func (n *NTA) findNodeOperationProfitSnapshots(ctx context.Context, operator com
 	}
 
 	return data, nil
-}
-
-func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
-	epochAPYSnapshots, err := n.databaseClient.FindEpochAPYSnapshots(c.Request().Context(), schema.EpochAPYSnapshotQuery{})
-	if err != nil {
-		zap.L().Error("find epoch APY snapshots", zap.Error(err))
-
-		return errorx.InternalError(c)
-	}
-
-	return c.JSON(http.StatusOK, nta.Response{
-		Data: epochAPYSnapshots,
-	})
 }

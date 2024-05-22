@@ -1,25 +1,18 @@
 package nta
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
-	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
-	"github.com/rss3-network/global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
-func (n *NTA) GetOperatorProfit(c echo.Context) error {
+func (n *NTA) GetNodeOperationProfit(c echo.Context) error {
 	var request nta.GetNodeOperationProfitRequest
 
 	if err := c.Bind(&request); err != nil {
@@ -42,7 +35,7 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 		OperationPool: decimal.NewFromBigInt(node.OperationPoolTokens, 0),
 	}
 
-	changes, err := n.findOperatorHistoryProfitSnapshots(c.Request().Context(), request.NodeAddress, &data)
+	changes, err := n.FindNodeOperationProfitSnapshots(c.Request().Context(), request.NodeAddress, &data)
 	if err != nil {
 		zap.L().Error("find operator history profit snapshots", zap.Error(err))
 
@@ -54,49 +47,4 @@ func (n *NTA) GetOperatorProfit(c echo.Context) error {
 	return c.JSON(http.StatusOK, nta.Response{
 		Data: data,
 	})
-}
-
-func (n *NTA) findOperatorHistoryProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetNodeOperationProfitResponse) ([]*nta.NodeProfitChangeDetail, error) {
-	if profit == nil {
-		return nil, nil
-	}
-
-	now := time.Now()
-	query := schema.OperatorProfitSnapshotsQuery{
-		Operator: lo.ToPtr(operator),
-		Dates: []time.Time{
-			now.Add(-24 * time.Hour),      // 1 day
-			now.Add(-7 * 24 * time.Hour),  // 1 week
-			now.Add(-30 * 24 * time.Hour), // 1 month
-		},
-	}
-
-	snapshots, err := n.databaseClient.FindOperatorProfitSnapshots(ctx, query)
-	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-		return nil, fmt.Errorf("find operator profit snapshots: %w", err)
-	}
-
-	data := make([]*nta.NodeProfitChangeDetail, len(query.Dates))
-
-	for _, snapshot := range snapshots {
-		if snapshot.OperationPool.IsZero() {
-			continue
-		}
-
-		var index int
-
-		if snapshot.Date.After(query.Dates[2]) && snapshot.Date.Before(query.Dates[1]) {
-			index = 2
-		} else if snapshot.Date.After(query.Dates[1]) && snapshot.Date.Before(query.Dates[0]) {
-			index = 1
-		}
-
-		data[index] = &nta.NodeProfitChangeDetail{
-			Date:          snapshot.Date,
-			OperationPool: snapshot.OperationPool,
-			ProfitAndLoss: profit.OperationPool.Sub(snapshot.OperationPool).Div(snapshot.OperationPool),
-		}
-	}
-
-	return data, nil
 }
