@@ -8,8 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// FIXME: OperatorProfit -> NodeOperationProfit
-type OperatorProfitSnapshot struct {
+type NodeOperationProfit struct {
 	ID            uint64          `gorm:"column:id"`
 	Date          time.Time       `gorm:"column:date"`
 	EpochID       uint64          `gorm:"column:epoch_id"`
@@ -19,11 +18,12 @@ type OperatorProfitSnapshot struct {
 	UpdatedAt     time.Time       `gorm:"column:updated_at"`
 }
 
-func (s *OperatorProfitSnapshot) TableName() string {
+func (s *NodeOperationProfit) TableName() string {
+	// FIXME: rename table name
 	return "node.operator_profit_snapshots"
 }
 
-func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) error {
+func (s *NodeOperationProfit) Import(snapshot schema.OperatorProfitSnapshot) error {
 	s.Date = snapshot.Date
 	s.EpochID = snapshot.EpochID
 	s.Operator = snapshot.Operator
@@ -34,7 +34,7 @@ func (s *OperatorProfitSnapshot) Import(snapshot schema.OperatorProfitSnapshot) 
 	return nil
 }
 
-func (s *OperatorProfitSnapshot) Export() (*schema.OperatorProfitSnapshot, error) {
+func (s *NodeOperationProfit) Export() (*schema.OperatorProfitSnapshot, error) {
 	return &schema.OperatorProfitSnapshot{
 		ID:            s.ID,
 		Date:          s.Date,
@@ -46,11 +46,11 @@ func (s *OperatorProfitSnapshot) Export() (*schema.OperatorProfitSnapshot, error
 	}, nil
 }
 
-type OperatorProfitSnapshots []OperatorProfitSnapshot
+type OperatorProfitSnapshots []NodeOperationProfit
 
 func (s *OperatorProfitSnapshots) Import(snapshots []*schema.OperatorProfitSnapshot) error {
 	for _, snapshot := range snapshots {
-		var imported OperatorProfitSnapshot
+		var imported NodeOperationProfit
 
 		if err := imported.Import(*snapshot); err != nil {
 			return err

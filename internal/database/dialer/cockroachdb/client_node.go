@@ -563,7 +563,7 @@ func (c *client) SaveNodeMinTokensToStakeSnapshots(ctx context.Context, snapshot
 }
 
 func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error) {
-	databaseClient := c.database.WithContext(ctx).Table((*table.OperatorProfitSnapshot).TableName(nil))
+	databaseClient := c.database.WithContext(ctx).Table((*table.NodeOperationProfit).TableName(nil))
 
 	if query.Operator != nil {
 		databaseClient = databaseClient.Where("operator = ?", *query.Operator)
