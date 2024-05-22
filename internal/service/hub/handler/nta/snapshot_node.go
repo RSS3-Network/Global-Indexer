@@ -107,7 +107,7 @@ func (n *NTA) GetEpochsAPYSnapshots(c echo.Context) error {
 	})
 }
 
-func (n *NTA) FindNodeOperationProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetNodeOperationProfitResponse) ([]*nta.NodeProfitChangeDetail, error) {
+func (n *NTA) findNodeOperationProfitSnapshots(ctx context.Context, operator common.Address, profit *nta.GetNodeOperationProfitResponse) ([]*nta.NodeProfitChangeDetail, error) {
 	if profit == nil {
 		return nil, nil
 	}

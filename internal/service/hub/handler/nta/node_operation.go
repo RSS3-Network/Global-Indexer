@@ -35,7 +35,7 @@ func (n *NTA) GetNodeOperationProfit(c echo.Context) error {
 		OperationPool: decimal.NewFromBigInt(node.OperationPoolTokens, 0),
 	}
 
-	changes, err := n.FindNodeOperationProfitSnapshots(c.Request().Context(), request.NodeAddress, &data)
+	changes, err := n.findNodeOperationProfitSnapshots(c.Request().Context(), request.NodeAddress, &data)
 	if err != nil {
 		zap.L().Error("find operator history profit snapshots", zap.Error(err))
 
