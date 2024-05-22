@@ -47,10 +47,9 @@ func BadParamsError(c echo.Context, err error) error {
 	})
 }
 
-func InternalError(c echo.Context, err error) error {
+func InternalError(c echo.Context) error {
 	return c.JSON(http.StatusInternalServerError, &ErrorResponse{
 		ErrorCode: ErrorCodeInternalError,
 		Error:     "An internal error has occurred, please try again later.",
-		Details:   fmt.Sprintf("%v", err),
 	})
 }

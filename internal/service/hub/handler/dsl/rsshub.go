@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
+	"go.uber.org/zap"
 )
 
 func (d *DSL) GetRSSHub(c echo.Context) error {
@@ -14,7 +15,9 @@ func (d *DSL) GetRSSHub(c echo.Context) error {
 	data, err := d.distributor.DistributeRSSHubData(c.Request().Context(), path, query)
 
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("distribute rss hub data error", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSONBlob(http.StatusOK, data)

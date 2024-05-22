@@ -24,6 +24,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetNodes(c echo.Context) error {
@@ -47,7 +48,9 @@ func (n *NTA) GetNodes(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get Nodes: %w", err))
+		zap.L().Error("get Nodes failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	var cursor string
@@ -92,7 +95,9 @@ func (n *NTA) GetNode(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get Node: %w", err))
+		zap.L().Error("get Node failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
@@ -117,7 +122,9 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		return errorx.InternalError(c, fmt.Errorf("get Node avatar: %w", err))
+		zap.L().Error("get Node avatar failed", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.Blob(http.StatusOK, "image/svg+xml", avatar)

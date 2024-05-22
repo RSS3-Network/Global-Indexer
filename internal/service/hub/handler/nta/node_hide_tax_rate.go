@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
@@ -25,19 +25,23 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 
 	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String()))
 
-	if err := n.checkSignature(c.Request().Context(), request.NodeAddress, message, hexutil.MustDecode(request.Signature)); err != nil {
-		return errorx.BadRequestError(c, fmt.Errorf("check signature: %w", err))
+	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
 	}
 
 	// Cache the hide tax rate status
-	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.NodeAddress), true); err != nil {
-		return errorx.InternalError(c, fmt.Errorf("cache hide tax value: %w", err))
+	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.Address), true); err != nil {
+		zap.L().Error("cache hide tax value", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	// If the Node exists, update the hide tax rate status
-	if _, err := n.getNode(c.Request().Context(), request.NodeAddress); err == nil {
-		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.NodeAddress, true); err != nil {
-			return errorx.InternalError(c, fmt.Errorf("confirmation to hide tax rate: %w", err))
+	if _, err := n.getNode(c.Request().Context(), request.Address); err == nil {
+		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
+			zap.L().Error("update node hide tax rate", zap.Error(err))
+
+			return errorx.InternalError(c)
 		}
 	}
 

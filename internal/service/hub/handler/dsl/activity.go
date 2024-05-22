@@ -10,7 +10,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
-	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/protocol-go/schema"
+	"github.com/rss3-network/protocol-go/schema/tag"
+	"go.uber.org/zap"
 )
 
 func (d *DSL) GetActivity(c echo.Context) (err error) {
@@ -25,12 +27,14 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 	}
 
 	if err = defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.BadRequestError(c, err)
 	}
 
 	activity, err := d.distributor.DistributeActivityRequest(c.Request().Context(), request)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("distribute activity request error", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSONBlob(http.StatusOK, activity)
@@ -52,20 +56,24 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	}
 
 	if err = defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.InternalError(c)
 	}
 
 	// Resolve name to EVM address
 	if !validEvmAddress(request.Account) {
 		request.Account, err = d.nameService.Resolve(c.Request().Context(), request.Account)
 		if err != nil {
-			return errorx.InternalError(c, err)
+			zap.L().Error("name service resolve error", zap.Error(err), zap.String("account", request.Account))
+
+			return errorx.InternalError(c)
 		}
 	}
 
 	activities, err := d.distributor.DistributeActivitiesData(c.Request().Context(), request)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("distribute activities data error", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	return c.JSONBlob(http.StatusOK, activities)
@@ -86,14 +94,14 @@ func parseParams(params url.Values, tags []string) ([]string, error) {
 	types := make([]string, 0)
 
 	for _, typeX := range params["type"] {
-		for _, tag := range tags {
-			t, err := filter.TagString(tag)
+		for _, tagX := range tags {
+			t, err := tag.TagString(tagX)
 
 			if err != nil {
 				continue
 			}
 
-			value, err := filter.TypeString(t, typeX)
+			value, err := schema.ParseTypeFromString(t, typeX)
 
 			if err != nil {
 				continue

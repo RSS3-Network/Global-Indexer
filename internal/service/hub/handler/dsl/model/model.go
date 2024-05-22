@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/protocol-go/schema/filter"
+	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/metadata"
+	"github.com/rss3-network/protocol-go/schema/network"
+	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
 var (
@@ -24,7 +27,7 @@ var (
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
-		filter.PlatformFarcaster.String(): {},
+		worker.PlatformFarcaster.String(): {},
 	}
 )
 
@@ -116,12 +119,12 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 		return fmt.Errorf("unmarshal action: %w", err)
 	}
 
-	tag, err := filter.TagString(temp.Tag)
+	tagX, err := tag.TagString(temp.Tag)
 	if err != nil {
 		return fmt.Errorf("invalid action tag: %w", err)
 	}
 
-	typeX, err := filter.TypeString(tag, temp.Type)
+	typeX, err := schema.ParseTypeFromString(tagX, temp.Type)
 	if err != nil {
 		return fmt.Errorf("invalid action type: %w", err)
 	}
@@ -137,270 +140,266 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 }
 
 // WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
-// https://github.com/RSS3-Network/Node/blob/develop/deploy/config.yaml
-var WorkerToNetworksMap = map[filter.Name][]string{
-	filter.Fallback: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkVSL.String(),
-		filter.NetworkSatoshiVM.String(),
-		filter.Optimism.String(),
-		filter.NetworkPolygon.String(),
-		filter.NetworkArbitrum.String(),
-		filter.NetworkBase.String(),
-		filter.NetworkBinanceSmartChain.String(),
-		filter.NetworkGnosis.String(),
-		filter.NetworkLinea.String(),
+var WorkerToNetworksMap = map[worker.Worker][]string{
+	worker.Aave: {
+		network.Arbitrum.String(),
+		network.Avalanche.String(),
+		network.Base.String(),
+		network.Ethereum.String(),
+		network.Optimism.String(),
+		network.Polygon.String(),
 	},
-	filter.RSS3: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkVSL.String(),
+	worker.Aavegotchi: {
+		network.Polygon.String(),
 	},
-	filter.Lens: {
-		filter.NetworkPolygon.String(),
+	worker.Core: {
+		network.Arbitrum.String(),
+		network.Base.String(),
+		network.BinanceSmartChain.String(),
+		network.Ethereum.String(),
+		network.Farcaster.String(),
+		network.Gnosis.String(),
+		network.Linea.String(),
+		network.Optimism.String(),
+		network.Polygon.String(),
+		network.SatoshiVM.String(),
+		network.VSL.String(),
 	},
-	filter.OpenSea: {
-		filter.NetworkEthereum.String(),
+	worker.Crossbell: {
+		network.Crossbell.String(),
 	},
-	filter.Uniswap: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkSatoshiVM.String(),
-		filter.NetworkLinea.String(),
+	worker.Curve: {
+		network.Arbitrum.String(),
+		network.Avalanche.String(),
+		network.Ethereum.String(),
+		network.Gnosis.String(),
+		network.Optimism.String(),
+		network.Polygon.String(),
 	},
-	filter.Optimism: {
-		filter.NetworkEthereum.String(),
+	worker.ENS: {
+		network.Ethereum.String(),
 	},
-	filter.Aavegotchi: {
-		filter.NetworkPolygon.String(),
+	worker.Highlight: {
+		network.Arbitrum.String(),
+		network.Ethereum.String(),
+		network.Optimism.String(),
+		network.Polygon.String(),
 	},
-	filter.Highlight: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkArbitrum.String(),
-		filter.NetworkPolygon.String(),
-		filter.NetworkOptimism.String(),
+	worker.IQWiki: {
+		network.Polygon.String(),
 	},
-	filter.Crossbell: {
-		filter.NetworkCrossbell.String(),
+	worker.KiwiStand: {
+		network.Optimism.String(),
 	},
-	filter.Farcaster: {
-		filter.NetworkFarcaster.String(),
+	worker.Lens: {
+		network.Polygon.String(),
 	},
-	filter.Mirror: {
-		filter.NetworkArweave.String(),
+	worker.Lido: {
+		network.Ethereum.String(),
 	},
-	filter.Paragraph: {
-		filter.NetworkArweave.String(),
+	worker.Looksrare: {
+		network.Ethereum.String(),
 	},
-	filter.Looksrare: {
-		filter.NetworkEthereum.String(),
+	worker.Matters: {
+		network.Optimism.String(),
 	},
-	filter.Matters: {
-		filter.NetworkPolygon.String(),
+	worker.Mirror: {
+		network.Arweave.String(),
 	},
-	filter.Momoka: {
-		filter.NetworkArweave.String(),
+	worker.Momoka: {
+		network.Arweave.String(),
 	},
-	filter.Aave: {
-		filter.NetworkPolygon.String(),
-		filter.NetworkEthereum.String(),
-		filter.NetworkAvalanche.String(),
-		filter.NetworkBase.String(),
-		filter.NetworkOptimism.String(),
-		filter.NetworkArbitrum.String(),
+	worker.Oneinch: {
+		network.Ethereum.String(),
 	},
-	filter.IQWiki: {
-		filter.NetworkPolygon.String(),
+	worker.OpenSea: {
+		network.Ethereum.String(),
 	},
-	filter.Lido: {
-		filter.NetworkEthereum.String(),
+	worker.Optimism: {
+		network.Ethereum.String(),
 	},
-	filter.ENS: {
-		filter.NetworkEthereum.String(),
+	worker.Paragraph: {
+		network.Arweave.String(),
 	},
-	filter.Oneinch: {
-		filter.NetworkEthereum.String(),
+	worker.RSS3: {
+		network.Ethereum.String(),
+		network.VSL.String(),
 	},
-	filter.KiwiStand: {
-		filter.NetworkOptimism.String(),
+	worker.SAVM: {
+		network.SatoshiVM.String(),
 	},
-	filter.SAVM: {
-		filter.NetworkSatoshiVM.String(),
+	worker.Stargate: {
+		network.Arbitrum.String(),
+		network.Avalanche.String(),
+		network.Base.String(),
+		network.BinanceSmartChain.String(),
+		network.Ethereum.String(),
+		network.Linea.String(),
+		network.Optimism.String(),
+		network.Polygon.String(),
 	},
-	filter.VSL: {
-		filter.NetworkVSL.String(),
+	worker.Uniswap: {
+		network.Ethereum.String(),
+		network.Linea.String(),
+		network.SatoshiVM.String(),
 	},
-	filter.Stargate: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkArbitrum.String(),
-		filter.NetworkLinea.String(),
-		filter.NetworkBinanceSmartChain.String(),
-		filter.NetworkBase.String(),
-		filter.NetworkOptimism.String(),
-		filter.NetworkPolygon.String(),
-		filter.NetworkAvalanche.String(),
-	},
-	filter.Curve: {
-		filter.NetworkEthereum.String(),
-		filter.NetworkArbitrum.String(),
-		filter.NetworkAvalanche.String(),
-		filter.NetworkGnosis.String(),
-		filter.NetworkOptimism.String(),
-		filter.NetworkPolygon.String(),
+	worker.VSL: {
+		network.VSL.String(),
 	},
 }
 
 // NetworkToWorkersMap is a map of network to workers.
-var NetworkToWorkersMap = map[filter.Network][]string{
-	filter.NetworkEthereum: {
-		filter.Fallback.String(),
-		filter.RSS3.String(),
-		filter.OpenSea.String(),
-		filter.Uniswap.String(),
-		filter.Optimism.String(),
-		filter.Looksrare.String(),
-		filter.Highlight.String(),
-		filter.Aave.String(),
-		filter.Lido.String(),
-		filter.ENS.String(),
-		filter.Oneinch.String(),
-		filter.Stargate.String(),
-		filter.Curve.String(),
+var NetworkToWorkersMap = map[network.Network][]string{
+	network.Arbitrum: {
+		worker.Aave.String(),
+		worker.Core.String(),
+		worker.Curve.String(),
+		worker.Highlight.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkArweave: {
-		filter.Mirror.String(),
-		filter.Paragraph.String(),
-		filter.Momoka.String(),
+	network.Arweave: {
+		worker.Mirror.String(),
+		worker.Momoka.String(),
+		worker.Paragraph.String(),
 	},
-	filter.NetworkFarcaster: {
-		filter.Farcaster.String(),
+	network.Avalanche: {
+		worker.Aave.String(),
+		worker.Curve.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkPolygon: {
-		filter.Aavegotchi.String(),
-		filter.Lens.String(),
-		filter.Matters.String(),
-		filter.Aave.String(),
-		filter.IQWiki.String(),
-		filter.Fallback.String(),
-		filter.Highlight.String(),
-		filter.Stargate.String(),
-		filter.Curve.String(),
+	network.Base: {
+		worker.Aave.String(),
+		worker.Core.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkCrossbell: {
-		filter.Crossbell.String(),
+	network.BinanceSmartChain: {
+		worker.Core.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkAvalanche: {
-		filter.Aave.String(),
-		filter.Stargate.String(),
-		filter.Curve.String(),
+	network.Crossbell: {
+		worker.Crossbell.String(),
 	},
-	filter.NetworkBase: {
-		filter.Aave.String(),
-		filter.Fallback.String(),
-		filter.Stargate.String(),
+	network.Ethereum: {
+		worker.Aave.String(),
+		worker.Core.String(),
+		worker.Curve.String(),
+		worker.ENS.String(),
+		worker.Highlight.String(),
+		worker.Lido.String(),
+		worker.Looksrare.String(),
+		worker.Oneinch.String(),
+		worker.OpenSea.String(),
+		worker.Optimism.String(),
+		worker.RSS3.String(),
+		worker.Stargate.String(),
+		worker.Uniswap.String(),
 	},
-	filter.NetworkOptimism: {
-		filter.Aave.String(),
-		filter.Fallback.String(),
-		filter.Highlight.String(),
-		filter.KiwiStand.String(),
-		filter.Stargate.String(),
-		filter.Curve.String(),
+	network.Farcaster: {
+		worker.Core.String(),
 	},
-	filter.NetworkArbitrum: {
-		filter.Aave.String(),
-		filter.Fallback.String(),
-		filter.Highlight.String(),
-		filter.Stargate.String(),
-		filter.Curve.String(),
+	network.Gnosis: {
+		worker.Core.String(),
+		worker.Curve.String(),
 	},
-	filter.NetworkVSL: {
-		filter.Fallback.String(),
-		filter.RSS3.String(),
-		filter.VSL.String(),
+	network.Linea: {
+		worker.Core.String(),
+		worker.Uniswap.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkSatoshiVM: {
-		filter.Fallback.String(),
-		filter.Uniswap.String(),
-		filter.SAVM.String(),
+	network.Optimism: {
+		worker.Aave.String(),
+		worker.Core.String(),
+		worker.Curve.String(),
+		worker.Highlight.String(),
+		worker.KiwiStand.String(),
+		worker.Matters.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkBinanceSmartChain: {
-		filter.Fallback.String(),
-		filter.Stargate.String(),
+	network.Polygon: {
+		worker.Aave.String(),
+		worker.Aavegotchi.String(),
+		worker.Core.String(),
+		worker.Curve.String(),
+		worker.Highlight.String(),
+		worker.Lens.String(),
+		worker.IQWiki.String(),
+		worker.Stargate.String(),
 	},
-	filter.NetworkGnosis: {
-		filter.Fallback.String(),
-		filter.Curve.String(),
+	network.SatoshiVM: {
+		worker.Core.String(),
+		worker.Uniswap.String(),
+		worker.SAVM.String(),
 	},
-	filter.NetworkLinea: {
-		filter.Fallback.String(),
-		filter.Uniswap.String(),
-		filter.Stargate.String(),
+	network.VSL: {
+		worker.Core.String(),
+		worker.RSS3.String(),
+		worker.VSL.String(),
 	},
 }
 
-// PlatformToWorkerMap is a map of platform to worker.
-var PlatformToWorkerMap = map[filter.Platform]string{
-	filter.PlatformRSS3:       filter.RSS3.String(),
-	filter.PlatformMirror:     filter.Mirror.String(),
-	filter.PlatformFarcaster:  filter.Farcaster.String(),
-	filter.PlatformParagraph:  filter.Paragraph.String(),
-	filter.PlatformOpenSea:    filter.OpenSea.String(),
-	filter.PlatformUniswap:    filter.Uniswap.String(),
-	filter.PlatformOptimism:   filter.Optimism.String(),
-	filter.PlatformAavegotchi: filter.Aavegotchi.String(),
-	filter.PlatformLens:       filter.Lens.String(),
-	filter.PlatformLooksRare:  filter.Looksrare.String(),
-	filter.PlatformMatters:    filter.Matters.String(),
-	filter.PlatformMomoka:     filter.Momoka.String(),
-	filter.PlatformHighlight:  filter.Highlight.String(),
-	filter.PlatformAAVE:       filter.Aave.String(),
-	filter.PlatformIQWiki:     filter.IQWiki.String(),
-	filter.PlatformLido:       filter.Lido.String(),
-	filter.PlatformCrossbell:  filter.Crossbell.String(),
-	filter.PlatformENS:        filter.ENS.String(),
-	filter.Platform1inch:      filter.Oneinch.String(),
-	filter.PlatformKiwiStand:  filter.KiwiStand.String(),
-	filter.PlatformSAVM:       filter.SAVM.String(),
-	filter.PlatformVSL:        filter.VSL.String(),
-	filter.PlatformStargate:   filter.Stargate.String(),
-	filter.PlatformCurve:      filter.Curve.String(),
+// PlatformToWorkersMap is a map of platform to workers.
+var PlatformToWorkersMap = map[worker.Platform][]string{
+	worker.Platform1Inch:      {worker.Oneinch.String()},
+	worker.PlatformAAVE:       {worker.Aave.String()},
+	worker.PlatformAavegotchi: {worker.Aavegotchi.String()},
+	worker.PlatformCrossbell:  {worker.Crossbell.String()},
+	worker.PlatformCurve:      {worker.Curve.String()},
+	worker.PlatformENS:        {worker.ENS.String()},
+	worker.PlatformFarcaster:  {worker.Core.String()},
+	worker.PlatformHighlight:  {worker.Highlight.String()},
+	worker.PlatformIQWiki:     {worker.IQWiki.String()},
+	worker.PlatformKiwiStand:  {worker.KiwiStand.String()},
+	worker.PlatformLens:       {worker.Lens.String(), worker.Momoka.String()},
+	worker.PlatformLido:       {worker.Lido.String()},
+	worker.PlatformLooksRare:  {worker.Looksrare.String()},
+	worker.PlatformMatters:    {worker.Matters.String()},
+	worker.PlatformMirror:     {worker.Mirror.String()},
+	worker.PlatformOpenSea:    {worker.OpenSea.String()},
+	worker.PlatformOptimism:   {worker.Optimism.String()},
+	worker.PlatformParagraph:  {worker.Paragraph.String()},
+	worker.PlatformRSS3:       {worker.RSS3.String()},
+	worker.PlatformSAVM:       {worker.SAVM.String()},
+	worker.PlatformStargate:   {worker.Stargate.String()},
+	worker.PlatformUniswap:    {worker.Uniswap.String()},
+	worker.PlatformVSL:        {worker.VSL.String()},
 }
 
 // TagToWorkersMap is a map of tag to workers.
-var TagToWorkersMap = map[filter.Tag][]string{
-	filter.TagTransaction: {
-		filter.Optimism.String(),
-		filter.SAVM.String(),
-		filter.VSL.String(),
-		filter.Stargate.String(),
+var TagToWorkersMap = map[tag.Tag][]string{
+	tag.Collectible: {
+		worker.ENS.String(),
+		worker.Highlight.String(),
+		worker.KiwiStand.String(),
+		worker.Lido.String(),
+		worker.Looksrare.String(),
+		worker.OpenSea.String(),
 	},
-	filter.TagCollectible: {
-		filter.OpenSea.String(),
-		filter.ENS.String(),
-		filter.Highlight.String(),
-		filter.Lido.String(),
-		filter.Looksrare.String(),
-		filter.KiwiStand.String(),
+	tag.Exchange: {
+		worker.Aave.String(),
+		worker.Curve.String(),
+		worker.Lido.String(),
+		worker.Oneinch.String(),
+		worker.RSS3.String(),
+		worker.Uniswap.String(),
 	},
-	filter.TagExchange: {
-		filter.RSS3.String(),
-		filter.Uniswap.String(),
-		filter.Aave.String(),
-		filter.Lido.String(),
-		filter.Oneinch.String(),
-		filter.Curve.String(),
+	tag.Metaverse: {
+		worker.Aavegotchi.String(),
 	},
-	filter.TagSocial: {
-		filter.Farcaster.String(),
-		filter.Mirror.String(),
-		filter.Lens.String(),
-		filter.Paragraph.String(),
-		filter.Crossbell.String(),
-		filter.ENS.String(),
-		filter.IQWiki.String(),
-		filter.Matters.String(),
-		filter.Momoka.String(),
+	tag.Social: {
+		worker.Core.String(), // farcaster core
+		worker.Crossbell.String(),
+		worker.ENS.String(),
+		worker.IQWiki.String(),
+		worker.Lens.String(),
+		worker.Matters.String(),
+		worker.Mirror.String(),
+		worker.Momoka.String(),
+		worker.Paragraph.String(),
 	},
-	filter.TagMetaverse: {
-		filter.Aavegotchi.String(),
+	tag.Transaction: {
+		worker.Optimism.String(),
+		worker.SAVM.String(),
+		worker.Stargate.String(),
+		worker.VSL.String(),
 	},
 }

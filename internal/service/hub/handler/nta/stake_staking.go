@@ -18,6 +18,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetStakeStakings(c echo.Context) error {
@@ -31,7 +32,7 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	}
 
 	if err := defaults.Set(&request); err != nil {
-		return errorx.InternalError(c, err)
+		return errorx.BadRequestError(c, err)
 	}
 
 	stakeStakingsQuery := schema.StakeStakingsQuery{
@@ -72,13 +73,17 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	// Find all stake chips
 	data, err := n.findChipsByOwner(c.Request().Context(), request.StakerAddress)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("find chips by owner", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	// Find history profit snapshots
 	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.StakerAddress, data)
 	if err != nil {
-		return errorx.InternalError(c, err)
+		zap.L().Error("find staker history profit snapshots", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
