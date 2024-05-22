@@ -64,7 +64,7 @@ func (n *NTA) GetEndpointConfig(c echo.Context) error {
 		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/networks/get_endpoint_config", endpoint))
+	return n.fetchResponse(c, fmt.Sprintf("%s/networks/endpoint_config", endpoint))
 }
 
 // bindAndValidateRequest binds and validates the request.
