@@ -13,8 +13,8 @@ type StakerProfitSnapshot struct {
 	Date            time.Time       `gorm:"column:date"`
 	EpochID         uint64          `gorm:"column:epoch_id"`
 	OwnerAddress    common.Address  `gorm:"column:owner_address"`
-	TotalChipAmount decimal.Decimal `gorm:"column:total_chip_amount"`
-	TotalChipValue  decimal.Decimal `gorm:"column:total_chip_value"`
+	TotalChipAmount decimal.Decimal `gorm:"column:total_chip_amounts"` // Fixme: total_chip_amounts-> total_chip_amount
+	TotalChipValue  decimal.Decimal `gorm:"column:total_chip_values"`  // Fixme: total_chip_values-> total_chip_value
 	CreatedAt       time.Time       `gorm:"column:created_at"`
 	UpdatedAt       time.Time       `gorm:"column:updated_at"`
 }
