@@ -8,11 +8,12 @@ import (
 )
 
 type StakerProfitSnapshot struct {
-	Date            time.Time       `json:"date"`
-	EpochID         uint64          `json:"epoch_id"`
-	OwnerAddress    common.Address  `json:"owner_address"`
-	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
-	TotalChipValue  decimal.Decimal `json:"total_chip_value"`
+	Date         time.Time      `json:"date"`
+	EpochID      uint64         `json:"epoch_id"`
+	OwnerAddress common.Address `json:"owner_address"`
+	// FIXME: rename to TotalChipAmount, TotalChipValue
+	TotalChipAmount decimal.Decimal `json:"total_chip_amounts"`
+	TotalChipValue  decimal.Decimal `json:"total_chip_values"`
 	ID              uint64          `json:"-"`
 	CreatedAt       time.Time       `json:"-"`
 	UpdatedAt       time.Time       `json:"-"`
