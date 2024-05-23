@@ -58,7 +58,7 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 	}
 
 	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	message := fmt.Sprintf(registrationMessage, strings.ToLower(request.Address.String()))
 	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
 		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
 	}
@@ -108,7 +108,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	}
 
 	// Check signature.
-	message := fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String()))
+	message := fmt.Sprintf(registrationMessage, strings.ToLower(request.Address.String()))
 	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
 		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
 	}

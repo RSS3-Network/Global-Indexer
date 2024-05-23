@@ -9,14 +9,14 @@ import (
 )
 
 type StakerProfitSnapshot struct {
-	ID               uint64          `gorm:"column:id"`
-	Date             time.Time       `gorm:"column:date"`
-	EpochID          uint64          `gorm:"column:epoch_id"`
-	OwnerAddress     common.Address  `gorm:"column:owner_address"`
-	TotalChipAmounts decimal.Decimal `gorm:"column:total_chip_amounts"`
-	TotalChipValues  decimal.Decimal `gorm:"column:total_chip_values"`
-	CreatedAt        time.Time       `gorm:"column:created_at"`
-	UpdatedAt        time.Time       `gorm:"column:updated_at"`
+	ID              uint64          `gorm:"column:id"`
+	Date            time.Time       `gorm:"column:date"`
+	EpochID         uint64          `gorm:"column:epoch_id"`
+	OwnerAddress    common.Address  `gorm:"column:owner_address"`
+	TotalChipAmount decimal.Decimal `gorm:"column:total_chip_amounts"` // Fixme: total_chip_amounts-> total_chip_amount
+	TotalChipValue  decimal.Decimal `gorm:"column:total_chip_values"`  // Fixme: total_chip_values-> total_chip_value
+	CreatedAt       time.Time       `gorm:"column:created_at"`
+	UpdatedAt       time.Time       `gorm:"column:updated_at"`
 }
 
 func (s *StakerProfitSnapshot) TableName() string {
@@ -27,8 +27,8 @@ func (s *StakerProfitSnapshot) Import(snapshot schema.StakerProfitSnapshot) erro
 	s.Date = snapshot.Date
 	s.EpochID = snapshot.EpochID
 	s.OwnerAddress = snapshot.OwnerAddress
-	s.TotalChipAmounts = snapshot.TotalChipAmounts
-	s.TotalChipValues = snapshot.TotalChipValues
+	s.TotalChipAmount = snapshot.TotalChipAmount
+	s.TotalChipValue = snapshot.TotalChipValue
 	s.CreatedAt = snapshot.CreatedAt
 	s.UpdatedAt = snapshot.UpdatedAt
 
@@ -37,14 +37,14 @@ func (s *StakerProfitSnapshot) Import(snapshot schema.StakerProfitSnapshot) erro
 
 func (s *StakerProfitSnapshot) Export() (*schema.StakerProfitSnapshot, error) {
 	return &schema.StakerProfitSnapshot{
-		ID:               s.ID,
-		Date:             s.Date,
-		EpochID:          s.EpochID,
-		OwnerAddress:     s.OwnerAddress,
-		TotalChipAmounts: s.TotalChipAmounts,
-		TotalChipValues:  s.TotalChipValues,
-		CreatedAt:        s.CreatedAt,
-		UpdatedAt:        s.UpdatedAt,
+		ID:              s.ID,
+		Date:            s.Date,
+		EpochID:         s.EpochID,
+		OwnerAddress:    s.OwnerAddress,
+		TotalChipAmount: s.TotalChipAmount,
+		TotalChipValue:  s.TotalChipValue,
+		CreatedAt:       s.CreatedAt,
+		UpdatedAt:       s.UpdatedAt,
 	}, nil
 }
 

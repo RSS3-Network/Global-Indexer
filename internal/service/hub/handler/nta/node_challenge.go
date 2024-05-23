@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	registerMessage    = "I, %s, am signing this message for registering my intention to operate an RSS3 Node."
-	hideTaxRateMessage = "I, %s, am signing this message for registering my intention to hide the tax rate on Explorer for my RSS3 Node."
+	registrationMessage = "I, %s, am signing this message for registering my intention to operate an RSS3 Node."
+	hideTaxRateMessage  = "I, %s, am signing this message for registering my intention to hide the tax rate on Explorer for my RSS3 Node."
 )
 
 func (n *NTA) GetNodeChallenge(c echo.Context) error {
@@ -30,9 +30,9 @@ func (n *NTA) GetNodeChallenge(c echo.Context) error {
 
 	switch request.Type {
 	case "":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(registerMessage, strings.ToLower(request.Address.String())))
+		data = nta.NodeChallengeResponseData(fmt.Sprintf(registrationMessage, strings.ToLower(request.NodeAddress.String())))
 	case "hideTaxRate":
-		data = nta.NodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String())))
+		data = nta.NodeChallengeResponseData(fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String())))
 	default:
 		return errorx.BadRequestError(c, fmt.Errorf("invalid challenge type: %s", request.Type))
 	}

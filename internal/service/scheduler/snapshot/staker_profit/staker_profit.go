@@ -154,7 +154,7 @@ func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnaps
 					return fmt.Errorf("build staker profit snapshots: %w", err)
 				}
 
-				if data.TotalChipValues.IsZero() {
+				if data.TotalChipValue.IsZero() {
 					continue
 				}
 
@@ -222,7 +222,7 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 				chip.Value = decimal.NewFromBigInt(minTokensToStake, 0)
 
 				mutex.Lock()
-				profit.TotalChipValues = profit.TotalChipValues.Add(chip.Value)
+				profit.TotalChipValue = profit.TotalChipValue.Add(chip.Value)
 				mutex.Unlock()
 
 				return nil
@@ -233,7 +233,7 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 			return nil, fmt.Errorf("parallel processing the chips: %w", err)
 		}
 
-		profit.TotalChipAmounts = profit.TotalChipAmounts.Add(decimal.NewFromInt(int64(len(chips))))
+		profit.TotalChipAmount = profit.TotalChipAmount.Add(decimal.NewFromInt(int64(len(chips))))
 
 		chipsCursor = chips[len(chips)-1].ID
 	}

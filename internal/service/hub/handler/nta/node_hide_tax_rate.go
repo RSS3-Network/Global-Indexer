@@ -23,22 +23,22 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
-	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.Address.String()))
+	message := fmt.Sprintf(hideTaxRateMessage, strings.ToLower(request.NodeAddress.String()))
 
-	if err := n.checkSignature(c.Request().Context(), request.Address, message, request.Signature); err != nil {
+	if err := n.checkSignature(c.Request().Context(), request.NodeAddress, message, request.Signature); err != nil {
 		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
 	}
 
 	// Cache the hide tax rate status
-	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.Address), true); err != nil {
+	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.NodeAddress), true); err != nil {
 		zap.L().Error("cache hide tax value", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}
 
 	// If the Node exists, update the hide tax rate status
-	if _, err := n.getNode(c.Request().Context(), request.Address); err == nil {
-		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.Address, true); err != nil {
+	if _, err := n.getNode(c.Request().Context(), request.NodeAddress); err == nil {
+		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.NodeAddress, true); err != nil {
 			zap.L().Error("update node hide tax rate", zap.Error(err))
 
 			return errorx.InternalError(c)

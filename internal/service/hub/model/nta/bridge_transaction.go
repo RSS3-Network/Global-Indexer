@@ -16,7 +16,7 @@ type GetBridgeTransactionsRequest struct {
 }
 
 type GetBridgeTransactionRequest struct {
-	ID *common.Hash `param:"id"`
+	TransactionHash *common.Hash `param:"transaction_hash"`
 }
 
 type GetBridgeTransactionsResponseData []*BridgeTransaction

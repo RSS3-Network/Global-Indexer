@@ -144,7 +144,7 @@ func (n *NTA) GetStakeTransaction(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	stakeTransactionQuery := schema.StakeTransactionQuery{
-		ID:   request.ID,
+		ID:   request.TransactionHash,
 		Type: request.Type,
 	}
 

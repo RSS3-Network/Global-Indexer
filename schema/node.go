@@ -14,27 +14,27 @@ type Node struct {
 	Address                common.Address         `json:"address"`
 	Name                   string                 `json:"name"`
 	Description            string                 `json:"description"`
-	TaxRateBasisPoints     *uint64                `json:"taxRateBasisPoints"`
+	TaxRateBasisPoints     *uint64                `json:"tax_rate_basis_points"`
 	HideTaxRate            bool                   `json:"-"`
-	IsPublicGood           bool                   `json:"isPublicGood"`
-	OperationPoolTokens    string                 `json:"operationPoolTokens"`
-	StakingPoolTokens      string                 `json:"stakingPoolTokens"`
-	TotalShares            string                 `json:"totalShares"`
-	SlashedTokens          string                 `json:"slashedTokens"`
+	IsPublicGood           bool                   `json:"is_public_good"`
+	OperationPoolTokens    string                 `json:"operation_pool_tokens"`
+	StakingPoolTokens      string                 `json:"staking_pool_tokens"`
+	TotalShares            string                 `json:"total_shares"`
+	SlashedTokens          string                 `json:"slashed_tokens"`
 	Alpha                  bool                   `json:"alpha"`
 	Endpoint               string                 `json:"-"`
 	Stream                 json.RawMessage        `json:"-"`
 	Config                 json.RawMessage        `json:"-"`
 	Status                 NodeStatus             `json:"status"`
-	LastHeartbeatTimestamp int64                  `json:"lastHeartbeat"`
+	LastHeartbeatTimestamp int64                  `json:"last_heartbeat"`
 	Location               []*NodeLocation        `json:"location"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
-	MinTokensToStake       decimal.Decimal        `json:"minTokensToStake"`
+	MinTokensToStake       decimal.Decimal        `json:"min_tokens_to_stake"`
 	APY                    decimal.Decimal        `json:"apy"`
-	ActiveScore            decimal.Decimal        `json:"activeScore"`
-	ReliabilityScore       decimal.Decimal        `json:"reliabilityScore"`
+	ActiveScore            decimal.Decimal        `json:"active_score"`
+	ReliabilityScore       decimal.Decimal        `json:"reliability_score"`
 	Type                   string                 `json:"type"`
-	CreatedAt              int64                  `json:"createdAt"`
+	CreatedAt              int64                  `json:"created_at"`
 }
 
 type NodeLocation struct {

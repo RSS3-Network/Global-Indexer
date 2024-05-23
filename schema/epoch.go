@@ -11,35 +11,35 @@ import (
 type Epoch struct {
 	ID uint64 `json:"id"`
 	// StartTimestamp when an Epoch begins.
-	StartTimestamp int64 `json:"startTimestamp"`
+	StartTimestamp int64 `json:"start_timestamp"`
 	// EndTimestamp when an Epoch ends.
-	EndTimestamp     int64       `json:"endTimestamp"`
-	TransactionHash  common.Hash `json:"transactionHash"`
-	TransactionIndex uint        `json:"transactionIndex"`
-	BlockHash        common.Hash `json:"blockHash"`
-	BlockNumber      *big.Int    `json:"blockNumber"`
-	BlockTimestamp   int64       `json:"blockTimestamp"`
+	EndTimestamp     int64       `json:"end_timestamp"`
+	TransactionHash  common.Hash `json:"transaction_hash"`
+	TransactionIndex uint        `json:"transaction_index"`
+	BlockHash        common.Hash `json:"block_hash"`
+	BlockNumber      *big.Int    `json:"block_number"`
+	BlockTimestamp   int64       `json:"block_timestamp"`
 	// total Operation Rewards distributed.
-	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
+	TotalOperationRewards decimal.Decimal `json:"total_operation_rewards"`
 	// total Staking Rewards distributed.
-	TotalStakingRewards decimal.Decimal `json:"totalStakingRewards"`
+	TotalStakingRewards decimal.Decimal `json:"total_staking_rewards"`
 	// the number of Nodes that received rewards.
-	TotalRewardedNodes int `json:"totalRewardedNodes"`
+	TotalRewardedNodes int `json:"total_rewarded_nodes"`
 	// the list of Nodes that received rewards and the amount they received.
-	RewardedNodes []*RewardedNode `json:"rewardedNodes,omitempty"`
+	RewardedNodes []*RewardedNode `json:"rewarded_nodes,omitempty"`
 	// the total number of DSL requests made during the Epoch.
-	TotalRequestCounts decimal.Decimal `json:"totalRequestCounts"`
+	TotalRequestCounts decimal.Decimal `json:"total_request_counts"`
 	CreatedAt          int64           `json:"-"`
 	UpdatedAt          int64           `json:"-"`
 }
 
 type RewardedNode struct {
-	EpochID          uint64          `json:"epochID"`
+	EpochID          uint64          `json:"epoch_id"`
 	Index            int             `json:"index"`
-	TransactionHash  common.Hash     `json:"transactionHash"`
-	NodeAddress      common.Address  `json:"nodeAddress"`
-	OperationRewards decimal.Decimal `json:"operationRewards"`
-	StakingRewards   decimal.Decimal `json:"stakingRewards"`
-	TaxCollected     decimal.Decimal `json:"taxCollected"`
-	RequestCount     decimal.Decimal `json:"requestCount"`
+	TransactionHash  common.Hash     `json:"transaction_hash"`
+	NodeAddress      common.Address  `json:"node_address"`
+	OperationRewards decimal.Decimal `json:"operation_rewards"`
+	StakingRewards   decimal.Decimal `json:"staking_rewards"`
+	TaxCollected     decimal.Decimal `json:"tax_collected"`
+	RequestCount     decimal.Decimal `json:"request_count"`
 }

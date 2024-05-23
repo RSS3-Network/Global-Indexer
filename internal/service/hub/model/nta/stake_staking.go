@@ -11,32 +11,32 @@ import (
 )
 
 type GetStakeStakingsRequest struct {
-	Cursor *string         `query:"cursor"`
-	Staker *common.Address `query:"staker"`
-	Node   *common.Address `query:"node"`
-	Limit  int             `query:"limit" default:"10" min:"1" max:"20"`
+	Cursor        *string         `query:"cursor"`
+	StakerAddress *common.Address `query:"staker_address"`
+	NodeAddress   *common.Address `query:"node_address"`
+	Limit         int             `query:"limit" default:"10" min:"1" max:"20"`
 }
 
 type GetStakeOwnerProfitRequest struct {
-	Owner common.Address `param:"owner" validate:"required"`
+	StakerAddress common.Address `param:"staker_address" validate:"required"`
 }
 
 type GetStakeStakingsResponseData []*StakeStaking
 
 type GetStakeOwnerProfitResponseData struct {
-	Owner            common.Address                               `json:"owner"`
-	TotalChipAmounts decimal.Decimal                              `json:"totalChipAmounts"`
-	TotalChipValues  decimal.Decimal                              `json:"totalChipValues"`
-	OneDay           *GetStakeOwnerProfitChangesSinceResponseData `json:"oneDay"`
-	OneWeek          *GetStakeOwnerProfitChangesSinceResponseData `json:"oneWeek"`
-	OneMonth         *GetStakeOwnerProfitChangesSinceResponseData `json:"oneMonth"`
+	Owner           common.Address                               `json:"owner"`
+	TotalChipAmount decimal.Decimal                              `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal                              `json:"total_chip_value"`
+	OneDay          *GetStakeOwnerProfitChangesSinceResponseData `json:"one_day"`
+	OneWeek         *GetStakeOwnerProfitChangesSinceResponseData `json:"one_week"`
+	OneMonth        *GetStakeOwnerProfitChangesSinceResponseData `json:"one_month"`
 }
 
 type GetStakeOwnerProfitChangesSinceResponseData struct {
-	Date             time.Time       `json:"date"`
-	TotalChipAmounts decimal.Decimal `json:"totalChipAmounts"`
-	TotalChipValues  decimal.Decimal `json:"totalChipValues"`
-	PNL              decimal.Decimal `json:"pnl"`
+	Date            time.Time       `json:"date"`
+	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal `json:"total_chip_value"`
+	ProfitAndLoss   decimal.Decimal `json:"profit_and_loss"`
 }
 
 type StakeStaking struct {
