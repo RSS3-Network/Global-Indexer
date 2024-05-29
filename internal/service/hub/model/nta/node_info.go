@@ -9,7 +9,7 @@ import (
 )
 
 type NodeRequest struct {
-	Address common.Address `param:"id" validate:"required"`
+	Address common.Address `param:"node_address" validate:"required"`
 }
 
 type BatchNodeRequest struct {
