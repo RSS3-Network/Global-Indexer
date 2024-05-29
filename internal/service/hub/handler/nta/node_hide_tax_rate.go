@@ -36,8 +36,8 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 		return errorx.InternalError(c)
 	}
 
-	// If the Node exists, update the hide tax rate status
-	if _, err := n.getNode(c.Request().Context(), request.NodeAddress); err == nil {
+	// If the Node exists and is not a public good Node, update the hide tax rate status
+	if node, err := n.getNode(c.Request().Context(), request.NodeAddress); err == nil && !node.IsPublicGood {
 		if err := n.databaseClient.UpdateNodesHideTaxRate(c.Request().Context(), request.NodeAddress, true); err != nil {
 			zap.L().Error("update node hide tax rate", zap.Error(err))
 

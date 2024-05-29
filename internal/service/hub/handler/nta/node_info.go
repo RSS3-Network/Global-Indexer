@@ -152,6 +152,15 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		reliabilityScore = decimal.NewFromFloat(nodeStat.Score)
 	}
 
+	if nodeInfo.PublicGood {
+		publicPool, err := n.stakingContract.GetPublicPool(&bind.CallOpts{})
+		if err != nil {
+			return nil, fmt.Errorf("get Public Pool from chain: %w", err)
+		}
+
+		nodeInfo.TaxRateBasisPoints = publicPool.TaxRateBasisPoints
+	}
+
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
 	node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
