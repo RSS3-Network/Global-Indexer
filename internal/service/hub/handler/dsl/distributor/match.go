@@ -146,7 +146,10 @@ func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []strin
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchNetwork(ctx context.Context, networks []string) ([]common.Address, error) {
 	// Find all indexers that match the networks.
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, nil)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Networks: networks,
+		IsActive: lo.ToPtr(true),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +220,10 @@ type WorkerNetworksMap struct {
 // matchWorker matches nodes based on the given worker names,
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, nil, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Names:    workers,
+		IsActive: lo.ToPtr(true),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +282,11 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 
 // matchWorkerAndNetwork matches nodes based on both worker and network.
 func (d *Distributor) matchWorkerAndNetwork(ctx context.Context, workers, networks []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Names:    workers,
+		Networks: networks,
+		IsActive: lo.ToPtr(true),
+	})
 
 	if err != nil {
 		return nil, err

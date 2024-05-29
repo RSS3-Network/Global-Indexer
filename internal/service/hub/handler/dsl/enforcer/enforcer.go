@@ -203,7 +203,11 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 	}
 
 	workers := model.PlatformToWorkersMap[pid]
-	indexers, err := e.databaseClient.FindNodeWorkers(ctx, nil, []string{activity.Network}, workers)
+
+	indexers, err := e.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Networks: []string{activity.Network},
+		Names:    workers,
+	})
 
 	if err != nil {
 		return nil, err
@@ -323,37 +327,26 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 		return err
 	}
 
-	var lastStatEpoch int64
+	stats, err := e.getAllNodeStats(ctx)
+	if err != nil {
+		return err
+	}
 
-	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
+	if len(stats) == 0 {
+		return nil
+	}
 
-	// Traverse the entire node and update its score.
-	for {
-		stats, err := e.databaseClient.FindNodeStats(ctx, query)
-		if err != nil {
-			return err
-		}
+	isNewEpoch := stats[0].Epoch != currentEpoch
 
-		// If there are no stats, exit the loop.
-		if len(stats) == 0 {
-			break
-		}
-
-		// A nil cursor indicates that the stats represent the initial batch of data.
-		if query.Cursor == nil {
-			lastStatEpoch = stats[0].Epoch
-		}
-
-		if err = e.processNodeStats(ctx, stats, currentEpoch); err != nil {
-			return err
-		}
-
-		query.Cursor = lo.ToPtr(stats[len(stats)-1].Address.String())
+	// Update the stats of the Nodes.
+	if err = e.processNodeStats(ctx, stats, currentEpoch, isNewEpoch); err != nil {
+		return err
 	}
 
 	// If the epoch of the current stat differs from that of the first stat,
 	// it indicates an epoch change, necessitating a notification to the score queue.
-	if currentEpoch != lastStatEpoch {
+	if isNewEpoch {
+		// Update the node cache for the latest epoch.
 		if err = e.updateNodeCache(ctx, currentEpoch); err != nil {
 			return err
 		}
@@ -460,7 +453,7 @@ func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, nodeType strin
 	return newScoreMaintainer(ctx, nodeType, nodes, e.cacheClient)
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initScoreMaintainer bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initScoreMaintainer, initWorkerMap bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
@@ -474,6 +467,12 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 		}
 
 		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
+	}
+
+	if initWorkerMap {
+		if err := enforcer.initWorkerMap(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	return enforcer, nil

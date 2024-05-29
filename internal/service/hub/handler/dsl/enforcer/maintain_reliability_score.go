@@ -60,15 +60,39 @@ func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	return 0, nil
 }
 
-func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, currentEpoch int64) error {
-	if err := e.updateNodeStats(ctx, stats, currentEpoch); err != nil {
+func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context) ([]*schema.Stat, error) {
+	stats := make([]*schema.Stat, 0)
+
+	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
+
+	// Traverse the entire node.
+	for {
+		tempStats, err := e.databaseClient.FindNodeStats(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		// If there are no stats, exit the loop.
+		if len(tempStats) == 0 {
+			break
+		}
+
+		stats = append(stats, tempStats...)
+		query.Cursor = lo.ToPtr(tempStats[len(tempStats)-1].Address.String())
+	}
+
+	return stats, nil
+}
+
+func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, currentEpoch int64, isNewEpoch bool) error {
+	if err := e.updateNodeStats(ctx, stats, currentEpoch, isNewEpoch); err != nil {
 		return err
 	}
 
 	return e.databaseClient.SaveNodeStats(ctx, stats)
 }
 
-func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64) error {
+func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64, isNewEpoch bool) error {
 	// Retrieve all Node addresses.
 	nodeAddresses := extractNodeAddresses(stats)
 
@@ -98,7 +122,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 
 	nodes = sortNodes(nodeAddresses, nodes)
 
-	return updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch)
+	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch, isNewEpoch)
 }
 
 func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]l2.DataTypesNode, error) {
@@ -125,14 +149,21 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64) error {
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64, isNewEpoch bool) error {
+	// If it is a new epoch, then maintain the Node worker.
+	if isNewEpoch {
+		if err := e.maintainNodeWorker(ctx, epoch, stats); err != nil {
+			return err
+		}
+	}
+
 	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i, stat := range stats {
 		i := i
 		stat := stat
 
-		statsPool.Go(func(_ context.Context) error {
+		statsPool.Go(func(ctx context.Context) error {
 			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 		})
 	}
