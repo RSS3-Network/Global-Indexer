@@ -94,7 +94,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
-		ID: request.ID,
+		ID: request.ChipID,
 	}
 
 	stakeChip, err := n.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)
@@ -119,6 +119,7 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// TODO: add redis cache
 func (n *NTA) GetStakeChipImage(c echo.Context) error {
 	var request nta.GetStakeChipsImageRequest
 	if err := c.Bind(&request); err != nil {
@@ -134,7 +135,7 @@ func (n *NTA) GetStakeChipImage(c echo.Context) error {
 	}
 
 	stakeChipQuery := schema.StakeChipQuery{
-		ID: request.ID,
+		ID: request.ChipID,
 	}
 
 	chip, err := n.databaseClient.FindStakeChip(c.Request().Context(), stakeChipQuery)

@@ -9,24 +9,24 @@ import (
 )
 
 type BatchNodeMinTokensToStakeRequest struct {
-	NodeAddresses   []*common.Address `json:"nodeAddresses" validate:"required"`
-	OnlyStartAndEnd bool              `json:"onlyStartAndEnd"`
+	NodeAddresses   []*common.Address `json:"node_addresses" validate:"required"`
+	OnlyStartAndEnd bool              `json:"only_start_and_end"`
 }
 
 type GetStakerProfitSnapshotsRequest struct {
-	OwnerAddress common.Address `query:"ownerAddress" validate:"required"`
-	Limit        *int           `query:"limit"`
-	Cursor       *string        `query:"cursor"`
-	BeforeDate   *time.Time     `query:"beforeDate"`
-	AfterDate    *time.Time     `query:"afterDate"`
+	StakerAddress common.Address `query:"staker_address" validate:"required"`
+	Limit         *int           `query:"limit"`
+	Cursor        *string        `query:"cursor"`
+	BeforeDate    *time.Time     `query:"before_date"`
+	AfterDate     *time.Time     `query:"after_date"`
 }
 
-type GetOperatorProfitSnapshotsRequest struct {
-	Operator   common.Address `query:"operator" validate:"required"`
-	Limit      *int           `query:"limit"`
-	Cursor     *string        `query:"cursor"`
-	BeforeDate *time.Time     `query:"beforeDate"`
-	AfterDate  *time.Time     `query:"afterDate"`
+type GetNodeOperationProfitSnapshotsRequest struct {
+	NodeAddress common.Address `query:"node_address" validate:"required"`
+	Limit       *int           `query:"limit"`
+	Cursor      *string        `query:"cursor"`
+	BeforeDate  *time.Time     `query:"before_date"`
+	AfterDate   *time.Time     `query:"after_date"`
 }
 
 type GetNodeCountSnapshotsResponseData []*CountSnapshot
@@ -43,7 +43,7 @@ type CountSnapshot struct {
 }
 
 type NodeMinTokensToStakeSnapshots struct {
-	NodeAddress common.Address                         `json:"nodeAddress"`
+	NodeAddress common.Address                         `json:"node_address"`
 	Snapshots   []*schema.NodeMinTokensToStakeSnapshot `json:"snapshots"`
 }
 

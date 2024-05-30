@@ -29,7 +29,7 @@ func (n *NTA) GetNodeEvents(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
-	events, err := n.databaseClient.FindNodeEvents(c.Request().Context(), request.Address, request.Cursor, request.Limit)
+	events, err := n.databaseClient.FindNodeEvents(c.Request().Context(), request.NodeAddress, request.Cursor, request.Limit)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)

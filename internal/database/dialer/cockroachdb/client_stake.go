@@ -132,13 +132,13 @@ func (c *client) FindStakeEvents(ctx context.Context, query schema.StakeEventsQu
 	databaseClient := c.database.WithContext(ctx)
 
 	if len(query.IDs) > 0 {
-		databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id common.Hash, _ int) string {
 			return id.String()
 		}))
 	}
 
 	var rows []table.StakeEvent
-	if err := c.database.WithContext(ctx).Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
+	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
@@ -329,7 +329,7 @@ func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.Staker
 
 	if err := databaseClient.
 		Order(`"date" DESC`).
-		Limit(100). // TODO Replace this constant with a query parameter.
+		Limit(100). // FIXME: Replace this constant with a query parameter.
 		Find(&stakeSnapshots).Error; err != nil {
 		return nil, err
 	}

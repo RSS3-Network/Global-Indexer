@@ -37,8 +37,8 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 
 	stakeStakingsQuery := schema.StakeStakingsQuery{
 		Cursor: request.Cursor,
-		Staker: request.Staker,
-		Node:   request.Node,
+		Staker: request.StakerAddress,
+		Node:   request.NodeAddress,
 		Limit:  request.Limit,
 	}
 
@@ -58,6 +58,7 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// FIXME: what is stake owner?
 func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	var request nta.GetStakeOwnerProfitRequest
 
@@ -70,7 +71,7 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	}
 
 	// Find all stake chips
-	data, err := n.findChipsByOwner(c.Request().Context(), request.Owner)
+	data, err := n.findChipsByOwner(c.Request().Context(), request.StakerAddress)
 	if err != nil {
 		zap.L().Error("find chips by owner", zap.Error(err))
 
@@ -78,7 +79,7 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	}
 
 	// Find history profit snapshots
-	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.Owner, data)
+	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.StakerAddress, data)
 	if err != nil {
 		zap.L().Error("find staker history profit snapshots", zap.Error(err))
 
@@ -125,8 +126,8 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
 			}
 
-			data.TotalChipAmounts = data.TotalChipAmounts.Add(decimal.NewFromInt(int64(count)))
-			data.TotalChipValues = data.TotalChipValues.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
+			data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
 		}
 
 		cursor = chips[len(chips)-1].ID
@@ -158,7 +159,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 	data := make([]*nta.GetStakeOwnerProfitChangesSinceResponseData, len(query.Dates))
 
 	for _, snapshot := range snapshots {
-		if snapshot.TotalChipValues.IsZero() {
+		if snapshot.TotalChipValue.IsZero() {
 			continue
 		}
 
@@ -171,10 +172,10 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		}
 
 		data[index] = &nta.GetStakeOwnerProfitChangesSinceResponseData{
-			Date:             snapshot.Date,
-			TotalChipAmounts: snapshot.TotalChipAmounts,
-			TotalChipValues:  snapshot.TotalChipValues,
-			PNL:              profit.TotalChipValues.Sub(snapshot.TotalChipValues).Div(snapshot.TotalChipValues),
+			Date:            snapshot.Date,
+			TotalChipAmount: snapshot.TotalChipAmount,
+			TotalChipValue:  snapshot.TotalChipValue,
+			ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
 		}
 	}
 

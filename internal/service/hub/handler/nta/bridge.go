@@ -113,7 +113,7 @@ func (n *NTA) GetBridgeTransaction(c echo.Context) error {
 	defer lo.Try(databaseTransaction.Rollback)
 
 	bridgeTransactionQuery := schema.BridgeTransactionQuery{
-		ID: request.ID,
+		ID: request.TransactionHash,
 	}
 
 	bridgeTransaction, err := databaseTransaction.FindBridgeTransaction(c.Request().Context(), bridgeTransactionQuery)

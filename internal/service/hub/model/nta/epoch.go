@@ -14,19 +14,19 @@ type GetEpochsRequest struct {
 }
 
 type GetEpochRequest struct {
-	ID         uint64  `param:"id" validate:"required"`
-	ItemsLimit int     `query:"itemsLimit" validate:"min=1,max=50" default:"10"`
-	Cursor     *string `query:"cursor"`
+	EpochID   uint64  `param:"epoch_id" validate:"required"`
+	ItemLimit int     `query:"item_limit" validate:"min=1,max=50" default:"10"`
+	Cursor    *string `query:"cursor"`
 }
 
 type GetEpochDistributionRequest struct {
-	TransactionHash common.Hash `param:"transaction" validate:"required"`
-	ItemsLimit      int         `query:"itemsLimit" validate:"min=1,max=50" default:"10"`
+	TransactionHash common.Hash `param:"transaction_hash" validate:"required"`
+	ItemLimit       int         `query:"item_limit" validate:"min=1,max=50" default:"10"`
 	Cursor          *string     `query:"cursor"`
 }
 
 type GetEpochNodeRewardsRequest struct {
-	NodeAddress common.Address `param:"node" validate:"required"`
+	NodeAddress common.Address `param:"node_address" validate:"required"`
 	Limit       int            `query:"limit" validate:"min=1,max=50" default:"10"`
 	Cursor      *string        `query:"cursor"`
 }
@@ -41,27 +41,27 @@ type GetEpochNodeRewardsResponseData *Epoch
 
 type Epoch struct {
 	ID                    uint64          `json:"id"`
-	StartTimestamp        int64           `json:"startTimestamp"`
-	EndTimestamp          int64           `json:"endTimestamp"`
-	TotalOperationRewards decimal.Decimal `json:"totalOperationRewards"`
-	TotalStakingRewards   decimal.Decimal `json:"totalStakingRewards"`
-	TotalRequestCounts    decimal.Decimal `json:"totalRequestCounts"`
-	TotalRewardedNodes    int             `json:"totalRewardedNodes"`
+	StartTimestamp        int64           `json:"start_timestamp"`
+	EndTimestamp          int64           `json:"end_timestamp"`
+	TotalOperationRewards decimal.Decimal `json:"total_operation_rewards"`
+	TotalStakingRewards   decimal.Decimal `json:"total_staking_rewards"`
+	TotalRequestCounts    decimal.Decimal `json:"total_request_counts"`
+	TotalRewardedNodes    int             `json:"total_rewarded_nodes"`
 
 	Distributions []*EpochTransaction `json:"distributions"`
 }
 
 type EpochTransaction struct {
 	ID                    uint64                      `json:"id"`
-	StartTimestamp        int64                       `json:"startTimestamp"`
-	EndTimestamp          int64                       `json:"endTimestamp"`
+	StartTimestamp        int64                       `json:"start_timestamp"`
+	EndTimestamp          int64                       `json:"end_timestamp"`
 	Transaction           TransactionEventTransaction `json:"transaction"`
 	Block                 TransactionEventBlock       `json:"block"`
-	TotalOperationRewards decimal.Decimal             `json:"totalOperationRewards"`
-	TotalStakingRewards   decimal.Decimal             `json:"totalStakingRewards"`
-	TotalRequestCounts    decimal.Decimal             `json:"totalRequestCounts"`
-	TotalRewardedNodes    int                         `json:"totalRewardedNodes"`
-	RewardedNodes         []*schema.RewardedNode      `json:"rewardedNodes,omitempty"`
+	TotalOperationRewards decimal.Decimal             `json:"total_operation_rewards"`
+	TotalStakingRewards   decimal.Decimal             `json:"total_staking_rewards"`
+	TotalRequestCounts    decimal.Decimal             `json:"total_request_counts"`
+	TotalRewardedNodes    int                         `json:"total_rewarded_nodes"`
+	RewardedNodes         []*schema.RewardedNode      `json:"rewarded_nodes,omitempty"`
 	CreatedAt             int64                       `json:"-"`
 	UpdatedAt             int64                       `json:"-"`
 }

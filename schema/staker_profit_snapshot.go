@@ -8,22 +8,22 @@ import (
 )
 
 type StakerProfitSnapshot struct {
-	Date             time.Time       `json:"date"`
-	EpochID          uint64          `json:"epochID"`
-	OwnerAddress     common.Address  `json:"ownerAddress"`
-	TotalChipAmounts decimal.Decimal `json:"totalChipAmounts"`
-	TotalChipValues  decimal.Decimal `json:"totalChipValues"`
-	ID               uint64          `json:"-"`
-	CreatedAt        time.Time       `json:"-"`
-	UpdatedAt        time.Time       `json:"-"`
+	Date            time.Time       `json:"date"`
+	EpochID         uint64          `json:"epoch_id"`
+	OwnerAddress    common.Address  `json:"owner_address"`
+	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal `json:"total_chip_value"`
+	ID              uint64          `json:"-"`
+	CreatedAt       time.Time       `json:"-"`
+	UpdatedAt       time.Time       `json:"-"`
 }
 
 type StakerProfitSnapshotsQuery struct {
 	Cursor       *string         `json:"cursor"`
 	Limit        *int            `json:"limit"`
-	OwnerAddress *common.Address `json:"ownerAddress"`
-	EpochID      *uint64         `json:"epochID"`
+	OwnerAddress *common.Address `json:"owner_address"`
+	EpochID      *uint64         `json:"epoch_id"`
 	Dates        []time.Time     `json:"dates"`
-	BeforeDate   *time.Time      `json:"beforeDate"`
-	AfterDate    *time.Time      `json:"afterDate"`
+	BeforeDate   *time.Time      `json:"before_date"`
+	AfterDate    *time.Time      `json:"after_date"`
 }
