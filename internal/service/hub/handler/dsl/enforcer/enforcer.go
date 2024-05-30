@@ -202,7 +202,7 @@ func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *mode
 		return nil, err
 	}
 
-	workers := model.PlatformToWorkersMap[pid]
+	workers := model.PlatformToWorkersMap[pid.String()]
 
 	indexers, err := e.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
 		Networks: []string{activity.Network},

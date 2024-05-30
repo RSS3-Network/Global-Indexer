@@ -35,10 +35,10 @@ var (
 		worker.PlatformFarcaster.String(): {},
 	}
 
-	WorkerToNetworksMap  = make(map[worker.Worker][]string, len(worker.WorkerValues()))
-	NetworkToWorkersMap  = make(map[network.Network][]string, len(network.NetworkValues()))
-	PlatformToWorkersMap = make(map[worker.Platform][]string, len(worker.PlatformValues()))
-	TagToWorkersMap      = make(map[tag.Tag][]string, len(tag.TagValues()))
+	WorkerToNetworksMap  = make(map[string][]string, len(worker.WorkerValues()))
+	NetworkToWorkersMap  = make(map[string][]string, len(network.NetworkValues()))
+	PlatformToWorkersMap = make(map[string][]string, len(worker.PlatformValues()))
+	TagToWorkersMap      = make(map[string][]string, len(tag.TagValues()))
 )
 
 // NodeEndpointCache stores the elements in the heap.

@@ -114,7 +114,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Network]struct{}, networkToWorkersMap map[network.Network]map[worker.Worker]struct{}, platformToWorkersMap map[worker.Platform]map[worker.Worker]struct{}, tagToWorkersMap map[tag.Tag]map[worker.Worker]struct{}) {
 	go func() {
 		for workerX, networks := range fullNodeWorkerToNetworksMap {
-			model.WorkerToNetworksMap[workerX] = lo.MapToSlice(networks, func(networkX network.Network, _ struct{}) string {
+			model.WorkerToNetworksMap[workerX.String()] = lo.MapToSlice(networks, func(networkX network.Network, _ struct{}) string {
 				return networkX.String()
 			})
 		}
@@ -122,7 +122,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 
 	go func() {
 		for networkX, workers := range networkToWorkersMap {
-			model.NetworkToWorkersMap[networkX] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
+			model.NetworkToWorkersMap[networkX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
 				return workerX.String()
 			})
 		}
@@ -130,7 +130,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 
 	go func() {
 		for platformX, workers := range platformToWorkersMap {
-			model.PlatformToWorkersMap[platformX] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
+			model.PlatformToWorkersMap[platformX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
 				return workerX.String()
 			})
 		}
@@ -138,7 +138,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 
 	go func() {
 		for tagX, workers := range tagToWorkersMap {
-			model.TagToWorkersMap[tagX] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
+			model.TagToWorkersMap[tagX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
 				return workerX.String()
 			})
 		}
@@ -256,19 +256,19 @@ func determineFullNode(workers []*WorkerInfo) bool {
 		return false
 	}
 
-	workerToNetworksMap := make(map[worker.Worker]map[string]struct{})
+	workerToNetworksMap := make(map[string]map[string]struct{})
 
 	for _, w := range workers {
-		if _, exists := workerToNetworksMap[w.Worker]; !exists {
-			workerToNetworksMap[w.Worker] = make(map[string]struct{})
+		if _, exists := workerToNetworksMap[w.Worker.String()]; !exists {
+			workerToNetworksMap[w.Worker.String()] = make(map[string]struct{})
 		}
 
-		workerToNetworksMap[w.Worker][w.Network.String()] = struct{}{}
+		workerToNetworksMap[w.Worker.String()][w.Network.String()] = struct{}{}
 	}
 
 	// Ensure all networks for each worker are present
-	for wid, requiredNetworks := range model.WorkerToNetworksMap {
-		networks, exists := workerToNetworksMap[wid]
+	for w, requiredNetworks := range model.WorkerToNetworksMap {
+		networks, exists := workerToNetworksMap[w]
 		if !exists || len(networks) != len(requiredNetworks) {
 			return false
 		}

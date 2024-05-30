@@ -65,7 +65,7 @@ func getWorkersByTag(tags []string) (WorkerSet, error) {
 			return nil, err
 		}
 
-		tagWorker, exists := model.TagToWorkersMap[tid]
+		tagWorker, exists := model.TagToWorkersMap[tid.String()]
 		if !exists {
 			return nil, fmt.Errorf("no workers found for tag: %s", tid)
 		}
@@ -88,7 +88,7 @@ func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
 			return nil, err
 		}
 
-		workers, exists := model.PlatformToWorkersMap[pid]
+		workers, exists := model.PlatformToWorkersMap[pid.String()]
 		if !exists {
 			return nil, fmt.Errorf("no worker found for platform: %s", pid)
 		}
@@ -204,7 +204,7 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 		nid, _ := network.NetworkString(n)
 
 		// Check if the workers match the required workers for the network.
-		requiredWorkers := model.NetworkToWorkersMap[nid]
+		requiredWorkers := model.NetworkToWorkersMap[nid.String()]
 		if !AreSliceElementsIdentical(workers, requiredWorkers) {
 			return false
 		}
@@ -271,7 +271,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 	for w, networks := range workerNetworksMap.Networks {
 		wid, _ := worker.WorkerString(w)
 
-		requiredNetworks := model.WorkerToNetworksMap[wid]
+		requiredNetworks := model.WorkerToNetworksMap[wid.String()]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
@@ -319,7 +319,7 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	for w, networks := range workerNetworksMap.Networks {
 		wid, _ := worker.WorkerString(w)
 
-		workerRequiredNetworks := model.WorkerToNetworksMap[wid]
+		workerRequiredNetworks := model.WorkerToNetworksMap[wid.String()]
 
 		requiredNetworks := IntersectUnique(workerRequiredNetworks, requestNetworks)
 
