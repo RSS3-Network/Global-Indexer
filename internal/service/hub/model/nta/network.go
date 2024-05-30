@@ -1,6 +1,8 @@
 package nta
 
 type NetworkRequest struct {
+	NodeRequest
+
 	NetworkName string `param:"network_name" validate:"required"`
 }
 
