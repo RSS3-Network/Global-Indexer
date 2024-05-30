@@ -69,7 +69,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	// nta is short for Network Transparency API
 	nta := instance.httpServer.Group("/nta")
 	{
-		bridge := nta.Group("/bridge")
+		bridge := nta.Group("/bridgings")
 		{
 			bridge.GET("/transactions", instance.hub.nta.GetBridgeTransactions)
 			bridge.GET("/transactions/:transaction_hash", instance.hub.nta.GetBridgeTransaction)
@@ -122,9 +122,11 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			snapshots.POST("/nodes/min_tokens_to_stake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
 		}
 
-		stake := nta.Group("/stake")
+		stake := nta.Group("/stakings")
 		{
 			stake.GET("/:staker_address/profit", instance.hub.nta.GetStakeOwnerProfit)
+			// FIXME: GetStakeStakings needs to be refactored
+			// see https://github.com/RSS3-Network/Global-Indexer/issues/233
 			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
 			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
 			stake.GET("/transactions/:transaction_hash", instance.hub.nta.GetStakeTransaction)

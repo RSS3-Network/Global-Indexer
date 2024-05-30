@@ -73,7 +73,7 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String())))
 	}
 
-	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), MinDeposit.String()) < 0 {
 		return errorx.ValidationFailedError(c, fmt.Errorf("insufficient operation pool tokens"))
 	}
 
