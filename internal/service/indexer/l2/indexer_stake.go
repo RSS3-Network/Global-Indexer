@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/schema"
@@ -210,6 +211,23 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		return fmt.Errorf("parse Staked event: %w", err)
 	}
 
+	callOptions := bind.CallOpts{
+		Context:     ctx,
+		BlockNumber: header.Number,
+	}
+
+	// If user staked token to a public good node, the event will be emitted with the genesis address.
+	// So we need to get the actual node address from the stake contract by the token ID.
+	if event.NodeAddr == ethereum.AddressGenesis {
+		chipsInfo, err := s.contractStaking.GetChipsInfo(&callOptions, event.StartTokenId)
+		if err != nil {
+			return fmt.Errorf("get the info of chips %s: %w", event.StartTokenId, err)
+		}
+
+		// Override the node address with the actual node address.
+		event.NodeAddr = chipsInfo.NodeAddr
+	}
+
 	stakeTransaction := schema.StakeTransaction{
 		ID:               transaction.Hash(),
 		Type:             schema.StakeTransactionTypeStake,
@@ -242,11 +260,6 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
 		return fmt.Errorf("save stake event: %w", err)
-	}
-
-	callOptions := bind.CallOpts{
-		Context:     ctx,
-		BlockNumber: header.Number,
 	}
 
 	resultPool := pool.
