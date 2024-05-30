@@ -272,6 +272,11 @@
     },
     {
         "inputs": [],
+        "name": "NodeIsPublicGood",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "NodeNotExists",
         "type": "error"
     },
@@ -304,6 +309,11 @@
     {
         "inputs": [],
         "name": "PublicGoodNodeNotDeposited",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "PublicGoodNodeTaxNotZero",
         "type": "error"
     },
     {
