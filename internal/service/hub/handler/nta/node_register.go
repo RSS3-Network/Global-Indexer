@@ -189,9 +189,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
 	}
 
-	// TODO: The transitional implementation during the beta phase, which will soon be deprecated.
-	if !nodeInfo.Alpha {
-		if err = n.updateBetaNodeStats(ctx, request.Config, node, nodeInfo); err != nil {
+	if request.Type != "alpha" {
+		if err = n.updateNodeStats(ctx, request.Config, node, nodeInfo); err != nil {
 			return err
 		}
 	}
@@ -199,7 +198,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	return nil
 }
 
-func (n *NTA) updateBetaNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo l2.DataTypesNode) error {
+// updateNodeStats updates node stats on nodes registered during the non-alpha phase.
+func (n *NTA) updateNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo l2.DataTypesNode) error {
 	var nodeConfig NodeConfig
 
 	if err := json.Unmarshal(config, &nodeConfig); err != nil {
