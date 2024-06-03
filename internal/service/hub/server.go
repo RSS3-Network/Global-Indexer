@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -15,6 +16,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/nameresolver"
 	"github.com/rss3-network/global-indexer/internal/service"
+	"go.uber.org/zap"
 )
 
 const Name = "hub"
@@ -56,7 +58,14 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	instance.httpServer.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
 	{
-		instance.httpServer.FileFS("/docs/openapi.yaml", "openapi.yaml", docs.EmbedFS)
+		docsFile, err := docs.Generate()
+		if err != nil {
+			zap.L().Error("generate docs error", zap.Error(err))
+		}
+
+		instance.httpServer.GET("/docs/openapi.json", func(c echo.Context) error {
+			return c.Blob(http.StatusOK, "application/json", docsFile)
+		})
 	}
 
 	nodes := instance.httpServer.Group("/nodes")
