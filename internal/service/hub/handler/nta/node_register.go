@@ -68,7 +68,7 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("node: %s has not been registered on the VSL", strings.ToLower(request.Address.String())))
 	}
 
-	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), decimal.NewFromInt(10000).Mul(decimal.NewFromInt(1e18)).String()) < 0 {
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), MinDeposit.String()) < 0 {
 		return errorx.ValidationFailedError(c, fmt.Errorf("insufficient operation pool tokens"))
 	}
 
@@ -184,9 +184,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
 	}
 
-	// TODO: The transitional implementation during the beta phase, which will soon be deprecated.
-	if !nodeInfo.Alpha {
-		if err = n.updateBetaNodeStats(ctx, node, nodeInfo); err != nil {
+	if request.Type != "alpha" {
+		if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
 			return err
 		}
 	}
@@ -194,7 +193,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	return nil
 }
 
-func (n *NTA) updateBetaNodeStats(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) error {
+// updateNodeStats updates node stats on nodes registered during the non-alpha phase.
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
