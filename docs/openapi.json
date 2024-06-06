@@ -22,19 +22,19 @@
     "tags": [
         {
             "name": "DSL",
-            "description": "The DSL API is an interface to interact with RSS3 Nodes and therefore the entire decentralized DSL."
+            "description": "The DSL API is an interface to interact with RSS3 Nodes and, therefore, the entire decentralized DSL."
         },
         {
             "name": "NTA",
-            "description": "Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
+            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
         },
         {
             "name": "Decentralized",
-            "description": "A subset of DSL, these APIs provide querying data on the blockchain."
+            "description": "A subset of DSL, these APIs facilitate querying information on decentralized networks."
         },
         {
             "name": "RSS",
-            "description": "A subset of DSL, these APIs provide data queries related to RSS feeds."
+            "description": "A subset of DSL, these APIs facilitate querying information conforming to the RSS Specification."
         },
         {
             "name": "Node",
@@ -42,19 +42,19 @@
         },
         {
             "name": "Epoch",
-            "description": "A subset of NTA, these APIs provide information on each Epoch on the VSL."
+            "description": "A subset of NTA, these APIs provide information on each Epoch in the VSL."
         },
         {
             "name": "Stake",
-            "description": "A subset of NTA, these APIs provide information on Stake transactions on the VSL."
+            "description": "A subset of NTA, these APIs provide information on Stake transactions in the VSL."
         },
         {
             "name": "Chips",
-            "description": "A subset of NTA, these APIs provide information and transaction queries related to Chips on the VSL."
+            "description": "A subset of NTA, these APIs provide information and transaction queries related to Chips in the VSL."
         },
         {
             "name": "Bridge",
-            "description": "A subset of NTA, these APIs provide querying cross-chain bridge transactions on the VSL."
+            "description": "A subset of NTA, these APIs provide querying cross-chain bridge transactions in the VSL."
         },
         {
             "name": "Networks",
@@ -63,7 +63,7 @@
         {
             "name": "Snapshots",
             "description": "A subset of NTA, these APIs provide snapshots of various data within the RSS3 network."
-        },
+        }
     ],
     "paths": {
         "/decentralized/tx/{id}": {
