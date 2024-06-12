@@ -1,9 +1,9 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "Global Indexer - Network Transparency API",
-        "description": "Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113",
-        "version": "0.1.0"
+        "title": "Global Indexer API",
+        "description": "An RSS3 Global Indexer (GI), is responsible for facilitating coordination among RSS3 Nodes, engaging with the VSL and performing critical functions such as Network Rewards calculation and slashing enforcement. Global Indexer API provides RSS3 Node data query (DSL) and network transparency (NTA) functions.",
+        "version": "1.0.0"
     },
     "servers": [
         {
@@ -21,37 +21,48 @@
     ],
     "tags": [
         {
-            "name": "DSL"
+            "name": "DSL",
+            "description": "The DSL API is an interface to interact with RSS3 Nodes and, therefore, the entire decentralized DSL."
         },
         {
-            "name": "NTA"
+            "name": "NTA",
+            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
         },
         {
-            "name": "Decentralized"
+            "name": "Decentralized",
+            "description": "A subset of DSL, these APIs facilitate querying information on decentralized networks."
         },
         {
-            "name": "RSS"
+            "name": "RSS",
+            "description": "A subset of DSL, these APIs facilitate querying information conforming to the RSS Specification."
         },
         {
-            "name": "Bridge"
+            "name": "Node",
+            "description": "A subset of NTA, these APIs provide information about nodes in the RSS3 network."
         },
         {
-            "name": "Chips"
+            "name": "Epoch",
+            "description": "A subset of NTA, these APIs provide information on each Epoch in the VSL."
         },
         {
-            "name": "Epoch"
+            "name": "Stake",
+            "description": "A subset of NTA, these APIs provide information on Stake transactions in the VSL."
         },
         {
-            "name": "Networks"
+            "name": "Chips",
+            "description": "A subset of NTA, these APIs provide information and transaction queries related to Chips in the VSL."
         },
         {
-            "name": "Node"
+            "name": "Bridge",
+            "description": "A subset of NTA, these APIs provide querying cross-chain bridge transactions in the VSL."
         },
         {
-            "name": "Snapshots"
+            "name": "Networks",
+            "description": "A subset of NTA, these APIs provide information about the open information networks indexed by the RSS3 network."
         },
         {
-            "name": "Stake"
+            "name": "Snapshots",
+            "description": "A subset of NTA, these APIs provide snapshots of various data within the RSS3 network."
         }
     ],
     "paths": {
@@ -327,6 +338,7 @@
         },
         "/nta/bridge/transactions": {
             "get": {
+                "summary": "Get bridging transactions",
                 "description": "Get bridging transactions",
                 "tags": [
                     "Bridge",
@@ -448,6 +460,7 @@
         },
         "/nta/bridge/transactions/{transaction_hash}": {
             "get": {
+                "summary": "Get bridging transaction by hash",
                 "description": "Get bridging transaction by transaction hash",
                 "tags": [
                     "Bridge",
@@ -524,6 +537,7 @@
         },
         "/nta/stake/transactions": {
             "get": {
+                "summary": "Get staking transactions",
                 "description": "Get staking transactions",
                 "tags": [
                     "Stake",
@@ -642,6 +656,7 @@
         },
         "/nta/stake/transactions/{transaction_hash}": {
             "get": {
+                "summary": "Get staking transaction by hash",
                 "description": "Get staking transaction by transaction hash",
                 "tags": [
                     "Stake",
@@ -678,6 +693,7 @@
         },
         "/nta/stake/stakings": {
             "get": {
+                "summary": "Get a list of stakers and Nodes",
                 "description": "Get a list of stakers and Nodes",
                 "tags": [
                     "Stake",
@@ -766,6 +782,7 @@
         },
         "/nta/stake/{staker_address}/profit": {
             "get": {
+                "summary": "Get staking profit of a staker",
                 "description": "Get staking profit of a staker",
                 "tags": [
                     "Stake",
@@ -822,6 +839,7 @@
         },
         "/nta/chips": {
             "get": {
+                "summary": "Get all chips",
                 "description": "Get all chips",
                 "tags": [
                     "Chips",
@@ -895,6 +913,7 @@
         },
         "/nta/chips/{chip_id}": {
             "get": {
+                "summary": "Get Chips by chip id",
                 "description": "Get Chips by chip id",
                 "tags": [
                     "Chips",
@@ -929,6 +948,7 @@
         },
         "/nta/chips/{chip_id}/image.svg": {
             "get": {
+                "summary": "Get Chips image by id",
                 "description": "Get Chips image by chip id",
                 "tags": [
                     "Chips",
@@ -963,6 +983,7 @@
         },
         "/nta/snapshots/nodes/count": {
             "get": {
+                "summary": "Get snapshots of Node count",
                 "description": "Get snapshots of Node count",
                 "tags": [
                     "Snapshots",
@@ -1008,6 +1029,7 @@
         },
         "/nta/snapshots/nodes/min_tokens_to_stake": {
             "post": {
+                "summary": "Get snapshots of the minimum staking amount",
                 "description": "Get snapshots of the minimum staking amount for Nodes",
                 "tags": [
                     "Snapshots",
@@ -1065,6 +1087,7 @@
         },
         "/nta/snapshots/stakers/count": {
             "get": {
+                "summary": "Get snapshots of staker count",
                 "description": "Get snapshots of total staker count",
                 "tags": [
                     "Snapshots",
@@ -1110,7 +1133,8 @@
         },
         "/nta/snapshots/stakers/profit": {
             "get": {
-                "description": "Get snapshots of the profit of stakers",
+                "summary": "Get snapshots of the staker profit",
+                "description": "Get snapshots of the staker profit",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -1185,7 +1209,8 @@
         },
         "/nta/snapshots/nodes/operation/profit": {
             "get": {
-                "description": "Get snapshots of operation profit of a Node",
+                "summary": "Get snapshots of operation profit",
+                "description": "Get snapshots of operation profit",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -1260,6 +1285,7 @@
         },
         "/nta/snapshots/epochs/apy": {
             "get": {
+                "summary": "Get the apy of epoch snapshots",
                 "description": "Get the apy of epoch snapshots",
                 "tags": [
                     "Snapshots",
@@ -1289,6 +1315,7 @@
         },
         "/nta/nodes": {
             "get": {
+                "summary": "Get all Nodes",
                 "description": "Get all Nodes",
                 "tags": [
                     "Node",
@@ -1353,6 +1380,7 @@
         },
         "/nta/nodes/{address}": {
             "get": {
+                "summary": "Get Node by address",
                 "description": "Get Node by address",
                 "tags": [
                     "Node",
@@ -1390,6 +1418,7 @@
         },
         "/nta/nodes/{address}/avatar.svg": {
             "get": {
+                "summary": "Get Node avatar by address",
                 "description": "Get Node avatar by address",
                 "tags": [
                     "Node",
@@ -1427,6 +1456,7 @@
         },
         "/nta/nodes/{address}/events": {
             "get": {
+                "summary": "Get Node transaction events by address",
                 "description": "Get Node transaction events by address",
                 "tags": [
                     "Node",
@@ -1490,6 +1520,7 @@
         },
         "/nta/nodes/{node_address}/operation/profit": {
             "get": {
+                "summary": "Get Node operation profit by address",
                 "description": "Get Node operation profit by Node address",
                 "tags": [
                     "Node",
@@ -1543,6 +1574,7 @@
         },
         "/nta/epochs": {
             "get": {
+                "summary": "Get all epochs",
                 "description": "Get all epochs",
                 "tags": [
                     "Epoch",
@@ -1594,6 +1626,7 @@
         },
         "/nta/epochs/{epoch_id}": {
             "get": {
+                "summary": "Get epoch by id",
                 "description": "Get epoch by epoch id",
                 "tags": [
                     "Epoch",
@@ -1625,6 +1658,7 @@
         },
         "/nta/epochs/distributions/{transaction_hash}": {
             "get": {
+                "summary": "Get epoch transaction by hash",
                 "description": "Get epoch transaction by hash",
                 "tags": [
                     "Epoch",
@@ -1664,6 +1698,7 @@
         },
         "/nta/epochs/{node_address}/rewards": {
             "get": {
+                "summary": "Get Node rewards by epoch",
                 "description": "Get Node rewards by epoch",
                 "tags": [
                     "Epoch",
@@ -1723,6 +1758,7 @@
         },
         "/nta/epochs/apy": {
             "get": {
+                "summary": "Get the average of epochs APY",
                 "description": "Get the average of epochs APY",
                 "tags": [
                     "Epoch",
@@ -1749,6 +1785,7 @@
         },
         "/nta/networks": {
             "get": {
+                "summary": "Get all compatible networks",
                 "description": "Get all compatible networks",
                 "tags": [
                     "Networks",
@@ -1779,6 +1816,7 @@
         },
         "/nta/networks/{network_name}/list_workers": {
             "get": {
+                "summary": "Get available workers by network",
                 "description": "Get available workers by network",
                 "tags": [
                     "Networks",
@@ -1819,6 +1857,7 @@
         },
         "/nta/networks/{network_name}/workers/{worker_name}": {
             "get": {
+                "summary": "Get config by network and worker",
                 "description": "Get config by network and worker",
                 "tags": [
                     "Networks",
@@ -2720,7 +2759,7 @@
             "StakerProfitSnapshot": {
                 "type": "object",
                 "properties": {
-                    "ownerAddress": {
+                    "owner_address": {
                         "type": "string"
                     },
                     "date": {
