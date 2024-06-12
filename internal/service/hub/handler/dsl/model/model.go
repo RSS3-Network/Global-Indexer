@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/metadata"
 	"github.com/rss3-network/protocol-go/schema/network"
@@ -32,12 +32,12 @@ var (
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
-		worker.PlatformFarcaster.String(): {},
+		decentralized.PlatformFarcaster.String(): {},
 	}
 
-	WorkerToNetworksMap  = make(map[string][]string, len(worker.WorkerValues()))
+	WorkerToNetworksMap  = make(map[string][]string, len(decentralized.WorkerValues()))
 	NetworkToWorkersMap  = make(map[string][]string, len(network.NetworkValues()))
-	PlatformToWorkersMap = make(map[string][]string, len(worker.PlatformValues()))
+	PlatformToWorkersMap = make(map[string][]string, len(decentralized.PlatformValues()))
 	TagToWorkersMap      = make(map[string][]string, len(tag.TagValues()))
 )
 

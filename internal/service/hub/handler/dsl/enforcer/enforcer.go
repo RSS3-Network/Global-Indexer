@@ -14,7 +14,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -197,7 +197,7 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 
 // findStatsByPlatform finds the required stats based on the platform.
 func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *model.Activity, workingNodes []common.Address) ([]*schema.Stat, error) {
-	pid, err := worker.PlatformString(activity.Platform)
+	pid, err := decentralized.PlatformString(activity.Platform)
 	if err != nil {
 		return nil, err
 	}

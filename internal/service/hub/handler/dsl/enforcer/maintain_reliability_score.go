@@ -163,7 +163,7 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 		i := i
 		stat := stat
 
-		statsPool.Go(func(ctx context.Context) error {
+		statsPool.Go(func(_ context.Context) error {
 			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 		})
 	}

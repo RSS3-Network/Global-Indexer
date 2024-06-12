@@ -14,6 +14,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
@@ -34,12 +35,12 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 }
 
 // generateMaps generates the worker related maps.
-func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address][]*WorkerInfo, map[worker.Worker]map[network.Network]struct{}, map[network.Network]map[worker.Worker]struct{}, map[worker.Platform]map[worker.Worker]struct{}, map[tag.Tag]map[worker.Worker]struct{}) {
+func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address][]*WorkerInfo, map[worker.Worker]map[network.Network]struct{}, map[network.Network]map[worker.Worker]struct{}, map[decentralized.Platform]map[worker.Worker]struct{}, map[tag.Tag]map[worker.Worker]struct{}) {
 	var (
 		nodeToWorkersMap            = make(map[common.Address][]*WorkerInfo, len(stats))
-		fullNodeWorkerToNetworksMap = make(map[worker.Worker]map[network.Network]struct{}, len(worker.WorkerValues()))
+		fullNodeWorkerToNetworksMap = make(map[worker.Worker]map[network.Network]struct{}, len(decentralized.WorkerValues()))
 		networkToWorkersMap         = make(map[network.Network]map[worker.Worker]struct{}, len(network.NetworkValues()))
-		platformToWorkersMap        = make(map[worker.Platform]map[worker.Worker]struct{}, len(worker.PlatformValues()))
+		platformToWorkersMap        = make(map[decentralized.Platform]map[worker.Worker]struct{}, len(decentralized.PlatformValues()))
 		tagToWorkersMap             = make(map[tag.Tag]map[worker.Worker]struct{}, len(tag.TagValues()))
 
 		wg sync.WaitGroup
@@ -74,12 +75,12 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 				networkToWorkersMap[workerInfo.Network][workerInfo.Worker] = struct{}{}
 				mu.Unlock()
 
-				if _, ok := platformToWorkersMap[workerInfo.Platform]; !ok && workerInfo.Platform != worker.PlatformUnknown {
+				if _, ok := platformToWorkersMap[workerInfo.Platform]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
 					platformToWorkersMap[workerInfo.Platform] = make(map[worker.Worker]struct{})
 				}
 
 				mu.Lock()
-				if workerInfo.Platform != worker.PlatformUnknown {
+				if workerInfo.Platform != decentralized.PlatformUnknown {
 					platformToWorkersMap[workerInfo.Platform][workerInfo.Worker] = struct{}{}
 				}
 				mu.Unlock()
@@ -111,10 +112,10 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 }
 
 // mapTransform transforms the map to slice.
-func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Network]struct{}, networkToWorkersMap map[network.Network]map[worker.Worker]struct{}, platformToWorkersMap map[worker.Platform]map[worker.Worker]struct{}, tagToWorkersMap map[tag.Tag]map[worker.Worker]struct{}) {
+func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Network]struct{}, networkToWorkersMap map[network.Network]map[worker.Worker]struct{}, platformToWorkersMap map[decentralized.Platform]map[worker.Worker]struct{}, tagToWorkersMap map[tag.Tag]map[worker.Worker]struct{}) {
 	go func() {
 		for workerX, networks := range fullNodeWorkerToNetworksMap {
-			model.WorkerToNetworksMap[workerX.String()] = lo.MapToSlice(networks, func(networkX network.Network, _ struct{}) string {
+			model.WorkerToNetworksMap[workerX.Name()] = lo.MapToSlice(networks, func(networkX network.Network, _ struct{}) string {
 				return networkX.String()
 			})
 		}
@@ -123,7 +124,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 	go func() {
 		for networkX, workers := range networkToWorkersMap {
 			model.NetworkToWorkersMap[networkX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
-				return workerX.String()
+				return workerX.Name()
 			})
 		}
 	}()
@@ -131,7 +132,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 	go func() {
 		for platformX, workers := range platformToWorkersMap {
 			model.PlatformToWorkersMap[platformX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
-				return workerX.String()
+				return workerX.Name()
 			})
 		}
 	}()
@@ -139,7 +140,7 @@ func mapTransform(fullNodeWorkerToNetworksMap map[worker.Worker]map[network.Netw
 	go func() {
 		for tagX, workers := range tagToWorkersMap {
 			model.TagToWorkersMap[tagX.String()] = lo.MapToSlice(workers, func(workerX worker.Worker, _ struct{}) string {
-				return workerX.String()
+				return workerX.Name()
 			})
 		}
 	}()
@@ -223,11 +224,11 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 	wg.Wait()
 
 	return e.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		if err := e.databaseClient.UpdateNodeWorkerActive(ctx); err != nil {
+		if err := client.UpdateNodeWorkerActive(ctx); err != nil {
 			return fmt.Errorf("update node worker active: %w", err)
 		}
 
-		if err := e.databaseClient.SaveNodeWorkers(ctx, workerList); err != nil {
+		if err := client.SaveNodeWorkers(ctx, workerList); err != nil {
 			return fmt.Errorf("save node workers: %w", err)
 		}
 
@@ -259,11 +260,11 @@ func determineFullNode(workers []*WorkerInfo) bool {
 	workerToNetworksMap := make(map[string]map[string]struct{})
 
 	for _, w := range workers {
-		if _, exists := workerToNetworksMap[w.Worker.String()]; !exists {
-			workerToNetworksMap[w.Worker.String()] = make(map[string]struct{})
+		if _, exists := workerToNetworksMap[w.Worker.Name()]; !exists {
+			workerToNetworksMap[w.Worker.Name()] = make(map[string]struct{})
 		}
 
-		workerToNetworksMap[w.Worker.String()][w.Network.String()] = struct{}{}
+		workerToNetworksMap[w.Worker.Name()][w.Network.String()] = struct{}{}
 	}
 
 	// Ensure all networks for each worker are present
@@ -305,7 +306,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint strin
 
 	for i, w := range response.Data {
 		if w.Network == network.Farcaster {
-			response.Data[i].Platform = worker.PlatformFarcaster
+			response.Data[i].Platform = decentralized.PlatformFarcaster
 			response.Data[i].Tags = []tag.Tag{tag.Social}
 		}
 	}
@@ -322,7 +323,7 @@ func buildNodeWorkers(epoch int64, address common.Address, workerInfo []*WorkerI
 			EpochID:  uint64(epoch),
 			Address:  address,
 			Network:  w.Network.String(),
-			Name:     w.Worker.String(),
+			Name:     w.Worker.Name(),
 			IsActive: true,
 		})
 	}
@@ -384,9 +385,9 @@ type WorkerResponse struct {
 }
 
 type WorkerInfo struct {
-	Network  network.Network `json:"network"`
-	Worker   worker.Worker   `json:"worker"`
-	Tags     []tag.Tag       `json:"tags"`
-	Platform worker.Platform `json:"platform"`
-	Status   worker.Status   `json:"status"`
+	Network  network.Network        `json:"network"`
+	Worker   worker.Worker          `json:"worker"`
+	Tags     []tag.Tag              `json:"tags"`
+	Platform decentralized.Platform `json:"platform"`
+	Status   worker.Status          `json:"status"`
 }

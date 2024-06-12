@@ -8,7 +8,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
@@ -83,7 +83,7 @@ func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
 	platformWorkers := make(WorkerSet)
 
 	for _, platform := range platforms {
-		pid, err := worker.PlatformString(platform)
+		pid, err := decentralized.PlatformString(platform)
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +269,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := worker.WorkerString(w)
+		wid, _ := decentralized.WorkerString(w)
 
 		requiredNetworks := model.WorkerToNetworksMap[wid.String()]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
@@ -317,7 +317,7 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := worker.WorkerString(w)
+		wid, _ := decentralized.WorkerString(w)
 
 		workerRequiredNetworks := model.WorkerToNetworksMap[wid.String()]
 
