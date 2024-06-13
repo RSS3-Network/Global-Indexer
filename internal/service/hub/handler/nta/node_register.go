@@ -19,7 +19,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
@@ -200,25 +199,11 @@ func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo l
 		return fmt.Errorf("update node stat: %w", err)
 	}
 
-	return n.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		// Save Node stat to database
-		if err = client.SaveNodeStat(ctx, stat); err != nil {
-			return fmt.Errorf("save Node stat: %s, %w", node.Address.String(), err)
-		}
-
-		zap.L().Info("save Node stat", zap.Any("node", node.Address.String()))
-
-		return nil
-	})
+	return n.databaseClient.SaveNodeStat(ctx, stat)
 }
 
 func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
-	var (
-		stat *schema.Stat
-		err  error
-	)
-
-	stat, err = n.databaseClient.FindNodeStat(ctx, node.Address)
+	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)
 	}
@@ -226,7 +211,6 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo l2
 	// Convert the staking to float64.
 	staking, _ := nodeInfo.StakingPoolTokens.Div(nodeInfo.StakingPoolTokens, big.NewInt(1e18)).Float64()
 
-	// TODO IsRssNode and FederatedNetwork
 	if stat == nil {
 		stat = &schema.Stat{
 			Address:      node.Address,
@@ -239,6 +223,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo l2
 		stat.Endpoint = node.Endpoint
 		stat.IsPublicGood = node.IsPublicGood
 		stat.Staking = staking
+		stat.ResetAt = time.Now()
 	}
 
 	return stat, nil
