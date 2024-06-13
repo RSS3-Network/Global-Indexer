@@ -61,7 +61,9 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 				return
 			}
 
+			mu.Lock()
 			nodeToDataMap[stat.Address] = workerStatus.Data
+			mu.Unlock()
 
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				if workerInfo.Status != worker.StatusReady {
