@@ -1,6 +1,7 @@
 package settler
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
@@ -28,15 +29,34 @@ func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Ad
 }
 
 // prepareRequestCounts prepares the request counts for all Nodes
-// For Alpha, there is no actual calculation logic, the counts are set to 0
-// TODO: Implement the actual logic to retrieve the count from the database
-func prepareRequestCounts(nodes []common.Address) []*big.Int {
-	slice := make([]*big.Int, len(nodes))
-
-	// For Alpha, set the counts to 0
-	for i := range slice {
-		slice[i] = big.NewInt(0)
+func (s *Server) prepareRequestCounts(ctx context.Context, nodes []common.Address) ([]*big.Int, error) {
+	if len(nodes) == 0 {
+		return make([]*big.Int, 0), nil
 	}
 
-	return slice
+	stats, err := s.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses: nodes,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to find node stats: %w", err)
+	}
+
+	statsMap := make(map[common.Address]*schema.Stat, len(stats))
+	for _, stat := range stats {
+		statsMap[stat.Address] = stat
+	}
+
+	requestCounts := make([]*big.Int, len(nodes))
+
+	for i, node := range nodes {
+		if stat, ok := statsMap[node]; ok {
+			// set request counts for nodes from the epoch.
+			requestCounts[i] = big.NewInt(stat.EpochRequest)
+		} else {
+			requestCounts[i] = big.NewInt(0)
+		}
+	}
+
+	return requestCounts, nil
 }

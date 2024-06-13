@@ -142,7 +142,10 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the operation rewards for the Nodes
-	requestCount := prepareRequestCounts(nodeAddresses)
+	requestCount, err := s.prepareRequestCounts(ctx, nodeAddresses)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
