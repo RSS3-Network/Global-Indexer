@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -84,15 +83,15 @@ func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context) ([]*schema.Stat, e
 	return stats, nil
 }
 
-func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, currentEpoch int64, isNewEpoch bool) error {
-	if err := e.updateNodeStats(ctx, stats, currentEpoch, isNewEpoch); err != nil {
+func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat) error {
+	if err := e.updateNodeStats(ctx, stats); err != nil {
 		return err
 	}
 
 	return e.databaseClient.SaveNodeStats(ctx, stats)
 }
 
-func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64, isNewEpoch bool) error {
+func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat) error {
 	// Retrieve all Node addresses.
 	nodeAddresses := extractNodeAddresses(stats)
 
@@ -122,7 +121,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 
 	nodes = sortNodes(nodeAddresses, nodes)
 
-	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch, isNewEpoch)
+	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes)
 }
 
 func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]l2.DataTypesNode, error) {
@@ -149,14 +148,7 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64, isNewEpoch bool) error {
-	// If it is a new epoch, then maintain the Node worker.
-	if isNewEpoch {
-		if err := e.maintainNodeWorker(ctx, epoch, stats); err != nil {
-			return err
-		}
-	}
-
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node) error {
 	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i, stat := range stats {
@@ -164,7 +156,7 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 		stat := stat
 
 		statsPool.Go(func(_ context.Context) error {
-			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
+			return updateNodeStat(stat, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 		})
 	}
 
@@ -172,18 +164,11 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 }
 
 // updateNodeStat updates Node's stat with Reliability Score.
-func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status schema.NodeStatus) error {
+func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatus) error {
 	// Convert the staking to float64.
 	stat.Staking, _ = staking.Div(staking, big.NewInt(1e18)).Float64()
 
-	if status == schema.NodeStatusOnline {
-		// Reset the epoch request and invalid request if the epoch changes.
-		if epoch != stat.Epoch {
-			stat.EpochRequest = 0
-			stat.EpochInvalidRequest = 0
-			stat.Epoch = epoch
-		}
-	} else {
+	if status != schema.NodeStatusOnline {
 		// If Node's status is not online, then reset the alive time.
 		stat.ResetAt = time.Now()
 	}
@@ -233,62 +218,4 @@ func CalculateReliabilityScore(stat *schema.Stat) error {
 	}
 
 	return nil
-}
-
-// UpdateNodeCache updates the cache for all Nodes.
-// 1. update the sorted set nodes.
-// 2. update the cache for the Node subscription.
-func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
-	for _, key := range []string{model.RssNodeCacheKey, model.FullNodeCacheKey} {
-		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
-			return err
-		}
-	}
-
-	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
-}
-
-// updateSortedSetForNodeType updates the sorted set for different types of Nodes.
-func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
-	if err != nil {
-		return err
-	}
-
-	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return node.Address, node
-	})
-
-	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
-	if err != nil {
-		return err
-	}
-
-	membersToRemove := make([]string, 0)
-	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
-
-	for _, member := range members {
-		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
-			membersToRemove = append(membersToRemove, member.Member.(string))
-		}
-	}
-
-	for _, node := range nodesEndpointCaches {
-		membersToAdd = append(membersToAdd, redis.Z{
-			Member: node.Address,
-			Score:  node.Score,
-		})
-	}
-
-	if len(membersToAdd) > 0 {
-		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
-			return err
-		}
-	}
-
-	if len(membersToRemove) == 0 {
-		return nil
-	}
-
-	return e.cacheClient.ZRem(ctx, key, membersToRemove)
 }

@@ -23,6 +23,7 @@ type Enforcer interface {
 	VerifyResponses(ctx context.Context, responses []*model.DataResponse) error
 	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
 	MaintainReliabilityScore(ctx context.Context) error
+	MaintainEpochData(ctx context.Context, epoch int64) error
 	ChallengeStates(ctx context.Context) error
 	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
 }
@@ -321,42 +322,37 @@ func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, 
 // MaintainReliabilityScore maintains the Reliability Score σ for all Nodes.
 // σ is used to determine the probability of a Node receiving a request on DSL.
 func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
-	// Retrieve the most recently indexed epoch.
-	currentEpoch, err := e.getCurrentEpoch(ctx)
-	if err != nil {
-		return err
-	}
-
 	stats, err := e.getAllNodeStats(ctx)
 	if err != nil {
 		return err
 	}
 
-	if len(stats) == 0 {
-		return nil
-	}
-
-	isNewEpoch := stats[0].Epoch != currentEpoch
-
 	// Update the stats of the Nodes.
-	if err = e.processNodeStats(ctx, stats, currentEpoch, isNewEpoch); err != nil {
+	if err = e.processNodeStats(ctx, stats); err != nil {
 		return err
-	}
-
-	// If the epoch of the current stat differs from that of the first stat,
-	// it indicates an epoch change, necessitating a notification to the score queue.
-	if isNewEpoch {
-		// Update the node cache for the latest epoch.
-		if err = e.updateNodeCache(ctx, currentEpoch); err != nil {
-			return err
-		}
-
-		zap.L().Info("update node cache for the latest epoch", zap.Int64("epoch", currentEpoch))
 	}
 
 	zap.L().Info("maintain reliability score completed")
 
 	return nil
+}
+
+func (e *SimpleEnforcer) MaintainNewEpochData(ctx context.Context, epoch int64) error {
+	stats, err := e.getAllNodeStats(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = e.maintainNodeWorker(ctx, epoch, stats)
+	if err != nil {
+		return err
+	}
+
+	if err = e.processNodeStats(ctx, stats); err != nil {
+		return err
+	}
+
+	return e.updateNodeCache(ctx, epoch)
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
