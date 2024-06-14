@@ -192,13 +192,13 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 		workerList = make([]*schema.Worker, 0)
 	)
 
-	for i, stat := range stats {
+	for i := range stats {
 		wg.Add(1)
 
-		go func(i int, stat *schema.Stat) {
+		go func(i int) {
 			defer wg.Done()
 
-			workerInfo, exist := nodeToDataMap[stat.Address]
+			workerInfo, exist := nodeToDataMap[stats[i].Address]
 			if !exist {
 				return
 			}
@@ -221,10 +221,10 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 
 			if !isFull {
 				mu.Lock()
-				workerList = append(workerList, buildNodeWorkers(epoch, stat.Address, workerInfo.Decentralized)...)
+				workerList = append(workerList, buildNodeWorkers(epoch, stats[i].Address, workerInfo.Decentralized)...)
 				mu.Unlock()
 			}
-		}(i, stat)
+		}(i)
 	}
 
 	wg.Wait()
@@ -357,10 +357,10 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 
 	wg.Add(4)
 
-	go getCache(model.WorkerToNetworksMapKey, model.WorkerToNetworksMap)
-	go getCache(model.NetworkToWorkersMapKey, model.NetworkToWorkersMap)
-	go getCache(model.PlatformToWorkersMapKey, model.PlatformToWorkersMap)
-	go getCache(model.TagToWorkersMapKey, model.TagToWorkersMap)
+	go getCache(model.WorkerToNetworksMapKey, &model.WorkerToNetworksMap)
+	go getCache(model.NetworkToWorkersMapKey, &model.NetworkToWorkersMap)
+	go getCache(model.PlatformToWorkersMapKey, &model.PlatformToWorkersMap)
+	go getCache(model.TagToWorkersMapKey, &model.TagToWorkersMap)
 
 	wg.Wait()
 
