@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"runtime"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -44,7 +45,7 @@ const (
 	defaultLimit = 50
 )
 
-// getNodeStatsMap returns the current epoch.
+// getCurrentEpoch returns the current epoch.
 func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
@@ -149,14 +150,17 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
 func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node) error {
-	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU(), len(stats), 20*runtime.NumCPU()))
 
-	for i, stat := range stats {
+	for i := range stats {
 		i := i
-		stat := stat
 
-		statsPool.Go(func(_ context.Context) error {
-			return updateNodeStat(stat, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
+		statsPool.Go(func(ctx context.Context) error {
+			updateNodeStat(stats[i], nodesInfo[i].StakingPoolTokens, nodes[i].Status)
+
+			e.updateScoreMaintainer(ctx, stats[i])
+
+			return nil
 		})
 	}
 
@@ -164,7 +168,7 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 }
 
 // updateNodeStat updates Node's stat with Reliability Score.
-func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatus) error {
+func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatus) {
 	// Convert the staking to float64.
 	stat.Staking, _ = staking.Div(staking, big.NewInt(1e18)).Float64()
 
@@ -173,13 +177,13 @@ func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatu
 		stat.ResetAt = time.Now()
 	}
 
-	// calculate Reliability Score
-	return CalculateReliabilityScore(stat)
+	// Calculate the Reliability Score.
+	calculateReliabilityScore(stat)
 }
 
-// CalculateReliabilityScore calculates the Reliability Score σ of a given Node.
+// calculateReliabilityScore calculates the Reliability Score σ of a given Node.
 // σ is used to determine the probability of a Node receiving a request on DSL.
-func CalculateReliabilityScore(stat *schema.Stat) error {
+func calculateReliabilityScore(stat *schema.Stat) {
 	// staking pool tokens
 	// maximum score is 0.2
 	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
@@ -216,6 +220,4 @@ func CalculateReliabilityScore(stat *schema.Stat) error {
 	} else {
 		stat.Score -= perSlashScore * float64(stat.EpochInvalidRequest)
 	}
-
-	return nil
 }

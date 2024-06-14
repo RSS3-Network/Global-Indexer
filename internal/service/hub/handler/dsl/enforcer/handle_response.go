@@ -1,10 +1,20 @@
 package enforcer
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"runtime"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
+	"github.com/rss3-network/global-indexer/schema"
+	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
+	"go.uber.org/zap"
 )
 
 const (
@@ -13,6 +23,239 @@ const (
 	// an invalid response gives 1 point (in a bad way)
 	invalidPointUnit = 1
 )
+
+func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model.DataResponse) (map[common.Address]*schema.Stat, error) {
+	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
+			return response.Address
+		}),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return lo.SliceToMap(stats, func(stat *schema.Stat) (common.Address, *schema.Stat) {
+		return stat.Address, stat
+	}), nil
+}
+
+func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, nodeStats []*schema.Stat) {
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
+
+	for i := range nodeStats {
+		i := i
+
+		statsPool.Go(func(_ context.Context) error {
+			calculateReliabilityScore(nodeStats[i])
+
+			e.updateScoreMaintainer(ctx, nodeStats[i])
+
+			return nil
+		})
+	}
+
+	if err := statsPool.Wait(); err != nil {
+		zap.L().Error("failed to update score maintainer", zap.Error(err))
+	}
+}
+
+func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStat *schema.Stat) {
+	nodeCache := &model.NodeEndpointCache{
+		Address:      nodeStat.Address.String(),
+		Score:        nodeStat.Score,
+		Endpoint:     nodeStat.Endpoint,
+		InvalidCount: nodeStat.EpochInvalidRequest,
+	}
+
+	if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, nodeCache); err != nil {
+		zap.L().Error("failed to update full node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
+	}
+
+	if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, nodeCache); err != nil {
+		zap.L().Error("failed to update rss node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
+	}
+}
+
+// verifyPartialActivities filter Activity based on the platform to perform a partial verification.
+func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID uint64, validResponse *model.DataResponse, activities []*model.Activity, workingNodes []common.Address) {
+	// platformMap is used to store the platform that has been verified
+	platformMap := make(map[string]struct{}, model.RequiredVerificationCount)
+	// statMap is used to store the stats that have been verified
+	statMap := make(map[string]struct{})
+
+	nodeInvalidResponse := &schema.NodeInvalidResponse{
+		EpochID:       epochID,
+		VerifierNodes: []common.Address{validResponse.Address},
+	}
+
+	for _, activity := range activities {
+		// This usually indicates that the activity belongs to the fallback worker.
+		// We cannot determine whether this activity belongs to a readable worker，
+		// therefore it is skipped.
+		if len(activity.Platform) == 0 {
+			continue
+		}
+
+		// Find stats that related to the platform
+		stats, err := e.findStatsByPlatform(ctx, activity, workingNodes)
+
+		if err != nil {
+			zap.L().Error("failed to verify platform", zap.Error(err))
+
+			continue
+		}
+
+		if len(stats) == 0 {
+			zap.L().Warn("no stats match the platform")
+
+			continue
+		}
+
+		e.verifyActivityByStats(ctx, activity, stats, statMap, platformMap, nodeInvalidResponse)
+
+		// If the platform count reaches the RequiredVerificationCount, exit the verification loop.
+		if _, exists := platformMap[activity.Platform]; !exists {
+			if len(platformMap) == model.RequiredVerificationCount {
+				break
+			}
+		}
+	}
+}
+
+// findStatsByPlatform finds the required stats based on the platform.
+func (e *SimpleEnforcer) findStatsByPlatform(ctx context.Context, activity *model.Activity, workingNodes []common.Address) ([]*schema.Stat, error) {
+	pid, err := decentralized.PlatformString(activity.Platform)
+	if err != nil {
+		return nil, err
+	}
+
+	workers := model.PlatformToWorkersMap[pid.String()]
+
+	indexers, err := e.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Networks: []string{activity.Network},
+		Names:    workers,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeAddresses := excludeWorkingNodes(indexers, workingNodes)
+
+	if len(nodeAddresses) == 0 {
+		return nil, nil
+	}
+
+	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses:    nodeAddresses,
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+		PointsOrder:  lo.ToPtr("DESC"),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// excludeWorkingNodes excludes the working Nodes from the indexers.
+func excludeWorkingNodes(indexers []*schema.Worker, workingNodes []common.Address) []common.Address {
+	nodeAddresses := lo.Map(indexers, func(indexer *schema.Worker, _ int) common.Address {
+		return indexer.Address
+	})
+
+	// filter out the working nodes
+	return lo.Filter(nodeAddresses, func(item common.Address, _ int) bool {
+		return !lo.Contains(workingNodes, item)
+	})
+}
+
+// verifyActivityByStats verifies the activity based on stats nodes that meet specific criteria.
+func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *model.Activity, stats []*schema.Stat, statMap, platformMap map[string]struct{}, nodeInvalidResponse *schema.NodeInvalidResponse) {
+	for _, stat := range stats {
+		if _, exists := statMap[stat.Address.String()]; !exists {
+			statMap[stat.Address.String()] = struct{}{}
+
+			activityFetched, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
+
+			if err != nil || activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
+				stat.EpochInvalidRequest += invalidPointUnit
+
+				nodeInvalidResponse.Type = lo.Ternary(err != nil, schema.NodeInvalidResponseTypeError, schema.NodeInvalidResponseTypeInconsistent)
+				nodeInvalidResponse.Response = generateInvalidResponse(err, activityFetched)
+			} else {
+				stat.TotalRequest++
+				stat.EpochRequest += validPointUnit
+			}
+
+			// If the request is invalid, save the invalid response to the database.
+			if stat.EpochInvalidRequest > 0 {
+				nodeInvalidResponse.Node = stat.Address
+				nodeInvalidResponse.Request = stat.Endpoint + "/decentralized/tx/" + activity.ID
+
+				validData, _ := json.Marshal(activity)
+				nodeInvalidResponse.VerifierResponse = validData
+
+				if err = e.databaseClient.SaveNodeInvalidResponses(ctx, []*schema.NodeInvalidResponse{nodeInvalidResponse}); err != nil {
+					zap.L().Error("save node invalid response", zap.Error(err))
+				}
+			}
+
+			platformMap[activity.Platform] = struct{}{}
+
+			if err = e.databaseClient.SaveNodeStat(ctx, stat); err != nil {
+				zap.L().Warn("[verifyStat] failed to save node stat", zap.Error(err))
+			}
+
+			break
+		}
+	}
+}
+
+func generateInvalidResponse(err error, activity *model.ActivityResponse) json.RawMessage {
+	if err != nil {
+		return json.RawMessage(err.Error())
+	}
+
+	rawData, _ := json.Marshal(activity.Data)
+
+	return rawData
+}
+
+// fetchActivityByTxID fetches the activity by txID from a Node.
+func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*model.ActivityResponse, error) {
+	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
+
+	body, err := e.httpClient.Fetch(ctx, fullURL)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	activity := &model.ActivityResponse{}
+	if isDataValid(data, activity) {
+		return activity, nil
+	}
+
+	return nil, fmt.Errorf("invalid data")
+}
+
+// updateStatsWithResults updates the stats based on the responses.
+func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []*model.DataResponse) {
+	for _, response := range responses {
+		if stat, exists := statsMap[response.Address]; exists {
+			stat.TotalRequest += int64(response.ValidPoint)
+			stat.EpochRequest += int64(response.ValidPoint)
+			stat.EpochInvalidRequest += int64(response.InvalidPoint)
+		}
+	}
+}
 
 // sortResponseByValidity sorts the responses based on the validity.
 func sortResponseByValidity(responses []*model.DataResponse) {

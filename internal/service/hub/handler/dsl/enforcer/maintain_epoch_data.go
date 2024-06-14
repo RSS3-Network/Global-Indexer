@@ -215,9 +215,12 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			stats[i].Indexer = len(workerInfo.Decentralized)
 			stats[i].IsRssNode = determineRssNode(workerInfo.RSS)
 			stats[i].FederatedNetwork = calculateFederatedNetwork(workerInfo.Federated)
-			stats[i].Epoch = epoch
-			stats[i].EpochRequest = 0
-			stats[i].EpochInvalidRequest = 0
+
+			if epoch != stats[i].Epoch {
+				stats[i].Epoch = epoch
+				stats[i].EpochRequest = 0
+				stats[i].EpochInvalidRequest = 0
+			}
 
 			if !isFull {
 				mu.Lock()
@@ -379,7 +382,11 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				return e.maintainNodeWorker(ctx, epoch, stats)
+				if err = e.maintainNodeWorker(ctx, epoch, stats); err != nil {
+					return err
+				}
+
+				return e.processNodeStats(ctx, stats)
 			}
 
 			zap.L().Error("Error setting cache", zap.Error(err))

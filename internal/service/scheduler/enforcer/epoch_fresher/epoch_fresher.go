@@ -80,7 +80,7 @@ func (s *server) Run(ctx context.Context) error {
 			}
 
 			if currentEpoch.Cmp(event.Epoch) == 0 {
-				if err = s.simpleEnforcer.MaintainNewEpochData(ctx, event.Epoch.Int64()); err != nil {
+				if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
 					return err
 				}
 
