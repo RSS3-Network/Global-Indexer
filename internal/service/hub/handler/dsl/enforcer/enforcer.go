@@ -174,19 +174,18 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 		stakingContract: stakingContract,
 		httpClient:      httpClient,
 	}
-
-	if initWorkerMap {
-		if err := enforcer.initWorkerMap(ctx); err != nil {
-			return nil, err
-		}
-	}
-
 	if initScoreMaintainer {
 		if err := enforcer.initScoreMaintainers(ctx); err != nil {
 			return nil, err
 		}
 
 		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
+	}
+
+	if initWorkerMap {
+		if err := enforcer.initWorkerMap(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	return enforcer, nil
