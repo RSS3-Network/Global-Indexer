@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-ALTER TABLE node_worker ADD COLUMN "epoch_id" bigint NOT NULL;
+ALTER TABLE node_worker ADD COLUMN "epoch_id" bigint NOT NULL DEFAULT 0;
 
 ALTER TABLE node_worker ADD COLUMN "is_active" BOOLEAN NOT NULL DEFAULT FALSE;
 
