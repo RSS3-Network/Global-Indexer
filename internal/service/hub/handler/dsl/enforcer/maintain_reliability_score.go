@@ -155,10 +155,8 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 	for i := range stats {
 		i := i
 
-		statsPool.Go(func(ctx context.Context) error {
+		statsPool.Go(func(_ context.Context) error {
 			updateNodeStat(stats[i], nodesInfo[i].StakingPoolTokens, nodes[i].Status)
-
-			e.updateScoreMaintainer(ctx, stats[i])
 
 			return nil
 		})

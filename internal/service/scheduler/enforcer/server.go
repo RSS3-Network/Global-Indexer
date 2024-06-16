@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -46,7 +47,7 @@ func (s *server) Run(ctx context.Context) error {
 	return nil
 }
 
-func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client, httpClient httputil.Client) (service.Server, error) {
 	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)
@@ -62,7 +63,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, nil, false, false)
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, httpClient, false, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("new simple enforcer: %w", err)

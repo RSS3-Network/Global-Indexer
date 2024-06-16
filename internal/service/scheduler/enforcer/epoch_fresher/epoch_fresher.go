@@ -55,7 +55,6 @@ func (s *server) Run(ctx context.Context) error {
 			)
 
 			timer := time.NewTimer(blockConfirmationTime)
-
 			<-timer.C
 
 			continue
@@ -68,28 +67,46 @@ func (s *server) Run(ctx context.Context) error {
 		}
 
 		if len(logs) > 0 {
-			currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
-
-			if err != nil {
-				return fmt.Errorf("get current epoch: %w", err)
+			if err = s.processLogs(ctx, logs); err != nil {
+				return err
 			}
 
-			event, err := s.stakingContract.ParseRewardDistributed(logs[0])
-			if err != nil {
-				return fmt.Errorf("parse RewardDistributed event: %w", err)
-			}
+			// wait for a new epoch
+			newEpochWaitTime := 17 * time.Hour
 
-			if currentEpoch.Cmp(event.Epoch) == 0 {
-				if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
-					return err
-				}
+			zap.L().Info(
+				"waiting for a new epoch",
+				zap.Duration("newEpochWaitTime", newEpochWaitTime),
+			)
 
-				zap.L().Info("maintain new epoch data completed", zap.Int64("epoch", event.Epoch.Int64()))
-			}
+			timer := time.NewTimer(newEpochWaitTime)
+			<-timer.C
 		}
 
 		s.blockNumber = blockEnd
 	}
+}
+
+func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
+	currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
+	if err != nil {
+		return fmt.Errorf("get current epoch: %w", err)
+	}
+
+	event, err := s.stakingContract.ParseRewardDistributed(logs[0])
+	if err != nil {
+		return fmt.Errorf("parse RewardDistributed event: %w", err)
+	}
+
+	if currentEpoch.Cmp(event.Epoch) == 0 {
+		if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
+			return err
+		}
+
+		zap.L().Info("maintain new epoch data completed", zap.Int64("epoch", event.Epoch.Int64()))
+	}
+
+	return nil
 }
 
 func (s *server) fetchLogs(ctx context.Context, blockStart, blockEnd uint64) ([]types.Log, error) {
