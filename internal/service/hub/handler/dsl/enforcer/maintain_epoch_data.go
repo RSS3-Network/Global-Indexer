@@ -369,6 +369,7 @@ func buildNodeWorkers(epoch int64, address common.Address, workerInfo []*Decentr
 	return workers
 }
 
+// getWorkerMapFromCache gets the worker map from the cache.
 func getWorkerMapFromCache(ctx context.Context, cacheClient cache.Client) chan error {
 	var wg sync.WaitGroup
 
