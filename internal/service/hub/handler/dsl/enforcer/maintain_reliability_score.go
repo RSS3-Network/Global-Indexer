@@ -63,7 +63,10 @@ func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context) ([]*schema.Stat, error) {
 	stats := make([]*schema.Stat, 0)
 
-	query := &schema.StatQuery{Limit: lo.ToPtr(defaultLimit)}
+	query := &schema.StatQuery{
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+		Limit:        lo.ToPtr(defaultLimit),
+	}
 
 	// Traverse the entire node.
 	for {

@@ -223,7 +223,11 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			defer wg.Done()
 
 			workerInfo, exist := nodeToDataMap[stats[i].Address]
+			// If the node does not exist, this indicates that the system failed to retrieve the status of the current epoch.
+			// In this case, the node will be disqualified from the current round of request distribution.
 			if !exist {
+				stats[i].EpochInvalidRequest = int64(model.DemotionCountBeforeSlashing)
+
 				return
 			}
 
