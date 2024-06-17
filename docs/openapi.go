@@ -3,10 +3,10 @@ package docs
 import (
 	"embed"
 	"fmt"
-	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"os"
 	"sort"
 
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/node/schema/worker"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/activity"
