@@ -23,33 +23,33 @@ import (
 	"go.uber.org/zap"
 )
 
-// maintainNodeWorkerWorker maintains the worker information for the network nodes at every new epoch.
+// maintainNodeWorkerWorker maintains the worker information for network nodes at each new epoch.
 func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) error {
-	// Initialize the worker related maps.
+	// Initialize maps related to worker data.
 	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats)
-	// Transform the map to slice.
+	// Transform the map and assigns the result to the global variable.
 	mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap)
-	// Set the cache data to be used as program restarts or updated when starts a new epoch.
+	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
 	if err := e.setMapCache(ctx); err != nil {
 		return err
 	}
-	// Update node stat and workers data.
+	// Update node statistics and worker data.
 	return e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch)
 }
 
-// generateMaps generates the worker related maps.
+// generateMaps generates maps related to worker data.
 func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address]*ComponentInfo, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}) {
 	var (
-		// nodeToDataMap stores the response returned by /workers_status api for each node.
+		// nodeToDataMap stores the API response from /workers_status for each node.
 		nodeToDataMap = make(map[common.Address]*ComponentInfo, len(stats))
-		// fullNodeWorkerToNetworksMap stores the correspondence between workers and networks that the entire network can support.
-		// A node is considered a full node if it contains all workers and each worker contains the complete quantity of its corresponding network.
+		// fullNodeWorkerToNetworksMap maps each worker in a full node to their respective networks that are fully supported by the entire network.
+		// A node qualifies as a full node if it includes all workers, with each worker fully supporting its designated network.
 		fullNodeWorkerToNetworksMap = make(map[string]map[string]struct{}, len(decentralized.WorkerValues()))
-		// networkToWorkersMap stores the correspondence between networks and workers that the entire network can support.
+		// networkToWorkersMap maps networks to workers that are supported across the entire network.
 		networkToWorkersMap = make(map[string]map[string]struct{}, len(network.NetworkValues()))
-		// platformToWorkersMap stores the correspondence between platforms and workers that the entire network can support.
+		// platformToWorkersMap maps platforms to workers that are supported across the entire network.
 		platformToWorkersMap = make(map[string]map[string]struct{}, len(decentralized.PlatformValues()))
-		// tagToWorkersMap stores the correspondence between tags and workers that the entire network can support.
+		// tagToWorkersMap maps tags to workers that are supported across the entire network.
 		tagToWorkersMap = make(map[string]map[string]struct{}, len(tag.TagValues()))
 
 		wg sync.WaitGroup
@@ -61,14 +61,14 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 
 		go func(stat *schema.Stat) {
 			defer wg.Done()
-			// Get the worker status of the node.
-			// The response includes the name, network, tags, and platform information of the worker.
+			// Retrieve the status of the node's worker,
+			// including details like name, network, tags, and platform information.
 			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint)
 			if err != nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
-				// If the system fails to retrieve the status of the current epoch,
-				// the node will be disqualified from the current round of request distribution.
+				// Disqualifie the node from the current request distribution round
+				// if retrieving the epoch status fails.
 				return
 			}
 
@@ -77,7 +77,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			mu.Unlock()
 
 			for _, workerInfo := range workerStatus.Data.Decentralized {
-				// Skip the worker if the status is not ready.
+				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
 					continue
 				}
@@ -126,7 +126,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 	return nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap
 }
 
-// mapTransformAssign transforms the map, and assigns the transformed map to the global variable.
+// mapTransformAssign transforms the map and assigns the result to a global variable.
 func mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap map[string]map[string]struct{}) {
 	var (
 		wg  sync.WaitGroup
@@ -174,8 +174,7 @@ func mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platfo
 	wg.Wait()
 }
 
-// setMapCache sets the worker related maps to the cache.
-// This is used as a cache for each epoch, and can be obtained when the program is restarted.
+// setMapCache caches worker-related maps for use in each epoch and retains them across program restarts.
 func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 	var wg sync.WaitGroup
 
@@ -220,7 +219,7 @@ func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 	return nil
 }
 
-// updateNodeWorkers checks whether the node is a full node and updates the worker information to the database.
+// updateNodeWorkers checks if the node is a full node and updates the corresponding worker information in the database.
 func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.Stat, nodeToDataMap map[common.Address]*ComponentInfo, epoch int64) error {
 	var (
 		wg         sync.WaitGroup
@@ -235,15 +234,15 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			defer wg.Done()
 
 			workerInfo, exist := nodeToDataMap[stats[i].Address]
-			// If the node does not exist, this indicates that the system failed to retrieve the status of the current epoch.
-			// In this case, the node will be disqualified from the current round of request distribution.
+			// Disqualifies the node from the current request distribution round if it does not exist,
+			// indicating a failure to retrieve the current epoch's status.
 			if !exist {
 				stats[i].EpochInvalidRequest = int64(model.DemotionCountBeforeSlashing)
 
 				return
 			}
 
-			// Determine if the node is a full node.
+			// Determine whether the node qualifies as a full node.
 			isFull := determineFullNode(workerInfo.Decentralized)
 			stats[i].IsFullNode = isFull
 
@@ -257,16 +256,15 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			stats[i].IsRssNode = determineRssNode(workerInfo.RSS)
 			stats[i].FederatedNetwork = calculateFederatedNetwork(workerInfo.Federated)
 
-			// If the epoch is different from the previous epoch, it indicates that the new epoch has arrived,
-			// the epoch, request count and invalid request count are reset.
+			// Reset the epoch, request count, and invalid request count if a new epoch is detected,
+			// different from the previous one.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
 				stats[i].EpochRequest = 0
 				stats[i].EpochInvalidRequest = 0
 			}
 
-			// If the node is not a full node,
-			// the worker information is updated to the database.
+			// Update worker information in the database if the node is not a full node.
 			if !isFull {
 				mu.Lock()
 				workerList = append(workerList, buildNodeWorkers(epoch, stats[i].Address, workerInfo.Decentralized)...)
@@ -278,7 +276,7 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 	wg.Wait()
 
 	return e.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		// Set the active of all outdated epoch workers to false
+		// Set the 'active' status to false for all workers from outdated epochs.
 		if err := client.UpdateNodeWorkerActive(ctx); err != nil {
 			return fmt.Errorf("update node worker active: %w", err)
 		}
@@ -307,9 +305,8 @@ func calculateFederatedNetwork(_ []*FederatedInfo) int {
 	return 0
 }
 
-// determineFullNode determines if the node is a full node.
-// If the information of workers contained in this node can construct a map
-// that is exactly the same as WorkerToNetworksMap, it is considered to be a full node.
+// determineFullNode determines if the node is a full node based on
+// whether the workers' information matches the WorkerToNetworksMap exactly.
 func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 	workers = lo.Filter(workers, func(workerInfo *DecentralizedWorkerInfo, _ int) bool {
 		return workerInfo.Status == worker.StatusReady
@@ -329,7 +326,7 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 		workerToNetworksMap[w.Worker.Name()][w.Network.String()] = struct{}{}
 	}
 
-	// Ensure all networks for each worker are present
+	// Ensure each worker has all required networks present.
 	for w, requiredNetworks := range model.WorkerToNetworksMap {
 		networks, exists := workerToNetworksMap[w]
 		if !exists || len(networks) != len(requiredNetworks) {
@@ -346,7 +343,7 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 	return true
 }
 
-// getNodeWorkerStatus gets the worker status of the node.
+// getNodeWorkerStatus retrieves the worker status for the node.
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint string) (*WorkerResponse, error) {
 	fullURL := endpoint + "/workers_status"
 
@@ -377,7 +374,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint strin
 	return response, nil
 }
 
-// buildNodeWorkers builds the worker information for the node.
+// buildNodeWorkers builds and populates worker information for the node.
 func buildNodeWorkers(epoch int64, address common.Address, workerInfo []*DecentralizedWorkerInfo) []*schema.Worker {
 	workers := make([]*schema.Worker, 0, len(workerInfo))
 
@@ -394,7 +391,7 @@ func buildNodeWorkers(epoch int64, address common.Address, workerInfo []*Decentr
 	return workers
 }
 
-// getWorkerMapFromCache gets the worker map from the cache.
+// getWorkerMapFromCache retrieves the worker map from the cache.
 func getWorkerMapFromCache(ctx context.Context, cacheClient cache.Client) chan error {
 	var wg sync.WaitGroup
 
@@ -431,8 +428,8 @@ func getWorkerMapFromCache(ctx context.Context, cacheClient cache.Client) chan e
 	return errChan
 }
 
-// initWorkerMap initializes the worker map when first startup or cache data loss.
-// TODO If cache data is lost, consider reverse recovery from the node data of the latest epoch.
+// initWorkerMap initializes the worker map on first startup or when cache data is lost.
+// TODO Implement reverse recovery from the latest epoch's node data if cache data is lost.
 func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 	errChan := getWorkerMapFromCache(ctx, e.cacheClient)
 

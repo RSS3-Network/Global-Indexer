@@ -60,7 +60,7 @@ func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	return 0, nil
 }
 
-// getAllNodeStats retrieves all Node stats with the given query from the database.
+// getAllNodeStats retrieves all node statistics matching the given query from the database.
 func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
 	stats := make([]*schema.Stat, 0)
 

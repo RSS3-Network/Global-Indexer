@@ -42,13 +42,13 @@ var (
 		decentralized.PlatformFarcaster.String(): {},
 	}
 
-	// WorkerToNetworksMap is a map of Workers to Networks which can filter out the completed network types that workers support.
+	// WorkerToNetworksMap is a map of workers to networks, filtering out the complete network types that workers support.
 	WorkerToNetworksMap = make(map[string][]string, len(decentralized.WorkerValues()))
-	// NetworkToWorkersMap is a map of Networks to Workers which can filter out the completed worker types that networks support.
+	// NetworkToWorkersMap is a map of Networks to Workers, filtering out the complete worker types that networks support.
 	NetworkToWorkersMap = make(map[string][]string, len(network.NetworkValues()))
-	// PlatformToWorkersMap is a map of Platforms to Workers which can filter out the completed worker types that platforms support.
+	// PlatformToWorkersMap is a map of Platforms to Workers, filtering out the complete worker types that platforms support.
 	PlatformToWorkersMap = make(map[string][]string, len(decentralized.PlatformValues()))
-	// TagToWorkersMap is a map of Tags to Workers which can filter out the completed worker types that tags support.
+	// TagToWorkersMap is a map of Tags to Workers, filtering out the complete worker types that tags support.
 	TagToWorkersMap = make(map[string][]string, len(tag.TagValues()))
 )
 
