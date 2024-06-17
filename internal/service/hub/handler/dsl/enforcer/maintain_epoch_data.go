@@ -421,7 +421,10 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				stats, err := e.getAllNodeStats(ctx)
+				stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
+					Limit: lo.ToPtr(defaultLimit),
+				})
+
 				if err != nil {
 					return err
 				}

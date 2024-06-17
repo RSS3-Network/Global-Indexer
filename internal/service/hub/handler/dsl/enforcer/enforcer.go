@@ -104,7 +104,10 @@ func (e *SimpleEnforcer) VerifyPartialResponses(ctx context.Context, epochID uin
 // MaintainReliabilityScore maintains the Reliability Score σ for all Nodes.
 // σ is used to determine the probability of a Node receiving a request on DSL.
 func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
-	stats, err := e.getAllNodeStats(ctx)
+	stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+		Limit:        lo.ToPtr(defaultLimit),
+	})
 	if err != nil {
 		return err
 	}
@@ -122,7 +125,9 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 // MaintainEpochData maintains the data for the new epoch.
 // The data includes the range of data that all nodes can support in a new epoch.
 func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) error {
-	stats, err := e.getAllNodeStats(ctx)
+	stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
+		Limit: lo.ToPtr(defaultLimit),
+	})
 	if err != nil {
 		return err
 	}
