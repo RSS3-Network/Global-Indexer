@@ -179,6 +179,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 		stakingContract: stakingContract,
 		httpClient:      httpClient,
 	}
+
 	if initCacheData {
 		if err := enforcer.initWorkerMap(ctx); err != nil {
 			return nil, err

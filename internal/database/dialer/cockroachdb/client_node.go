@@ -435,7 +435,25 @@ func (c *client) SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) 
 
 	tWorkers.Import(workers)
 
-	return c.database.WithContext(ctx).CreateInBatches(tWorkers, math.MaxUint8).Error
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "epoch_id",
+			},
+			{
+				Name: "address",
+			},
+			{
+				Name: "network",
+			},
+			{
+				Name: "name",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tWorkers, math.MaxUint8).Error
 }
 
 func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error {

@@ -13,14 +13,21 @@ import (
 )
 
 var (
-	RssNodeCacheKey  = "nodes:rss"
+	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
+	RssNodeCacheKey = "nodes:rss"
+	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
 
-	WorkerToNetworksMapKey  = "map:worker_to_networks"
-	NetworkToWorkersMapKey  = "map:network_to_workers"
+	// WorkerToNetworksMapKey is the cache key for the map of Workers to Networks.
+	WorkerToNetworksMapKey = "map:worker_to_networks"
+	// NetworkToWorkersMapKey is the cache key for the map of Networks to Workers.
+	NetworkToWorkersMapKey = "map:network_to_workers"
+	// PlatformToWorkersMapKey is the cache key for the map of Platforms to Workers.
 	PlatformToWorkersMapKey = "map:platform_to_workers"
-	TagToWorkersMapKey      = "map:tag_to_workers"
+	// TagToWorkersMapKey is the cache key for the map of Tags to Workers.
+	TagToWorkersMapKey = "map:tag_to_workers"
 
+	// SubscribeNodeCacheKey is the cache key for the subscribed nodes that new epoch starts.
 	SubscribeNodeCacheKey = "epoch"
 
 	// RequiredQualifiedNodeCount the required number of qualified Nodes
@@ -35,10 +42,14 @@ var (
 		decentralized.PlatformFarcaster.String(): {},
 	}
 
-	WorkerToNetworksMap  = make(map[string][]string, len(decentralized.WorkerValues()))
-	NetworkToWorkersMap  = make(map[string][]string, len(network.NetworkValues()))
+	// WorkerToNetworksMap is a map of Workers to Networks which can filter out the completed network types that workers support.
+	WorkerToNetworksMap = make(map[string][]string, len(decentralized.WorkerValues()))
+	// NetworkToWorkersMap is a map of Networks to Workers which can filter out the completed worker types that networks support.
+	NetworkToWorkersMap = make(map[string][]string, len(network.NetworkValues()))
+	// PlatformToWorkersMap is a map of Platforms to Workers which can filter out the completed worker types that platforms support.
 	PlatformToWorkersMap = make(map[string][]string, len(decentralized.PlatformValues()))
-	TagToWorkersMap      = make(map[string][]string, len(tag.TagValues()))
+	// TagToWorkersMap is a map of Tags to Workers which can filter out the completed worker types that tags support.
+	TagToWorkersMap = make(map[string][]string, len(tag.TagValues()))
 )
 
 // NodeEndpointCache stores the elements in the heap.

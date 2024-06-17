@@ -40,11 +40,13 @@ func (s *server) Name() string {
 
 func (s *server) Run(ctx context.Context) error {
 	for {
+		// Get the latest block number from VSL.
 		blockEnd, err := s.ethereumClient.BlockNumber(ctx)
 		if err != nil {
 			return fmt.Errorf("get block number: %w", err)
 		}
 
+		// If the block number is the same as the previous one, wait for a new block to be minted.
 		if blockEnd <= s.blockNumber {
 			blockConfirmationTime := time.Second
 			zap.L().Info(
@@ -60,18 +62,20 @@ func (s *server) Run(ctx context.Context) error {
 			continue
 		}
 
+		// Fetch logs from the previous block number to the latest block number.
 		logs, err := s.fetchLogs(ctx, s.blockNumber, blockEnd)
 
 		if err != nil {
 			return fmt.Errorf("fetch logs: %w", err)
 		}
 
+		// If logs are found, it indicates that a new epoch has started.
 		if len(logs) > 0 {
 			if err = s.processLogs(ctx, logs); err != nil {
 				return err
 			}
 
-			// wait for a new epoch
+			// Wait for a new epoch
 			newEpochWaitTime := 17 * time.Hour
 
 			zap.L().Info(
@@ -87,17 +91,23 @@ func (s *server) Run(ctx context.Context) error {
 	}
 }
 
+// processLogs processes the logs to maintain the epoch data.
 func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
+	// Get the current epoch from the settlement contract.
 	currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
 	if err != nil {
 		return fmt.Errorf("get current epoch: %w", err)
 	}
 
+	// Parse the RewardDistributed event to get the epoch.
 	event, err := s.stakingContract.ParseRewardDistributed(logs[0])
 	if err != nil {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
 	}
 
+	// Reward distributed event is triggered indicating a new epoch started, the epoch in event should be previous epoch which starts from 1.
+	// The current epoch in the settlement contract is the newest epoch, but it starts from 0.
+	// Reward distributed event epoch = Current epoch.
 	if currentEpoch.Cmp(event.Epoch) == 0 {
 		if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
 			return err
