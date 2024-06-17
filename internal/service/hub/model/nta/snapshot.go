@@ -14,7 +14,7 @@ type BatchNodeMinTokensToStakeRequest struct {
 }
 
 type GetStakerProfitSnapshotsRequest struct {
-	StakerAddress common.Address `query:"staker" validate:"required"`
+	StakerAddress common.Address `query:"address" validate:"required"`
 	Limit         *int           `query:"limit"`
 	Cursor        *string        `query:"cursor"`
 	BeforeDate    *time.Time     `query:"before_date"`
@@ -22,7 +22,7 @@ type GetStakerProfitSnapshotsRequest struct {
 }
 
 type GetNodeOperationProfitSnapshotsRequest struct {
-	NodeAddress common.Address `query:"node" validate:"required"`
+	NodeAddress common.Address `query:"address" validate:"required"`
 	Limit       *int           `query:"limit"`
 	Cursor      *string        `query:"cursor"`
 	BeforeDate  *time.Time     `query:"before_date"`
@@ -33,7 +33,7 @@ type GetNodeCountSnapshotsResponseData []*CountSnapshot
 
 type BatchGetNodeMinTokensToStakeSnapshotsResponseData []*NodeMinTokensToStakeSnapshots
 
-type GetStakerProfitSnapshotsResponseData []*CountSnapshot
+type GetStakerCountSnapshotsResponseData []*CountSnapshot
 
 type GetOperatorProfitsSnapshotsResponseData []*schema.OperatorProfitSnapshot
 
@@ -56,7 +56,7 @@ func NewNodeCountSnapshots(nodeSnapshots []*schema.NodeSnapshot) GetNodeCountSna
 	})
 }
 
-func NewStakeSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) GetStakerProfitSnapshotsResponseData {
+func NewStakerCountSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) GetStakerCountSnapshotsResponseData {
 	return lo.Map(stakeSnapshots, func(stakeSnapshot *schema.StakerCountSnapshot, _ int) *CountSnapshot {
 		return &CountSnapshot{
 			Date:  stakeSnapshot.Date.Format(time.DateOnly),

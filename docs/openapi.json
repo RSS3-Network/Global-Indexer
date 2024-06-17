@@ -422,21 +422,21 @@
         }
       }
     },
-      "/nta/snapshots/nodes/count": {
-          "get": {
-              "summary": "Get snapshots of Node count",
-              "description": "Retrieve snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
-              "tags": [
-                  "Snapshots",
-                  "NTA"
-              ],
-              "responses": {
-                  "200": {
-                      "$ref": "#/components/responses/NodeCountSnapshotsResponse"
-                  }
-              }
+    "/nta/snapshots/nodes/count": {
+      "get": {
+        "summary": "Get snapshots of Node count",
+        "description": "Retrieve snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
+        "tags": [
+          "Snapshots",
+          "NTA"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/NodeCountSnapshotsResponse"
           }
-      },
+        }
+      }
+    },
     "/nta/snapshots/nodes/min_tokens_to_stake": {
       "post": {
         "summary": "Get snapshots of the minimum staking amount",
@@ -479,11 +479,21 @@
           "NTA"
         ],
         "parameters": [
-          { "$ref": "#/components/parameters/staker_query" },
-          { "$ref": "#/components/parameters/cursor_query" },
-          { "$ref": "#/components/parameters/limit_1_20" },
-          { "$ref": "#/components/parameters/before_date_query" },
-          { "$ref": "#/components/parameters/after_date_query" }
+          {
+            "$ref": "#/components/parameters/address_query"
+          },
+          {
+            "$ref": "#/components/parameters/cursor_query"
+          },
+          {
+            "$ref": "#/components/parameters/limit_1_20"
+          },
+          {
+            "$ref": "#/components/parameters/before_date_query"
+          },
+          {
+            "$ref": "#/components/parameters/after_date_query"
+          }
         ],
         "responses": {
           "200": {
@@ -495,75 +505,21 @@
     "/nta/snapshots/nodes/operation/profit": {
       "get": {
         "summary": "Get snapshots of operation profit",
-        "description": "Get snapshots of operation profit",
+        "description": "Retrieve snapshots of the operation profit over time for a specific node. This endpoint allows filtering by node address, date range, and pagination parameters.",
         "tags": [
           "Snapshots",
           "NTA"
         ],
         "parameters": [
-          {
-            "name": "node_address",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer"
-            },
-            "description": "The number of snapshots to return, if not provided, return all snapshots"
-          },
-          {
-            "name": "beforeDate",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "description": "The date before which the snapshots are returned"
-          },
-          {
-            "name": "afterDate",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "description": "The date after which the snapshots are returned"
-          }
+          { "$ref": "#/components/parameters/address_query" },
+          { "$ref": "#/components/parameters/cursor_query" },
+          { "$ref": "#/components/parameters/limit_1_20" },
+          { "$ref": "#/components/parameters/before_date_query" },
+          { "$ref": "#/components/parameters/after_date_query" }
         ],
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OperationProfit"
-                      }
-                    },
-                    "cursor": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/OperationProfitSnapshotsResponse"
           }
         }
       }
@@ -1345,22 +1301,73 @@
       "Direction": {
         "description": "The direction of an activity.",
         "type": "string",
-        "enum": ["in","out","self"]
+        "enum": [
+          "in",
+          "out",
+          "self"
+        ]
       },
       "Tag": {
         "description": "A tag used to categorize activities.",
         "type": "string",
-        "enum": ["collectible","exchange","metaverse","rss","social","transaction","unknown"]
+        "enum": [
+          "collectible",
+          "exchange",
+          "metaverse",
+          "rss",
+          "social",
+          "transaction",
+          "unknown"
+        ]
       },
       "Network": {
         "description": "The network on which activities occur.",
         "type": "string",
-        "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","optimism","polygon","vsl"]
+        "enum": [
+          "arbitrum",
+          "arweave",
+          "avax",
+          "base",
+          "binance-smart-chain",
+          "crossbell",
+          "ethereum",
+          "farcaster",
+          "gnosis",
+          "linea",
+          "optimism",
+          "polygon",
+          "vsl"
+        ]
       },
       "Platform": {
         "description": "The platform on which activities occur.",
         "type": "string",
-        "enum": ["1inch","AAVE","Aavegotchi","Crossbell","Curve","ENS","Farcaster","Highlight","IQWiki","KiwiStand","Lens","Lido","LooksRare","Matters","Mirror","OpenSea","Optimism","Paragraph","RSS3","SAVM","Stargate","Uniswap","Unknown","VSL"]
+        "enum": [
+          "1inch",
+          "AAVE",
+          "Aavegotchi",
+          "Crossbell",
+          "Curve",
+          "ENS",
+          "Farcaster",
+          "Highlight",
+          "IQWiki",
+          "KiwiStand",
+          "Lens",
+          "Lido",
+          "LooksRare",
+          "Matters",
+          "Mirror",
+          "OpenSea",
+          "Optimism",
+          "Paragraph",
+          "RSS3",
+          "SAVM",
+          "Stargate",
+          "Uniswap",
+          "Unknown",
+          "VSL"
+        ]
       },
       "Fee": {
         "description": "Represents fee information for an activity.",
@@ -1923,12 +1930,13 @@
       "StakerProfitSnapshot": {
         "type": "object",
         "properties": {
-          "owner_address": {
-            "type": "string"
+          "address": {
+            "type": "string",
+            "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944"
           },
           "date": {
             "type": "string",
-            "example": "2024-03-13T00:08:38+08:00"
+            "example": "2024-06-17T02:01:29Z"
           },
           "epoch_id": {
             "type": "integer",
@@ -1968,7 +1976,7 @@
       "OperationProfit": {
         "type": "object",
         "properties": {
-          "node_address": {
+          "address": {
             "type": "string"
           },
           "date": {
@@ -2322,7 +2330,12 @@
         "properties": {
           "error_code": {
             "type": "string",
-            "enum": ["bad_request","validate_failed","bad_params","internal_error"]
+            "enum": [
+              "bad_request",
+              "validate_failed",
+              "bad_params",
+              "internal_error"
+            ]
           },
           "error": {
             "type": "string"
@@ -2335,7 +2348,27 @@
       "Type": {
         "description": "The type of activity.",
         "type": "string",
-        "enum": ["approval","bridge","burn","comment","delete","feed","liquidity","mint","post","profile","proxy","revise","reward","share","staking","swap","trade","transfer","unknown"]
+        "enum": [
+          "approval",
+          "bridge",
+          "burn",
+          "comment",
+          "delete",
+          "feed",
+          "liquidity",
+          "mint",
+          "post",
+          "profile",
+          "proxy",
+          "revise",
+          "reward",
+          "share",
+          "staking",
+          "swap",
+          "trade",
+          "transfer",
+          "unknown"
+        ]
       },
       "CountSnapshot": {
         "type": "object",
@@ -2923,37 +2956,37 @@
           }
         }
       },
-        "ChipImageResponse": {
-            "description": "A successful response containing the SVG image of the specified chip. The image can be used to visually represent the chip.",
-            "content": {
-                "image/svg+xml": {
-                    "schema": {
-                        "type": "string",
-                        "description": "SVG image data of the chip.",
-                        "example": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;background-color:black;\" xml:space=\"preserve\">\n    <style type=\"text/css\">.f{fill:#FB1467;}.c{fill:#DEE5D9;}.b{fill:#DEE5D9;}.h{fill:#31C040;}.alpha{fill:#1477FB;}.pg{fill:#FB1467;}.e{fill-rule:evenodd;clip-rule:evenodd;}</style>\n    <path class=\"f\" d=\"M92 18v2h2v4h-2v2h2v2h-2v2h2v4h-2v2h2v4h-2v2h2v2h-2v2h2v8h-2v2h2v2h-2v2h2v4h-2v2h2v2h-2v2h2v4h-2v2h2v4h-2v2h2v2h-4V16h4v2zM84 6v4H16V6h2v2h2V6h4v2h2V6h4v2h2V6h2v2h2V6h4v2h2V6h2v2h2V6h8v2h2V6h2v2h2V6h4v2h2V6h4v2h2V6h2v2h2V6h4v2h2V6zm0 84v4h-2v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-8v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-4v-2h-2v2h-2v-4zM10 16v68H6v-2h2v-2H6v-4h2v-2H6v-4h2v-2H6v-2h2v-2H6v-4h2v-2H6v-2h2v-2H6v-8h2v-2H6v-2h2v-2H6v-4h2v-2H6v-4h2v-2H6v-2h2v-2H6v-4h2v-2H6v-2z\"/>\n    <svg class=\"c\">\n      <path d=\"M14 16v2h2v-2zm2-2v2h2v-2zm0 4v2h2v-2zm2-2v2h2v-2zm-4 68v-2h2v2zm2 2v-2h2v2zm0-4v-2h2v2zm2 2v-2h2v2zm-4-26V42h2v16zm4 0V42h2v16z\"/>\n      <path d=\"M14 58v-2h6v2zm0-6v-4h6v4zm0-8v-2h6v2zm4 16v-2h2v2zm-4 0v-2h2v2zm4-18v-2h2v2zm-4 0v-2h2v2zm2 18v6h2v-6zm0 12v2h2v-2zm0-32v-6h2v6zm0-12v-2h2v2zm2-2v-2h2v2zm-2-2v-2h2v2zm2-2v-2h2v2zm-4 46h6v-2h-6zm0 4h6v-2h-6z\"/>\n      <path d=\"M14 66v6h2v-6zm4 0v6h2v-6zm-2 6v2h2v-2zm2 2v2h2v-2zm-2 2v2h2v-2zm2 2v2h2v-2z\"/>\n      <path d=\"M18 74v2h2v-2zm-4-42h6v2h-6zm0-4h6v2h-6z\"/>\n      <path d=\"M14 34v-6h2v6zm4 0v-6h2v6zm68-18v2h-2v-2zm-2-2v2h-2v-2zm0 4v2h-2v-2zm-2-2v2h-2v-2zm4 68v-2h-2v2zm-2 2v-2h-2v2zm0-4v-2h-2v2zm-2 2v-2h-2v2zm4-26V42h-2v16zm-4 0V42h-2v16z\"/>\n      <path d=\"M86 58v-2h-6v2zm0-6v-4h-6v4zm0-8v-2h-6v2zm-4 16v-2h-2v2zm4 0v-2h-2v2zm-4-18v-2h-2v2zm4 0v-2h-2v2zm-2 18v6h-2v-6zm0 12v2h-2v-2zm0-32v-6h-2v6zm0-12v-2h-2v2zm-2-2v-2h-2v2zm2-2v-2h-2v2zm-2-2v-2h-2v2zm4 46h-6v-2h6zm0 4h-6v-2h6z\"/>\n      <path d=\"M86 66v6h-2v-6zm-4 0v6h-2v-6zm2 6v2h-2v-2zm-2 2v2h-2v-2zm2 2v2h-2v-2zm-2 2v2h-2v-2z\"/>\n      <path d=\"M82 74v2h-2v-2zm4-42h-6v2h6zm0-4h-6v2h6z\"/>\n      <path d=\"M86 34v-6h-2v6zm-4 0v-6h-2v6zM16 86h2v-2h-2zm-2-2h2v-2h-2zm4 0h2v-2h-2zm-2-2h2v-2h-2zm68 4h-2v-2h2zm2-2h-2v-2h2zm-4 0h-2v-2h2zm2-2h-2v-2h2zm-26 4H42v-2h16zm0-4H42v-2h16z\"/>\n      <path d=\"M58 86h-2v-6h2zm-6 0h-4v-6h4zm-8 0h-2v-6h2zm16-4h-2v-2h2zm0 4h-2v-2h2zm-18-4h-2v-2h2zm0 4h-2v-2h2zm18-2h6v-2h-6zm12 0h2v-2h-2zm-32 0h-6v-2h6zm-12 0h-2v-2h2zm-2-2h-2v-2h2zm-2 2h-2v-2h2zm-2-2h-2v-2h2zm46 4v-6h-2v6zm4 0v-6h-2v6z\"/>\n      <path d=\"M66 86h6v-2h-6zm0-4h6v-2h-6zm6 2h2v-2h-2zm2-2h2v-2h-2zm2 2h2v-2h-2zm2-2h2v-2h-2z\"/>\n      <path d=\"M74 82h2v-2h-2zm-42 4v-6h2v6zm-4 0v-6h2v6z\"/>\n      <path d=\"M34 86h-6v-2h6zm0-4h-6v-2h6zM16 14h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm-2 2h2v2h-2zm68-4h-2v2h2zm2 2h-2v2h2zm-4 0h-2v2h2zm2 2h-2v2h2zm-26-4H42v2h16zm0 4H42v2h16z\"/>\n      <path d=\"M58 14h-2v6h2zm-6 0h-4v6h4zm-8 0h-2v6h2zm16 4h-2v2h2zm0-4h-2v2h2zm-18 4h-2v2h2zm0-4h-2v2h2zm18 2h6v2h-6zm12 0h2v2h-2zm-32 0h-6v2h6zm-12 0h-2v2h2zm-2 2h-2v2h2zm-2-2h-2v2h2zm-2 2h-2v2h2zm46-4v6h-2v-6zm4 0v6h-2v-6z\"/>\n      <path d=\"M66 14h6v2h-6zm0 4h6v2h-6zm6-2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm2 2h2v2h-2z\"/>\n      <path d=\"M74 18h2v2h-2zm-42-4v6h2v-6zm-4 0v6h2v-6z\"/>\n      <path d=\"M34 14h-6v2h6zm0 4h-6v2h6z\"/>\n    </svg>\n    <path class=\"alpha\" d=\"M6 6V4h4v2zm4 0v2H6V6H4v6h2v-2h4v2h2V6zm84-2v2h-4V4zm0 2v2h-4V6h-2v6h2v-2h4v2h2V6zM10 88v2H6v-2zm0 2v2H6v-2H4v6h2v-2h4v2h2v-6zm84-2v2h-4v-2zm0 2v2h-4v-2h-2v6h2v-2h4v2h2v-6z\"/>\n    <polygon class=\"b\" points=\"72,44 72,68 70,68 70,70 68,70 68,72 32,72 32,70 30,70 30,68 28,68 28,44 \"/>\n    <path d=\"M26 48h16v2H26zm0 2h18v2H26zm2 2h16v2H28zm2 2h14v2H30zm2 2h12v2H32z\" fill=\"#000\"/>\n    <path d=\"M38 52h2v4h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M46 56h2v2h-2zm28-8H58v2h16zm0 2H56v2h18zm-2 2H56v2h16zm-2 2H56v2h14zm-2 2H56v2h12z\" fill=\"#000\"/>\n    <path d=\"M62 52h-2v4h2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M54 56h-2v2h2z\" fill=\"#000\"/>\n    <path d=\"M38 61h2v2h-2zM42 63h4v4h-4zM40 63h2v4h-2z\" fill=\"#000\"/>\n    <path d=\"M54 63h4v2h-4z\" fill=\"#DEE5D9\"/>\n    <path d=\"M46 63h2v4h-2zM52 63h2v4h-2zM58 63h2v4h-2zM40 61h20v2H40zM54 63h4v4h-4z\" fill=\"#000\"/>\n    <path d=\"M54 61h4v2h-4zM44 61h2v2h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M60 61h2v2h-2zM48 63h4v4h-4zM40 67h20v2H40zM36 63h2v2h-2zM34 61h2v2h-2zM34 63h2v2h-2zM34 65h2v2h-2zM66 61h-2v2h2zM66 63h-2v2h2zM66 65h-2v2h2zM38 63h2v4h-2z\" fill=\"#000\"/>\n    <path d=\"M52 67h2v2h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M60 63h2v4h-2zM62 63h2v2h-2z\" fill=\"#000\"/>\n    <path class=\"h e\" d=\"M70 34v-4h-2v-2h-2v-2h-6v2h-2v2h-2v2h-2v2h-8v-2h-2v-2h-2v-2h-2v-2h-6v2h-2v2h-2v4h-2v8h44v-8zm-26 4H30v-2h2v-4h2v-2h6v2h2v4h2zm26 0H56v-2h2v-4h2v-2h6v2h2v4h2z\"/>\n  </svg>"
-                    }
-                }
+      "ChipImageResponse": {
+        "description": "A successful response containing the SVG image of the specified chip. The image can be used to visually represent the chip.",
+        "content": {
+          "image/svg+xml": {
+            "schema": {
+              "type": "string",
+              "description": "SVG image data of the chip.",
+              "example": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <svg version=\"1.1\" id=\"Layer_1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 100 100\" style=\"enable-background:new 0 0 100 100;background-color:black;\" xml:space=\"preserve\">\n    <style type=\"text/css\">.f{fill:#FB1467;}.c{fill:#DEE5D9;}.b{fill:#DEE5D9;}.h{fill:#31C040;}.alpha{fill:#1477FB;}.pg{fill:#FB1467;}.e{fill-rule:evenodd;clip-rule:evenodd;}</style>\n    <path class=\"f\" d=\"M92 18v2h2v4h-2v2h2v2h-2v2h2v4h-2v2h2v4h-2v2h2v2h-2v2h2v8h-2v2h2v2h-2v2h2v4h-2v2h2v2h-2v2h2v4h-2v2h2v4h-2v2h2v2h-4V16h4v2zM84 6v4H16V6h2v2h2V6h4v2h2V6h4v2h2V6h2v2h2V6h4v2h2V6h2v2h2V6h8v2h2V6h2v2h2V6h4v2h2V6h4v2h2V6h2v2h2V6h4v2h2V6zm0 84v4h-2v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-8v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-2v-2h-2v2h-4v-2h-2v2h-4v-2h-2v2h-2v-4zM10 16v68H6v-2h2v-2H6v-4h2v-2H6v-4h2v-2H6v-2h2v-2H6v-4h2v-2H6v-2h2v-2H6v-8h2v-2H6v-2h2v-2H6v-4h2v-2H6v-4h2v-2H6v-2h2v-2H6v-4h2v-2H6v-2z\"/>\n    <svg class=\"c\">\n      <path d=\"M14 16v2h2v-2zm2-2v2h2v-2zm0 4v2h2v-2zm2-2v2h2v-2zm-4 68v-2h2v2zm2 2v-2h2v2zm0-4v-2h2v2zm2 2v-2h2v2zm-4-26V42h2v16zm4 0V42h2v16z\"/>\n      <path d=\"M14 58v-2h6v2zm0-6v-4h6v4zm0-8v-2h6v2zm4 16v-2h2v2zm-4 0v-2h2v2zm4-18v-2h2v2zm-4 0v-2h2v2zm2 18v6h2v-6zm0 12v2h2v-2zm0-32v-6h2v6zm0-12v-2h2v2zm2-2v-2h2v2zm-2-2v-2h2v2zm2-2v-2h2v2zm-4 46h6v-2h-6zm0 4h6v-2h-6z\"/>\n      <path d=\"M14 66v6h2v-6zm4 0v6h2v-6zm-2 6v2h2v-2zm2 2v2h2v-2zm-2 2v2h2v-2zm2 2v2h2v-2z\"/>\n      <path d=\"M18 74v2h2v-2zm-4-42h6v2h-6zm0-4h6v2h-6z\"/>\n      <path d=\"M14 34v-6h2v6zm4 0v-6h2v6zm68-18v2h-2v-2zm-2-2v2h-2v-2zm0 4v2h-2v-2zm-2-2v2h-2v-2zm4 68v-2h-2v2zm-2 2v-2h-2v2zm0-4v-2h-2v2zm-2 2v-2h-2v2zm4-26V42h-2v16zm-4 0V42h-2v16z\"/>\n      <path d=\"M86 58v-2h-6v2zm0-6v-4h-6v4zm0-8v-2h-6v2zm-4 16v-2h-2v2zm4 0v-2h-2v2zm-4-18v-2h-2v2zm4 0v-2h-2v2zm-2 18v6h-2v-6zm0 12v2h-2v-2zm0-32v-6h-2v6zm0-12v-2h-2v2zm-2-2v-2h-2v2zm2-2v-2h-2v2zm-2-2v-2h-2v2zm4 46h-6v-2h6zm0 4h-6v-2h6z\"/>\n      <path d=\"M86 66v6h-2v-6zm-4 0v6h-2v-6zm2 6v2h-2v-2zm-2 2v2h-2v-2zm2 2v2h-2v-2zm-2 2v2h-2v-2z\"/>\n      <path d=\"M82 74v2h-2v-2zm4-42h-6v2h6zm0-4h-6v2h6z\"/>\n      <path d=\"M86 34v-6h-2v6zm-4 0v-6h-2v6zM16 86h2v-2h-2zm-2-2h2v-2h-2zm4 0h2v-2h-2zm-2-2h2v-2h-2zm68 4h-2v-2h2zm2-2h-2v-2h2zm-4 0h-2v-2h2zm2-2h-2v-2h2zm-26 4H42v-2h16zm0-4H42v-2h16z\"/>\n      <path d=\"M58 86h-2v-6h2zm-6 0h-4v-6h4zm-8 0h-2v-6h2zm16-4h-2v-2h2zm0 4h-2v-2h2zm-18-4h-2v-2h2zm0 4h-2v-2h2zm18-2h6v-2h-6zm12 0h2v-2h-2zm-32 0h-6v-2h6zm-12 0h-2v-2h2zm-2-2h-2v-2h2zm-2 2h-2v-2h2zm-2-2h-2v-2h2zm46 4v-6h-2v6zm4 0v-6h-2v6z\"/>\n      <path d=\"M66 86h6v-2h-6zm0-4h6v-2h-6zm6 2h2v-2h-2zm2-2h2v-2h-2zm2 2h2v-2h-2zm2-2h2v-2h-2z\"/>\n      <path d=\"M74 82h2v-2h-2zm-42 4v-6h2v6zm-4 0v-6h2v6z\"/>\n      <path d=\"M34 86h-6v-2h6zm0-4h-6v-2h6zM16 14h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm-2 2h2v2h-2zm68-4h-2v2h2zm2 2h-2v2h2zm-4 0h-2v2h2zm2 2h-2v2h2zm-26-4H42v2h16zm0 4H42v2h16z\"/>\n      <path d=\"M58 14h-2v6h2zm-6 0h-4v6h4zm-8 0h-2v6h2zm16 4h-2v2h2zm0-4h-2v2h2zm-18 4h-2v2h2zm0-4h-2v2h2zm18 2h6v2h-6zm12 0h2v2h-2zm-32 0h-6v2h6zm-12 0h-2v2h2zm-2 2h-2v2h2zm-2-2h-2v2h2zm-2 2h-2v2h2zm46-4v6h-2v-6zm4 0v6h-2v-6z\"/>\n      <path d=\"M66 14h6v2h-6zm0 4h6v2h-6zm6-2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm2 2h2v2h-2z\"/>\n      <path d=\"M74 18h2v2h-2zm-42-4v6h2v-6zm-4 0v6h2v-6z\"/>\n      <path d=\"M34 14h-6v2h6zm0 4h-6v2h6z\"/>\n    </svg>\n    <path class=\"alpha\" d=\"M6 6V4h4v2zm4 0v2H6V6H4v6h2v-2h4v2h2V6zm84-2v2h-4V4zm0 2v2h-4V6h-2v6h2v-2h4v2h2V6zM10 88v2H6v-2zm0 2v2H6v-2H4v6h2v-2h4v2h2v-6zm84-2v2h-4v-2zm0 2v2h-4v-2h-2v6h2v-2h4v2h2v-6z\"/>\n    <polygon class=\"b\" points=\"72,44 72,68 70,68 70,70 68,70 68,72 32,72 32,70 30,70 30,68 28,68 28,44 \"/>\n    <path d=\"M26 48h16v2H26zm0 2h18v2H26zm2 2h16v2H28zm2 2h14v2H30zm2 2h12v2H32z\" fill=\"#000\"/>\n    <path d=\"M38 52h2v4h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M46 56h2v2h-2zm28-8H58v2h16zm0 2H56v2h18zm-2 2H56v2h16zm-2 2H56v2h14zm-2 2H56v2h12z\" fill=\"#000\"/>\n    <path d=\"M62 52h-2v4h2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M54 56h-2v2h2z\" fill=\"#000\"/>\n    <path d=\"M38 61h2v2h-2zM42 63h4v4h-4zM40 63h2v4h-2z\" fill=\"#000\"/>\n    <path d=\"M54 63h4v2h-4z\" fill=\"#DEE5D9\"/>\n    <path d=\"M46 63h2v4h-2zM52 63h2v4h-2zM58 63h2v4h-2zM40 61h20v2H40zM54 63h4v4h-4z\" fill=\"#000\"/>\n    <path d=\"M54 61h4v2h-4zM44 61h2v2h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M60 61h2v2h-2zM48 63h4v4h-4zM40 67h20v2H40zM36 63h2v2h-2zM34 61h2v2h-2zM34 63h2v2h-2zM34 65h2v2h-2zM66 61h-2v2h2zM66 63h-2v2h2zM66 65h-2v2h2zM38 63h2v4h-2z\" fill=\"#000\"/>\n    <path d=\"M52 67h2v2h-2z\" fill=\"#DEE5D9\"/>\n    <path d=\"M60 63h2v4h-2zM62 63h2v2h-2z\" fill=\"#000\"/>\n    <path class=\"h e\" d=\"M70 34v-4h-2v-2h-2v-2h-6v2h-2v2h-2v2h-2v2h-8v-2h-2v-2h-2v-2h-2v-2h-6v2h-2v2h-2v4h-2v8h44v-8zm-26 4H30v-2h2v-4h2v-2h6v2h2v4h2zm26 0H56v-2h2v-4h2v-2h6v2h2v4h2z\"/>\n  </svg>"
             }
-        },
-        "NodeCountSnapshotsResponse": {
-            "description": "A successful response containing snapshots of node counts over time. Each entry in the data array includes the date and the count of nodes on that date.",
-            "content": {
-                "application/json": {
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "data": {
-                                "type": "array",
-                                "description": "Array of node count snapshots.",
-                                "items": {
-                                    "$ref": "#/components/schemas/CountSnapshot"
-                                }
-                            }
-                        }
-                    }
+          }
+        }
+      },
+      "NodeCountSnapshotsResponse": {
+        "description": "A successful response containing snapshots of node counts over time. Each entry in the data array includes the date and the count of nodes on that date.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Array of node count snapshots.",
+                  "items": {
+                    "$ref": "#/components/schemas/CountSnapshot"
+                  }
                 }
+              }
             }
-        },
+          }
+        }
+      },
       "NodeMinTokensToStakeResponse": {
         "description": "A successful response containing snapshots of the minimum staking amount for the specified nodes. Each entry in the data array includes the node address, date, and the minimum tokens to stake on that date.",
         "content": {
@@ -3004,6 +3037,29 @@
                   "description": "Array of staker profit snapshots.",
                   "items": {
                     "$ref": "#/components/schemas/StakerProfitSnapshot"
+                  }
+                },
+                "cursor": {
+                  "type": "string",
+                  "description": "Cursor for pagination to fetch the next set of results."
+                }
+              }
+            }
+          }
+        }
+      },
+      "OperationProfitSnapshotsResponse": {
+        "description": "A successful response containing snapshots of the operation profit over time for the specified node. Each entry in the data array includes the date and profit details. The response also includes a cursor for pagination to fetch subsequent sets of results.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Array of operation profit snapshots.",
+                  "items": {
+                    "$ref": "#/components/schemas/OperationProfit"
                   }
                 },
                 "cursor": {
