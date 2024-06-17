@@ -151,275 +151,275 @@ func TestGenerateMaps(t *testing.T) {
 	}
 	assert.Equal(t, expectedNodeToWorkersMap[common.Address{1}].Decentralized, nodeToWorkersMap[common.Address{1}].Decentralized)
 
-	expectedFullNodeWorkerToNetworksMap := map[decentralized.Worker]map[network.Network]struct{}{
-		decentralized.Aave: {
-			network.Avalanche: {},
-			network.Arbitrum:  {},
-			network.Base:      {},
-			network.Ethereum:  {},
-			network.Optimism:  {},
-			network.Polygon:   {},
+	expectedFullNodeWorkerToNetworksMap := map[string]map[string]struct{}{
+		decentralized.Aave.String(): {
+			network.Avalanche.String(): {},
+			network.Arbitrum.String():  {},
+			network.Base.String():      {},
+			network.Ethereum.String():  {},
+			network.Optimism.String():  {},
+			network.Polygon.String():   {},
 		},
-		decentralized.Aavegotchi: {
-			network.Polygon: {},
+		decentralized.Aavegotchi.String(): {
+			network.Polygon.String(): {},
 		},
-		decentralized.Core: {
-			network.BinanceSmartChain: {},
-			network.Ethereum:          {},
-			network.Linea:             {},
-			network.Optimism:          {},
-			network.Polygon:           {},
-			network.SatoshiVM:         {},
-			network.VSL:               {},
-			network.Farcaster:         {},
-			network.Crossbell:         {},
-			network.Arbitrum:          {},
-			network.Gnosis:            {},
-			network.Avalanche:         {},
-			network.Base:              {},
+		decentralized.Core.String(): {
+			network.BinanceSmartChain.String(): {},
+			network.Ethereum.String():          {},
+			network.Linea.String():             {},
+			network.Optimism.String():          {},
+			network.Polygon.String():           {},
+			network.SatoshiVM.String():         {},
+			network.VSL.String():               {},
+			network.Farcaster.String():         {},
+			network.Crossbell.String():         {},
+			network.Arbitrum.String():          {},
+			network.Gnosis.String():            {},
+			network.Avalanche.String():         {},
+			network.Base.String():              {},
 		},
-		decentralized.Curve: {
-			network.Arbitrum:  {},
-			network.Avalanche: {},
-			network.Ethereum:  {},
-			network.Gnosis:    {},
-			network.Optimism:  {},
-			network.Polygon:   {},
+		decentralized.Curve.String(): {
+			network.Arbitrum.String():  {},
+			network.Avalanche.String(): {},
+			network.Ethereum.String():  {},
+			network.Gnosis.String():    {},
+			network.Optimism.String():  {},
+			network.Polygon.String():   {},
 		},
-		decentralized.Highlight: {
-			network.Ethereum: {},
-			network.Optimism: {},
-			network.Polygon:  {},
-			network.Arbitrum: {},
+		decentralized.Highlight.String(): {
+			network.Ethereum.String(): {},
+			network.Optimism.String(): {},
+			network.Polygon.String():  {},
+			network.Arbitrum.String(): {},
 		},
-		decentralized.IQWiki: {
-			network.Polygon: {},
+		decentralized.IQWiki.String(): {
+			network.Polygon.String(): {},
 		},
-		decentralized.KiwiStand: {
-			network.Optimism: {},
+		decentralized.KiwiStand.String(): {
+			network.Optimism.String(): {},
 		},
-		decentralized.Lido: {
-			network.Ethereum: {},
+		decentralized.Lido.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.Looksrare: {
-			network.Ethereum: {},
+		decentralized.Looksrare.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.Oneinch: {
-			network.Ethereum: {},
+		decentralized.Oneinch.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.OpenSea: {
-			network.Ethereum: {},
+		decentralized.OpenSea.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.Optimism: {
-			network.Ethereum: {},
+		decentralized.Optimism.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.RSS3: {
-			network.Ethereum: {},
-			network.VSL:      {},
+		decentralized.RSS3.String(): {
+			network.Ethereum.String(): {},
+			network.VSL.String():      {},
 		},
-		decentralized.SAVM: {
-			network.SatoshiVM: {},
+		decentralized.SAVM.String(): {
+			network.SatoshiVM.String(): {},
 		},
-		decentralized.Stargate: {
-			network.Arbitrum:          {},
-			network.Avalanche:         {},
-			network.Base:              {},
-			network.BinanceSmartChain: {},
-			network.Ethereum:          {},
-			network.Optimism:          {},
-			network.Polygon:           {},
-			network.Linea:             {},
+		decentralized.Stargate.String(): {
+			network.Arbitrum.String():          {},
+			network.Avalanche.String():         {},
+			network.Base.String():              {},
+			network.BinanceSmartChain.String(): {},
+			network.Ethereum.String():          {},
+			network.Optimism.String():          {},
+			network.Polygon.String():           {},
+			network.Linea.String():             {},
 		},
-		decentralized.Uniswap: {
-			network.Ethereum:  {},
-			network.Linea:     {},
-			network.SatoshiVM: {},
+		decentralized.Uniswap.String(): {
+			network.Ethereum.String():  {},
+			network.Linea.String():     {},
+			network.SatoshiVM.String(): {},
 		},
-		decentralized.VSL: {
-			network.Ethereum: {},
+		decentralized.VSL.String(): {
+			network.Ethereum.String(): {},
 		},
-		decentralized.Momoka: {
-			network.Arweave: {},
+		decentralized.Momoka.String(): {
+			network.Arweave.String(): {},
 		},
-		decentralized.Lens: {
-			network.Polygon: {},
+		decentralized.Lens.String(): {
+			network.Polygon.String(): {},
 		},
-		decentralized.Mirror: {
-			network.Arweave: {},
+		decentralized.Mirror.String(): {
+			network.Arweave.String(): {},
 		},
-		decentralized.Paragraph: {
-			network.Arweave: {},
+		decentralized.Paragraph.String(): {
+			network.Arweave.String(): {},
 		},
-		decentralized.Matters: {
-			network.Optimism: {},
+		decentralized.Matters.String(): {
+			network.Optimism.String(): {},
 		},
-		decentralized.Crossbell: {
-			network.Crossbell: {},
+		decentralized.Crossbell.String(): {
+			network.Crossbell.String(): {},
 		},
 	}
 
 	assert.Equal(t, expectedFullNodeWorkerToNetworksMap, fullNodeWorkerToNetworksMap)
 
-	expectedNetworkToWorkersMap := map[network.Network]map[decentralized.Worker]struct{}{
-		network.Arbitrum: {
-			decentralized.Curve:     {},
-			decentralized.Stargate:  {},
-			decentralized.Core:      {},
-			decentralized.Aave:      {},
-			decentralized.Highlight: {},
+	expectedNetworkToWorkersMap := map[string]map[string]struct{}{
+		network.Arbitrum.String(): {
+			decentralized.Curve.String():     {},
+			decentralized.Stargate.String():  {},
+			decentralized.Core.String():      {},
+			decentralized.Aave.String():      {},
+			decentralized.Highlight.String(): {},
 		},
-		network.Avalanche: {
-			decentralized.Aave:     {},
-			decentralized.Curve:    {},
-			decentralized.Stargate: {},
-			decentralized.Core:     {},
+		network.Avalanche.String(): {
+			decentralized.Aave.String():     {},
+			decentralized.Curve.String():    {},
+			decentralized.Stargate.String(): {},
+			decentralized.Core.String():     {},
 		},
-		network.Arweave: {
-			decentralized.Momoka:    {},
-			decentralized.Mirror:    {},
-			decentralized.Paragraph: {},
+		network.Arweave.String(): {
+			decentralized.Momoka.String():    {},
+			decentralized.Mirror.String():    {},
+			decentralized.Paragraph.String(): {},
 		},
-		network.Base: {
-			decentralized.Aave:     {},
-			decentralized.Stargate: {},
-			decentralized.Core:     {},
+		network.Base.String(): {
+			decentralized.Aave.String():     {},
+			decentralized.Stargate.String(): {},
+			decentralized.Core.String():     {},
 		},
-		network.BinanceSmartChain: {
-			decentralized.Core:     {},
-			decentralized.Stargate: {},
+		network.BinanceSmartChain.String(): {
+			decentralized.Core.String():     {},
+			decentralized.Stargate.String(): {},
 		},
-		network.Crossbell: {
-			decentralized.Crossbell: {},
-			decentralized.Core:      {},
+		network.Crossbell.String(): {
+			decentralized.Crossbell.String(): {},
+			decentralized.Core.String():      {},
 		},
-		network.Ethereum: {
-			decentralized.Aave:      {},
-			decentralized.Core:      {},
-			decentralized.Curve:     {},
-			decentralized.Highlight: {},
-			decentralized.Lido:      {},
-			decentralized.Looksrare: {},
-			decentralized.Oneinch:   {},
-			decentralized.OpenSea:   {},
-			decentralized.Optimism:  {},
-			decentralized.RSS3:      {},
-			decentralized.Stargate:  {},
-			decentralized.Uniswap:   {},
-			decentralized.VSL:       {},
+		network.Ethereum.String(): {
+			decentralized.Aave.String():      {},
+			decentralized.Core.String():      {},
+			decentralized.Curve.String():     {},
+			decentralized.Highlight.String(): {},
+			decentralized.Lido.String():      {},
+			decentralized.Looksrare.String(): {},
+			decentralized.Oneinch.String():   {},
+			decentralized.OpenSea.String():   {},
+			decentralized.Optimism.String():  {},
+			decentralized.RSS3.String():      {},
+			decentralized.Stargate.String():  {},
+			decentralized.Uniswap.String():   {},
+			decentralized.VSL.String():       {},
 		},
-		network.Gnosis: {
-			decentralized.Curve: {},
-			decentralized.Core:  {},
+		network.Gnosis.String(): {
+			decentralized.Curve.String(): {},
+			decentralized.Core.String():  {},
 		},
-		network.Linea: {
-			decentralized.Core:     {},
-			decentralized.Stargate: {},
-			decentralized.Uniswap:  {},
+		network.Linea.String(): {
+			decentralized.Core.String():     {},
+			decentralized.Stargate.String(): {},
+			decentralized.Uniswap.String():  {},
 		},
-		network.Optimism: {
-			decentralized.Aave:      {},
-			decentralized.Core:      {},
-			decentralized.Curve:     {},
-			decentralized.Highlight: {},
-			decentralized.KiwiStand: {},
-			decentralized.Stargate:  {},
-			decentralized.Matters:   {},
+		network.Optimism.String(): {
+			decentralized.Aave.String():      {},
+			decentralized.Core.String():      {},
+			decentralized.Curve.String():     {},
+			decentralized.Highlight.String(): {},
+			decentralized.KiwiStand.String(): {},
+			decentralized.Stargate.String():  {},
+			decentralized.Matters.String():   {},
 		},
-		network.Polygon: {
-			decentralized.Aave:       {},
-			decentralized.Aavegotchi: {},
-			decentralized.Core:       {},
-			decentralized.Curve:      {},
-			decentralized.Highlight:  {},
-			decentralized.IQWiki:     {},
-			decentralized.Stargate:   {},
-			decentralized.Lens:       {},
+		network.Polygon.String(): {
+			decentralized.Aave.String():       {},
+			decentralized.Aavegotchi.String(): {},
+			decentralized.Core.String():       {},
+			decentralized.Curve.String():      {},
+			decentralized.Highlight.String():  {},
+			decentralized.IQWiki.String():     {},
+			decentralized.Stargate.String():   {},
+			decentralized.Lens.String():       {},
 		},
-		network.SatoshiVM: {
-			decentralized.Core:    {},
-			decentralized.Uniswap: {},
-			decentralized.SAVM:    {},
+		network.SatoshiVM.String(): {
+			decentralized.Core.String():    {},
+			decentralized.Uniswap.String(): {},
+			decentralized.SAVM.String():    {},
 		},
-		network.VSL: {
-			decentralized.Core: {},
-			decentralized.RSS3: {},
+		network.VSL.String(): {
+			decentralized.Core.String(): {},
+			decentralized.RSS3.String(): {},
 		},
 
-		network.Farcaster: {
-			decentralized.Core: {},
+		network.Farcaster.String(): {
+			decentralized.Core.String(): {},
 		},
 	}
 
 	assert.Equal(t, expectedNetworkToWorkersMap, networkToWorkersMap)
 
-	expectedPlatformToWorkersMap := map[decentralized.Platform]map[decentralized.Worker]struct{}{
-		decentralized.Platform1Inch:      {decentralized.Oneinch: {}},
-		decentralized.PlatformAAVE:       {decentralized.Aave: {}},
-		decentralized.PlatformAavegotchi: {decentralized.Aavegotchi: {}},
-		decentralized.PlatformCurve:      {decentralized.Curve: {}},
-		decentralized.PlatformHighlight:  {decentralized.Highlight: {}},
-		decentralized.PlatformIQWiki:     {decentralized.IQWiki: {}},
-		decentralized.PlatformKiwiStand:  {decentralized.KiwiStand: {}},
-		decentralized.PlatformLido:       {decentralized.Lido: {}},
-		decentralized.PlatformLooksRare:  {decentralized.Looksrare: {}},
-		decentralized.PlatformOpenSea:    {decentralized.OpenSea: {}},
-		decentralized.PlatformOptimism:   {decentralized.Optimism: {}},
-		decentralized.PlatformRSS3:       {decentralized.RSS3: {}},
-		decentralized.PlatformSAVM:       {decentralized.SAVM: {}},
-		decentralized.PlatformStargate:   {decentralized.Stargate: {}},
-		decentralized.PlatformUniswap:    {decentralized.Uniswap: {}},
-		decentralized.PlatformVSL:        {decentralized.VSL: {}},
-		decentralized.PlatformFarcaster:  {decentralized.Core: {}},
-		decentralized.PlatformLens:       {decentralized.Lens: {}, decentralized.Momoka: {}},
-		decentralized.PlatformMirror:     {decentralized.Mirror: {}},
-		decentralized.PlatformParagraph:  {decentralized.Paragraph: {}},
-		decentralized.PlatformMatters:    {decentralized.Matters: {}},
-		decentralized.PlatformCrossbell:  {decentralized.Crossbell: {}},
+	expectedPlatformToWorkersMap := map[string]map[string]struct{}{
+		decentralized.Platform1Inch.String():      {decentralized.Oneinch.String(): {}},
+		decentralized.PlatformAAVE.String():       {decentralized.Aave.String(): {}},
+		decentralized.PlatformAavegotchi.String(): {decentralized.Aavegotchi.String(): {}},
+		decentralized.PlatformCurve.String():      {decentralized.Curve.String(): {}},
+		decentralized.PlatformHighlight.String():  {decentralized.Highlight.String(): {}},
+		decentralized.PlatformIQWiki.String():     {decentralized.IQWiki.String(): {}},
+		decentralized.PlatformKiwiStand.String():  {decentralized.KiwiStand.String(): {}},
+		decentralized.PlatformLido.String():       {decentralized.Lido.String(): {}},
+		decentralized.PlatformLooksRare.String():  {decentralized.Looksrare.String(): {}},
+		decentralized.PlatformOpenSea.String():    {decentralized.OpenSea.String(): {}},
+		decentralized.PlatformOptimism.String():   {decentralized.Optimism.String(): {}},
+		decentralized.PlatformRSS3.String():       {decentralized.RSS3.String(): {}},
+		decentralized.PlatformSAVM.String():       {decentralized.SAVM.String(): {}},
+		decentralized.PlatformStargate.String():   {decentralized.Stargate.String(): {}},
+		decentralized.PlatformUniswap.String():    {decentralized.Uniswap.String(): {}},
+		decentralized.PlatformVSL.String():        {decentralized.VSL.String(): {}},
+		decentralized.PlatformFarcaster.String():  {decentralized.Core.String(): {}},
+		decentralized.PlatformLens.String():       {decentralized.Lens.String(): {}, decentralized.Momoka.String(): {}},
+		decentralized.PlatformMirror.String():     {decentralized.Mirror.String(): {}},
+		decentralized.PlatformParagraph.String():  {decentralized.Paragraph.String(): {}},
+		decentralized.PlatformMatters.String():    {decentralized.Matters.String(): {}},
+		decentralized.PlatformCrossbell.String():  {decentralized.Crossbell.String(): {}},
 	}
 
 	assert.Equal(t, expectedPlatformToWorkersMap, platformToWorkersMap)
 
-	expectedTagToWorkersMap := map[tag.Tag]map[decentralized.Worker]struct{}{
-		tag.Collectible: {
-			decentralized.Highlight: {},
-			decentralized.KiwiStand: {},
-			decentralized.Lido:      {},
-			decentralized.Looksrare: {},
-			decentralized.OpenSea:   {},
-			decentralized.RSS3:      {},
+	expectedTagToWorkersMap := map[string]map[string]struct{}{
+		tag.Collectible.String(): {
+			decentralized.Highlight.String(): {},
+			decentralized.KiwiStand.String(): {},
+			decentralized.Lido.String():      {},
+			decentralized.Looksrare.String(): {},
+			decentralized.OpenSea.String():   {},
+			decentralized.RSS3.String():      {},
 		},
-		tag.Exchange: {
-			decentralized.Aave:    {},
-			decentralized.Curve:   {},
-			decentralized.Lido:    {},
-			decentralized.Oneinch: {},
-			decentralized.RSS3:    {},
-			decentralized.Uniswap: {},
+		tag.Exchange.String(): {
+			decentralized.Aave.String():    {},
+			decentralized.Curve.String():   {},
+			decentralized.Lido.String():    {},
+			decentralized.Oneinch.String(): {},
+			decentralized.RSS3.String():    {},
+			decentralized.Uniswap.String(): {},
 		},
-		tag.Metaverse: {
-			decentralized.Aavegotchi: {},
+		tag.Metaverse.String(): {
+			decentralized.Aavegotchi.String(): {},
 		},
-		tag.Social: {
-			decentralized.KiwiStand: {},
-			decentralized.IQWiki:    {},
-			decentralized.Core:      {},
-			decentralized.Momoka:    {},
-			decentralized.Lens:      {},
-			decentralized.Mirror:    {},
-			decentralized.Paragraph: {},
-			decentralized.Crossbell: {},
-			decentralized.Matters:   {},
+		tag.Social.String(): {
+			decentralized.KiwiStand.String(): {},
+			decentralized.IQWiki.String():    {},
+			decentralized.Core.String():      {},
+			decentralized.Momoka.String():    {},
+			decentralized.Lens.String():      {},
+			decentralized.Mirror.String():    {},
+			decentralized.Paragraph.String(): {},
+			decentralized.Crossbell.String(): {},
+			decentralized.Matters.String():   {},
 		},
-		tag.Transaction: {
-			decentralized.KiwiStand: {},
-			decentralized.Uniswap:   {},
-			decentralized.Curve:     {},
-			decentralized.Optimism:  {},
-			decentralized.Highlight: {},
-			decentralized.Lido:      {},
-			decentralized.SAVM:      {},
-			decentralized.Stargate:  {},
-			decentralized.VSL:       {},
+		tag.Transaction.String(): {
+			decentralized.KiwiStand.String(): {},
+			decentralized.Uniswap.String():   {},
+			decentralized.Curve.String():     {},
+			decentralized.Optimism.String():  {},
+			decentralized.Highlight.String(): {},
+			decentralized.Lido.String():      {},
+			decentralized.SAVM.String():      {},
+			decentralized.Stargate.String():  {},
+			decentralized.VSL.String():       {},
 		},
 	}
 

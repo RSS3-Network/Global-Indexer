@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
@@ -36,13 +37,13 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 }
 
 // generateMaps generates the worker related maps.
-func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address]*ComponentInfo, map[decentralized.Worker]map[network.Network]struct{}, map[network.Network]map[decentralized.Worker]struct{}, map[decentralized.Platform]map[decentralized.Worker]struct{}, map[tag.Tag]map[decentralized.Worker]struct{}) {
+func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address]*ComponentInfo, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}) {
 	var (
 		nodeToDataMap               = make(map[common.Address]*ComponentInfo, len(stats))
-		fullNodeWorkerToNetworksMap = make(map[decentralized.Worker]map[network.Network]struct{}, len(decentralized.WorkerValues()))
-		networkToWorkersMap         = make(map[network.Network]map[decentralized.Worker]struct{}, len(network.NetworkValues()))
-		platformToWorkersMap        = make(map[decentralized.Platform]map[decentralized.Worker]struct{}, len(decentralized.PlatformValues()))
-		tagToWorkersMap             = make(map[tag.Tag]map[decentralized.Worker]struct{}, len(tag.TagValues()))
+		fullNodeWorkerToNetworksMap = make(map[string]map[string]struct{}, len(decentralized.WorkerValues()))
+		networkToWorkersMap         = make(map[string]map[string]struct{}, len(network.NetworkValues()))
+		platformToWorkersMap        = make(map[string]map[string]struct{}, len(decentralized.PlatformValues()))
+		tagToWorkersMap             = make(map[string]map[string]struct{}, len(tag.TagValues()))
 
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -70,40 +71,40 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 					continue
 				}
 
-				if _, ok := networkToWorkersMap[workerInfo.Network]; !ok {
-					networkToWorkersMap[workerInfo.Network] = make(map[decentralized.Worker]struct{})
+				if _, ok := networkToWorkersMap[workerInfo.Network.String()]; !ok {
+					networkToWorkersMap[workerInfo.Network.String()] = make(map[string]struct{})
 				}
 
 				mu.Lock()
-				networkToWorkersMap[workerInfo.Network][workerInfo.Worker] = struct{}{}
+				networkToWorkersMap[workerInfo.Network.String()][workerInfo.Worker.String()] = struct{}{}
 				mu.Unlock()
 
-				if _, ok := platformToWorkersMap[workerInfo.Platform]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
-					platformToWorkersMap[workerInfo.Platform] = make(map[decentralized.Worker]struct{})
+				if _, ok := platformToWorkersMap[workerInfo.Platform.String()]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
+					platformToWorkersMap[workerInfo.Platform.String()] = make(map[string]struct{})
 				}
 
 				mu.Lock()
 				if workerInfo.Platform != decentralized.PlatformUnknown {
-					platformToWorkersMap[workerInfo.Platform][workerInfo.Worker] = struct{}{}
+					platformToWorkersMap[workerInfo.Platform.String()][workerInfo.Worker.String()] = struct{}{}
 				}
 				mu.Unlock()
 
 				for _, tagX := range workerInfo.Tags {
-					if _, ok := tagToWorkersMap[tagX]; !ok {
-						tagToWorkersMap[tagX] = make(map[decentralized.Worker]struct{})
+					if _, ok := tagToWorkersMap[tagX.String()]; !ok {
+						tagToWorkersMap[tagX.String()] = make(map[string]struct{})
 					}
 
 					mu.Lock()
-					tagToWorkersMap[tagX][workerInfo.Worker] = struct{}{}
+					tagToWorkersMap[tagX.String()][workerInfo.Worker.String()] = struct{}{}
 					mu.Unlock()
 				}
 
-				if _, ok := fullNodeWorkerToNetworksMap[workerInfo.Worker]; !ok {
-					fullNodeWorkerToNetworksMap[workerInfo.Worker] = make(map[network.Network]struct{})
+				if _, ok := fullNodeWorkerToNetworksMap[workerInfo.Worker.String()]; !ok {
+					fullNodeWorkerToNetworksMap[workerInfo.Worker.String()] = make(map[string]struct{})
 				}
 
 				mu.Lock()
-				fullNodeWorkerToNetworksMap[workerInfo.Worker][workerInfo.Network] = struct{}{}
+				fullNodeWorkerToNetworksMap[workerInfo.Worker.String()][workerInfo.Network.String()] = struct{}{}
 				mu.Unlock()
 			}
 		}(stat)
@@ -115,63 +116,86 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 }
 
 // mapTransform transforms the map to slice.
-func mapTransform(fullNodeWorkerToNetworksMap map[decentralized.Worker]map[network.Network]struct{}, networkToWorkersMap map[network.Network]map[decentralized.Worker]struct{}, platformToWorkersMap map[decentralized.Platform]map[decentralized.Worker]struct{}, tagToWorkersMap map[tag.Tag]map[decentralized.Worker]struct{}) {
-	go func() {
-		for workerX, networks := range fullNodeWorkerToNetworksMap {
-			model.WorkerToNetworksMap[workerX.Name()] = lo.MapToSlice(networks, func(networkX network.Network, _ struct{}) string {
-				return networkX.String()
-			})
-		}
-	}()
+func mapTransform(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap map[string]map[string]struct{}) {
+	var (
+		wg  sync.WaitGroup
+		mux sync.Mutex
+	)
 
-	go func() {
-		for networkX, workers := range networkToWorkersMap {
-			model.NetworkToWorkersMap[networkX.String()] = lo.MapToSlice(workers, func(workerX decentralized.Worker, _ struct{}) string {
-				return workerX.Name()
-			})
-		}
-	}()
+	srcMaps := []map[string]map[string]struct{}{
+		fullNodeWorkerToNetworksMap,
+		networkToWorkersMap,
+		platformToWorkersMap,
+		tagToWorkersMap,
+	}
 
-	go func() {
-		for platformX, workers := range platformToWorkersMap {
-			model.PlatformToWorkersMap[platformX.String()] = lo.MapToSlice(workers, func(workerX decentralized.Worker, _ struct{}) string {
-				return workerX.Name()
-			})
-		}
-	}()
+	desMaps := []*map[string][]string{
+		&model.WorkerToNetworksMap,
+		&model.NetworkToWorkersMap,
+		&model.PlatformToWorkersMap,
+		&model.TagToWorkersMap,
+	}
 
-	go func() {
-		for tagX, workers := range tagToWorkersMap {
-			model.TagToWorkersMap[tagX.String()] = lo.MapToSlice(workers, func(workerX decentralized.Worker, _ struct{}) string {
-				return workerX.Name()
+	transformAndAssign := func(srcMap map[string]map[string]struct{}, targetMap *map[string][]string) {
+		localMap := make(map[string][]string)
+
+		for key, value := range srcMap {
+			localMap[key] = lo.MapToSlice(value, func(s string, _ struct{}) string {
+				return s
 			})
 		}
-	}()
+
+		mux.Lock()
+		*targetMap = localMap
+		mux.Unlock()
+	}
+
+	for i := range srcMaps {
+		wg.Add(1)
+
+		go func(i int) {
+			defer wg.Done()
+
+			transformAndAssign(srcMaps[i], desMaps[i])
+		}(i)
+	}
+
+	wg.Wait()
 }
 
 // setMapCache sets the cache for the worker related maps.
 func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 	var wg sync.WaitGroup
 
-	errChan := make(chan error, 4)
-
-	setCache := func(key string, data interface{}) {
-		defer wg.Done()
-
-		if err := e.cacheClient.Set(ctx, key, data); err != nil {
-			errChan <- err
-		}
+	keys := []string{
+		model.WorkerToNetworksMapKey,
+		model.NetworkToWorkersMapKey,
+		model.PlatformToWorkersMapKey,
+		model.TagToWorkersMapKey,
 	}
 
-	wg.Add(4)
+	maps := []interface{}{
+		&model.WorkerToNetworksMap,
+		&model.NetworkToWorkersMap,
+		&model.PlatformToWorkersMap,
+		&model.TagToWorkersMap,
+	}
 
-	go setCache(model.WorkerToNetworksMapKey, model.WorkerToNetworksMap)
-	go setCache(model.NetworkToWorkersMapKey, model.NetworkToWorkersMap)
-	go setCache(model.PlatformToWorkersMapKey, model.PlatformToWorkersMap)
-	go setCache(model.TagToWorkersMapKey, model.TagToWorkersMap)
+	errChan := make(chan error, len(keys))
+
+	for i := range keys {
+		wg.Add(1)
+
+		go func(i int) {
+			defer wg.Done()
+
+			if err := e.cacheClient.Set(ctx, keys[i], maps[i]); err != nil {
+				errChan <- err
+			}
+		}(i)
+	}
 
 	wg.Wait()
-
 	close(errChan)
 
 	for err := range errChan {
@@ -345,29 +369,44 @@ func buildNodeWorkers(epoch int64, address common.Address, workerInfo []*Decentr
 	return workers
 }
 
-func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
+func getWorkerMapFromCache(ctx context.Context, cacheClient cache.Client) chan error {
 	var wg sync.WaitGroup
 
-	errChan := make(chan error, 4)
-
-	getCache := func(key string, data interface{}) {
-		defer wg.Done()
-
-		if err := e.cacheClient.Get(ctx, key, data); err != nil {
-			errChan <- err
-		}
+	keys := []string{
+		model.WorkerToNetworksMapKey,
+		model.NetworkToWorkersMapKey,
+		model.PlatformToWorkersMapKey,
+		model.TagToWorkersMapKey,
 	}
 
-	wg.Add(4)
+	maps := []interface{}{
+		&model.WorkerToNetworksMap,
+		&model.NetworkToWorkersMap,
+		&model.PlatformToWorkersMap,
+		&model.TagToWorkersMap,
+	}
+	errChan := make(chan error, len(keys))
 
-	go getCache(model.WorkerToNetworksMapKey, &model.WorkerToNetworksMap)
-	go getCache(model.NetworkToWorkersMapKey, &model.NetworkToWorkersMap)
-	go getCache(model.PlatformToWorkersMapKey, &model.PlatformToWorkersMap)
-	go getCache(model.TagToWorkersMapKey, &model.TagToWorkersMap)
+	for i := range keys {
+		wg.Add(1)
+
+		go func(i int) {
+			defer wg.Done()
+
+			if err := cacheClient.Get(ctx, keys[i], maps[i]); err != nil {
+				errChan <- err
+			}
+		}(i)
+	}
 
 	wg.Wait()
-
 	close(errChan)
+
+	return errChan
+}
+
+func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
+	errChan := getWorkerMapFromCache(ctx, e.cacheClient)
 
 	for err := range errChan {
 		if err != nil {

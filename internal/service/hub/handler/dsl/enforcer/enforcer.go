@@ -167,14 +167,18 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	return nodesCache, err
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initScoreMaintainer, initWorkerMap bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
 		stakingContract: stakingContract,
 		httpClient:      httpClient,
 	}
-	if initScoreMaintainer {
+	if initCacheData {
+		if err := enforcer.initWorkerMap(ctx); err != nil {
+			return nil, err
+		}
+
 		if err := enforcer.initScoreMaintainers(ctx); err != nil {
 			return nil, err
 		}
@@ -182,18 +186,12 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
 	}
 
-	if initWorkerMap {
-		if err := enforcer.initWorkerMap(ctx); err != nil {
-			return nil, err
-		}
-	}
-
 	return enforcer, nil
 }
 
 // subscribeNodeCacheUpdate subscribes to updates of the 'epoch' key.
 // Upon updating the 'epoch' key, the Node cache is refreshed.
-// This cache holds the initial reliability scores of the nodes for the new epoch.
+// This cache holds the initial reliability scores and related maps of the nodes for the new epoch.
 func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
 		//Subscribe to changes to 'epoch'
@@ -217,8 +215,26 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, dat
 			zap.L().Info("received message from channel", zap.String("channel", msg.Channel), zap.String("payload", msg.Payload))
 
 			if msg.Payload == "set" {
+				var epoch int64
+				if err := cacheClient.Get(ctx, model.SubscribeNodeCacheKey, &epoch); err != nil {
+					zap.L().Error("get epoch from cache", zap.Error(err))
+
+					continue
+				}
+
 				updateQualifiedNodesMap(ctx, model.FullNodeCacheKey, databaseClient, fullNodeScoreMaintainer)
 				updateQualifiedNodesMap(ctx, model.RssNodeCacheKey, databaseClient, rssNodeScoreMaintainer)
+
+				zap.L().Info("update qualified nodes map completed", zap.Int64("epoch", epoch))
+
+				errChan := getWorkerMapFromCache(ctx, cacheClient)
+				for err := range errChan {
+					if err != nil {
+						zap.L().Error("get worker map from cache", zap.Error(err), zap.Int64("epoch", epoch))
+					}
+				}
+
+				zap.L().Info("update worker map completed", zap.Int64("epoch", epoch))
 			}
 		}
 	}()
