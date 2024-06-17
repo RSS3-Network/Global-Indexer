@@ -135,10 +135,10 @@
                         "$ref": "#/components/parameters/network_query"
                     },
                     {
-                        "$ref": "#/components/parameters/tag_query"
+                        "$ref": "#/components/parameters/action_tag_query"
                     },
                     {
-                        "$ref": "#/components/parameters/type_query"
+                        "$ref": "#/components/parameters/action_type_query"
                     },
                     {
                         "$ref": "#/components/parameters/platform_query"
@@ -207,10 +207,10 @@
                         "$ref": "#/components/parameters/address_query"
                     },
                     {
-                        "$ref": "#/components/parameters/type_query"
+                        "$ref": "#/components/parameters/bridging_type_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_query"
+                        "$ref": "#/components/parameters/limit_1_20"
                     }
                 ],
                 "responses": {
@@ -230,7 +230,7 @@
                 ],
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/transaction_hash_path"
+                        "$ref": "#/components/parameters/bridging_transaction_hash_path"
                     }
                 ],
                 "responses": {
@@ -240,304 +240,106 @@
                 }
             }
         },
-        "/nta/stake/transactions": {
+        "/nta/stakings/transactions": {
             "get": {
                 "summary": "Get staking transactions",
-                "description": "Get staking transactions",
+                "description": "Retrieve a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
                 "tags": [
                     "Stake",
                     "NTA"
                 ],
                 "parameters": [
                     {
-                        "name": "cursor",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "name": "staker",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/staker_query"
                     },
                     {
-                        "name": "node",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/node_query"
                     },
                     {
-                        "name": "type",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "deposit",
-                                "withdraw",
-                                "stake",
-                                "unstake"
-                            ]
-                        }
+                        "$ref": "#/components/parameters/staking_type_query"
                     },
                     {
-                        "name": "pending",
-                        "in": "query",
-                        "schema": {
-                            "type": "boolean"
-                        }
+                        "$ref": "#/components/parameters/pending_query"
                     },
                     {
-                        "name": "limit",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 20
-                        }
+                        "$ref": "#/components/parameters/limit_1_20"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/StakeTransaction"
-                                            }
-                                        }
-                                    }
-                                },
-                                "example": {
-                                    "data": [
-                                        {
-                                            "id": "0xbfbb8cbffc01c13c1f849ecfb53099309e189b362fd621addbfa9f5d03dcd0c1",
-                                            "staker": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
-                                            "node": "0x6727a51caefcaf1bc189a8316ea09f844644b195",
-                                            "value": "8239445455124262851652",
-                                            "chips": [
-                                                {
-                                                    "id": 2105,
-                                                    "node": "0x6727a51caefcaf1bc189a8316ea09f844644b195",
-                                                    "owner": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
-                                                    "metadata": {
-                                                        "name": "Chip #2105",
-                                                        "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                                        "image": "https://gi.rss3.dev/chips/2105/image.svg"
-                                                    }
-                                                }
-                                            ],
-                                            "event": {
-                                                "deposit": {
-                                                    "deposited": {
-                                                        "block": {
-                                                            "hash": "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015",
-                                                            "number": 128115,
-                                                            "timestamp": 1707140550
-                                                        },
-                                                        "transaction": {
-                                                            "hash": "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833",
-                                                            "index": 1
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    ],
-                                    "cursor": "0xbfbb8cbffc01c13c1f849ecfb53099309e189b362fd621addbfa9f5d03dcd0c1"
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/StakeTransactionsResponse"
                     }
                 }
             }
         },
-        "/nta/stake/transactions/{transaction_hash}": {
+        "/nta/stakings/transactions/{transaction_hash}": {
             "get": {
                 "summary": "Get staking transaction by hash",
-                "description": "Get staking transaction by transaction hash",
+                "description": "Retrieve detailed information of a staking transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, node address, value staked, associated chips, and related events.",
                 "tags": [
                     "Stake",
                     "NTA"
                 ],
                 "parameters": [
                     {
-                        "name": "transaction_hash",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/staking_transaction_hash_path"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/StakeTransaction"
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/StakeTransactionByHashResponse"
                     }
                 }
             }
         },
-        "/nta/stake/stakings": {
+        "/nta/stakings/stakings": {
             "get": {
                 "summary": "Get a list of stakers and Nodes",
-                "description": "Get a list of stakers and Nodes",
+                "description": "Retrieve a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
                 "tags": [
                     "Stake",
                     "NTA"
                 ],
                 "parameters": [
                     {
-                        "name": "staker_address",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/staker_query"
                     },
                     {
-                        "name": "node_address",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/node_query"
                     },
                     {
-                        "name": "limit",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 10
-                        }
+                        "$ref": "#/components/parameters/limit_1_20"
                     },
                     {
-                        "name": "cursor",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/cursor_query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/StakeStaking"
-                                            }
-                                        },
-                                        "cursor": {
-                                            "type": "string",
-                                            "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-                                        }
-                                    }
-                                },
-                                "example": {
-                                    "data": [
-                                        {
-                                            "staker": "0x827431510a5d249ce4fdb7f00c83a3353f471848",
-                                            "node": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                            "chips": {
-                                                "total": 1,
-                                                "showcase": [
-                                                    {
-                                                        "id": 21,
-                                                        "node": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                                        "owner": "0x827431510a5d249ce4fdb7f00c83a3353f471848",
-                                                        "metadata": {
-                                                            "name": "Chip #21",
-                                                            "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                                            "image": "https://gi.rss3.dev/chips/21/image.svg"
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ],
-                                    "cursor": "MHg4Mjc0MzE1MTBhNWQyNDljZTRmZGI3ZjAwYzgzYTMzNTNmNDcxODQ4LTB4M2I2ZDAyYTI0ZGY2ODFmZmRmNjIxZDM1ZDcwYWJhN2FkYWFjMDdjMQ=="
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/StakeStakingsResponse"
                     }
                 }
             }
         },
-        "/nta/stake/{staker_address}/profit": {
+        "/nta/stakings/{staker_address}/profit": {
             "get": {
                 "summary": "Get staking profit of a staker",
-                "description": "Get staking profit of a staker",
+                "description": "Retrieve the staking profit information for a specified staker. This endpoint returns detailed profit data, including the owner's address, total chip amount, total chip value, and profit and loss (PNL) data over different time periods (one day, one week, one month).",
                 "tags": [
                     "Stake",
                     "NTA"
                 ],
                 "parameters": [
                     {
-                        "name": "staker_address",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                        "$ref": "#/components/parameters/staker_address_path"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "owner": {
-                                                    "type": "string"
-                                                },
-                                                "total_chip_amount": {
-                                                    "type": "string"
-                                                },
-                                                "total_chip_value": {
-                                                    "type": "string"
-                                                },
-                                                "oneDay": {
-                                                    "$ref": "#/components/schemas/ChipPNL"
-                                                },
-                                                "oneWeek": {
-                                                    "$ref": "#/components/schemas/ChipPNL"
-                                                },
-                                                "oneMonth": {
-                                                    "$ref": "#/components/schemas/ChipPNL"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/StakingProfitResponse"
                     }
                 }
             }
@@ -545,73 +347,21 @@
         "/nta/chips": {
             "get": {
                 "summary": "Get all chips",
-                "description": "Get all chips",
+                "description": "Retrieve a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
                 "tags": [
                     "Chips",
                     "NTA"
                 ],
                 "parameters": [
-                    {
-                        "name": "cursor",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "id",
-                        "in": "query",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
-                        }
-                    },
-                    {
-                        "name": "node",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "owner",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 10
-                        }
-                    }
+                    { "$ref": "#/components/parameters/cursor_query" },
+                    { "$ref": "#/components/parameters/chip_ids_query" },
+                    { "$ref": "#/components/parameters/node_query" },
+                    { "$ref": "#/components/parameters/owner_query" },
+                    { "$ref": "#/components/parameters/limit_1_20" }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Chips"
-                                            }
-                                        },
-                                        "cursor": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/ChipsResponse"
                     }
                 }
             }
@@ -640,7 +390,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Chips"
+                                    "$ref": "#/components/schemas/Chip"
                                 }
                             }
                         }
@@ -1875,13 +1625,16 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff"
                     },
                     "sender": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     },
                     "receiver": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     },
                     "token": {
                         "type": "object",
@@ -1890,15 +1643,18 @@
                                 "type": "object",
                                 "properties": {
                                     "l1": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23"
                                     },
                                     "l2": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "0x4200000000000000000000000000000000000042"
                                     }
                                 }
                             },
                             "value": {
-                                "type": "string"
+                                "type": "string",
+                                "example": "10000000000000000000000"
                             }
                         }
                     },
@@ -1933,66 +1689,32 @@
                             }
                         }
                     }
-                },
-                "example": {
-                    "id": "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff",
-                    "sender": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                    "receiver": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                    "token": {
-                        "address": {
-                            "l1": "0x3ef1d5be1e2ce46c583a0c8e511f015706a0ab23",
-                            "l2": "0x4200000000000000000000000000000000000042"
-                        },
-                        "value": "10000000000000000000000"
-                    },
-                    "event": {
-                        "deposit": {
-                            "initialized": {
-                                "block": {
-                                    "hash": "0x7735d45a54e91e836881c2f185766b391f335b53734b0a57f6c8843f66d03a13",
-                                    "number": 5223592,
-                                    "timestamp": 1707118764
-                                },
-                                "transaction": {
-                                    "hash": "0x28e8d8f6cbbdfcf14501ebf0bbd11647dfabab371fc7a989a1e441321af6a6ee",
-                                    "index": 49
-                                }
-                            },
-                            "finalized": {
-                                "block": {
-                                    "hash": "0xb0208c1b76aca5d51cb3cde5d10a90f20c2e520c935fbb99af0b66031489433e",
-                                    "number": 117285,
-                                    "timestamp": 1707118890
-                                },
-                                "transaction": {
-                                    "hash": "0x493972cb6219c74071c69fd9279df74b8cebbac4d087259991253e58930a4edb",
-                                    "index": 1
-                                }
-                            }
-                        }
-                    }
                 }
             },
             "StakeTransaction": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0xcb4038576ed46c3913915435c7ccb7316cf83c626dfcf580d0b84b86702e76eb"
                     },
                     "staker": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944"
                     },
                     "node": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
                     },
                     "value": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "5000000000000000000000"
                     },
                     "chips": {
                         "type": "array",
                         "nullable": true,
                         "items": {
-                            "$ref": "#/components/schemas/Chips"
+                            "$ref": "#/components/schemas/Chip"
                         }
                     },
                     "event": {
@@ -2037,39 +1759,6 @@
                                     "claimed": {
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     }
-                                }
-                            }
-                        }
-                    }
-                },
-                "example": {
-                    "id": "0xbfbb8cbffc01c13c1f849ecfb53099309e189b362fd621addbfa9f5d03dcd0c1",
-                    "staker": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
-                    "node": "0x6727a51caefcaf1bc189a8316ea09f844644b195",
-                    "value": "8239445455124262851652",
-                    "chips": [
-                        {
-                            "id": 2105,
-                            "node": "0x6727a51caefcaf1bc189a8316ea09f844644b195",
-                            "owner": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
-                            "metadata": {
-                                "name": "Chip #2105",
-                                "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                "image": "https://gi.rss3.dev/chips/2105/image.svg"
-                            }
-                        }
-                    ],
-                    "event": {
-                        "deposit": {
-                            "deposited": {
-                                "block": {
-                                    "hash": "0x37af6202ef8303485aa3db32be6668070b6b9c7e46521325f959369847482015",
-                                    "number": 128115,
-                                    "timestamp": 1707140550
-                                },
-                                "transaction": {
-                                    "hash": "0x823d988f7a18215ea850010131e5fa138d8d882ae4f95716d5791a45fac57833",
-                                    "index": 1
                                 }
                             }
                         }
@@ -2121,10 +1810,12 @@
                 "type": "object",
                 "properties": {
                     "staker": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1"
                     },
                     "node": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
                     },
                     "chips": {
                         "type": "object",
@@ -2135,118 +1826,55 @@
                             "showcase": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/components/schemas/Chips"
+                                    "$ref": "#/components/schemas/Chip"
                                 }
                             }
                         }
                     }
-                },
-                "example": {
-                    "staker": 3.3926146615919217e+47,
-                    "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                    "chips": {
-                        "total": 200,
-                        "showcase": [
-                            {
-                                "id": 275,
-                                "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                                "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                "metadata": {
-                                    "name": "Chip #275",
-                                    "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                    "image": "https://gi.rss3.dev/chips/275/image.svg"
-                                }
-                            },
-                            {
-                                "id": 276,
-                                "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                                "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                "metadata": {
-                                    "name": "Chip #276",
-                                    "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                    "image": "https://gi.rss3.dev/chips/275/image.svg"
-                                }
-                            },
-                            {
-                                "id": 277,
-                                "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                                "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                "metadata": {
-                                    "name": "Chip #277",
-                                    "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                    "image": "https://gi.rss3.dev/chips/275/image.svg"
-                                }
-                            },
-                            {
-                                "id": 278,
-                                "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                                "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                "metadata": {
-                                    "name": "Chip #278",
-                                    "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                    "image": "https://gi.rss3.dev/chips/275/image.svg"
-                                }
-                            },
-                            {
-                                "id": 279,
-                                "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                                "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                                "metadata": {
-                                    "name": "Chip #279",
-                                    "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                                    "image": "https://gi.rss3.dev/chips/275/image.svg"
-                                }
-                            }
-                        ]
-                    }
                 }
             },
-            "Chips": {
+            "Chip": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "example": 1690
                     },
                     "node": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
                     },
                     "owner": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944"
                     },
                     "metadata": {
                         "type": "object",
                         "properties": {
                             "name": {
-                                "type": "string"
+                                "type": "string",
+                                "example": "Open Chips #1690"
                             },
                             "description": {
-                                "type": "string"
+                                "type": "string",
+                                "example": "Chip Monsters are unique creatures living in the RSS3 Network, each one special because of where it was born. They represent the idea of FREE and OPEN INFORMATION, thriving in a world that values sharing and being different. These Chip Monsters are more than just digital; they symbolize the excitement and importance of being unique in a connected digital world."
                             },
                             "image": {
-                                "type": "string"
+                                "type": "string",
+                                "example": "https://gi.rss3.io/nta/chips/1690/image.svg"
                             }
                         }
                     },
                     "value": {
                         "type": "string",
-                        "description": "the value at time of minting"
+                        "description": "the value at time of minting",
+                        "example": "500000000000000000000"
                     },
                     "latest_value": {
                         "type": "string",
-                        "description": "The latest value of the chip"
+                        "description": "The latest value of the chip",
+                        "example": "613891695796128425340"
                     }
-                },
-                "example": {
-                    "id": 474,
-                    "node": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
-                    "owner": "0x3b6d02a24df681ffdf621d35d70aba7adaac07c1",
-                    "metadata": {
-                        "name": "Chip #474",
-                        "description": "Chip is a unique NFT that represents a Node in the network. It is generated based on the node's address and token ID.",
-                        "image": "https://gi.rss3.dev/chips/474/image.svg"
-                    },
-                    "value": "5000000000000000000000",
-                    "latest_value": "5500000000000000000000"
                 }
             },
             "Node": {
@@ -2540,16 +2168,20 @@
                 "type": "object",
                 "properties": {
                     "date": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "2024-06-14T01:57:07Z"
                     },
                     "total_chip_amount": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "24"
                     },
                     "total_chip_value": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "14459771035071565497880"
                     },
                     "profit_and_loss": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "0.0066375630868202"
                     }
                 }
             },
@@ -3077,7 +2709,7 @@
                     }
                 }
             },
-            "tag_query": {
+            "action_tag_query": {
                 "name": "tag",
                 "in": "query",
                 "description": "Retrieve activities from the specified tag(s). Tags can be used to categorize activities.",
@@ -3089,7 +2721,7 @@
                     }
                 }
             },
-            "type_query": {
+            "action_type_query": {
                 "name": "type",
                 "in": "query",
                 "description": "Retrieve activities from the specified type(s). Types can help filter activities based on their nature or category.",
@@ -3158,7 +2790,6 @@
                 "in": "query",
                 "required": false,
                 "description": "Type of bridging transaction",
-                "example": "deposit",
                 "schema": {
                     "type": "string",
                     "enum": [
@@ -3177,12 +2808,99 @@
                     "default": 20
                 }
             },
-            "transaction_hash_path": {
+            "bridging_transaction_hash_path": {
                 "name": "transaction_hash",
                 "in": "path",
                 "required": true,
                 "description": "The unique hash of the bridging transaction",
                 "example": "0xdbfa26e70977dfe2d68f3da7dd7d9e0c04136ecf14e80b98b209314ae7c462ff",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "staking_transaction_hash_path": {
+                "name": "transaction_hash",
+                "in": "path",
+                "required": true,
+                "description": "The unique hash of the staking transaction",
+                "example": "0xcb4038576ed46c3913915435c7ccb7316cf83c626dfcf580d0b84b86702e76eb",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "staker_query": {
+                "name": "staker",
+                "in": "query",
+                "required": false,
+                "description": "Staker address",
+                "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "node_query": {
+                "name": "node",
+                "in": "query",
+                "required": false,
+                "description": "Node address",
+                "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "staking_type_query": {
+                "name": "type",
+                "in": "query",
+                "required": false,
+                "description": "Type of staking transaction",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "deposit",
+                        "withdraw",
+                        "stake",
+                        "unstake"
+                    ]
+                }
+            },
+            "pending_query": {
+                "name": "pending",
+                "in": "query",
+                "required": false,
+                "description": "Pending status of the transaction",
+                "schema": {
+                    "type": "boolean"
+                }
+            },
+            "staker_address_path": {
+                "name": "staker_address",
+                "in": "path",
+                "required": true,
+                "description": "The address of the staker whose profit information is to be retrieved.",
+                "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "chip_ids_query": {
+                "name": "id",
+                "in": "query",
+                "required": false,
+                "description": "Array of chip IDs to filter the results.",
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "example": [1690]
+            },
+            "owner_query": {
+                "name": "owner",
+                "in": "query",
+                "required": false,
+                "description": "The address of the chip owner to filter the results.",
+                "example": "0xc8b960d09c0078c18dcbe7eb9ab9d816bcca8944",
                 "schema": {
                     "type": "string"
                 }
@@ -3210,7 +2928,7 @@
                 }
             },
             "BridgeTransactionsResponse": {
-                "description": "OK",
+                "description": "List of bridging transactions retrieved successfully",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -3228,7 +2946,7 @@
                 }
             },
             "BridgeTransactionByHashResponse": {
-                "description": "OK",
+                "description": "Bridging transaction details fetched successfully",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -3236,6 +2954,131 @@
                             "properties": {
                                 "data": {
                                     "$ref": "#/components/schemas/BridgeTransaction"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakeTransactionsResponse": {
+                "description": "List of staking transactions retrieved successfully with pagination cursor",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/StakeTransaction"
+                                    }
+                                },
+                                "cursor": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakeTransactionByHashResponse": {
+                "description": "Staking transaction details fetched successfully",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "$ref": "#/components/schemas/StakeTransaction"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakeStakingsResponse": {
+                "description": "A successful response containing a list of stakers and their associated nodes. Each entry in the data array represents a staker and includes detailed information about the staker, the node they are associated with, and any associated chips. The response also includes a cursor for pagination to fetch subsequent sets of results. This allows users to retrieve large datasets incrementally.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/StakeStaking"
+                                    }
+                                },
+                                "cursor": {
+                                    "type": "string",
+                                    "description": "Cursor for pagination to fetch the next set of results.",
+                                    "example": "0xc7d6378960bd3374c31ce6223df0e79355ff3dc4b6dccf28afe84487321ef9fb"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakingProfitResponse": {
+                "description": "A successful response containing the staking profit information for the specified staker. The data includes the owner's address, total chip amount, total chip value, and profit and loss (PNL) data for one day, one week, and one month.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "description": "Staking profit information for the specified staker.",
+                                    "properties": {
+                                        "owner": {
+                                            "type": "string",
+                                            "description": "The address of the staker.",
+                                            "example": "0x827431510a5d249ce4fdb7f00c83a3353f471848"
+                                        },
+                                        "total_chip_amount": {
+                                            "type": "string",
+                                            "description": "The total amount of chips owned by the staker.",
+                                            "example": "1000"
+                                        },
+                                        "total_chip_value": {
+                                            "type": "string",
+                                            "description": "The total value of chips owned by the staker.",
+                                            "example": "100000"
+                                        },
+                                        "oneDay": {
+                                            "$ref": "#/components/schemas/ChipPNL"
+                                        },
+                                        "oneWeek": {
+                                            "$ref": "#/components/schemas/ChipPNL"
+                                        },
+                                        "oneMonth": {
+                                            "$ref": "#/components/schemas/ChipPNL"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ChipsResponse": {
+                "description": "A successful response containing a list of chips based on the provided filters. Each chip includes detailed information such as its ID, node address, owner address, and metadata. The response also includes a cursor for pagination to fetch subsequent sets of results.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "description": "Array of chips matching the filter criteria.",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Chip"
+                                    }
+                                },
+                                "cursor": {
+                                    "type": "string",
+                                    "description": "Cursor for pagination to fetch the next set of results.",
+                                    "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
                                 }
                             }
                         }
