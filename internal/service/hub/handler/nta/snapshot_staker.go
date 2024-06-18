@@ -22,7 +22,7 @@ func (n *NTA) GetStakerCountSnapshots(c echo.Context) error {
 
 	var response nta.Response
 
-	response.Data = nta.NewStakeSnapshots(stakeSnapshots)
+	response.Data = nta.NewStakerCountSnapshots(stakeSnapshots)
 
 	return c.JSON(http.StatusOK, response)
 }
