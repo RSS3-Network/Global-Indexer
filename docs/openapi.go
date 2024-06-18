@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/activity"
@@ -42,6 +43,12 @@ func Generate() ([]byte, error) {
 
 func generateEnum(file []byte) ([]byte, error) {
 	var err error
+
+	// Generate error code values.
+	file, err = sjson.SetBytes(file, "components.schemas.ResponseError.properties.error_code.enum", errorx.ErrorCodeStrings())
+	if err != nil {
+		return nil, fmt.Errorf("sjson set error code enum err: %w", err)
+	}
 
 	// Generate network values.
 	networks := lo.Filter(network.NetworkStrings(), func(s string, _ int) bool {
