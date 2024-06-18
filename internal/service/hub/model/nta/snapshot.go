@@ -33,7 +33,7 @@ type GetNodeCountSnapshotsResponseData []*CountSnapshot
 
 type BatchGetNodeMinTokensToStakeSnapshotsResponseData []*NodeMinTokensToStakeSnapshots
 
-type GetStakerProfitSnapshotsResponseData []*CountSnapshot
+type GetStakerCountSnapshotsResponseData []*CountSnapshot
 
 type GetOperatorProfitsSnapshotsResponseData []*schema.OperatorProfitSnapshot
 
@@ -56,7 +56,7 @@ func NewNodeCountSnapshots(nodeSnapshots []*schema.NodeSnapshot) GetNodeCountSna
 	})
 }
 
-func NewStakeSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) GetStakerProfitSnapshotsResponseData {
+func NewStakerCountSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) GetStakerCountSnapshotsResponseData {
 	return lo.Map(stakeSnapshots, func(stakeSnapshot *schema.StakerCountSnapshot, _ int) *CountSnapshot {
 		return &CountSnapshot{
 			Date:  stakeSnapshot.Date.Format(time.DateOnly),
