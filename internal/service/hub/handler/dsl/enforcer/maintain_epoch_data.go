@@ -82,39 +82,39 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 					continue
 				}
 
+				mu.Lock()
 				if _, ok := networkToWorkersMap[workerInfo.Network.String()]; !ok {
 					networkToWorkersMap[workerInfo.Network.String()] = make(map[string]struct{})
 				}
 
-				mu.Lock()
 				networkToWorkersMap[workerInfo.Network.String()][workerInfo.Worker.String()] = struct{}{}
 				mu.Unlock()
 
+				mu.Lock()
 				if _, ok := platformToWorkersMap[workerInfo.Platform.String()]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
 					platformToWorkersMap[workerInfo.Platform.String()] = make(map[string]struct{})
 				}
 
-				mu.Lock()
 				if workerInfo.Platform != decentralized.PlatformUnknown {
 					platformToWorkersMap[workerInfo.Platform.String()][workerInfo.Worker.String()] = struct{}{}
 				}
 				mu.Unlock()
 
 				for _, tagX := range workerInfo.Tags {
+					mu.Lock()
 					if _, ok := tagToWorkersMap[tagX.String()]; !ok {
 						tagToWorkersMap[tagX.String()] = make(map[string]struct{})
 					}
 
-					mu.Lock()
 					tagToWorkersMap[tagX.String()][workerInfo.Worker.String()] = struct{}{}
 					mu.Unlock()
 				}
 
+				mu.Lock()
 				if _, ok := fullNodeWorkerToNetworksMap[workerInfo.Worker.String()]; !ok {
 					fullNodeWorkerToNetworksMap[workerInfo.Worker.String()] = make(map[string]struct{})
 				}
 
-				mu.Lock()
 				fullNodeWorkerToNetworksMap[workerInfo.Worker.String()][workerInfo.Network.String()] = struct{}{}
 				mu.Unlock()
 			}
