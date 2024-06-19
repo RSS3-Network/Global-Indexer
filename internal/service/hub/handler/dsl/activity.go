@@ -56,7 +56,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	}
 
 	if err = defaults.Set(&request); err != nil {
-		return errorx.InternalError(c)
+		return errorx.BadRequestError(c, err)
 	}
 
 	// Resolve name to EVM address
@@ -65,7 +65,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		if err != nil {
 			zap.L().Error("name service resolve error", zap.Error(err), zap.String("account", request.Account))
 
-			return errorx.InternalError(c)
+			return errorx.BadRequestError(c, err)
 		}
 	}
 
