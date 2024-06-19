@@ -1019,7 +1019,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    },
+                    ,"anyOf":[{"$ref":"#/components/schemas/approval"},{"$ref":"#/components/schemas/bridge"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -2310,7 +2310,7 @@
                     }
                 }
             }
-        },
+        ,"approval":{"properties":{"Token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"type":"integer"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"action":{"enum":["approve","revoke"],"type":"string"}},"type":"object"},"bridge":{"properties":{"action":{"type":"integer"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","optimism","polygon","rss","savm","vsl"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","optimism","polygon","rss","savm","vsl"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"type":"integer"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"}},
         "parameters": {
             "activity_id_path": {
                 "description": "Retrieve details for the specified activity ID",
