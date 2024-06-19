@@ -59,7 +59,9 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 	qualifiedNodes := make([]*model.NodeEndpointCache, 0, n)
 
 	for _, item := range result {
-		qualifiedNodes = append(qualifiedNodes, sm.nodeEndpointCaches[item.Member.(string)])
+		if member := sm.nodeEndpointCaches[item.Member.(string)]; member != nil {
+			qualifiedNodes = append(qualifiedNodes, member)
+		}
 	}
 
 	return qualifiedNodes, nil
