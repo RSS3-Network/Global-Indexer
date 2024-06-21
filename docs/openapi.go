@@ -19,7 +19,6 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/rss3-network/protocol-go/schema/typex"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 )
@@ -128,36 +127,34 @@ func generateEnum(file []byte) ([]byte, error) {
 
 func generateMetadataAction(file []byte) ([]byte, error) {
 	// Generate all MetadataActionSchemas
-	schemas := make(map[string]map[string]interface{})
+	schemas := make(map[tag.Tag]map[schema.Type]interface{})
 
-	schemas[tag.Transaction.String()] = generateTransactionMetadataActionSchemas()
-	schemas[tag.Collectible.String()] = generateCollectibleMetadataActionSchemas()
-	schemas[tag.Exchange.String()] = generateExchangeMetadataActionSchemas()
-	schemas[tag.Social.String()] = generateSocialMetadataActionSchemas()
-	schemas[tag.Metaverse.String()] = generateMetaverseMetadataActionSchemas()
-	schemas[tag.RSS.String()] = generateRSSMetadataActionSchemas()
+	schemas[tag.Transaction] = generateTransactionMetadataActionSchemas()
+	schemas[tag.Collectible] = generateCollectibleMetadataActionSchemas()
+	schemas[tag.Exchange] = generateExchangeMetadataActionSchemas()
+	schemas[tag.Social] = generateSocialMetadataActionSchemas()
+	schemas[tag.Metaverse] = generateMetaverseMetadataActionSchemas()
+	schemas[tag.RSS] = generateRSSMetadataActionSchemas()
+
+	anyOfArray := make([]map[string]interface{}, 0)
 
 	var err error
 
 	// Add the generated schemas to the components.schemas section of the OpenAPI document
 	for tagx := range schemas {
-		for metadatax, value := range schemas[tagx] {
-			key := fmt.Sprintf("%s%s", tagx, metadatax)
+		for typex, value := range schemas[tagx] {
+			key := fmt.Sprintf("%s%s", tagx.String(), typex.Name())
 
 			file, err = sjson.SetBytes(file, fmt.Sprintf("components.schemas.%s", key), value)
 			if err != nil {
 				return nil, fmt.Errorf("sjson set schema err: %w", err)
 			}
+
+			// Prepare anyOf array for components.schemas.Action.properties.metadata
+			anyOfArray = append(anyOfArray, map[string]interface{}{
+				"$ref": fmt.Sprintf("#/components/schemas/%s", key),
+			})
 		}
-	}
-
-	// Prepare anyOf array for components.schemas.Action.properties.metadata
-	anyOfArray := make([]map[string]interface{}, 0)
-
-	for key := range schemas {
-		anyOfArray = append(anyOfArray, map[string]interface{}{
-			"$ref": fmt.Sprintf("#/components/schemas/%s", key),
-		})
 	}
 
 	// Add the anyOf array to components.schemas.Action.properties.metadata
@@ -169,60 +166,60 @@ func generateMetadataAction(file []byte) ([]byte, error) {
 	return file, nil
 }
 
-func generateTransactionMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.TransactionApproval.String(): generateMetadataObject(reflect.TypeOf(metadata.TransactionApproval{})),
-		typex.TransactionBridge.String():   generateMetadataObject(reflect.TypeOf(metadata.TransactionBridge{})),
-		typex.TransactionTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
-		typex.TransactionBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
-		typex.TransactionMint.String():     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+func generateTransactionMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.TransactionApproval: generateMetadataObject(reflect.TypeOf(metadata.TransactionApproval{})),
+		typex.TransactionBridge:   generateMetadataObject(reflect.TypeOf(metadata.TransactionBridge{})),
+		typex.TransactionTransfer: generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+		typex.TransactionBurn:     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+		typex.TransactionMint:     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
 	}
 }
 
-func generateCollectibleMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.CollectibleApproval.String(): generateMetadataObject(reflect.TypeOf(metadata.CollectibleApproval{})),
-		typex.CollectibleTrade.String():    generateMetadataObject(reflect.TypeOf(metadata.CollectibleTrade{})),
-		typex.CollectibleTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
-		typex.CollectibleBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
-		typex.CollectibleMint.String():     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+func generateCollectibleMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.CollectibleApproval: generateMetadataObject(reflect.TypeOf(metadata.CollectibleApproval{})),
+		typex.CollectibleTrade:    generateMetadataObject(reflect.TypeOf(metadata.CollectibleTrade{})),
+		typex.CollectibleTransfer: generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+		typex.CollectibleBurn:     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+		typex.CollectibleMint:     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
 	}
 }
 
-func generateExchangeMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.ExchangeLiquidity.String(): generateMetadataObject(reflect.TypeOf(metadata.ExchangeLiquidity{})),
-		typex.ExchangeStaking.String():   generateMetadataObject(reflect.TypeOf(metadata.ExchangeStaking{})),
-		typex.ExchangeSwap.String():      generateMetadataObject(reflect.TypeOf(metadata.ExchangeSwap{})),
+func generateExchangeMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.ExchangeLiquidity: generateMetadataObject(reflect.TypeOf(metadata.ExchangeLiquidity{})),
+		typex.ExchangeStaking:   generateMetadataObject(reflect.TypeOf(metadata.ExchangeStaking{})),
+		typex.ExchangeSwap:      generateMetadataObject(reflect.TypeOf(metadata.ExchangeSwap{})),
 	}
 }
 
-func generateSocialMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.SocialPost.String():    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialComment.String(): generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialRevise.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialReward.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialShare.String():   generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialDelete.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialMint.String():    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
-		typex.SocialProfile.String(): generateMetadataObject(reflect.TypeOf(metadata.SocialProfile{})),
-		typex.SocialProxy.String():   generateMetadataObject(reflect.TypeOf(metadata.SocialProxy{})),
+func generateSocialMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.SocialPost:    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialComment: generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialRevise:  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialReward:  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialShare:   generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialDelete:  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialMint:    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialProfile: generateMetadataObject(reflect.TypeOf(metadata.SocialProfile{})),
+		typex.SocialProxy:   generateMetadataObject(reflect.TypeOf(metadata.SocialProxy{})),
 	}
 }
 
-func generateMetaverseMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.MetaverseBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
-		typex.MetaverseMint.String():     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
-		typex.MetaverseTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
-		typex.MetaverseTrade.String():    generateMetadataObject(reflect.TypeOf(metadata.MetaverseTrade{})),
+func generateMetaverseMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.MetaverseBurn:     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseMint:     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseTransfer: generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseTrade:    generateMetadataObject(reflect.TypeOf(metadata.MetaverseTrade{})),
 	}
 }
 
-func generateRSSMetadataActionSchemas() map[string]interface{} {
-	return map[string]interface{}{
-		typex.RSSFeed.String(): generateMetadataObject(reflect.TypeOf(metadata.RSS{})),
+func generateRSSMetadataActionSchemas() map[schema.Type]interface{} {
+	return map[schema.Type]interface{}{
+		typex.RSSFeed: generateMetadataObject(reflect.TypeOf(metadata.RSS{})),
 	}
 }
 
@@ -254,7 +251,7 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 			if field.Type.Kind() == reflect.Ptr {
 				elemType := field.Type.Elem()
 
-				if elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(big.Int{}) {
+				if elemType == reflect.TypeOf(big.Int{}) {
 					properties[fieldName] = map[string]interface{}{
 						"type": "string",
 					}
@@ -263,6 +260,14 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 				}
 
 				if elemType.Kind() == reflect.Struct {
+					if elemType == reflect.TypeOf(metadata.SocialPost{}) && fieldName == "target" {
+						properties[fieldName] = map[string]interface{}{
+							"$ref": "#/components/schemas/socialpost",
+						}
+
+						continue
+					}
+
 					properties[fieldName] = generateMetadataObject(elemType)
 
 					continue
@@ -301,13 +306,13 @@ func transformOpenAPIType(t reflect.Type) string {
 	case reflect.Ptr:
 		elemType := t.Elem()
 
-		if elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(big.Int{}) {
+		if elemType == reflect.TypeOf(big.Int{}) {
 			return "string"
 		}
 
 		return transformOpenAPIType(elemType)
 	case reflect.Struct:
-		if t == reflect.TypeOf(decimal.Decimal{}) || t == reflect.TypeOf(big.Int{}) {
+		if t == reflect.TypeOf(big.Int{}) {
 			return "string"
 		}
 
