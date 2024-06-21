@@ -21,6 +21,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 //go:embed openapi.json
@@ -143,7 +145,7 @@ func generateMetadataAction(file []byte) ([]byte, error) {
 	// Add the generated schemas to the components.schemas section of the OpenAPI document
 	for tagx := range schemas {
 		for typex, value := range schemas[tagx] {
-			key := fmt.Sprintf("%s%s", tagx.String(), typex.Name())
+			key := fmt.Sprintf("%s%s", toTitleCase(tagx.String()), toTitleCase(typex.Name()))
 
 			file, err = sjson.SetBytes(file, fmt.Sprintf("components.schemas.%s", key), value)
 			if err != nil {
@@ -164,6 +166,13 @@ func generateMetadataAction(file []byte) ([]byte, error) {
 	}
 
 	return file, nil
+}
+
+// toTitleCase converts a string to title case
+func toTitleCase(s string) string {
+	caser := cases.Title(language.English, cases.NoLower)
+
+	return caser.String(s)
 }
 
 func generateTransactionMetadataActionSchemas() map[schema.Type]interface{} {
@@ -262,7 +271,7 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 				if elemType.Kind() == reflect.Struct {
 					if elemType == reflect.TypeOf(metadata.SocialPost{}) && fieldName == "target" {
 						properties[fieldName] = map[string]interface{}{
-							"$ref": "#/components/schemas/socialpost",
+							"$ref": "#/components/schemas/SocialPost",
 						}
 
 						continue
