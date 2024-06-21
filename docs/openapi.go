@@ -127,16 +127,27 @@ func generateEnum(file []byte) ([]byte, error) {
 }
 
 func generateMetadataAction(file []byte) ([]byte, error) {
-	// Generate all TransactionMetadataActionSchemas
-	schemas := generateTransactionMetadataActionSchemas()
+	// Generate all MetadataActionSchemas
+	schemas := make(map[string]map[string]interface{})
+
+	schemas[tag.Transaction.String()] = generateTransactionMetadataActionSchemas()
+	schemas[tag.Collectible.String()] = generateCollectibleMetadataActionSchemas()
+	schemas[tag.Exchange.String()] = generateExchangeMetadataActionSchemas()
+	schemas[tag.Social.String()] = generateSocialMetadataActionSchemas()
+	schemas[tag.Metaverse.String()] = generateMetaverseMetadataActionSchemas()
+	schemas[tag.RSS.String()] = generateRSSMetadataActionSchemas()
+
+	var err error
 
 	// Add the generated schemas to the components.schemas section of the OpenAPI document
-	for key, schema := range schemas {
-		var err error
-		file, err = sjson.SetBytes(file, fmt.Sprintf("components.schemas.%s", key), schema)
+	for tagx := range schemas {
+		for metadatax, value := range schemas[tagx] {
+			key := fmt.Sprintf("%s%s", tagx, metadatax)
 
-		if err != nil {
-			return nil, fmt.Errorf("sjson set schema err: %w", err)
+			file, err = sjson.SetBytes(file, fmt.Sprintf("components.schemas.%s", key), value)
+			if err != nil {
+				return nil, fmt.Errorf("sjson set schema err: %w", err)
+			}
 		}
 	}
 
@@ -150,7 +161,7 @@ func generateMetadataAction(file []byte) ([]byte, error) {
 	}
 
 	// Add the anyOf array to components.schemas.Action.properties.metadata
-	file, err := sjson.SetBytes(file, "components.schemas.Action.properties.metadata.anyOf", anyOfArray)
+	file, err = sjson.SetBytes(file, "components.schemas.Action.properties.metadata.anyOf", anyOfArray)
 	if err != nil {
 		return nil, fmt.Errorf("sjson set anyOf err: %w", err)
 	}
@@ -159,12 +170,60 @@ func generateMetadataAction(file []byte) ([]byte, error) {
 }
 
 func generateTransactionMetadataActionSchemas() map[string]interface{} {
-	schemas := make(map[string]interface{})
+	return map[string]interface{}{
+		typex.TransactionApproval.String(): generateMetadataObject(reflect.TypeOf(metadata.TransactionApproval{})),
+		typex.TransactionBridge.String():   generateMetadataObject(reflect.TypeOf(metadata.TransactionBridge{})),
+		typex.TransactionTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+		typex.TransactionBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+		typex.TransactionMint.String():     generateMetadataObject(reflect.TypeOf(metadata.TransactionTransfer{})),
+	}
+}
 
-	schemas[typex.TransactionApproval.String()] = generateMetadataObject(reflect.TypeOf(metadata.TransactionApproval{}))
-	schemas[typex.TransactionBridge.String()] = generateMetadataObject(reflect.TypeOf(metadata.TransactionBridge{}))
+func generateCollectibleMetadataActionSchemas() map[string]interface{} {
+	return map[string]interface{}{
+		typex.CollectibleApproval.String(): generateMetadataObject(reflect.TypeOf(metadata.CollectibleApproval{})),
+		typex.CollectibleTrade.String():    generateMetadataObject(reflect.TypeOf(metadata.CollectibleTrade{})),
+		typex.CollectibleTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+		typex.CollectibleBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+		typex.CollectibleMint.String():     generateMetadataObject(reflect.TypeOf(metadata.CollectibleTransfer{})),
+	}
+}
 
-	return schemas
+func generateExchangeMetadataActionSchemas() map[string]interface{} {
+	return map[string]interface{}{
+		typex.ExchangeLiquidity.String(): generateMetadataObject(reflect.TypeOf(metadata.ExchangeLiquidity{})),
+		typex.ExchangeStaking.String():   generateMetadataObject(reflect.TypeOf(metadata.ExchangeStaking{})),
+		typex.ExchangeSwap.String():      generateMetadataObject(reflect.TypeOf(metadata.ExchangeSwap{})),
+	}
+}
+
+func generateSocialMetadataActionSchemas() map[string]interface{} {
+	return map[string]interface{}{
+		typex.SocialPost.String():    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialComment.String(): generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialRevise.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialReward.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialShare.String():   generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialDelete.String():  generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialMint.String():    generateMetadataObject(reflect.TypeOf(metadata.SocialPost{})),
+		typex.SocialProfile.String(): generateMetadataObject(reflect.TypeOf(metadata.SocialProfile{})),
+		typex.SocialProxy.String():   generateMetadataObject(reflect.TypeOf(metadata.SocialProxy{})),
+	}
+}
+
+func generateMetaverseMetadataActionSchemas() map[string]interface{} {
+	return map[string]interface{}{
+		typex.MetaverseBurn.String():     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseMint.String():     generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseTransfer.String(): generateMetadataObject(reflect.TypeOf(metadata.MetaverseTransfer{})),
+		typex.MetaverseTrade.String():    generateMetadataObject(reflect.TypeOf(metadata.MetaverseTrade{})),
+	}
+}
+
+func generateRSSMetadataActionSchemas() map[string]interface{} {
+	return map[string]interface{}{
+		typex.RSSFeed.String(): generateMetadataObject(reflect.TypeOf(metadata.RSS{})),
+	}
 }
 
 func generateMetadataObject(t reflect.Type) map[string]interface{} {
@@ -266,8 +325,14 @@ func hasEnumStringsFunction(t reflect.Type) (reflect.Value, bool) {
 	funcName := t.Name() + "Strings"
 	globalFuncs := []interface{}{
 		metadata.TransactionApprovalActionStrings,
+		metadata.TransactionBridgeActionStrings,
+		metadata.ExchangeLiquidityActionStrings,
+		metadata.ExchangeStakingActionStrings,
+		metadata.SocialProfileActionStrings,
+		metadata.SocialProfileActionStrings,
+		metadata.MetaverseTradeActionStrings,
+		metadata.StandardStrings,
 		network.NetworkStrings,
-		// TODO: Add more global functions here
 	}
 
 	for _, f := range globalFuncs {
