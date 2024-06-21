@@ -93,7 +93,7 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
 	}
 
-	if query.Pending != nil {
+	if query.Pending != nil && *query.Pending {
 		subQuery := c.database.WithContext(ctx).
 			Select("TRUE").
 			Table((*table.StakeEvent).TableName(nil)).
