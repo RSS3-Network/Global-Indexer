@@ -294,6 +294,21 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 					fieldSchema := generateMetadataObject(field.Type)
 					properties[fieldName] = fieldSchema
 				}
+			} else if field.Type.Kind() == reflect.Slice {
+				elemType := field.Type.Elem()
+				if elemType.Kind() == reflect.Struct {
+					// Handle slice of structs
+					properties[fieldName] = map[string]interface{}{
+						"type":  "array",
+						"items": generateMetadataObject(elemType),
+					}
+				} else {
+					// Handle slice of simple types
+					properties[fieldName] = map[string]interface{}{
+						"type":  "array",
+						"items": map[string]interface{}{"type": transformOpenAPIType(elemType)},
+					}
+				}
 			} else {
 				fieldSchema := map[string]interface{}{
 					"type": transformOpenAPIType(field.Type),
