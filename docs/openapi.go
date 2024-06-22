@@ -285,8 +285,15 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 
 			// Then handle struct types
 			if field.Type.Kind() == reflect.Struct {
-				fieldSchema := generateMetadataObject(field.Type)
-				properties[fieldName] = fieldSchema
+				if field.Anonymous {
+					// Merge the properties of the embedded struct directly
+					for k, v := range generateMetadataObject(field.Type)["properties"].(map[string]interface{}) {
+						properties[k] = v
+					}
+				} else {
+					fieldSchema := generateMetadataObject(field.Type)
+					properties[fieldName] = fieldSchema
+				}
 			} else {
 				fieldSchema := map[string]interface{}{
 					"type": transformOpenAPIType(field.Type),
