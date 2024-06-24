@@ -235,6 +235,7 @@ func generateRSSMetadataActionSchemas() map[schema.Type]interface{} {
 }
 
 func generateMetadataObject(t reflect.Type) map[string]interface{} {
+	requiredProperties := make([]string, 0)
 	object := map[string]interface{}{
 		"type":       "object",
 		"properties": map[string]interface{}{},
@@ -263,9 +264,12 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 		// Check if the field type has a corresponding Strings function
 		if method, ok := hasEnumStringsFunction(field.Type); ok {
 			properties[fieldName] = map[string]interface{}{
-				"type":     "string",
-				"required": required,
-				"enum":     getEnumStrings(method),
+				"type": "string",
+				"enum": getEnumStrings(method),
+			}
+
+			if required {
+				requiredProperties = append(requiredProperties, fieldName)
 			}
 
 			continue
@@ -277,8 +281,11 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 
 			if elemType == reflect.TypeOf(big.Int{}) || elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(time.Time{}) {
 				properties[fieldName] = map[string]interface{}{
-					"type":     "string",
-					"required": required,
+					"type": "string",
+				}
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
 				}
 
 				continue
@@ -287,8 +294,11 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 			if elemType.Kind() == reflect.Struct {
 				if elemType == reflect.TypeOf(metadata.SocialPost{}) && fieldName == "target" {
 					properties[fieldName] = map[string]interface{}{
-						"required": required,
-						"$ref":     "#/components/schemas/SocialPost",
+						"$ref": "#/components/schemas/SocialPost",
+					}
+
+					if required {
+						requiredProperties = append(requiredProperties, fieldName)
 					}
 
 					continue
@@ -315,24 +325,37 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 			if elemType.Kind() == reflect.Struct {
 				// Handle slice of structs
 				properties[fieldName] = map[string]interface{}{
-					"type":     "array",
-					"required": required,
-					"items":    generateMetadataObject(elemType),
+					"type":  "array",
+					"items": generateMetadataObject(elemType),
+				}
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
 				}
 			} else {
 				// Handle slice of simple types
 				properties[fieldName] = map[string]interface{}{
-					"type":     "array",
-					"required": required,
-					"items":    map[string]interface{}{"type": transformOpenAPIType(elemType)},
+					"type":  "array",
+					"items": map[string]interface{}{"type": transformOpenAPIType(elemType)},
+				}
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
 				}
 			}
 		} else {
 			properties[fieldName] = map[string]interface{}{
-				"required": required,
-				"type":     transformOpenAPIType(field.Type),
+				"type": transformOpenAPIType(field.Type),
+			}
+
+			if required {
+				requiredProperties = append(requiredProperties, fieldName)
 			}
 		}
+	}
+
+	if len(requiredProperties) > 0 {
+		object["required"] = requiredProperties
 	}
 
 	return object
