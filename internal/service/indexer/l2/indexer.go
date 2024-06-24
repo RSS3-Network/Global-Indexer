@@ -40,6 +40,7 @@ type server struct {
 	contractChips                  *l2.Chips
 	checkpoint                     *schema.Checkpoint
 	blockNumberLatest              uint64
+	blockNumberFinalized           uint64
 	blockThreads                   uint64
 }
 
@@ -83,7 +84,17 @@ func (s *server) refreshLatestBlockNumber(ctx context.Context) (err error) {
 		return fmt.Errorf("get latest block number: %w", err)
 	}
 
-	span.SetAttributes(attribute.Int64("block.number", int64(s.blockNumberLatest)))
+	finalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
+	if err != nil {
+		return fmt.Errorf("get finalized block number: %w", err)
+	}
+
+	s.blockNumberFinalized = finalizedBlock.NumberU64()
+
+	span.SetAttributes(
+		attribute.Int64("block.number.latest", int64(s.blockNumberLatest)),
+		attribute.Int64("block.number.finalized", int64(s.blockNumberFinalized)),
+	)
 
 	return nil
 }
@@ -97,7 +108,7 @@ func (s *server) fetchBlocks(ctx context.Context) ([]*types.Block, error) {
 	for offset := uint64(1); offset <= s.blockThreads; offset++ {
 		blockNumber := s.checkpoint.BlockNumber + offset
 
-		if blockNumber > s.blockNumberLatest {
+		if blockNumber > s.blockNumberFinalized {
 			continue
 		}
 
@@ -169,6 +180,7 @@ func (s *server) index(ctx context.Context) (err error) {
 		attribute.Int64("chain.id", s.chainID.Int64()),
 		attribute.Int64("block.number.local", int64(s.checkpoint.BlockNumber)),
 		attribute.Int64("block.number.latest", int64(s.blockNumberLatest)),
+		attribute.Int64("block.number.finalized", int64(s.blockNumberFinalized)),
 	)
 
 	if err := s.refreshLatestBlockNumber(ctx); err != nil {
@@ -179,16 +191,18 @@ func (s *server) index(ctx context.Context) (err error) {
 		"refreshed the latest block number",
 		zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
 		zap.Uint64("block.number.latest", s.blockNumberLatest),
+		zap.Uint64("block.number.finalized", s.blockNumberFinalized),
 	)
 
 	// Waiting for a new block to be minted.
-	if s.checkpoint.BlockNumber >= s.blockNumberLatest {
+	if s.checkpoint.BlockNumber >= s.blockNumberFinalized {
 		blockConfirmationTime := time.Second // TODO Redefine it.
 
 		zap.L().Info(
 			"waiting for a new block to be minted",
 			zap.Uint64("block.number.local", s.checkpoint.BlockNumber),
 			zap.Uint64("block.number.latest", s.blockNumberLatest),
+			zap.Uint64("block.number.finalized", s.blockNumberFinalized),
 			zap.Duration("block.confirmationTime", blockConfirmationTime),
 		)
 
