@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -29,7 +29,7 @@ type SimpleEnforcer struct {
 	cacheClient             cache.Client
 	databaseClient          database.Client
 	httpClient              httputil.Client
-	stakingContract         *l2.Staking
+	stakingContract         *stakingv2.Staking
 	fullNodeScoreMaintainer *ScoreMaintainer
 	rssNodeScoreMaintainer  *ScoreMaintainer
 }
@@ -277,4 +277,23 @@ func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, nodeType strin
 	}
 
 	return newScoreMaintainer(ctx, nodeType, nodes, e.cacheClient)
+}
+
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, initScoreMaintainer bool) (*SimpleEnforcer, error) {
+	enforcer := &SimpleEnforcer{
+		databaseClient:  databaseClient,
+		cacheClient:     cacheClient,
+		stakingContract: stakingContract,
+		httpClient:      httpClient,
+	}
+
+	if initScoreMaintainer {
+		if err := enforcer.initScoreMaintainers(ctx); err != nil {
+			return nil, err
+		}
+
+		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
+	}
+
+	return enforcer, nil
 }

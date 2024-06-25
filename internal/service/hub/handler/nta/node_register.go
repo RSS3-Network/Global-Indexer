@@ -18,6 +18,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
+	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
@@ -119,7 +123,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.DataTypesNode) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -193,7 +197,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
