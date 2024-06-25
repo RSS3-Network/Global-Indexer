@@ -9,7 +9,9 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
@@ -19,6 +21,7 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/rss3-network/protocol-go/schema/typex"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
@@ -233,6 +236,7 @@ func generateRSSMetadataActionSchemas() map[schema.Type]interface{} {
 }
 
 func generateMetadataObject(t reflect.Type) map[string]interface{} {
+	requiredProperties := make([]string, 0)
 	object := map[string]interface{}{
 		"type":       "object",
 		"properties": map[string]interface{}{},
@@ -242,58 +246,117 @@ func generateMetadataObject(t reflect.Type) map[string]interface{} {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		// Remove 'omitempty' from the JSON tag to get the actual field name
-		fieldName := strings.Split(field.Tag.Get("json"), ",")[0]
-		if fieldName == "" {
-			fieldName = field.Name
+		fieldName := field.Name
+		required := true
+
+		// Parse the field tags
+		fieldTags := strings.Split(field.Tag.Get("json"), ",")
+		if fieldTags[0] != "" {
+			fieldName = fieldTags[0]
+		}
+
+		for _, fieldTag := range fieldTags {
+			if fieldTag == "omitempty" {
+				required = false
+				break
+			}
 		}
 
 		// Check if the field type has a corresponding Strings function
 		if method, ok := hasEnumStringsFunction(field.Type); ok {
-			fieldSchema := map[string]interface{}{
+			properties[fieldName] = map[string]interface{}{
 				"type": "string",
 				"enum": getEnumStrings(method),
 			}
-			properties[fieldName] = fieldSchema
-		} else {
-			// Handle pointer types first
-			if field.Type.Kind() == reflect.Ptr {
-				elemType := field.Type.Elem()
 
-				if elemType == reflect.TypeOf(big.Int{}) {
-					properties[fieldName] = map[string]interface{}{
-						"type": "string",
-					}
-
-					continue
-				}
-
-				if elemType.Kind() == reflect.Struct {
-					if elemType == reflect.TypeOf(metadata.SocialPost{}) && fieldName == "target" {
-						properties[fieldName] = map[string]interface{}{
-							"$ref": "#/components/schemas/SocialPost",
-						}
-
-						continue
-					}
-
-					properties[fieldName] = generateMetadataObject(elemType)
-
-					continue
-				}
+			if required {
+				requiredProperties = append(requiredProperties, fieldName)
 			}
 
-			// Then handle struct types
-			if field.Type.Kind() == reflect.Struct {
-				fieldSchema := generateMetadataObject(field.Type)
-				properties[fieldName] = fieldSchema
-			} else {
-				fieldSchema := map[string]interface{}{
-					"type": transformOpenAPIType(field.Type),
+			continue
+		}
+
+		// Handle pointer types first
+		if field.Type.Kind() == reflect.Ptr {
+			elemType := field.Type.Elem()
+
+			if elemType == reflect.TypeOf(big.Int{}) || elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(time.Time{}) {
+				properties[fieldName] = map[string]interface{}{
+					"type": "string",
 				}
-				properties[fieldName] = fieldSchema
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
+				}
+
+				continue
+			}
+
+			if elemType.Kind() == reflect.Struct {
+				if elemType == reflect.TypeOf(metadata.SocialPost{}) && fieldName == "target" {
+					properties[fieldName] = map[string]interface{}{
+						"$ref": "#/components/schemas/SocialPost",
+					}
+
+					if required {
+						requiredProperties = append(requiredProperties, fieldName)
+					}
+
+					continue
+				}
+
+				properties[fieldName] = generateMetadataObject(elemType)
+
+				continue
 			}
 		}
+
+		// Then handle struct types
+		if field.Type.Kind() == reflect.Struct {
+			if field.Anonymous {
+				// Merge the properties of the embedded struct directly
+				for k, v := range generateMetadataObject(field.Type)["properties"].(map[string]interface{}) {
+					properties[k] = v
+				}
+			} else {
+				properties[fieldName] = generateMetadataObject(field.Type)
+			}
+		} else if field.Type.Kind() == reflect.Slice {
+			elemType := field.Type.Elem()
+			if elemType.Kind() == reflect.Struct {
+				// Handle slice of structs
+				properties[fieldName] = map[string]interface{}{
+					"type":  "array",
+					"items": generateMetadataObject(elemType),
+				}
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
+				}
+			} else {
+				// Handle slice of simple types
+				properties[fieldName] = map[string]interface{}{
+					"type":  "array",
+					"items": map[string]interface{}{"type": transformOpenAPIType(elemType)},
+				}
+
+				if required {
+					requiredProperties = append(requiredProperties, fieldName)
+				}
+			}
+		} else {
+			properties[fieldName] = map[string]interface{}{
+				"type": transformOpenAPIType(field.Type),
+			}
+
+			if required {
+				requiredProperties = append(requiredProperties, fieldName)
+			}
+		}
+	}
+
+	if len(requiredProperties) > 0 {
+		object["required"] = requiredProperties
 	}
 
 	return object
@@ -311,20 +374,20 @@ func transformOpenAPIType(t reflect.Type) string {
 	case reflect.Bool:
 		return "boolean"
 	case reflect.Slice, reflect.Array:
+		if t == reflect.TypeOf(common.Address{}) {
+			return "string"
+		}
+
 		return "array"
 	case reflect.Ptr:
 		elemType := t.Elem()
 
-		if elemType == reflect.TypeOf(big.Int{}) {
+		if elemType == reflect.TypeOf(big.Int{}) || elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(time.Time{}) || elemType == reflect.TypeOf(common.Address{}) {
 			return "string"
 		}
 
 		return transformOpenAPIType(elemType)
 	case reflect.Struct:
-		if t == reflect.TypeOf(big.Int{}) {
-			return "string"
-		}
-
 		return "object"
 	default:
 		return "string"
@@ -340,10 +403,12 @@ func hasEnumStringsFunction(t reflect.Type) (reflect.Value, bool) {
 	globalFuncs := []interface{}{
 		metadata.TransactionApprovalActionStrings,
 		metadata.TransactionBridgeActionStrings,
+		metadata.CollectibleApprovalActionStrings,
+		metadata.CollectibleTradeActionStrings,
 		metadata.ExchangeLiquidityActionStrings,
 		metadata.ExchangeStakingActionStrings,
 		metadata.SocialProfileActionStrings,
-		metadata.SocialProfileActionStrings,
+		metadata.SocialProxyActionStrings,
 		metadata.MetaverseTradeActionStrings,
 		metadata.StandardStrings,
 		network.NetworkStrings,
