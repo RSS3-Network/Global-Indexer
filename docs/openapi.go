@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/node/schema/worker"
 	"github.com/rss3-network/protocol-go/schema"
@@ -373,11 +374,15 @@ func transformOpenAPIType(t reflect.Type) string {
 	case reflect.Bool:
 		return "boolean"
 	case reflect.Slice, reflect.Array:
+		if t == reflect.TypeOf(common.Address{}) {
+			return "string"
+		}
+
 		return "array"
 	case reflect.Ptr:
 		elemType := t.Elem()
 
-		if elemType == reflect.TypeOf(big.Int{}) || elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(time.Time{}) {
+		if elemType == reflect.TypeOf(big.Int{}) || elemType == reflect.TypeOf(decimal.Decimal{}) || elemType == reflect.TypeOf(time.Time{}) || elemType == reflect.TypeOf(common.Address{}) {
 			return "string"
 		}
 
@@ -403,7 +408,7 @@ func hasEnumStringsFunction(t reflect.Type) (reflect.Value, bool) {
 		metadata.ExchangeLiquidityActionStrings,
 		metadata.ExchangeStakingActionStrings,
 		metadata.SocialProfileActionStrings,
-		metadata.SocialProfileActionStrings,
+		metadata.SocialProxyActionStrings,
 		metadata.MetaverseTradeActionStrings,
 		metadata.StandardStrings,
 		network.NetworkStrings,
