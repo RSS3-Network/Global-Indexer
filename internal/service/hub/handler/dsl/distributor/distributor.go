@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
@@ -140,7 +140,7 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 }
 
 // NewDistributor creates a new distributor.
-func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.Staking) (*Distributor, error) {
+func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *stakingv2.Staking) (*Distributor, error) {
 	simpleEnforcer, err := enforcer.NewSimpleEnforcer(ctx, database, cache, stakingContract, httpClient, true)
 
 	if err != nil {

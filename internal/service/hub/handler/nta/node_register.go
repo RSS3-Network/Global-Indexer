@@ -19,7 +19,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -125,7 +125,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.DataTypesNode) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -199,7 +199,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) updateNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
 	var nodeConfig NodeConfig
 
 	if err := json.Unmarshal(config, &nodeConfig); err != nil {
@@ -285,7 +285,7 @@ func isFullNode(workers []*NodeConfigModule) (bool, error) {
 	return true, nil
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool, nodeInfo stakingv2.DataTypesNode) (*schema.Stat, error) {
 	var (
 		stat *schema.Stat
 		err  error

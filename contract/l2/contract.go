@@ -1,14 +1,21 @@
 package l2
 
 import (
+	"math/big"
+
 	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-//go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Staking.abi --pkg l2 --type Staking --out contract_staking.go
+//go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Staking.abi --pkg v1 --type Staking --out ./staking/v1/staking.go
+//go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/StakingV2.abi --pkg v2 --type Staking --out ./staking/v2/staking.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Chips.abi --pkg l2 --type Chips --out contract_chips.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Settlement.abi --pkg l2 --type Settlement --out contract_settlement.go
+
+var (
+	BlockHeightStakingV2Testnet = big.NewInt(5283916)
+)
 
 var (
 	AddressGovernanceTokenProxy        = predeploys.GovernanceTokenAddr        // https://scan.testnet.rss3.io/token/0x4200000000000000000000000000000000000042
