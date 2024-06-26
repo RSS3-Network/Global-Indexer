@@ -513,13 +513,13 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error
 
 // updateSortedSetForNodeType updates the sorted set for different types of Nodes.
 func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+	nodeStats, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return node.Address, node
+	nodesEndpointCachesMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (string, string) {
+		return stat.Address.String(), stat.Endpoint
 	})
 
 	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
@@ -536,10 +536,10 @@ func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key str
 		}
 	}
 
-	for _, node := range nodesEndpointCaches {
+	for _, stat := range nodeStats {
 		membersToAdd = append(membersToAdd, redis.Z{
-			Member: node.Address,
-			Score:  node.Score,
+			Member: stat.Address.String(),
+			Score:  stat.Score,
 		})
 	}
 

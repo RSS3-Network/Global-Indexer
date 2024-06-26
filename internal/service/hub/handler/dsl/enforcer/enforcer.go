@@ -40,28 +40,14 @@ func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model
 		return fmt.Errorf("no response returned from nodes")
 	}
 
-	nodeStatsMap, err := e.getNodeStatsMap(ctx, responses)
-	if err != nil {
-		return fmt.Errorf("failed to Find node stats: %w", err)
-	}
-
 	// non-error and non-null results are always put in front of the list
 	sortResponseByValidity(responses)
 	// update requests based on data compare
 	updatePointsBasedOnIdentity(responses)
-	// update stats struct based on the above results
-	updateStatsWithResults(nodeStatsMap, responses)
-
-	nodeStatsSlice := lo.MapToSlice(nodeStatsMap, func(_ common.Address, stat *schema.Stat) *schema.Stat {
-		return stat
-	})
-	// save stats to the database
-	if err = e.databaseClient.SaveNodeStats(ctx, nodeStatsSlice); err != nil {
-		return fmt.Errorf("save Node stats: %w", err)
-	}
-
+	// update the cache request
+	e.updateCacheRequest(ctx, responses)
 	// update the score maintainer
-	e.batchUpdateScoreMaintainer(ctx, nodeStatsSlice)
+	e.batchUpdateScoreMaintainer(ctx, responses)
 
 	return nil
 }
@@ -253,7 +239,9 @@ func updateQualifiedNodesMap(ctx context.Context, key string, databaseClient dat
 		zap.L().Error("get nodes from db", zap.Error(err))
 	}
 
-	scoreMaintainer.updateQualifiedNodesMap(nodes)
+	if err = scoreMaintainer.updateQualifiedNodesMap(ctx, nodes); err != nil {
+		zap.L().Error("update qualified nodes map", zap.Error(err))
+	}
 }
 
 func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {

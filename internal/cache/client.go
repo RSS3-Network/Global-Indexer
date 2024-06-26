@@ -10,6 +10,7 @@ import (
 type Client interface {
 	Get(ctx context.Context, key string, dest interface{}) error
 	Set(ctx context.Context, key string, value interface{}) error
+	IncrBy(ctx context.Context, key string, value int64) error
 	PSubscribe(ctx context.Context, pattern string) *redis.PubSub
 	ZAdd(ctx context.Context, key string, members ...redis.Z) error
 	ZRem(ctx context.Context, key string, members ...interface{}) error
@@ -39,6 +40,10 @@ func (c *client) Set(ctx context.Context, key string, value interface{}) error {
 	}
 
 	return c.redisClient.Set(ctx, key, data, 0).Err()
+}
+
+func (c *client) IncrBy(ctx context.Context, key string, value int64) error {
+	return c.redisClient.IncrBy(ctx, key, value).Err()
 }
 
 func (c *client) PSubscribe(ctx context.Context, pattern string) *redis.PubSub {
