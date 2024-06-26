@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/creasty/defaults"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -17,7 +16,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetStakeChips(c echo.Context) error {
@@ -47,25 +45,25 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 		return fmt.Errorf("find stake chips: %w", err)
 	}
 
-	// Get current chip values
-	nodeAddresses := lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) common.Address {
-		return stakeChip.Node
-	})
+	//// Get current chip values
+	//nodeAddresses := lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) common.Address {
+	//	return stakeChip.Node
+	//})
 
-	node, err := n.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
-		NodeAddresses: nodeAddresses,
-	})
-	if err != nil {
-		return fmt.Errorf("find Nodes: %w", err)
-	}
-
-	values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
-		return node.Address, node.MinTokensToStake
-	})
-
-	for _, chip := range stakeChips {
-		chip.LatestValue = values[chip.Node]
-	}
+	//node, err := n.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
+	//	NodeAddresses: nodeAddresses,
+	//})
+	//if err != nil {
+	//	return fmt.Errorf("find Nodes: %w", err)
+	//}
+	//
+	//values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
+	//	return node.Address, node.MinTokensToStake
+	//})
+	//
+	//for _, chip := range stakeChips {
+	//	chip.LatestValue = values[chip.Node]
+	//}
 
 	var response nta.Response
 	response.Data = lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) *nta.StakeChip {
@@ -106,12 +104,12 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 		return err
 	}
 
-	node, err := n.databaseClient.FindNode(c.Request().Context(), stakeChip.Node)
-	if err != nil {
-		return fmt.Errorf("find Node: %w", err)
-	}
+	//node, err := n.databaseClient.FindNode(c.Request().Context(), stakeChip.Node)
+	//if err != nil {
+	//	return fmt.Errorf("find Node: %w", err)
+	//}
 
-	stakeChip.LatestValue = node.MinTokensToStake
+	//stakeChip.LatestValue = node.MinTokensToStake
 
 	var response nta.Response
 	response.Data = nta.NewStakeChip(stakeChip, n.baseURL(c))

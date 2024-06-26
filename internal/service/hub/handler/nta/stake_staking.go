@@ -17,7 +17,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -120,15 +119,15 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			nodes[chip.Node]++
 		}
 
-		for node, count := range nodes {
-			minTokensToStake, err := n.stakingContract.MinTokensToStake(nil, node)
-			if err != nil {
-				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
-			}
-
-			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
-			data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
-		}
+		//for node, count := range nodes {
+		//	minTokensToStake, err := n.stakingContract.MinTokensToStake(nil, node)
+		//	if err != nil {
+		//		return nil, fmt.Errorf("get min tokens from rpc: %w", err)
+		//	}
+		//
+		//	data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
+		//	data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+		//}
 
 		cursor = chips[len(chips)-1].ID
 	}

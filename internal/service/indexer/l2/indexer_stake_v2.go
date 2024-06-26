@@ -7,6 +7,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 )
 
-func (s *server) indexStakingV2Log(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (s *server) indexStakingV2Log(_ context.Context, _ *types.Header, _ *types.Transaction, _ *types.Receipt, _ *types.Log, _ database.Client) error {
 	panic("implement me")
 }
