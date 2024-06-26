@@ -6,9 +6,11 @@ import (
 )
 
 type Worker struct {
-	Address common.Address `gorm:"column:address;primaryKey"`
-	Network string         `gorm:"column:network;primaryKey"`
-	Name    string         `gorm:"column:name;primaryKey"`
+	EpochID  uint64         `gorm:"column:epoch_id;primaryKey"`
+	Address  common.Address `gorm:"column:address;primaryKey"`
+	Network  string         `gorm:"column:network;primaryKey"`
+	Name     string         `gorm:"column:name;primaryKey"`
+	IsActive bool           `gorm:"column:is_active"`
 }
 
 func (*Worker) TableName() string {
@@ -16,16 +18,20 @@ func (*Worker) TableName() string {
 }
 
 func (w *Worker) Import(worker *schema.Worker) {
+	w.EpochID = worker.EpochID
 	w.Address = worker.Address
 	w.Network = worker.Network
 	w.Name = worker.Name
+	w.IsActive = worker.IsActive
 }
 
 func (w *Worker) Export() *schema.Worker {
 	return &schema.Worker{
-		Address: w.Address,
-		Network: w.Network,
-		Name:    w.Name,
+		EpochID:  w.EpochID,
+		Address:  w.Address,
+		Network:  w.Network,
+		Name:     w.Name,
+		IsActive: w.IsActive,
 	}
 }
 

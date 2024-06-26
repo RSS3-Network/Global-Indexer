@@ -394,29 +394,37 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
-func (c *client) DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error {
-	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Worker{}).Error
+func (c *client) UpdateNodeWorkerActive(ctx context.Context) error {
+	return c.database.WithContext(ctx).Model(&table.Worker{}).Where("is_active = ?", true).Update("is_active", false).Error
 }
 
-func (c *client) FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error) {
+func (c *client) FindNodeWorkers(ctx context.Context, query *schema.WorkerQuery) ([]*schema.Worker, error) {
 	var workers table.Workers
 
 	databaseStatement := c.database.WithContext(ctx)
 
-	if len(nodeAddresses) > 0 {
-		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	if query.IsActive != nil {
+		databaseStatement = databaseStatement.Where("is_active = ?", query.IsActive)
 	}
 
-	if len(networks) > 0 {
-		databaseStatement = databaseStatement.Where("network IN ?", networks)
+	if query.EpochID > 0 {
+		databaseStatement = databaseStatement.Where("epoch_id = ?", query.EpochID)
 	}
 
-	if len(names) > 0 {
-		databaseStatement = databaseStatement.Where("name IN ?", names)
+	if len(query.NodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", query.NodeAddresses)
+	}
+
+	if len(query.Networks) > 0 {
+		databaseStatement = databaseStatement.Where("network IN ?", query.Networks)
+	}
+
+	if len(query.Names) > 0 {
+		databaseStatement = databaseStatement.Where("name IN ?", query.Names)
 	}
 
 	if err := databaseStatement.Find(&workers).Error; err != nil {
-		return nil, fmt.Errorf("find Nodes: %w", err)
+		return nil, fmt.Errorf("find node worker : %w", err)
 	}
 
 	return workers.Export(), nil
@@ -427,7 +435,25 @@ func (c *client) SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) 
 
 	tWorkers.Import(workers)
 
-	return c.database.WithContext(ctx).CreateInBatches(tWorkers, math.MaxUint8).Error
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "epoch_id",
+			},
+			{
+				Name: "address",
+			},
+			{
+				Name: "network",
+			},
+			{
+				Name: "name",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tWorkers, math.MaxUint8).Error
 }
 
 func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error {

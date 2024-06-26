@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"runtime"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -45,7 +45,7 @@ const (
 	defaultLimit = 50
 )
 
-// getNodeStatsMap returns the current epoch.
+// getCurrentEpoch returns the current epoch.
 func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
@@ -60,15 +60,38 @@ func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
 	return 0, nil
 }
 
-func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, currentEpoch int64) error {
-	if err := e.updateNodeStats(ctx, stats, currentEpoch); err != nil {
+// getAllNodeStats retrieves all node statistics matching the given query from the database.
+func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error) {
+	stats := make([]*schema.Stat, 0)
+
+	// Traverse the entire node.
+	for {
+		tempStats, err := e.databaseClient.FindNodeStats(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		// If there are no stats, exit the loop.
+		if len(tempStats) == 0 {
+			break
+		}
+
+		stats = append(stats, tempStats...)
+		query.Cursor = lo.ToPtr(tempStats[len(tempStats)-1].Address.String())
+	}
+
+	return stats, nil
+}
+
+func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat) error {
+	if err := e.updateNodeStats(ctx, stats); err != nil {
 		return err
 	}
 
 	return e.databaseClient.SaveNodeStats(ctx, stats)
 }
 
-func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, epoch int64) error {
+func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat) error {
 	// Retrieve all Node addresses.
 	nodeAddresses := extractNodeAddresses(stats)
 
@@ -98,7 +121,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 
 	nodes = sortNodes(nodeAddresses, nodes)
 
-	return updateStatsInPool(ctx, stats, nodesInfo, nodes, epoch)
+	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes)
 }
 
 func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]l2.DataTypesNode, error) {
@@ -125,15 +148,16 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, epoch int64) error {
-	statsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node) error {
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU(), len(stats), 20*runtime.NumCPU()))
 
-	for i, stat := range stats {
+	for i := range stats {
 		i := i
-		stat := stat
 
 		statsPool.Go(func(_ context.Context) error {
-			return updateNodeStat(stat, epoch, nodesInfo[i].StakingPoolTokens, nodes[i].Status)
+			updateNodeStat(stats[i], nodesInfo[i].StakingPoolTokens, nodes[i].Status)
+
+			return nil
 		})
 	}
 
@@ -141,29 +165,22 @@ func updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2
 }
 
 // updateNodeStat updates Node's stat with Reliability Score.
-func updateNodeStat(stat *schema.Stat, epoch int64, staking *big.Int, status schema.NodeStatus) error {
+func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatus) {
 	// Convert the staking to float64.
 	stat.Staking, _ = staking.Div(staking, big.NewInt(1e18)).Float64()
 
-	if status == schema.NodeStatusOnline {
-		// Reset the epoch request and invalid request if the epoch changes.
-		if epoch != stat.Epoch {
-			stat.EpochRequest = 0
-			stat.EpochInvalidRequest = 0
-			stat.Epoch = epoch
-		}
-	} else {
+	if status != schema.NodeStatusOnline {
 		// If Node's status is not online, then reset the alive time.
 		stat.ResetAt = time.Now()
 	}
 
-	// calculate Reliability Score
-	return CalculateReliabilityScore(stat)
+	// Calculate the Reliability Score.
+	calculateReliabilityScore(stat)
 }
 
-// CalculateReliabilityScore calculates the Reliability Score σ of a given Node.
+// calculateReliabilityScore calculates the Reliability Score σ of a given Node.
 // σ is used to determine the probability of a Node receiving a request on DSL.
-func CalculateReliabilityScore(stat *schema.Stat) error {
+func calculateReliabilityScore(stat *schema.Stat) {
 	// staking pool tokens
 	// maximum score is 0.2
 	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
@@ -200,64 +217,4 @@ func CalculateReliabilityScore(stat *schema.Stat) error {
 	} else {
 		stat.Score -= perSlashScore * float64(stat.EpochInvalidRequest)
 	}
-
-	return nil
-}
-
-// UpdateNodeCache updates the cache for all Nodes.
-// 1. update the sorted set nodes.
-// 2. update the cache for the Node subscription.
-func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
-	for _, key := range []string{model.RssNodeCacheKey, model.FullNodeCacheKey} {
-		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
-			return err
-		}
-	}
-
-	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
-}
-
-// updateSortedSetForNodeType updates the sorted set for different types of Nodes.
-func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
-	if err != nil {
-		return err
-	}
-
-	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return node.Address, node
-	})
-
-	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
-	if err != nil {
-		return err
-	}
-
-	membersToRemove := make([]string, 0)
-	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
-
-	for _, member := range members {
-		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
-			membersToRemove = append(membersToRemove, member.Member.(string))
-		}
-	}
-
-	for _, node := range nodesEndpointCaches {
-		membersToAdd = append(membersToAdd, redis.Z{
-			Member: node.Address,
-			Score:  node.Score,
-		})
-	}
-
-	if len(membersToAdd) > 0 {
-		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
-			return err
-		}
-	}
-
-	if len(membersToRemove) == 0 {
-		return nil
-	}
-
-	return e.cacheClient.ZRem(ctx, key, membersToRemove)
 }

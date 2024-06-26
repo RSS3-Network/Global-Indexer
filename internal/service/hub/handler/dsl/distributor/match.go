@@ -8,7 +8,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
@@ -65,7 +65,7 @@ func getWorkersByTag(tags []string) (WorkerSet, error) {
 			return nil, err
 		}
 
-		tagWorker, exists := model.TagToWorkersMap[tid]
+		tagWorker, exists := model.TagToWorkersMap[tid.String()]
 		if !exists {
 			return nil, fmt.Errorf("no workers found for tag: %s", tid)
 		}
@@ -83,12 +83,12 @@ func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
 	platformWorkers := make(WorkerSet)
 
 	for _, platform := range platforms {
-		pid, err := worker.PlatformString(platform)
+		pid, err := decentralized.PlatformString(platform)
 		if err != nil {
 			return nil, err
 		}
 
-		workers, exists := model.PlatformToWorkersMap[pid]
+		workers, exists := model.PlatformToWorkersMap[pid.String()]
 		if !exists {
 			return nil, fmt.Errorf("no worker found for platform: %s", pid)
 		}
@@ -146,7 +146,10 @@ func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []strin
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchNetwork(ctx context.Context, networks []string) ([]common.Address, error) {
 	// Find all indexers that match the networks.
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, nil)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Networks: networks,
+		IsActive: lo.ToPtr(true),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +204,7 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 		nid, _ := network.NetworkString(n)
 
 		// Check if the workers match the required workers for the network.
-		requiredWorkers := model.NetworkToWorkersMap[nid]
+		requiredWorkers := model.NetworkToWorkersMap[nid.String()]
 		if !AreSliceElementsIdentical(workers, requiredWorkers) {
 			return false
 		}
@@ -217,7 +220,10 @@ type WorkerNetworksMap struct {
 // matchWorker matches nodes based on the given worker names,
 // and returns the addresses of Nodes that match the requests.
 func (d *Distributor) matchWorker(ctx context.Context, workers []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, nil, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Names:    workers,
+		IsActive: lo.ToPtr(true),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -263,9 +269,9 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := worker.WorkerString(w)
+		wid, _ := decentralized.WorkerString(w)
 
-		requiredNetworks := model.WorkerToNetworksMap[wid]
+		requiredNetworks := model.WorkerToNetworksMap[wid.String()]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
@@ -276,7 +282,11 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 
 // matchWorkerAndNetwork matches nodes based on both worker and network.
 func (d *Distributor) matchWorkerAndNetwork(ctx context.Context, workers, networks []string) ([]common.Address, error) {
-	indexers, err := d.databaseClient.FindNodeWorkers(ctx, nil, networks, workers)
+	indexers, err := d.databaseClient.FindNodeWorkers(ctx, &schema.WorkerQuery{
+		Names:    workers,
+		Networks: networks,
+		IsActive: lo.ToPtr(true),
+	})
 
 	if err != nil {
 		return nil, err
@@ -307,9 +317,9 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := worker.WorkerString(w)
+		wid, _ := decentralized.WorkerString(w)
 
-		workerRequiredNetworks := model.WorkerToNetworksMap[wid]
+		workerRequiredNetworks := model.WorkerToNetworksMap[wid.String()]
 
 		requiredNetworks := IntersectUnique(workerRequiredNetworks, requestNetworks)
 

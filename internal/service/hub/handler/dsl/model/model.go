@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/node/schema/worker"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/metadata"
 	"github.com/rss3-network/protocol-go/schema/network"
@@ -13,9 +13,21 @@ import (
 )
 
 var (
-	RssNodeCacheKey  = "nodes:rss"
+	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
+	RssNodeCacheKey = "nodes:rss"
+	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
 
+	// WorkerToNetworksMapKey is the cache key for the map of Workers to Networks.
+	WorkerToNetworksMapKey = "map:worker_to_networks"
+	// NetworkToWorkersMapKey is the cache key for the map of Networks to Workers.
+	NetworkToWorkersMapKey = "map:network_to_workers"
+	// PlatformToWorkersMapKey is the cache key for the map of Platforms to Workers.
+	PlatformToWorkersMapKey = "map:platform_to_workers"
+	// TagToWorkersMapKey is the cache key for the map of Tags to Workers.
+	TagToWorkersMapKey = "map:tag_to_workers"
+
+	// SubscribeNodeCacheKey is the cache key for the subscribed nodes that new epoch starts.
 	SubscribeNodeCacheKey = "epoch"
 
 	// RequiredQualifiedNodeCount the required number of qualified Nodes
@@ -27,8 +39,17 @@ var (
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
-		worker.PlatformFarcaster.String(): {},
+		decentralized.PlatformFarcaster.String(): {},
 	}
+
+	// WorkerToNetworksMap is a map of workers to networks, filtering out the complete network types that workers support.
+	WorkerToNetworksMap = make(map[string][]string, len(decentralized.WorkerValues()))
+	// NetworkToWorkersMap is a map of Networks to Workers, filtering out the complete worker types that networks support.
+	NetworkToWorkersMap = make(map[string][]string, len(network.NetworkValues()))
+	// PlatformToWorkersMap is a map of Platforms to Workers, filtering out the complete worker types that platforms support.
+	PlatformToWorkersMap = make(map[string][]string, len(decentralized.PlatformValues()))
+	// TagToWorkersMap is a map of Tags to Workers, filtering out the complete worker types that tags support.
+	TagToWorkersMap = make(map[string][]string, len(tag.TagValues()))
 )
 
 // NodeEndpointCache stores the elements in the heap.
@@ -137,269 +158,4 @@ func (a *Action) UnmarshalJSON(bytes []byte) error {
 	*a = Action(temp.ActionAlias)
 
 	return nil
-}
-
-// WorkerToNetworksMap Supplement the conditions for a full node based on the configuration file.
-var WorkerToNetworksMap = map[worker.Worker][]string{
-	worker.Aave: {
-		network.Arbitrum.String(),
-		network.Avalanche.String(),
-		network.Base.String(),
-		network.Ethereum.String(),
-		network.Optimism.String(),
-		network.Polygon.String(),
-	},
-	worker.Aavegotchi: {
-		network.Polygon.String(),
-	},
-	worker.Core: {
-		network.Arbitrum.String(),
-		network.Base.String(),
-		network.BinanceSmartChain.String(),
-		network.Ethereum.String(),
-		network.Farcaster.String(),
-		network.Gnosis.String(),
-		network.Linea.String(),
-		network.Optimism.String(),
-		network.Polygon.String(),
-		network.SatoshiVM.String(),
-		network.VSL.String(),
-	},
-	worker.Crossbell: {
-		network.Crossbell.String(),
-	},
-	worker.Curve: {
-		network.Arbitrum.String(),
-		network.Avalanche.String(),
-		network.Ethereum.String(),
-		network.Gnosis.String(),
-		network.Optimism.String(),
-		network.Polygon.String(),
-	},
-	worker.ENS: {
-		network.Ethereum.String(),
-	},
-	worker.Highlight: {
-		network.Arbitrum.String(),
-		network.Ethereum.String(),
-		network.Optimism.String(),
-		network.Polygon.String(),
-	},
-	worker.IQWiki: {
-		network.Polygon.String(),
-	},
-	worker.KiwiStand: {
-		network.Optimism.String(),
-	},
-	worker.Lens: {
-		network.Polygon.String(),
-	},
-	worker.Lido: {
-		network.Ethereum.String(),
-	},
-	worker.Looksrare: {
-		network.Ethereum.String(),
-	},
-	worker.Matters: {
-		network.Optimism.String(),
-	},
-	worker.Mirror: {
-		network.Arweave.String(),
-	},
-	worker.Momoka: {
-		network.Arweave.String(),
-	},
-	worker.Oneinch: {
-		network.Ethereum.String(),
-	},
-	worker.OpenSea: {
-		network.Ethereum.String(),
-	},
-	worker.Optimism: {
-		network.Ethereum.String(),
-	},
-	worker.Paragraph: {
-		network.Arweave.String(),
-	},
-	worker.RSS3: {
-		network.Ethereum.String(),
-		network.VSL.String(),
-	},
-	worker.SAVM: {
-		network.SatoshiVM.String(),
-	},
-	worker.Stargate: {
-		network.Arbitrum.String(),
-		network.Avalanche.String(),
-		network.Base.String(),
-		network.BinanceSmartChain.String(),
-		network.Ethereum.String(),
-		network.Linea.String(),
-		network.Optimism.String(),
-		network.Polygon.String(),
-	},
-	worker.Uniswap: {
-		network.Ethereum.String(),
-		network.Linea.String(),
-		network.SatoshiVM.String(),
-	},
-	worker.VSL: {
-		network.VSL.String(),
-	},
-}
-
-// NetworkToWorkersMap is a map of network to workers.
-var NetworkToWorkersMap = map[network.Network][]string{
-	network.Arbitrum: {
-		worker.Aave.String(),
-		worker.Core.String(),
-		worker.Curve.String(),
-		worker.Highlight.String(),
-		worker.Stargate.String(),
-	},
-	network.Arweave: {
-		worker.Mirror.String(),
-		worker.Momoka.String(),
-		worker.Paragraph.String(),
-	},
-	network.Avalanche: {
-		worker.Aave.String(),
-		worker.Curve.String(),
-		worker.Stargate.String(),
-	},
-	network.Base: {
-		worker.Aave.String(),
-		worker.Core.String(),
-		worker.Stargate.String(),
-	},
-	network.BinanceSmartChain: {
-		worker.Core.String(),
-		worker.Stargate.String(),
-	},
-	network.Crossbell: {
-		worker.Crossbell.String(),
-	},
-	network.Ethereum: {
-		worker.Aave.String(),
-		worker.Core.String(),
-		worker.Curve.String(),
-		worker.ENS.String(),
-		worker.Highlight.String(),
-		worker.Lido.String(),
-		worker.Looksrare.String(),
-		worker.Oneinch.String(),
-		worker.OpenSea.String(),
-		worker.Optimism.String(),
-		worker.RSS3.String(),
-		worker.Stargate.String(),
-		worker.Uniswap.String(),
-	},
-	network.Farcaster: {
-		worker.Core.String(),
-	},
-	network.Gnosis: {
-		worker.Core.String(),
-		worker.Curve.String(),
-	},
-	network.Linea: {
-		worker.Core.String(),
-		worker.Uniswap.String(),
-		worker.Stargate.String(),
-	},
-	network.Optimism: {
-		worker.Aave.String(),
-		worker.Core.String(),
-		worker.Curve.String(),
-		worker.Highlight.String(),
-		worker.KiwiStand.String(),
-		worker.Matters.String(),
-		worker.Stargate.String(),
-	},
-	network.Polygon: {
-		worker.Aave.String(),
-		worker.Aavegotchi.String(),
-		worker.Core.String(),
-		worker.Curve.String(),
-		worker.Highlight.String(),
-		worker.Lens.String(),
-		worker.IQWiki.String(),
-		worker.Stargate.String(),
-	},
-	network.SatoshiVM: {
-		worker.Core.String(),
-		worker.Uniswap.String(),
-		worker.SAVM.String(),
-	},
-	network.VSL: {
-		worker.Core.String(),
-		worker.RSS3.String(),
-		worker.VSL.String(),
-	},
-}
-
-// PlatformToWorkersMap is a map of platform to workers.
-var PlatformToWorkersMap = map[worker.Platform][]string{
-	worker.Platform1Inch:      {worker.Oneinch.String()},
-	worker.PlatformAAVE:       {worker.Aave.String()},
-	worker.PlatformAavegotchi: {worker.Aavegotchi.String()},
-	worker.PlatformCrossbell:  {worker.Crossbell.String()},
-	worker.PlatformCurve:      {worker.Curve.String()},
-	worker.PlatformENS:        {worker.ENS.String()},
-	worker.PlatformFarcaster:  {worker.Core.String()},
-	worker.PlatformHighlight:  {worker.Highlight.String()},
-	worker.PlatformIQWiki:     {worker.IQWiki.String()},
-	worker.PlatformKiwiStand:  {worker.KiwiStand.String()},
-	worker.PlatformLens:       {worker.Lens.String(), worker.Momoka.String()},
-	worker.PlatformLido:       {worker.Lido.String()},
-	worker.PlatformLooksRare:  {worker.Looksrare.String()},
-	worker.PlatformMatters:    {worker.Matters.String()},
-	worker.PlatformMirror:     {worker.Mirror.String()},
-	worker.PlatformOpenSea:    {worker.OpenSea.String()},
-	worker.PlatformOptimism:   {worker.Optimism.String()},
-	worker.PlatformParagraph:  {worker.Paragraph.String()},
-	worker.PlatformRSS3:       {worker.RSS3.String()},
-	worker.PlatformSAVM:       {worker.SAVM.String()},
-	worker.PlatformStargate:   {worker.Stargate.String()},
-	worker.PlatformUniswap:    {worker.Uniswap.String()},
-	worker.PlatformVSL:        {worker.VSL.String()},
-}
-
-// TagToWorkersMap is a map of tag to workers.
-var TagToWorkersMap = map[tag.Tag][]string{
-	tag.Collectible: {
-		worker.ENS.String(),
-		worker.Highlight.String(),
-		worker.KiwiStand.String(),
-		worker.Lido.String(),
-		worker.Looksrare.String(),
-		worker.OpenSea.String(),
-	},
-	tag.Exchange: {
-		worker.Aave.String(),
-		worker.Curve.String(),
-		worker.Lido.String(),
-		worker.Oneinch.String(),
-		worker.RSS3.String(),
-		worker.Uniswap.String(),
-	},
-	tag.Metaverse: {
-		worker.Aavegotchi.String(),
-	},
-	tag.Social: {
-		worker.Core.String(), // farcaster core
-		worker.Crossbell.String(),
-		worker.ENS.String(),
-		worker.IQWiki.String(),
-		worker.Lens.String(),
-		worker.Matters.String(),
-		worker.Mirror.String(),
-		worker.Momoka.String(),
-		worker.Paragraph.String(),
-	},
-	tag.Transaction: {
-		worker.Optimism.String(),
-		worker.SAVM.String(),
-		worker.Stargate.String(),
-		worker.VSL.String(),
-	},
 }
