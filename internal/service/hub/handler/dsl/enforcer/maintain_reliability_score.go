@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -154,7 +155,22 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 	for i := range stats {
 		i := i
 
-		statsPool.Go(func(_ context.Context) error {
+		statsPool.Go(func(ctx context.Context) error {
+			var validCount int64
+
+			if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.ValidRequestCount, stats[i].Address.String()), &validCount); err != nil && !errors.Is(err, redis.Nil) {
+				return fmt.Errorf("get valid request count: %w", err)
+			}
+
+			if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), &stats[i].EpochInvalidRequest); err != nil && !errors.Is(err, redis.Nil) {
+				return fmt.Errorf("get invalid request count: %w", err)
+			}
+
+			if validCount >= stats[i].EpochRequest {
+				stats[i].TotalRequest += validCount - stats[i].EpochRequest
+				stats[i].EpochRequest = validCount
+			}
+
 			updateNodeStat(stats[i], nodesInfo[i].StakingPoolTokens, nodes[i].Status)
 
 			return nil
