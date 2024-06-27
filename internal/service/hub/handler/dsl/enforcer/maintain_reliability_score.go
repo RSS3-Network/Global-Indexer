@@ -84,6 +84,7 @@ func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context, query *schema.Stat
 	return stats, nil
 }
 
+// processNodeStats processes the node statistics in parallel.
 func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, reset bool) error {
 	if err := e.updateNodeStats(ctx, stats, reset); err != nil {
 		return err
@@ -158,15 +159,23 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 		statsPool.Go(func(ctx context.Context) error {
 			var validCount int64
 
+			// Get the latest valid request count from the cache.
 			if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.ValidRequestCount, stats[i].Address.String()), &validCount); err != nil && !errors.Is(err, redis.Nil) {
 				return fmt.Errorf("get valid request count: %w", err)
 			}
 
+			// Update the total request count for the node.
+			// This action occurs only if the valid request count from the cache surpasses the epoch request count from the db,
+			// which indicates the receipt of new requests during the current epoch.
 			if validCount >= stats[i].EpochRequest {
 				stats[i].TotalRequest += validCount - stats[i].EpochRequest
 				stats[i].EpochRequest = validCount
 			}
 
+			// Check the reset flag status for the node. If the reset flag is not set (false),
+			// retrieve the invalid request count from the cache to maintain current epoch data.
+			// If the reset flag is true, initialize the valid and invalid request counts to zero,
+			// effectively resetting the node's counters for the new epoch.
 			if !reset {
 				if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), &stats[i].EpochInvalidRequest); err != nil && !errors.Is(err, redis.Nil) {
 					return fmt.Errorf("get invalid request count: %w", err)

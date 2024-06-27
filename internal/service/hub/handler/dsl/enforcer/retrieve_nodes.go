@@ -11,16 +11,6 @@ import (
 	"github.com/samber/lo"
 )
 
-// retrieveNodeEndpointCaches retrieves the qualified Nodes from the database.
-func retrieveNodeEndpointCaches(ctx context.Context, key string, databaseClient database.Client) ([]*schema.Stat, error) {
-	nodeStats, err := retrieveNodeStatsFromDB(ctx, key, databaseClient)
-	if err != nil {
-		return nil, err
-	}
-
-	return nodeStats, err
-}
-
 // retrieveNodeStatsFromDB retrieves the Node stats from the database.
 func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient database.Client) ([]*schema.Stat, error) {
 	query := schema.StatQuery{

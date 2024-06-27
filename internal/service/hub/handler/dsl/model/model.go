@@ -18,8 +18,10 @@ var (
 	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
 
+	// InvalidRequestCount is the prefix used for cache keys related to storing invalid request counts in the current epoch.
 	InvalidRequestCount = "node:stat:invalid"
-	ValidRequestCount   = "node:stat:valid"
+	// ValidRequestCount is the prefix used for cache keys related to storing valid request counts in the current epoch.
+	ValidRequestCount = "node:stat:valid"
 
 	// WorkerToNetworksMapKey is the cache key for the map of Workers to Networks.
 	WorkerToNetworksMapKey = "map:worker_to_networks"

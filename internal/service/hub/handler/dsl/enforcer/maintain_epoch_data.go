@@ -452,7 +452,7 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				return e.processNodeStats(ctx, stats, false)
+				return e.processNodeStats(ctx, stats, true)
 			}
 
 			zap.L().Error("Error setting cache", zap.Error(err))
@@ -512,7 +512,7 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error
 
 // updateSortedSetForNodeType updates the sorted set for different types of Nodes.
 func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodeStats, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+	nodeStats, err := retrieveNodeStatsFromDB(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
