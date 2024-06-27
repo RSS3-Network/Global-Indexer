@@ -38,7 +38,7 @@ type server struct {
 	contractL2CrossDomainMessenger *bindings.L2CrossDomainMessenger
 	contractL2StandardBridge       *bindings.L2StandardBridge
 	contractL2ToL1MessagePasser    *bindings.L2ToL1MessagePasser
-	contractStaking                *stakingv1.Staking
+	contractStakingV1              *stakingv1.Staking
 	contractStakingV2              *stakingv2.Staking
 	contractChips                  *l2.Chips
 	checkpoint                     *schema.Checkpoint
@@ -245,7 +245,7 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 
 	header := block.Header()
 
-	for _, receipt := range receipts {
+	for transactionIndex, receipt := range receipts {
 		// Discard all contract creation transactions.
 		if block.Transaction(receipt.TxHash).To() == nil {
 			continue
@@ -256,7 +256,7 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 			continue
 		}
 
-		for index, log := range receipt.Logs {
+		for logIndex, log := range receipt.Logs {
 			// Discard all removed logs.
 			if log.Removed {
 				continue
@@ -269,20 +269,21 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 
 			switch log.Address {
 			case l2.AddressL2StandardBridgeProxy:
-				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, index, databaseTransaction); err != nil {
+				if err := s.indexBridgingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, logIndex, databaseTransaction); err != nil {
 					return fmt.Errorf("index bridge log: %w", err)
 				}
 			case l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy:
 				transaction := block.Transaction(log.TxHash)
 
-				if header.Number.Cmp(l2.BlockHeightStakingV2Testnet) >= 0 {
+				switch {
+				case l2.IsStakingV2Deployed(s.chainID, header.Number, uint(transactionIndex)): // Staking V2
 					if err := s.indexStakingV2Log(ctx, header, transaction, receipt, log, databaseTransaction); err != nil {
 						return fmt.Errorf("index staking v2 log: %w", err)
 					}
-				}
-
-				if err := s.indexStakingLog(ctx, header, transaction, receipt, log, databaseTransaction); err != nil {
-					return fmt.Errorf("index staking log: %w", err)
+				default:
+					if err := s.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction); err != nil {
+						return fmt.Errorf("index staking log: %w", err)
+					}
 				}
 			case l2.ContractMap[s.chainID.Uint64()].AddressChipsProxy:
 				if err := s.indexChipsLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
@@ -343,7 +344,7 @@ func NewServer(ctx context.Context, databaseClient database.Client, cacheClient 
 		return nil, err
 	}
 
-	if instance.contractStaking, err = stakingv1.NewStaking(contractAddresses.AddressStakingProxy, instance.ethereumClient); err != nil {
+	if instance.contractStakingV1, err = stakingv1.NewStaking(contractAddresses.AddressStakingProxy, instance.ethereumClient); err != nil {
 		return nil, err
 	}
 
