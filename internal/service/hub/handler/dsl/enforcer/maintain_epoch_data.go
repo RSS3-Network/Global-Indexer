@@ -260,7 +260,6 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			// different from the previous one.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
-				stats[i].EpochRequest = 0
 				stats[i].EpochInvalidRequest = 0
 			}
 
@@ -453,7 +452,7 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				return e.processNodeStats(ctx, stats)
+				return e.processNodeStats(ctx, stats, false)
 			}
 
 			zap.L().Error("Error setting cache", zap.Error(err))

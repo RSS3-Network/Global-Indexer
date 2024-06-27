@@ -99,7 +99,7 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 	}
 
 	// Update the stats of the Nodes.
-	if err = e.processNodeStats(ctx, stats); err != nil {
+	if err = e.processNodeStats(ctx, stats, false); err != nil {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) err
 		return err
 	}
 
-	if err = e.processNodeStats(ctx, stats); err != nil {
+	if err = e.processNodeStats(ctx, stats, true); err != nil {
 		return err
 	}
 

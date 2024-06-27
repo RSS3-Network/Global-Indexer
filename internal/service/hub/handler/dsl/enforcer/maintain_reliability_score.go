@@ -84,15 +84,15 @@ func (e *SimpleEnforcer) getAllNodeStats(ctx context.Context, query *schema.Stat
 	return stats, nil
 }
 
-func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat) error {
-	if err := e.updateNodeStats(ctx, stats); err != nil {
+func (e *SimpleEnforcer) processNodeStats(ctx context.Context, stats []*schema.Stat, reset bool) error {
+	if err := e.updateNodeStats(ctx, stats, reset); err != nil {
 		return err
 	}
 
 	return e.databaseClient.SaveNodeStats(ctx, stats)
 }
 
-func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat) error {
+func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.Stat, reset bool) error {
 	// Retrieve all Node addresses.
 	nodeAddresses := extractNodeAddresses(stats)
 
@@ -122,7 +122,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 
 	nodes = sortNodes(nodeAddresses, nodes)
 
-	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes)
+	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes, reset)
 }
 
 func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]l2.DataTypesNode, error) {
@@ -149,7 +149,7 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node) error {
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, reset bool) error {
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU(), len(stats), 20*runtime.NumCPU()))
 
 	for i := range stats {
@@ -162,13 +162,25 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 				return fmt.Errorf("get valid request count: %w", err)
 			}
 
-			if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), &stats[i].EpochInvalidRequest); err != nil && !errors.Is(err, redis.Nil) {
-				return fmt.Errorf("get invalid request count: %w", err)
-			}
-
 			if validCount >= stats[i].EpochRequest {
 				stats[i].TotalRequest += validCount - stats[i].EpochRequest
 				stats[i].EpochRequest = validCount
+			}
+
+			if !reset {
+				if err := e.cacheClient.Get(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), &stats[i].EpochInvalidRequest); err != nil && !errors.Is(err, redis.Nil) {
+					return fmt.Errorf("get invalid request count: %w", err)
+				}
+			} else {
+				stats[i].EpochRequest = 0
+
+				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.ValidRequestCount, stats[i].Address.String()), 0); err != nil {
+					return fmt.Errorf("reset valid request count: %w", err)
+				}
+
+				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), stats[i].EpochInvalidRequest); err != nil {
+					return fmt.Errorf("reset invalid request count: %w", err)
+				}
 			}
 
 			updateNodeStat(stats[i], nodesInfo[i].StakingPoolTokens, nodes[i].Status)
