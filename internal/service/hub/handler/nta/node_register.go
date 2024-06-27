@@ -19,10 +19,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
-	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
-	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
-	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
@@ -198,7 +194,7 @@ func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo s
 	return n.databaseClient.SaveNodeStat(ctx, stat)
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) (*schema.Stat, error) {
 	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)

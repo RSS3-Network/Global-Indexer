@@ -172,7 +172,7 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	return nodesCache, err
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
@@ -200,7 +200,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 // This cache holds the initial reliability scores and related maps of the nodes for the new epoch.
 func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
-		//Subscribe to changes to 'epoch'
+		// Subscribe to changes to 'epoch'
 		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@*__:%s", model.SubscribeNodeCacheKey))
 		defer pubsub.Close()
 
@@ -277,23 +277,4 @@ func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, nodeType strin
 	}
 
 	return newScoreMaintainer(ctx, nodeType, nodes, e.cacheClient)
-}
-
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, initScoreMaintainer bool) (*SimpleEnforcer, error) {
-	enforcer := &SimpleEnforcer{
-		databaseClient:  databaseClient,
-		cacheClient:     cacheClient,
-		stakingContract: stakingContract,
-		httpClient:      httpClient,
-	}
-
-	if initScoreMaintainer {
-		if err := enforcer.initScoreMaintainers(ctx); err != nil {
-			return nil, err
-		}
-
-		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
-	}
-
-	return enforcer, nil
 }

@@ -9,9 +9,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
-	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
