@@ -79,13 +79,15 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 // updateQualifiedNodesMap replaces the current nodeEndpointCaches.
 func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStats []*schema.Stat) error {
 	nodeStatsCaches := make(map[string]string, len(nodeStats))
+
 	var mu sync.Mutex
+
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
 
 	for _, stat := range nodeStats {
 		stat := stat
 
-		statsPool.Go(func(ctx context.Context) error {
+		statsPool.Go(func(_ context.Context) error {
 			if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
 				mu.Lock()
 				nodeStatsCaches[stat.Address.String()] = stat.Endpoint
