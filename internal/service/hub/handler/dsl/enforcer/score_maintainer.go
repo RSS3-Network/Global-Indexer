@@ -24,7 +24,7 @@ import (
 type ScoreMaintainer struct {
 	cacheClient        cache.Client
 	nodeEndpointCaches map[string]string
-	lock               sync.Mutex
+	lock               sync.RWMutex
 }
 
 // addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
@@ -79,7 +79,7 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 // updateQualifiedNodesMap replaces the current nodeEndpointCaches.
 func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStats []*schema.Stat) error {
 	nodeStatsCaches := make(map[string]string, len(nodeStats))
-
+	var mu sync.Mutex
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
 
 	for _, stat := range nodeStats {
@@ -95,7 +95,9 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStat
 			}
 
 			if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
+				mu.Lock()
 				nodeStatsCaches[stat.Address.String()] = stat.Endpoint
+				mu.Unlock()
 			}
 
 			return nil
