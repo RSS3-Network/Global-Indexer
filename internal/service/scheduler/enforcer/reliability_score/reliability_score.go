@@ -29,7 +29,7 @@ func (s *server) Name() string {
 }
 
 func (s *server) Spec() string {
-	return "0 */10 * * * *"
+	return "0 */5 * * * *"
 }
 
 func (s *server) Run(ctx context.Context) error {

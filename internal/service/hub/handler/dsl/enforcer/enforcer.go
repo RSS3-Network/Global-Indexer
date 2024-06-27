@@ -40,28 +40,14 @@ func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model
 		return fmt.Errorf("no response returned from nodes")
 	}
 
-	nodeStatsMap, err := e.getNodeStatsMap(ctx, responses)
-	if err != nil {
-		return fmt.Errorf("failed to Find node stats: %w", err)
-	}
-
 	// non-error and non-null results are always put in front of the list
 	sortResponseByValidity(responses)
 	// update requests based on data compare
 	updatePointsBasedOnIdentity(responses)
-	// update stats struct based on the above results
-	updateStatsWithResults(nodeStatsMap, responses)
-
-	nodeStatsSlice := lo.MapToSlice(nodeStatsMap, func(_ common.Address, stat *schema.Stat) *schema.Stat {
-		return stat
-	})
-	// save stats to the database
-	if err = e.databaseClient.SaveNodeStats(ctx, nodeStatsSlice); err != nil {
-		return fmt.Errorf("save Node stats: %w", err)
-	}
-
+	// update the cache request
+	e.updateCacheRequest(ctx, responses)
 	// update the score maintainer
-	e.batchUpdateScoreMaintainer(ctx, nodeStatsSlice)
+	e.batchUpdateScoreMaintainer(ctx, responses)
 
 	return nil
 }
@@ -113,7 +99,7 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 	}
 
 	// Update the stats of the Nodes.
-	if err = e.processNodeStats(ctx, stats); err != nil {
+	if err = e.processNodeStats(ctx, stats, false); err != nil {
 		return err
 	}
 
@@ -137,7 +123,7 @@ func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) err
 		return err
 	}
 
-	if err = e.processNodeStats(ctx, stats); err != nil {
+	if err = e.processNodeStats(ctx, stats, true); err != nil {
 		return err
 	}
 
@@ -248,14 +234,17 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, dat
 
 // updateQualifiedNodesMap retrieves the node endpoint caches from the database and updates the score maintainer's map of qualified nodes.
 func updateQualifiedNodesMap(ctx context.Context, key string, databaseClient database.Client, scoreMaintainer *ScoreMaintainer) {
-	nodes, err := retrieveNodeEndpointCaches(ctx, key, databaseClient)
+	nodes, err := retrieveNodeStatsFromDB(ctx, key, databaseClient)
 	if err != nil {
 		zap.L().Error("get nodes from db", zap.Error(err))
 	}
 
-	scoreMaintainer.updateQualifiedNodesMap(nodes)
+	if err = scoreMaintainer.updateQualifiedNodesMap(ctx, nodes); err != nil {
+		zap.L().Error("update qualified nodes map", zap.Error(err))
+	}
 }
 
+// initScoreMaintainers initializes the score maintainers for the full and rss nodes.
 func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {
 	var err error
 	if e.fullNodeScoreMaintainer, err = e.initScoreMaintainer(ctx, model.FullNodeCacheKey); err != nil {
@@ -269,12 +258,13 @@ func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {
 	return nil
 }
 
+// initScoreMaintainer initializes the score maintainer for the given node type.
 func (e *SimpleEnforcer) initScoreMaintainer(ctx context.Context, nodeType string) (*ScoreMaintainer, error) {
-	nodes, err := retrieveNodeEndpointCaches(ctx, nodeType, e.databaseClient)
-
+	// Retrieve the node stats from the database.
+	nodeStats, err := retrieveNodeStatsFromDB(ctx, nodeType, e.databaseClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return newScoreMaintainer(ctx, nodeType, nodes, e.cacheClient)
+	return newScoreMaintainer(ctx, nodeType, nodeStats, e.cacheClient)
 }
