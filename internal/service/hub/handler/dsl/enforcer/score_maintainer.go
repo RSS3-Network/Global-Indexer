@@ -134,6 +134,8 @@ func newScoreMaintainer(ctx context.Context, setKey string, nodeStats []*schema.
 
 // prepareNodeCachesAndMembers set node request caches and prepares the members for the sorted set.
 func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, cacheClient cache.Client) (map[string]string, []redis.Z, error) {
+	var mu sync.Mutex
+
 	nodeEndpointMap := make(map[string]string, len(nodeStats))
 	members := make([]redis.Z, 0, len(nodeStats))
 
@@ -173,13 +175,16 @@ func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, 
 
 			// If the invalid request count is less than the demotion count, add the node to the map and sorted set.
 			if invalidCount < int64(model.DemotionCountBeforeSlashing) {
-				nodeEndpointMap[stat.Address.String()] = stat.Endpoint
 				// Calculate the reliability score.
 				calculateReliabilityScore(stat)
+
+				mu.Lock()
+				nodeEndpointMap[stat.Address.String()] = stat.Endpoint
 				members = append(members, redis.Z{
 					Member: stat.Address.String(),
 					Score:  stat.Score,
 				})
+				mu.Unlock()
 			}
 
 			return nil
