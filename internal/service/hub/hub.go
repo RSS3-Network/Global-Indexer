@@ -10,7 +10,7 @@ import (
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v1"
+	"github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
 	"github.com/rss3-network/global-indexer/internal/config/flag"
@@ -53,7 +53,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
 	}
 
-	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := v2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}

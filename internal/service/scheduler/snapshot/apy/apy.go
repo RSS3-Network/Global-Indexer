@@ -70,7 +70,7 @@ func (s *server) Run(ctx context.Context) error {
 			latestSnapshotEpochID = snapshots[0].EpochID
 		}
 
-		// Save the minTokensToStake snapshots.
+		// Save the apy snapshots.
 		if latestSnapshotEpochID < epochEvents[0].ID {
 			if err := s.saveAPYToSnapshots(ctx, latestSnapshotEpochID, epochEvents[0]); err != nil {
 				zap.L().Error("save APY to snapshots", zap.Error(err))

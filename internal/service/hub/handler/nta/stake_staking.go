@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -18,6 +20,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -96,6 +99,7 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakeOwnerProfitResponseData, error) {
 	var (
 		cursor *big.Int
+		mu     sync.Mutex
 		data   = &nta.GetStakeOwnerProfitResponseData{Owner: owner}
 	)
 
@@ -113,21 +117,27 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			break
 		}
 
-		nodes := make(map[common.Address]int)
+		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
 
 		for _, chip := range chips {
 			chip := chip
-			nodes[chip.Node]++
-		}
+			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(1)))
 
-		for node, count := range nodes {
-			minTokensToStake, err := n.stakingContract.MinTokensToStake(nil, node)
-			if err != nil {
-				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
-			}
+			errorPool.Go(func(ctx context.Context) error {
+				chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+				if err != nil {
+					zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
 
-			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
-			data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+					return fmt.Errorf("get chip info: %w", err)
+				}
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(chipInfo.Tokens, 0))
+
+				return nil
+			})
 		}
 
 		cursor = chips[len(chips)-1].ID

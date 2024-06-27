@@ -212,14 +212,14 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 
 			errorPool.Go(func(ctx context.Context) error {
 				// Query the chip value from the staking contract.
-				minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{Context: ctx, BlockNumber: currentEpoch.BlockNumber}, chip.Node)
+				chipInfo, err := s.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx, BlockNumber: currentEpoch.BlockNumber}, chip.ID)
 				if err != nil {
 					zap.L().Error("fetch min tokens to stake", zap.Error(err), zap.String("node", chip.Node.String()), zap.Uint64("block_number", currentEpoch.BlockNumber.Uint64()))
 
 					return fmt.Errorf("fetch the min tokens to stake: %w", err)
 				}
 
-				chip.Value = decimal.NewFromBigInt(minTokensToStake, 0)
+				chip.Value = decimal.NewFromBigInt(chipInfo.Tokens, 0)
 
 				mutex.Lock()
 				profit.TotalChipValue = profit.TotalChipValue.Add(chip.Value)

@@ -548,14 +548,6 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
-	// Get node minTokensToStake
-	minTokensToStake, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
-	if err != nil {
-		return fmt.Errorf("get min tokens to stake: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
-
 	// Save Node avatar
 	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
@@ -729,8 +721,8 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 
 		errorPool.Go(func(_ context.Context) error {
 			var (
-				apy, minTokensToStake decimal.Decimal
-				address               = epoch.RewardedNodes[i].NodeAddress
+				apy     decimal.Decimal
+				address = epoch.RewardedNodes[i].NodeAddress
 			)
 
 			// Calculate node APY
@@ -752,20 +744,9 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 					Mul(decimal.NewFromFloat(486.6666666666667))
 			}
 
-			// Query the minTokensToStake of the Node
-			minTokens, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
-			if err != nil {
-				zap.L().Error("indexRewardDistributedLog: get min tokens to stake", zap.Error(err), zap.String("address", address.String()))
-
-				return fmt.Errorf("get min tokens to stake: %w", err)
-			}
-
-			minTokensToStake = decimal.NewFromBigInt(minTokens, 0)
-
 			data[i] = &schema.BatchUpdateNode{
-				Address:          address,
-				Apy:              apy,
-				MinTokensToStake: minTokensToStake,
+				Address: address,
+				Apy:     apy,
 			}
 
 			return nil

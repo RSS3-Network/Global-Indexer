@@ -27,7 +27,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -169,13 +168,6 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)
 	}
-
-	minTokensToStake, err := n.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get min token to stake from chain: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
 
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
