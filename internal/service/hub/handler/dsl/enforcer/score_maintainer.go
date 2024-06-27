@@ -86,14 +86,6 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStat
 		stat := stat
 
 		statsPool.Go(func(ctx context.Context) error {
-			if err := sm.cacheClient.Set(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stat.Address.String()), stat.EpochInvalidRequest); err != nil {
-				return err
-			}
-
-			if err := sm.cacheClient.Set(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stat.Address.String()), stat.EpochInvalidRequest); err != nil {
-				return err
-			}
-
 			if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
 				mu.Lock()
 				nodeStatsCaches[stat.Address.String()] = stat.Endpoint
