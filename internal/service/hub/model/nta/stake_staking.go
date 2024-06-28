@@ -17,22 +17,22 @@ type GetStakeStakingsRequest struct {
 	Limit         int             `query:"limit" default:"10" min:"1" max:"20"`
 }
 
-type GetStakeOwnerProfitRequest struct {
+type GetStakerProfitRequest struct {
 	StakerAddress common.Address `param:"staker_address" validate:"required"`
 }
 
 type GetStakeStakingsResponseData []*StakeStaking
 
-type GetStakeOwnerProfitResponseData struct {
-	Owner           common.Address                               `json:"owner"`
-	TotalChipAmount decimal.Decimal                              `json:"total_chip_amount"`
-	TotalChipValue  decimal.Decimal                              `json:"total_chip_value"`
-	OneDay          *GetStakeOwnerProfitChangesSinceResponseData `json:"one_day"`
-	OneWeek         *GetStakeOwnerProfitChangesSinceResponseData `json:"one_week"`
-	OneMonth        *GetStakeOwnerProfitChangesSinceResponseData `json:"one_month"`
+type GetStakerProfitResponseData struct {
+	Owner           common.Address                           `json:"owner"`
+	TotalChipAmount decimal.Decimal                          `json:"total_chip_amount"`
+	TotalChipValue  decimal.Decimal                          `json:"total_chip_value"`
+	OneDay          *GetStakerProfitChangesSinceResponseData `json:"one_day"`
+	OneWeek         *GetStakerProfitChangesSinceResponseData `json:"one_week"`
+	OneMonth        *GetStakerProfitChangesSinceResponseData `json:"one_month"`
 }
 
-type GetStakeOwnerProfitChangesSinceResponseData struct {
+type GetStakerProfitChangesSinceResponseData struct {
 	Date            time.Time       `json:"date"`
 	TotalChipAmount decimal.Decimal `json:"total_chip_amount"`
 	TotalChipValue  decimal.Decimal `json:"total_chip_value"`

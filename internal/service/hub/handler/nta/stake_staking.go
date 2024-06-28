@@ -61,9 +61,8 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// FIXME: what is stake owner?
-func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
-	var request nta.GetStakeOwnerProfitRequest
+func (n *NTA) GetStakerProfit(c echo.Context) error {
+	var request nta.GetStakerProfitRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, err)
@@ -96,11 +95,11 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	})
 }
 
-func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakeOwnerProfitResponseData, error) {
+func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakerProfitResponseData, error) {
 	var (
 		cursor *big.Int
 		mu     sync.Mutex
-		data   = &nta.GetStakeOwnerProfitResponseData{Owner: owner}
+		data   = &nta.GetStakerProfitResponseData{Owner: owner}
 	)
 
 	for {
@@ -140,13 +139,17 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			})
 		}
 
+		if err = errorPool.Wait(); err != nil {
+			return nil, err
+		}
+
 		cursor = chips[len(chips)-1].ID
 	}
 
 	return data, nil
 }
 
-func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *nta.GetStakeOwnerProfitResponseData) ([]*nta.GetStakeOwnerProfitChangesSinceResponseData, error) {
+func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *nta.GetStakerProfitResponseData) ([]*nta.GetStakerProfitChangesSinceResponseData, error) {
 	if profit == nil {
 		return nil, nil
 	}
@@ -166,7 +169,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
 	}
 
-	data := make([]*nta.GetStakeOwnerProfitChangesSinceResponseData, len(query.Dates))
+	data := make([]*nta.GetStakerProfitChangesSinceResponseData, len(query.Dates))
 
 	for _, snapshot := range snapshots {
 		if snapshot.TotalChipValue.IsZero() {
@@ -181,7 +184,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 			index = 1
 		}
 
-		data[index] = &nta.GetStakeOwnerProfitChangesSinceResponseData{
+		data[index] = &nta.GetStakerProfitChangesSinceResponseData{
 			Date:            snapshot.Date,
 			TotalChipAmount: snapshot.TotalChipAmount,
 			TotalChipValue:  snapshot.TotalChipValue,

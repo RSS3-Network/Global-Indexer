@@ -131,7 +131,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 
 		stake := nta.Group("/stakings")
 		{
-			stake.GET("/:staker_address/profit", instance.hub.nta.GetStakeOwnerProfit)
+			stake.GET("/:staker_address/profit", instance.hub.nta.GetStakerProfit)
 			// FIXME: GetStakeStakings needs to be refactored
 			// see https://github.com/RSS3-Network/Global-Indexer/issues/233
 			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
