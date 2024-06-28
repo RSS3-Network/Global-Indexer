@@ -995,7 +995,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -1505,7 +1505,7 @@
             },
             "Node": {
                 "type": "object",
-                "required": ["id", "address", "name", "description", "is_public_good", "operation_pool_tokens", "staking_pool_tokens", "total_shares", "slashed_tokens", "status", "last_heartbeat", "avatar", "min_tokens_to_stake", "created_at"],
+                "required": ["id", "address", "name", "description", "is_public_good", "operation_pool_tokens", "staking_pool_tokens", "total_shares", "slashed_tokens", "status", "last_heartbeat", "avatar", "created_at"],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -1588,9 +1588,6 @@
                             }
                         }
                     },
-                    "min_tokens_to_stake": {
-                        "type": "string"
-                    },
                     "created_at": {
                         "type": "integer",
                         "description": "The timestamp of the Node creation"
@@ -1624,7 +1621,6 @@
                         "description": "",
                         "image": "https://gi.rss3.io/nta/nodes/0x69982E017Acc0FDE3d1542205089A8d3EAfcD1B7/avatar.svg"
                     },
-                    "min_tokens_to_stake": "599739424417467944968",
                     "apy": "0.3928765550642588002426864199264",
                     "active_score": "0.2712648142772680586868915",
                     "reliability_score": "0",
@@ -1905,7 +1901,7 @@
                                 }
                             ]
                         }
-]
+                    ]
                 }
             },
             "Epoch": {
