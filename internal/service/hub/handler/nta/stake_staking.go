@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -18,6 +20,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -58,9 +61,8 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// FIXME: what is stake owner?
-func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
-	var request nta.GetStakeOwnerProfitRequest
+func (n *NTA) GetStakerProfit(c echo.Context) error {
+	var request nta.GetStakerProfitRequest
 
 	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, err)
@@ -93,10 +95,11 @@ func (n *NTA) GetStakeOwnerProfit(c echo.Context) error {
 	})
 }
 
-func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakeOwnerProfitResponseData, error) {
+func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakerProfitResponseData, error) {
 	var (
 		cursor *big.Int
-		data   = &nta.GetStakeOwnerProfitResponseData{Owner: owner}
+		mu     sync.Mutex
+		data   = &nta.GetStakerProfitResponseData{Owner: owner}
 	)
 
 	for {
@@ -113,21 +116,31 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			break
 		}
 
-		nodes := make(map[common.Address]int)
+		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
 
 		for _, chip := range chips {
 			chip := chip
-			nodes[chip.Node]++
+			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(1)))
+
+			errorPool.Go(func(ctx context.Context) error {
+				chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+				if err != nil {
+					zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
+
+					return fmt.Errorf("get chip info: %w", err)
+				}
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(chipInfo.Tokens, 0))
+
+				return nil
+			})
 		}
 
-		for node, count := range nodes {
-			minTokensToStake, err := n.stakingContract.MinTokensToStake(nil, node)
-			if err != nil {
-				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
-			}
-
-			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
-			data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+		if err = errorPool.Wait(); err != nil {
+			return nil, err
 		}
 
 		cursor = chips[len(chips)-1].ID
@@ -136,7 +149,7 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 	return data, nil
 }
 
-func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *nta.GetStakeOwnerProfitResponseData) ([]*nta.GetStakeOwnerProfitChangesSinceResponseData, error) {
+func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *nta.GetStakerProfitResponseData) ([]*nta.GetStakerProfitChangesSinceResponseData, error) {
 	if profit == nil {
 		return nil, nil
 	}
@@ -156,7 +169,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
 	}
 
-	data := make([]*nta.GetStakeOwnerProfitChangesSinceResponseData, len(query.Dates))
+	data := make([]*nta.GetStakerProfitChangesSinceResponseData, len(query.Dates))
 
 	for _, snapshot := range snapshots {
 		if snapshot.TotalChipValue.IsZero() {
@@ -171,7 +184,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 			index = 1
 		}
 
-		data[index] = &nta.GetStakeOwnerProfitChangesSinceResponseData{
+		data[index] = &nta.GetStakerProfitChangesSinceResponseData{
 			Date:            snapshot.Date,
 			TotalChipAmount: snapshot.TotalChipAmount,
 			TotalChipValue:  snapshot.TotalChipValue,

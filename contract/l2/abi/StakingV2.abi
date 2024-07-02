@@ -77,17 +77,6 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "AmountTooSmall",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "BatchSizeZero",
     "type": "error"
@@ -99,7 +88,7 @@
   },
   {
     "inputs": [],
-    "name": "CheckpointUnorderedInsertion",
+    "name": "ChipIdsLengthTooShort",
     "type": "error"
   },
   {
@@ -173,7 +162,7 @@
   },
   {
     "inputs": [],
-    "name": "EmptyChipsIds",
+    "name": "EmptyChipIds",
     "type": "error"
   },
   {
@@ -354,6 +343,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "StakeAmountTooSmall",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -388,6 +382,37 @@
     "inputs": [],
     "name": "TransferFailed",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "nodeAddr",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "newTokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "burnedTokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "ChipsMerged",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -537,19 +562,6 @@
       }
     ],
     "name": "NodeUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "nodeAddr",
-        "type": "address"
-      }
-    ],
-    "name": "NodeUpdated2PublicGood",
     "type": "event"
   },
   {
@@ -1184,7 +1196,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getChipsInfo",
+    "name": "getChipInfo",
     "outputs": [
       {
         "internalType": "address",
@@ -1194,6 +1206,11 @@
       {
         "internalType": "uint256",
         "name": "tokens",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "shares",
         "type": "uint256"
       }
     ],
@@ -1786,20 +1803,20 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "nodeAddr",
-        "type": "address"
+        "internalType": "uint256[]",
+        "name": "chipIds",
+        "type": "uint256[]"
       }
     ],
-    "name": "minTokensToStake",
+    "name": "mergeChips",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "newTokenId",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1849,7 +1866,7 @@
       },
       {
         "internalType": "uint256[]",
-        "name": "chipsIds",
+        "name": "chipIds",
         "type": "uint256[]"
       }
     ],
@@ -1965,12 +1982,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "startTokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "endTokenId",
+        "name": "tokenId",
         "type": "uint256"
       }
     ],
@@ -1989,12 +2001,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "startTokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "endTokenId",
+        "name": "tokenId",
         "type": "uint256"
       }
     ],
@@ -2041,13 +2048,6 @@
       }
     ],
     "name": "updateNode",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "updateToPublicGood",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

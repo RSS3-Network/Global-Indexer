@@ -2,7 +2,6 @@ package nta
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,17 +18,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
-	"github.com/rss3-network/global-indexer/contract/l2"
-	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
-	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker"
-	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -125,7 +118,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.DataTypesNode) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -172,13 +165,6 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("update node status: %w", err)
 	}
 
-	minTokensToStake, err := n.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get min token to stake from chain: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
-
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
 		zap.L().Error("get Node local error", zap.Error(err))
@@ -190,7 +176,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	}
 
 	if request.Type != "alpha" {
-		if err = n.updateNodeStats(ctx, request.Config, node, nodeInfo); err != nil {
+		if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
 			return err
 		}
 	}
@@ -199,99 +185,17 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, config json.RawMessage, node *schema.Node, nodeInfo l2.DataTypesNode) error {
-	var nodeConfig NodeConfig
-
-	if err := json.Unmarshal(config, &nodeConfig); err != nil {
-		return fmt.Errorf("unmarshal node config: %w", err)
-	}
-
-	// Check if the Node is a full node.
-	fullNode, err := isFullNode(nodeConfig.Decentralized)
-	if err != nil {
-		return fmt.Errorf("check full node error: %w", err)
-	}
-
-	stat, err := n.updateNodeStat(ctx, node, nodeConfig, fullNode, nodeInfo)
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
+	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
 	}
 
-	return n.databaseClient.WithTransaction(ctx, func(ctx context.Context, client database.Client) error {
-		// Save Node stat to database
-		if err = client.SaveNodeStat(ctx, stat); err != nil {
-			return fmt.Errorf("save Node stat: %s, %w", node.Address.String(), err)
-		}
-
-		zap.L().Info("save Node stat", zap.Any("node", node.Address.String()))
-
-		// If the Node is a full node,
-		// then delete the record from the table.
-		// Otherwise, add the worker to the table.
-		if err = client.DeleteNodeWorkers(ctx, node.Address); err != nil {
-			return fmt.Errorf("delete node workers: %s, %w", node.Address.String(), err)
-		}
-
-		// Save light node workers to database.
-		if !fullNode {
-			workers := updateNodeWorkers(node.Address, nodeConfig)
-			if err = client.SaveNodeWorkers(ctx, workers); err != nil {
-				return fmt.Errorf("save Node workers: %s, %w", node.Address.String(), err)
-			}
-
-			zap.L().Info("save Node worker", zap.Any("node", node.Address.String()))
-		}
-
-		return nil
-	})
+	return n.databaseClient.SaveNodeStat(ctx, stat)
 }
 
-// isFullNode returns true if the Node is a full Node: has every worker on all possible networks.
-func isFullNode(workers []*NodeConfigModule) (bool, error) {
-	if len(workers) < len(model.WorkerToNetworksMap) {
-		return false, nil
-	}
-
-	workerToNetworksMap := make(map[worker.Worker]map[string]struct{})
-
-	for _, w := range workers {
-		wid, err := worker.WorkerString(w.Worker.String())
-
-		if err != nil {
-			return false, err
-		}
-
-		if _, exists := workerToNetworksMap[wid]; !exists {
-			workerToNetworksMap[wid] = make(map[string]struct{})
-		}
-
-		workerToNetworksMap[wid][w.Network.String()] = struct{}{}
-	}
-
-	// Ensure all networks for each worker are present
-	for wid, requiredNetworks := range model.WorkerToNetworksMap {
-		networks, exists := workerToNetworksMap[wid]
-		if !exists || len(networks) != len(requiredNetworks) {
-			return false, nil
-		}
-
-		for _, n := range requiredNetworks {
-			if _, exists = networks[n]; !exists {
-				return false, nil
-			}
-		}
-	}
-
-	return true, nil
-}
-
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig NodeConfig, fullNode bool, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
-	var (
-		stat *schema.Stat
-		err  error
-	)
-
-	stat, err = n.databaseClient.FindNodeStat(ctx, node.Address)
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) (*schema.Stat, error) {
+	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)
 	}
@@ -306,45 +210,15 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeConfig 
 			IsPublicGood: node.IsPublicGood,
 			Staking:      staking,
 			ResetAt:      time.Now(),
-			IsFullNode:   fullNode,
-			IsRssNode:    len(nodeConfig.RSS) > 0,
-			DecentralizedNetwork: len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) network.Network {
-				return module.Network
-			})),
-			FederatedNetwork: len(nodeConfig.Federated),
-			Indexer:          len(nodeConfig.Decentralized),
 		}
 	} else {
 		stat.Endpoint = node.Endpoint
 		stat.IsPublicGood = node.IsPublicGood
 		stat.Staking = staking
-		stat.IsFullNode = fullNode
-		stat.IsRssNode = len(nodeConfig.RSS) > 0
-		stat.DecentralizedNetwork = len(lo.UniqBy(nodeConfig.Decentralized, func(module *NodeConfigModule) network.Network {
-			return module.Network
-		}))
-		stat.FederatedNetwork = len(nodeConfig.Federated)
-		stat.Indexer = len(nodeConfig.Decentralized)
+		stat.ResetAt = time.Now()
 	}
-
-	// Calculate the reliability score.
-	_ = enforcer.CalculateReliabilityScore(stat)
 
 	return stat, nil
-}
-
-func updateNodeWorkers(address common.Address, nodeConfig NodeConfig) []*schema.Worker {
-	workers := make([]*schema.Worker, 0, len(nodeConfig.Decentralized))
-
-	for _, w := range nodeConfig.Decentralized {
-		workers = append(workers, &schema.Worker{
-			Address: address,
-			Network: w.Network.String(),
-			Name:    w.Worker.String(),
-		})
-	}
-
-	return workers
 }
 
 func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, requestIP string) error {
@@ -441,15 +315,4 @@ func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address commo
 	}
 
 	return nil
-}
-
-type NodeConfig struct {
-	RSS           []*NodeConfigModule `json:"rss"`
-	Federated     []*NodeConfigModule `json:"federated"`
-	Decentralized []*NodeConfigModule `json:"decentralized"`
-}
-
-type NodeConfigModule struct {
-	Network network.Network `json:"network"`
-	Worker  worker.Worker   `json:"worker"`
 }

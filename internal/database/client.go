@@ -44,15 +44,13 @@ type Client interface {
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
 	SaveNodeStat(ctx context.Context, stat *schema.Stat) error
 	SaveNodeStats(ctx context.Context, stats []*schema.Stat) error
-	FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error)
+	FindNodeWorkers(ctx context.Context, query *schema.WorkerQuery) ([]*schema.Worker, error)
 	SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) error
-	DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error
+	UpdateNodeWorkerActive(ctx context.Context) error
 	SaveNodeInvalidResponses(ctx context.Context, nodeInvalidResponses []*schema.NodeInvalidResponse) error
 
 	FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
-	FindNodeMinTokensToStakeSnapshots(ctx context.Context, nodeAddress []*common.Address, onlyStartAndEnd bool, limit *int) ([]*schema.NodeMinTokensToStakeSnapshot, error)
-	SaveNodeMinTokensToStakeSnapshots(ctx context.Context, nodeMinTokensToStakeSnapshot []*schema.NodeMinTokensToStakeSnapshot) error
 	FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error)
 	SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error
 	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)

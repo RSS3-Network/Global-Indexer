@@ -197,13 +197,6 @@ func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdat
 		values = append(values, value.Address, value.Apy)
 	}
 
-	rawSQL += " END, min_tokens_to_stake = CASE address"
-	for _, value := range data {
-		rawSQL += " WHEN ? THEN ?"
-
-		values = append(values, value.Address, value.MinTokensToStake)
-	}
-
 	addresses := make([]common.Address, len(data))
 	for i, value := range data {
 		addresses[i] = value.Address
@@ -394,29 +387,37 @@ func (c *client) SaveNodeStats(ctx context.Context, stats []*schema.Stat) error 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tStats, math.MaxUint8).Error
 }
 
-func (c *client) DeleteNodeWorkers(ctx context.Context, nodeAddress common.Address) error {
-	return c.database.WithContext(ctx).Where("address = ?", nodeAddress).Delete(&table.Worker{}).Error
+func (c *client) UpdateNodeWorkerActive(ctx context.Context) error {
+	return c.database.WithContext(ctx).Model(&table.Worker{}).Where("is_active = ?", true).Update("is_active", false).Error
 }
 
-func (c *client) FindNodeWorkers(ctx context.Context, nodeAddresses []common.Address, networks, names []string) ([]*schema.Worker, error) {
+func (c *client) FindNodeWorkers(ctx context.Context, query *schema.WorkerQuery) ([]*schema.Worker, error) {
 	var workers table.Workers
 
 	databaseStatement := c.database.WithContext(ctx)
 
-	if len(nodeAddresses) > 0 {
-		databaseStatement = databaseStatement.Where("address IN ?", nodeAddresses)
+	if query.IsActive != nil {
+		databaseStatement = databaseStatement.Where("is_active = ?", query.IsActive)
 	}
 
-	if len(networks) > 0 {
-		databaseStatement = databaseStatement.Where("network IN ?", networks)
+	if query.EpochID > 0 {
+		databaseStatement = databaseStatement.Where("epoch_id = ?", query.EpochID)
 	}
 
-	if len(names) > 0 {
-		databaseStatement = databaseStatement.Where("name IN ?", names)
+	if len(query.NodeAddresses) > 0 {
+		databaseStatement = databaseStatement.Where("address IN ?", query.NodeAddresses)
+	}
+
+	if len(query.Networks) > 0 {
+		databaseStatement = databaseStatement.Where("network IN ?", query.Networks)
+	}
+
+	if len(query.Names) > 0 {
+		databaseStatement = databaseStatement.Where("name IN ?", query.Names)
 	}
 
 	if err := databaseStatement.Find(&workers).Error; err != nil {
-		return nil, fmt.Errorf("find Nodes: %w", err)
+		return nil, fmt.Errorf("find node worker : %w", err)
 	}
 
 	return workers.Export(), nil
@@ -427,7 +428,25 @@ func (c *client) SaveNodeWorkers(ctx context.Context, workers []*schema.Worker) 
 
 	tWorkers.Import(workers)
 
-	return c.database.WithContext(ctx).CreateInBatches(tWorkers, math.MaxUint8).Error
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "epoch_id",
+			},
+			{
+				Name: "address",
+			},
+			{
+				Name: "network",
+			},
+			{
+				Name: "name",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(tWorkers, math.MaxUint8).Error
 }
 
 func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error {
@@ -488,78 +507,6 @@ func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address,
 	}
 
 	return events.Export()
-}
-
-func (c *client) FindNodeMinTokensToStakeSnapshots(ctx context.Context, nodeAddress []*common.Address, onlyStartAndEnd bool, limit *int) ([]*schema.NodeMinTokensToStakeSnapshot, error) {
-	var snapshots table.NodeMinTokensToStakeSnapshots
-
-	databaseStatement := c.database.WithContext(ctx)
-
-	if onlyStartAndEnd {
-		var groupedSnapshots []struct {
-			NodeAddress  common.Address `gorm:"column:node_address"`
-			StartEpochID uint64         `gorm:"column:start_epoch_id"`
-			EndEpochID   uint64         `gorm:"column:end_epoch_id"`
-		}
-
-		if err := c.database.WithContext(ctx).Table((*table.NodeMinTokensToStakeSnapshot).TableName(nil)).
-			Select("node_address, MIN(epoch_id) AS start_epoch_id, MAX(epoch_id) AS end_epoch_id").
-			Where("node_address IN ?", nodeAddress).Group("node_address").Find(&groupedSnapshots).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, database.ErrorRowNotFound
-			}
-
-			return nil, err
-		}
-
-		if len(groupedSnapshots) > 0 {
-			databaseStatement = databaseStatement.Where("(node_address = ? AND epoch_id = ?) OR (node_address = ? AND epoch_id = ?)",
-				groupedSnapshots[0].NodeAddress, groupedSnapshots[0].StartEpochID, groupedSnapshots[0].NodeAddress, groupedSnapshots[0].EndEpochID)
-		}
-
-		for index := 1; index < len(groupedSnapshots); index++ {
-			databaseStatement = databaseStatement.Or("(node_address = ? AND epoch_id = ?) OR (node_address = ? AND epoch_id = ?)",
-				groupedSnapshots[index].NodeAddress, groupedSnapshots[index].StartEpochID, groupedSnapshots[index].NodeAddress, groupedSnapshots[index].EndEpochID)
-		}
-	} else if len(nodeAddress) > 0 {
-		databaseStatement = databaseStatement.Where("node_address IN ?", nodeAddress)
-	}
-
-	if limit != nil {
-		databaseStatement = databaseStatement.Limit(*limit)
-	}
-
-	if err := databaseStatement.Order("epoch_id DESC, id DESC").Find(&snapshots).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, database.ErrorRowNotFound
-		}
-
-		return nil, err
-	}
-
-	return snapshots.Export()
-}
-
-func (c *client) SaveNodeMinTokensToStakeSnapshots(ctx context.Context, snapshot []*schema.NodeMinTokensToStakeSnapshot) error {
-	var value table.NodeMinTokensToStakeSnapshots
-
-	if err := value.Import(snapshot); err != nil {
-		return fmt.Errorf("import node min tokens to stake snapshot: %w", err)
-	}
-
-	onConflict := clause.OnConflict{
-		Columns: []clause.Column{
-			{
-				Name: "node_address",
-			},
-			{
-				Name: "epoch_id",
-			},
-		},
-		UpdateAll: true,
-	}
-
-	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
 }
 
 func (c *client) FindOperatorProfitSnapshots(ctx context.Context, query schema.OperatorProfitSnapshotsQuery) ([]*schema.OperatorProfitSnapshot, error) {
