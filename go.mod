@@ -1,6 +1,7 @@
 module github.com/rss3-network/global-indexer
 
 go 1.21.4
+toolchain go1.22.4
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101305.0
@@ -14,14 +15,14 @@ require (
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.21.0
-	github.com/go-redsync/redsync/v4 v4.11.0
+	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 	github.com/maxmind/geoipupdate/v6 v6.1.0
 	github.com/orlangure/gnomock v0.31.0
 	github.com/oschwald/geoip2-golang v1.9.0
 	github.com/pressly/goose/v3 v3.20.0
-	github.com/redis/go-redis/v9 v9.4.0
+	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rss3-network/node v0.5.17
 	github.com/rss3-network/protocol-go v0.5.1
