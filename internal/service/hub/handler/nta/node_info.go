@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
@@ -159,6 +160,8 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		}
 
 		nodeInfo.TaxRateBasisPoints = publicPool.TaxRateBasisPoints
+		nodeInfo.OperationPoolTokens = publicPool.OperationPoolTokens
+		nodeInfo.StakingPoolTokens = publicPool.StakingPoolTokens
 	}
 
 	node.Name = nodeInfo.Name
@@ -195,7 +198,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.DataTypesNode) (common.Address, stakingv2.DataTypesNode) {
 		return node.Account, node
 	})
 

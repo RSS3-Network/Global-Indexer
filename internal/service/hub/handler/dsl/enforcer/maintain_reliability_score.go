@@ -11,7 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
@@ -124,7 +124,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes)
 }
 
-func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]l2.DataTypesNode, error) {
+func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]stakingv2.DataTypesNode, error) {
 	return e.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 }
 
@@ -148,7 +148,7 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node) error {
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []stakingv2.DataTypesNode, nodes []*schema.Node) error {
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU(), len(stats), 20*runtime.NumCPU()))
 
 	for i := range stats {

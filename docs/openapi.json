@@ -494,30 +494,6 @@
                 }
             }
         },
-        "/nta/snapshots/nodes/min_tokens_to_stake": {
-            "post": {
-                "summary": "Get snapshots of the minimum staking amount",
-                "description": "Retrieve snapshots of the minimum staking amount for specified nodes. This endpoint allows users to specify a list of node addresses and optionally return only the start and end values of the minimum tokens to stake.",
-                "tags": [
-                    "Snapshots",
-                    "NTA"
-                ],
-                "requestBody": {
-                    "$ref": "#/components/requestBodies/NodeMinTokensToStakeRequestBody"
-                },
-                "responses": {
-                    "200": {
-                        "$ref": "#/components/responses/NodeMinTokensToStakeResponse"
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
-                    },
-                    "500": {
-                        "$ref": "#/components/responses/500"
-                    }
-                }
-            }
-        },
         "/nta/snapshots/stakers/count": {
             "get": {
                 "summary": "Get snapshots of staker count",
@@ -1019,7 +995,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/RssFeed"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -1529,7 +1505,7 @@
             },
             "Node": {
                 "type": "object",
-                "required": ["id", "address", "name", "description", "is_public_good", "operation_pool_tokens", "staking_pool_tokens", "total_shares", "slashed_tokens", "status", "last_heartbeat", "avatar", "min_tokens_to_stake", "created_at"],
+                "required": ["id", "address", "name", "description", "is_public_good", "operation_pool_tokens", "staking_pool_tokens", "total_shares", "slashed_tokens", "status", "last_heartbeat", "avatar", "created_at"],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -1612,9 +1588,6 @@
                             }
                         }
                     },
-                    "min_tokens_to_stake": {
-                        "type": "string"
-                    },
                     "created_at": {
                         "type": "integer",
                         "description": "The timestamp of the Node creation"
@@ -1648,7 +1621,6 @@
                         "description": "",
                         "image": "https://gi.rss3.io/nta/nodes/0x69982E017Acc0FDE3d1542205089A8d3EAfcD1B7/avatar.svg"
                     },
-                    "min_tokens_to_stake": "599739424417467944968",
                     "apy": "0.3928765550642588002426864199264",
                     "active_score": "0.2712648142772680586868915",
                     "reliability_score": "0",
@@ -1771,41 +1743,6 @@
                     "log_index": 0,
                     "chain_id": 12553,
                     "metadata": {}
-                }
-            },
-            "NodeMinTokensToStakeSnapshot": {
-                "type": "object",
-                "required": ["node_address", "snapshots"],
-                "properties": {
-                    "node_address": {
-                        "type": "string",
-                        "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-                    },
-                    "snapshots": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": ["date", "epoch_id","node_address", "min_tokens_to_stake"],
-                            "properties": {
-                                "date": {
-                                    "type": "string",
-                                    "example": "2024-03-12T19:00:03Z"
-                                },
-                                "epoch_id": {
-                                    "type": "integer",
-                                    "example": 1
-                                },
-                                "node_address": {
-                                    "type": "string",
-                                    "example": "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-                                },
-                                "min_tokens_to_stake": {
-                                    "type": "string",
-                                    "example": "517704408563610773574"
-                                }
-                            }
-                        }
-                    }
                 }
             },
             "StakerProfitSnapshot": {
@@ -1964,7 +1901,7 @@
                                 }
                             ]
                         }
-]
+                    ]
                 }
             },
             "Epoch": {
@@ -2763,36 +2700,6 @@
                 "example": 130
             }
         },
-        "requestBodies": {
-            "NodeMinTokensToStakeRequestBody": {
-                "description": "Request payload for retrieving snapshots of the minimum staking amount for specified nodes.",
-                "required": true,
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "node_addresses": {
-                                    "type": "array",
-                                    "description": "List of node addresses to retrieve the minimum staking amount snapshots for.",
-                                    "items": {
-                                        "type": "string"
-                                    },
-                                    "example": [
-                                        "0x08d66b34054a174841e2361bd4746ff9f4905cc2"
-                                    ]
-                                },
-                                "only_start_and_end": {
-                                    "type": "boolean",
-                                    "description": "If true, only return the start and end min_tokens_to_stake.",
-                                    "example": false
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "responses": {
             "ActivityResponse": {
                 "description": "A successful response containing the details of the specified activity. The response includes the activity ID, timestamp, and a list of actions performed within the activity.",
@@ -3018,26 +2925,6 @@
                                     "description": "Array of node count snapshots.",
                                     "items": {
                                         "$ref": "#/components/schemas/CountSnapshot"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "NodeMinTokensToStakeResponse": {
-                "description": "A successful response containing snapshots of the minimum staking amount for the specified nodes. Each entry in the data array includes the node address, date, and the minimum tokens to stake on that date.",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "required": ["data"],
-                            "properties": {
-                                "data": {
-                                    "type": "array",
-                                    "description": "Array of minimum staking amount snapshots.",
-                                    "items": {
-                                        "$ref": "#/components/schemas/NodeMinTokensToStakeSnapshot"
                                     }
                                 }
                             }
