@@ -568,3 +568,17 @@ func (c *client) SaveStakerProfitSnapshots(ctx context.Context, snapshots []*sch
 
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
 }
+
+func (c *client) DeleteStakeTransactionsByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.StakeTransaction), `"block_number" = ? AND NOT "finalized"`, blockNumber).
+		Error
+}
+
+func (c *client) DeleteStakeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.StakeEvent), `"block_number" = ? AND NOT "finalized"`, blockNumber).
+		Error
+}

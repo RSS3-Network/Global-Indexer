@@ -612,3 +612,10 @@ func (c *client) SaveNodeAPYSnapshots(ctx context.Context, nodeAPYSnapshots []*s
 
 	return c.database.WithContext(ctx).Clauses(onConflict).CreateInBatches(value, math.MaxUint8).Error
 }
+
+func (c *client) DeleteNodeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.NodeEvent), `"block_number" = ? AND NOT "finalized"`, blockNumber).
+		Error
+}

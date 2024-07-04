@@ -42,9 +42,10 @@ type BridgeEvent struct {
 	BlockHash         common.Hash     `json:"block_hash"`
 	BlockNumber       *big.Int        `json:"block_number"`
 	BlockTimestamp    time.Time       `json:"block_timestamp"`
+	Finalized         bool            `json:"finalized"`
 }
 
-func NewBridgeEvent(id common.Hash, eventType BridgeEventType, chainID uint64, header *types.Header, transaction *types.Transaction, receipt *types.Receipt) *BridgeEvent {
+func NewBridgeEvent(id common.Hash, eventType BridgeEventType, chainID uint64, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, finalized bool) *BridgeEvent {
 	bridgeEvent := BridgeEvent{
 		ID:                id,
 		Type:              eventType,
@@ -55,6 +56,7 @@ func NewBridgeEvent(id common.Hash, eventType BridgeEventType, chainID uint64, h
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         finalized,
 	}
 
 	return &bridgeEvent

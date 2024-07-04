@@ -82,8 +82,8 @@ type ChipsTokenMetadata struct {
 	Image       string `json:"image"`
 }
 
-func IsStakingV2Deployed(chainID *big.Int, blockNumber *big.Int, transactionIndex uint) bool {
-	switch chainID.Uint64() {
+func IsStakingV2Deployed(chainID uint64, blockNumber *big.Int, transactionIndex uint) bool {
+	switch chainID {
 	case ChainIDMainnet:
 		return false // TODO Need to deploy the contract on mainnet.
 	case ChainIDTestnet:

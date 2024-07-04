@@ -43,6 +43,7 @@ type StakeEvent struct {
 	BlockHash         common.Hash    `json:"block_hash"`
 	BlockNumber       *big.Int       `json:"block_number"`
 	BlockTimestamp    time.Time      `json:"block_timestamp"`
+	Finalized         bool
 }
 
 type StakeEventQuery struct {

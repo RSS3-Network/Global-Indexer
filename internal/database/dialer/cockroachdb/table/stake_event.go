@@ -23,6 +23,7 @@ type StakeEvent struct {
 	BlockHash         string    `gorm:"column:block_hash;primaryKey"`
 	BlockNumber       uint64    `gorm:"column:block_number"`
 	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
+	Finalized         bool      `gorm:"column:finalized"`
 }
 
 func (b *StakeEvent) TableName() string {
@@ -38,6 +39,7 @@ func (b *StakeEvent) Import(stakeEvent schema.StakeEvent) error {
 	b.BlockHash = stakeEvent.BlockHash.String()
 	b.BlockNumber = stakeEvent.BlockNumber.Uint64()
 	b.BlockTimestamp = stakeEvent.BlockTimestamp
+	b.Finalized = stakeEvent.Finalized
 
 	return nil
 }
@@ -52,6 +54,7 @@ func (b *StakeEvent) Export() (*schema.StakeEvent, error) {
 		BlockHash:         common.HexToHash(b.BlockHash),
 		BlockNumber:       new(big.Int).SetUint64(b.BlockNumber),
 		BlockTimestamp:    b.BlockTimestamp,
+		Finalized:         b.Finalized,
 	}
 
 	return &stakeEvent, nil

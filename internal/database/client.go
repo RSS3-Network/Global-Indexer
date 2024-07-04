@@ -39,6 +39,7 @@ type Client interface {
 	BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdateNode) error
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error)
+	DeleteNodeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
@@ -68,6 +69,8 @@ type Client interface {
 	FindBridgeEvents(ctx context.Context, query schema.BridgeEventsQuery) ([]*schema.BridgeEvent, error)
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
+	DeleteBridgeTransactionsByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error
+	DeleteBridgeEventsByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error
 
 	FindStakeTransaction(ctx context.Context, query schema.StakeTransactionQuery) (*schema.StakeTransaction, error)
 	FindStakeTransactions(ctx context.Context, query schema.StakeTransactionsQuery) ([]*schema.StakeTransaction, error)
@@ -77,6 +80,8 @@ type Client interface {
 	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
+	DeleteStakeTransactionsByBlockNumber(ctx context.Context, blockNumber uint64) error
+	DeleteStakeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error
 	SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 

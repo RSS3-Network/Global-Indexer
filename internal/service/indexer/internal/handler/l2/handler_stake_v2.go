@@ -20,18 +20,18 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func (s *server) indexStakingV2Log(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
-	switch eventHash := log.Topics[0]; eventHash {
-	case l2.EventHashStakingV1Staked: // The event hash is the same as the staking v1 contract.
-		return s.indexStakingV2StakedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingV2ChipsMerged:
-		return s.indexStakingV2ChipsMergedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+func (h *handler) indexStakingV2Log(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	switch eventHash := log.Topics[0]; {
+	case eventHash == l2.EventHashStakingV1Staked: // The event hash is the same as the staking v1 contract.
+		return h.indexStakingV2StakedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case h.finalized && eventHash == l2.EventHashStakingV2ChipsMerged:
+		return h.indexStakingV2ChipsMergedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	default:
-		return s.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction)
+		return h.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction)
 	}
 }
 
-func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingV2StakedLog")
 	defer span.End()
 
@@ -42,7 +42,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStakingV2.ParseStaked(*log)
+	event, err := h.contractStakingV2.ParseStaked(*log)
 	if err != nil {
 		return fmt.Errorf("parse Staked event: %w", err)
 	}
@@ -55,7 +55,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 	// If user staked token to a public good node, the event will be emitted with the genesis address.
 	// So we need to get the actual node address from the stake contract by the token ID.
 	if event.NodeAddr == ethereum.AddressGenesis {
-		chipsInfo, err := s.contractStakingV2.GetChipInfo(&callOptions, event.StartTokenId)
+		chipsInfo, err := h.contractStakingV2.GetChipInfo(&callOptions, event.StartTokenId)
 		if err != nil {
 			return fmt.Errorf("get the info of chips %s: %w", event.StartTokenId, err)
 		}
@@ -73,6 +73,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	for i := uint64(0); i+event.StartTokenId.Uint64() <= event.EndTokenId.Uint64(); i++ {
@@ -92,10 +93,16 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
 		return fmt.Errorf("save stake event: %w", err)
+	}
+
+	// Skip save chips if the block is not finalized.
+	if !h.finalized {
+		return nil
 	}
 
 	resultPool := pool.
@@ -108,7 +115,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 		chipID := chipID
 
 		resultPool.Go(func(_ context.Context) (*schema.StakeChip, error) {
-			tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
+			tokenURI, err := h.contractChips.TokenURI(&callOptions, chipID)
 			if err != nil {
 				return nil, fmt.Errorf("get #%d token uri", chipID)
 			}
@@ -123,7 +130,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 				return nil, fmt.Errorf("decode #%d token metadata", chipID)
 			}
 
-			chipInfo, err := s.contractStakingV2.GetChipInfo(&callOptions, chipID)
+			chipInfo, err := h.contractStakingV2.GetChipInfo(&callOptions, chipID)
 			if err != nil {
 				return nil, fmt.Errorf("get chips #%d info", chipID)
 			}
@@ -154,7 +161,7 @@ func (s *server) indexStakingV2StakedLog(ctx context.Context, header *types.Head
 	return nil
 }
 
-func (s *server) indexStakingV2ChipsMergedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, _ *types.Receipt, log *types.Log, _ database.Client) error {
+func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, _ *types.Receipt, log *types.Log, _ database.Client) error {
 	_, span := otel.Tracer("").Start(ctx, "indexStakingV2ChipsMergedLog")
 	defer span.End()
 
@@ -165,7 +172,7 @@ func (s *server) indexStakingV2ChipsMergedLog(ctx context.Context, header *types
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	if _, err := s.contractStakingV2.ParseChipsMerged(*log); err != nil {
+	if _, err := h.contractStakingV2.ParseChipsMerged(*log); err != nil {
 		return fmt.Errorf("parse ChipsMerged event: %w", err)
 	}
 

@@ -27,6 +27,7 @@ type NodeEvent struct {
 	BlockNumber      *big.Int          `json:"block_number"`
 	BlockTimestamp   int64             `json:"block_timestamp"`
 	Metadata         NodeEventMetadata `json:"metadata"`
+	Finalized        bool              `json:"finalized"`
 }
 
 type NodeEventMetadata struct {
