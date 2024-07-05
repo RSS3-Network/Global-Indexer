@@ -7,11 +7,11 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
 	nodecount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_count"
+	nodemintokenstostake "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_min_tokens_to_stake"
 	operatorprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/operator_profit"
 	stakercount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_count"
 	stakerprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_profit"
@@ -59,7 +59,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
 	}
 
-	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
@@ -68,6 +68,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		snapshots: []service.Server{
 			nodecount.New(databaseClient, redis),
 			stakercount.New(databaseClient, redis),
+			nodemintokenstostake.New(databaseClient, redis, stakingContract),
 			stakerprofit.New(databaseClient, redis, stakingContract),
 			operatorprofit.New(databaseClient, redis, stakingContract),
 			apy.New(databaseClient, redis, stakingContract),

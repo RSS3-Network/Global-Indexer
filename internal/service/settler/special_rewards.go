@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
@@ -96,7 +96,7 @@ func (s *Server) fetchNodePoolSizes(nodeAddresses []common.Address, nodes []*sch
 		return fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.DataTypesNode) (common.Address, stakingv2.DataTypesNode) {
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node l2.DataTypesNode) (common.Address, l2.DataTypesNode) {
 		return node.Account, node
 	})
 
