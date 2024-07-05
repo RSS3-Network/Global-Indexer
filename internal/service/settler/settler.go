@@ -36,7 +36,10 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 		}
 	}()
 
-	var cursor *string
+	var (
+		cursor      *string
+		firstInvoke = true
+	)
 
 	for {
 		msg := "construct Settlement data"
@@ -49,7 +52,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 		}
 
 		// Finish processing when conditions are met
-		if len(transactionData.NodeAddress) == 0 && cursor != nil {
+		if len(transactionData.NodeAddress) == 0 && !firstInvoke {
 			zap.L().Info("finished processing transactionData.")
 
 			break
@@ -65,6 +68,8 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 
 			return err
 		}
+
+		firstInvoke = false
 
 		// Update the Node scores
 		if len(nodes) > 0 {
