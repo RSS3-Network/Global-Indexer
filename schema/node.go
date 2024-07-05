@@ -29,6 +29,7 @@ type Node struct {
 	LastHeartbeatTimestamp int64                  `json:"last_heartbeat"`
 	Location               []*NodeLocation        `json:"location"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
+	MinTokensToStake       decimal.Decimal        `json:"min_tokens_to_stake"`
 	APY                    decimal.Decimal        `json:"apy"`
 	ActiveScore            decimal.Decimal        `json:"active_score"`
 	ReliabilityScore       decimal.Decimal        `json:"reliability_score"`
@@ -84,8 +85,9 @@ const (
 )
 
 type BatchUpdateNode struct {
-	Address common.Address
-	Apy     decimal.Decimal
+	Address          common.Address
+	Apy              decimal.Decimal
+	MinTokensToStake decimal.Decimal
 }
 
 type FindNodesQuery struct {

@@ -32,6 +32,29 @@ func (n *NTA) GetNodeCountSnapshots(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+func (n *NTA) BatchGetNodeMinTokensToStakeSnapshots(c echo.Context) error {
+	var request nta.BatchNodeMinTokensToStakeRequest
+
+	if err := c.Bind(&request); err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
+	}
+
+	nodeMinTokensToStakeSnapshots, err := n.databaseClient.FindNodeMinTokensToStakeSnapshots(c.Request().Context(), request.NodeAddresses, request.OnlyStartAndEnd, nil)
+	if err != nil {
+		zap.L().Error("find Node min tokens to stake snapshots", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: nta.NewNodeMinTokensToStakeSnapshots(nodeMinTokensToStakeSnapshots),
+	})
+}
+
 func (n *NTA) GetNodeOperationProfitSnapshots(c echo.Context) error {
 	var request nta.GetNodeOperationProfitSnapshotsRequest
 

@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
@@ -29,7 +28,7 @@ type server struct {
 	cronJob                   *cronjob.CronJob
 	blockNumber               uint64
 	simpleEnforcer            *enforcer.SimpleEnforcer
-	stakingContract           *stakingv2.Staking
+	stakingContract           *l2.Staking
 	settlementContract        *l2.Settlement
 	ethereumClient            *ethclient.Client
 	settlementContractAddress common.Address
@@ -129,7 +128,7 @@ func (s *server) fetchLogs(ctx context.Context, blockStart, blockEnd uint64) ([]
 		ToBlock:   new(big.Int).SetUint64(blockEnd),
 		Topics: [][]common.Hash{
 			{
-				l2.EventHashStakingV1RewardDistributed,
+				l2.EventHashStakingRewardDistributed,
 			},
 		},
 	}
@@ -146,7 +145,7 @@ func (s *server) fetchLogs(ctx context.Context, blockStart, blockEnd uint64) ([]
 	return logs, nil
 }
 
-func New(redis *redis.Client, ethereumClient *ethclient.Client, blockNumber uint64, simpleEnforcer *enforcer.SimpleEnforcer, stakingContract *stakingv2.Staking, settlementContract *l2.Settlement, settlementContractAddress common.Address) service.Server {
+func New(redis *redis.Client, ethereumClient *ethclient.Client, blockNumber uint64, simpleEnforcer *enforcer.SimpleEnforcer, stakingContract *l2.Staking, settlementContract *l2.Settlement, settlementContractAddress common.Address) service.Server {
 	return &server{
 		cronJob:                   cronjob.New(redis, Name, 1*time.Minute),
 		blockNumber:               blockNumber,
