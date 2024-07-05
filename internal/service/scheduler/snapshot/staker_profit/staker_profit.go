@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
@@ -36,7 +36,7 @@ type server struct {
 	cronJob         *cronjob.CronJob
 	databaseClient  database.Client
 	redisClient     *redis.Client
-	stakingContract *stakingv2.Staking
+	stakingContract *l2.Staking
 }
 
 func (s *server) Name() string {
@@ -212,14 +212,14 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 
 			errorPool.Go(func(ctx context.Context) error {
 				// Query the chip value from the staking contract.
-				chipInfo, err := s.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx, BlockNumber: currentEpoch.BlockNumber}, chip.ID)
+				minTokensToStake, err := s.stakingContract.MinTokensToStake(&bind.CallOpts{Context: ctx, BlockNumber: currentEpoch.BlockNumber}, chip.Node)
 				if err != nil {
 					zap.L().Error("fetch min tokens to stake", zap.Error(err), zap.String("node", chip.Node.String()), zap.Uint64("block_number", currentEpoch.BlockNumber.Uint64()))
 
 					return fmt.Errorf("fetch the min tokens to stake: %w", err)
 				}
 
-				chip.Value = decimal.NewFromBigInt(chipInfo.Tokens, 0)
+				chip.Value = decimal.NewFromBigInt(minTokensToStake, 0)
 
 				mutex.Lock()
 				profit.TotalChipValue = profit.TotalChipValue.Add(chip.Value)
@@ -241,7 +241,7 @@ func (s *server) buildStakerProfitSnapshots(ctx context.Context, currentEpoch *s
 	return profit, nil
 }
 
-func New(databaseClient database.Client, redisClient *redis.Client, stakingContract *stakingv2.Staking) service.Server {
+func New(databaseClient database.Client, redisClient *redis.Client, stakingContract *l2.Staking) service.Server {
 	return &server{
 		cronJob:         cronjob.New(redisClient, Name, Timeout),
 		databaseClient:  databaseClient,
