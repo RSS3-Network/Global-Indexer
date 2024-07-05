@@ -159,6 +159,8 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		}
 
 		nodeInfo.TaxRateBasisPoints = publicPool.TaxRateBasisPoints
+		nodeInfo.OperationPoolTokens = publicPool.OperationPoolTokens
+		nodeInfo.StakingPoolTokens = publicPool.StakingPoolTokens
 	}
 
 	node.Name = nodeInfo.Name
