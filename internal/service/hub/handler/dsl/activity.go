@@ -79,6 +79,93 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activities)
 }
 
+func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
+	var request dsl.AccountsActivitiesRequest
+
+	if err = c.Bind(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if err = c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, err)
+	}
+
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	activities, err := d.distributor.DistributeBatchActivitiesData(c.Request().Context(), request)
+	if err != nil {
+		zap.L().Error("distribute batch activities data error", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	return c.JSONBlob(http.StatusOK, activities)
+}
+
+func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
+	var request dsl.NetworkActivitiesRequest
+
+	if err = c.Bind(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if err = c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, err)
+	}
+
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	activities, err := d.distributor.DistributeNetworkActivitiesData(c.Request().Context(), request)
+	if err != nil {
+		zap.L().Error("distribute activities data error", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	return c.JSONBlob(http.StatusOK, activities)
+}
+
+func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
+	var request dsl.PlatformActivitiesRequest
+
+	if err = c.Bind(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	if err = c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, err)
+	}
+
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	activities, err := d.distributor.DistributePlatformActivitiesData(c.Request().Context(), request)
+	if err != nil {
+		zap.L().Error("distribute activities data error", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	return c.JSONBlob(http.StatusOK, activities)
+}
+
 // validEvmAddress checks if the address is a valid EVM address.
 func validEvmAddress(address string) bool {
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
