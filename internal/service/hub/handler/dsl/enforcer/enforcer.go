@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -29,7 +29,7 @@ type SimpleEnforcer struct {
 	cacheClient             cache.Client
 	databaseClient          database.Client
 	httpClient              httputil.Client
-	stakingContract         *stakingv2.Staking
+	stakingContract         *l2.Staking
 	fullNodeScoreMaintainer *ScoreMaintainer
 	rssNodeScoreMaintainer  *ScoreMaintainer
 }
@@ -172,7 +172,7 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	return nodesCache, err
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
@@ -200,7 +200,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 // This cache holds the initial reliability scores and related maps of the nodes for the new epoch.
 func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
-		// Subscribe to changes to 'epoch'
+		//Subscribe to changes to 'epoch'
 		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@*__:%s", model.SubscribeNodeCacheKey))
 		defer pubsub.Close()
 

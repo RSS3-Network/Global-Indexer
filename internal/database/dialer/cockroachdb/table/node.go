@@ -24,6 +24,7 @@ type Node struct {
 	LastHeartbeatTimestamp time.Time         `gorm:"column:last_heartbeat_timestamp"`
 	Location               json.RawMessage   `gorm:"column:location;type:jsonb"`
 	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
+	MinTokensToStake       decimal.Decimal   `gorm:"column:min_tokens_to_stake"`
 	APY                    decimal.Decimal   `gorm:"column:apy"`
 	Score                  decimal.Decimal   `gorm:"column:score"`
 	Type                   string            `gorm:"column:type"`
@@ -45,6 +46,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.LastHeartbeatTimestamp = time.Unix(node.LastHeartbeatTimestamp, 0)
 	n.Stream = node.Stream
 	n.Config = node.Config
+	n.MinTokensToStake = node.MinTokensToStake
 	n.APY = node.APY
 	n.Score = node.ActiveScore
 	n.Type = node.Type
@@ -86,6 +88,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Config:                 n.Config,
 		Location:               locations,
 		Avatar:                 avatar,
+		MinTokensToStake:       n.MinTokensToStake,
 		APY:                    n.APY,
 		ActiveScore:            n.Score,
 		Type:                   n.Type,

@@ -8,6 +8,11 @@ import (
 	"github.com/samber/lo"
 )
 
+type BatchNodeMinTokensToStakeRequest struct {
+	NodeAddresses   []*common.Address `json:"node_addresses" validate:"required"`
+	OnlyStartAndEnd bool              `json:"only_start_and_end"`
+}
+
 type GetStakerProfitSnapshotsRequest struct {
 	StakerAddress common.Address `query:"staker_address" validate:"required"`
 	Limit         *int           `query:"limit"`
@@ -26,6 +31,8 @@ type GetNodeOperationProfitSnapshotsRequest struct {
 
 type GetNodeCountSnapshotsResponseData []*CountSnapshot
 
+type BatchGetNodeMinTokensToStakeSnapshotsResponseData []*NodeMinTokensToStakeSnapshots
+
 type GetStakerCountSnapshotsResponseData []*CountSnapshot
 
 type GetOperatorProfitsSnapshotsResponseData []*schema.OperatorProfitSnapshot
@@ -33,6 +40,11 @@ type GetOperatorProfitsSnapshotsResponseData []*schema.OperatorProfitSnapshot
 type CountSnapshot struct {
 	Date  string `json:"date"`
 	Count uint64 `json:"count"`
+}
+
+type NodeMinTokensToStakeSnapshots struct {
+	NodeAddress common.Address                         `json:"node_address"`
+	Snapshots   []*schema.NodeMinTokensToStakeSnapshot `json:"snapshots"`
 }
 
 func NewNodeCountSnapshots(nodeSnapshots []*schema.NodeSnapshot) GetNodeCountSnapshotsResponseData {
@@ -51,4 +63,27 @@ func NewStakerCountSnapshots(stakeSnapshots []*schema.StakerCountSnapshot) GetSt
 			Count: uint64(stakeSnapshot.Count),
 		}
 	})
+}
+
+func NewNodeMinTokensToStakeSnapshots(nodeMinTokensToStakeSnapshots []*schema.NodeMinTokensToStakeSnapshot) BatchGetNodeMinTokensToStakeSnapshotsResponseData {
+	nodeMap := make(map[common.Address][]*schema.NodeMinTokensToStakeSnapshot)
+
+	for _, nodeMinTokensToStakeSnapshot := range nodeMinTokensToStakeSnapshots {
+		if _, ok := nodeMap[nodeMinTokensToStakeSnapshot.NodeAddress]; !ok {
+			nodeMap[nodeMinTokensToStakeSnapshot.NodeAddress] = make([]*schema.NodeMinTokensToStakeSnapshot, 0)
+		}
+
+		nodeMap[nodeMinTokensToStakeSnapshot.NodeAddress] = append(nodeMap[nodeMinTokensToStakeSnapshot.NodeAddress], nodeMinTokensToStakeSnapshot)
+	}
+
+	data := make([]*NodeMinTokensToStakeSnapshots, 0)
+
+	for nodeAddress, snapshots := range nodeMap {
+		data = append(data, &NodeMinTokensToStakeSnapshots{
+			NodeAddress: nodeAddress,
+			Snapshots:   snapshots,
+		})
+	}
+
+	return data
 }

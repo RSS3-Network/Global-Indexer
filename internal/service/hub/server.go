@@ -127,6 +127,8 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			snapshots.GET("/stakers/count", instance.hub.nta.GetStakerCountSnapshots)
 			snapshots.GET("/stakers/profit", instance.hub.nta.GetStakerProfitSnapshots)
 			snapshots.GET("/epochs/apy", instance.hub.nta.GetEpochsAPYSnapshots)
+
+			snapshots.POST("/nodes/min_tokens_to_stake", instance.hub.nta.BatchGetNodeMinTokensToStakeSnapshots)
 		}
 
 		stake := nta.Group("/stakings")
