@@ -1,8 +1,12 @@
 package distributor
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
@@ -53,8 +57,8 @@ func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query stri
 }
 
 // generateRSSHubPath builds the path for RSSHub requests.
-func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
+func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}
@@ -126,8 +130,13 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 }
 
 // generateDecentralizedPath builds the path for decentralized requests.
-func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	var path string
+func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+	var (
+		path   string
+		method = http.MethodGet
+
+		body io.Reader
+	)
 
 	switch req := request.(type) {
 	case dsl.ActivityRequest:
@@ -136,6 +145,14 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 		path = fmt.Sprintf("/decentralized/%s", req.Account)
 	case dsl.AccountsActivitiesRequest:
 		path = "/decentralized/accounts"
+		method = http.MethodPost
+		jsonData, err := json.Marshal(req)
+
+		if err != nil {
+			return nil, fmt.Errorf("marshal request data: %w", err)
+		}
+
+		body = bytes.NewReader(jsonData)
 	case dsl.NetworkActivitiesRequest:
 		path = fmt.Sprintf("/decentralized/network/%s", req.Network)
 	case dsl.PlatformActivitiesRequest:
@@ -144,7 +161,7 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
 
-	endpointMap, err := d.simpleRouter.BuildPath(path, request, nodes)
+	endpointMap, err := d.simpleRouter.BuildPath(method, path, request, nodes, body)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}

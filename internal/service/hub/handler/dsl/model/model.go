@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/node/schema/worker/decentralized"
@@ -81,6 +82,12 @@ type DataResponse struct {
 	ValidPoint int
 	// InvalidPoint is the points given to the response when it is invalid
 	InvalidPoint int
+}
+
+type RequestMeta struct {
+	Method   string
+	Endpoint string
+	Body     io.Reader
 }
 
 type ErrResponse struct {
