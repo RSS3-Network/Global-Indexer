@@ -8,6 +8,7 @@ import (
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/protocol-go/schema"
@@ -30,7 +31,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	activity, err := d.distributor.DistributeActivityRequest(c.Request().Context(), request)
+	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request)
 	if err != nil {
 		zap.L().Error("distribute activity request error", zap.Error(err))
 
@@ -69,7 +70,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		}
 	}
 
-	activities, err := d.distributor.DistributeActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request)
 	if err != nil {
 		zap.L().Error("distribute activities data error", zap.Error(err))
 
@@ -98,7 +99,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	activities, err := d.distributor.DistributeBatchActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request)
 	if err != nil {
 		zap.L().Error("distribute batch activities data error", zap.Error(err))
 
@@ -127,9 +128,9 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	activities, err := d.distributor.DistributeNetworkActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request)
 	if err != nil {
-		zap.L().Error("distribute activities data error", zap.Error(err))
+		zap.L().Error("distribute network activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}
@@ -156,9 +157,9 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	activities, err := d.distributor.DistributePlatformActivitiesData(c.Request().Context(), request)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request)
 	if err != nil {
-		zap.L().Error("distribute activities data error", zap.Error(err))
+		zap.L().Error("distribute platform activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}

@@ -52,175 +52,6 @@ func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query stri
 	return nodeResponse.Data, nil
 }
 
-// DistributeActivityRequest distributes Activity requests to qualified Nodes.
-func (d *Distributor) DistributeActivityRequest(ctx context.Context, request dsl.ActivityRequest) ([]byte, error) {
-	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap, err := d.generateActivityPathByID(request, nodes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivityResponses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
-
-	if nodeResponse.Err != nil {
-		return nil, nodeResponse.Err
-	}
-
-	return nodeResponse.Data, nil
-}
-
-// DistributeActivitiesData distributes Activities requests to qualified Nodes.
-func (d *Distributor) DistributeActivitiesData(ctx context.Context, request dsl.ActivitiesRequest) ([]byte, error) {
-	nodes, err := d.getQualifiedNodes(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap, err := d.generateAccountActivitiesPath(request, nodes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
-
-	if nodeResponse.Err != nil {
-		return nil, nodeResponse.Err
-	}
-
-	return nodeResponse.Data, nil
-}
-
-// DistributeBatchActivitiesData distributes AccountsActivities requests to qualified Nodes.
-func (d *Distributor) DistributeBatchActivitiesData(ctx context.Context, request dsl.AccountsActivitiesRequest) ([]byte, error) {
-	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap, err := d.generateAccountsActivitiesPath(request, nodes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
-
-	if nodeResponse.Err != nil {
-		return nil, nodeResponse.Err
-	}
-
-	return nodeResponse.Data, nil
-}
-
-// DistributeNetworkActivitiesData distributes NetworkActivities requests to qualified Nodes.
-func (d *Distributor) DistributeNetworkActivitiesData(ctx context.Context, request dsl.NetworkActivitiesRequest) ([]byte, error) {
-	nodes, err := d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
-		Network:  []string{request.Network},
-		Platform: request.Platform,
-		Tag:      request.Tag,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap, err := d.generateNetworkActivitiesPath(request, nodes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
-
-	if nodeResponse.Err != nil {
-		return nil, nodeResponse.Err
-	}
-
-	return nodeResponse.Data, nil
-}
-
-// DistributePlatformActivitiesData distributes PlatformActivities requests to qualified Nodes.
-func (d *Distributor) DistributePlatformActivitiesData(ctx context.Context, request dsl.PlatformActivitiesRequest) ([]byte, error) {
-	nodes, err := d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
-		Platform: []string{request.Platform},
-		Network:  request.Network,
-		Tag:      request.Tag,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	nodeMap, err := d.generatePlatformActivitiesPath(request, nodes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processActivitiesResponses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
-
-	if nodeResponse.Err != nil {
-		return nil, nodeResponse.Err
-	}
-
-	return nodeResponse.Data, nil
-}
-
-// generateActivityPathByID builds the path for Activity requests.
-func (d *Distributor) generateActivityPathByID(query dsl.ActivityRequest, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/tx/%s", query.ID), query, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
-	}
-
-	return endpointMap, nil
-}
-
-// generateAccountActivitiesPath builds the path for Activities requests.
-func (d *Distributor) generateAccountActivitiesPath(query dsl.ActivitiesRequest, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/%s", query.Account), query, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
-	}
-
-	return endpointMap, nil
-}
-
 // generateRSSHubPath builds the path for RSSHub requests.
 func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes)
@@ -231,29 +62,89 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 	return endpointMap, nil
 }
 
-// generateAccountsActivitiesPath builds the path for AccountsActivities requests.
-func (d *Distributor) generateAccountsActivitiesPath(query dsl.AccountsActivitiesRequest, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath("/decentralized/accounts", query, nodes)
-	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
+// DistributeDecentralizedData distributes decentralized requests to qualified Nodes.
+func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}) ([]byte, error) {
+	var (
+		nodes          []*model.NodeEndpointCache
+		processResults = d.processActivitiesResponses
+
+		err error
+	)
+
+	switch requestType {
+	case model.DistributorRequestActivity:
+		nodes, err = d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
+		processResults = d.processActivityResponses
+	case model.DistributorRequestAccountActivities:
+		nodes, err = d.getQualifiedNodes(ctx, request.(dsl.ActivitiesRequest))
+	case model.DistributorRequestBatchAccountActivities:
+		req := request.(dsl.AccountsActivitiesRequest)
+		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
+			Network:  req.Network,
+			Platform: req.Platform,
+			Tag:      req.Tag,
+		})
+	case model.DistributorRequestNetworkActivities:
+		req := request.(dsl.NetworkActivitiesRequest)
+		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
+			Network:  []string{req.Network},
+			Platform: req.Platform,
+			Tag:      req.Tag,
+		})
+	case model.DistributorRequestPlatformActivities:
+		req := request.(dsl.PlatformActivitiesRequest)
+		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
+			Platform: []string{req.Platform},
+			Network:  req.Network,
+			Tag:      req.Tag,
+		})
+	default:
+		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
 
-	return endpointMap, nil
-}
-
-// generateNetworkActivitiesPath builds the path for NetworkActivities requests.
-func (d *Distributor) generateNetworkActivitiesPath(query dsl.NetworkActivitiesRequest, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/network/%s", query.Network), query, nodes)
 	if err != nil {
-		return nil, fmt.Errorf("build path: %w", err)
+		return nil, err
 	}
 
-	return endpointMap, nil
+	nodeMap, err := d.generateDecentralizedPath(requestType, request, nodes)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, processResults)
+	if err != nil {
+		return nil, err
+	}
+
+	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
+
+	if nodeResponse.Err != nil {
+		return nil, nodeResponse.Err
+	}
+
+	return nodeResponse.Data, nil
 }
 
-// generatePlatformActivitiesPath builds the path for PlatformActivities requests.
-func (d *Distributor) generatePlatformActivitiesPath(query dsl.PlatformActivitiesRequest, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(fmt.Sprintf("/decentralized/platform/%s", query.Platform), query, nodes)
+// generateDecentralizedPath builds the path for decentralized requests.
+func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
+	var path string
+
+	switch req := request.(type) {
+	case dsl.ActivityRequest:
+		path = fmt.Sprintf("/decentralized/tx/%s", req.ID)
+	case dsl.ActivitiesRequest:
+		path = fmt.Sprintf("/decentralized/%s", req.Account)
+	case dsl.AccountsActivitiesRequest:
+		path = "/decentralized/accounts"
+	case dsl.NetworkActivitiesRequest:
+		path = fmt.Sprintf("/decentralized/network/%s", req.Network)
+	case dsl.PlatformActivitiesRequest:
+		path = fmt.Sprintf("/decentralized/platform/%s", req.Platform)
+	default:
+		return nil, fmt.Errorf("invalid request type: %s", requestType)
+	}
+
+	endpointMap, err := d.simpleRouter.BuildPath(path, request, nodes)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}

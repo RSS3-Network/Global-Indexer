@@ -12,6 +12,14 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
+const (
+	DistributorRequestActivity               = "activity"
+	DistributorRequestAccountActivities      = "activities"
+	DistributorRequestBatchAccountActivities = "batch_activities"
+	DistributorRequestNetworkActivities      = "network_activities"
+	DistributorRequestPlatformActivities     = "platform_activities"
+)
+
 var (
 	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
 	RssNodeCacheKey = "nodes:rss"
