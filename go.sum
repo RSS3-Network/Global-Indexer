@@ -514,8 +514,8 @@ github.com/prometheus/procfs v0.15.0 h1:A82kmvXJq2jTu5YUhSGNlYoxh85zLnKgPz4bMZgI
 github.com/prometheus/procfs v0.15.0/go.mod h1:Y0RJ/Y5g5wJpkTisOtqwDSo4HwhGmLB4VQSw2sQJLHk=
 github.com/redis/go-redis/v9 v9.4.0 h1:Yzoz33UZw9I/mFhx4MNrB6Fk+XHO1VukNcCa1+lwyKk=
 github.com/redis/go-redis/v9 v9.4.0/go.mod h1:hdY0cQFCN4fnSYT6TkisLufl/4W5UIXyv0b/CLO2V2M=
-github.com/redis/rueidis v1.0.39 h1:RNMbL7/tMkiVga/0ukbbFFslcPQckq4zs7c81mkIfTk=
-github.com/redis/rueidis v1.0.39/go.mod h1:bnbkk4+CkXZgDPEbUtSos/o55i4RhFYYesJ4DS2zmq0=
+github.com/redis/rueidis v1.0.40 h1:zoC+GUTdNHhP7ZHrnMiIDcP16DUEVcxsPThQsvD7yDg=
+github.com/redis/rueidis v1.0.40/go.mod h1:bnbkk4+CkXZgDPEbUtSos/o55i4RhFYYesJ4DS2zmq0=
 github.com/redis/rueidis/rueidiscompat v1.0.37 h1:YDV3B+zYnw08r/oH/WorvLnGb4wedC1Vou3gjnmk5qg=
 github.com/redis/rueidis/rueidiscompat v1.0.37/go.mod h1:vMyMT9TWeL9I4BEIhCODehEbrrnuEGuG6Zp4vJjWH94=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
@@ -532,8 +532,8 @@ github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/rs/cors v1.9.0 h1:l9HGsTsHJcvW14Nk7J9KFz8bzeAWXn3CG6bgt7LsrAE=
 github.com/rs/cors v1.9.0/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
-github.com/rss3-network/node v0.5.20 h1:UaDF/ZMlV2DIcFi2scWqcJdmS7Nqk1AENR/Ybp+BwGQ=
-github.com/rss3-network/node v0.5.20/go.mod h1:QR8OjjhI383FySohDp5Z24e6Z7lAILqynwywGj6ANrQ=
+github.com/rss3-network/node v0.5.23 h1:LxSj7egRMl75I4MhWpegNTxxpLNMCFesN4AWverAQsM=
+github.com/rss3-network/node v0.5.23/go.mod h1:3Pg2GrvwzIWAfjeflYzl+VHM2ctFplp3ty1biGgbY98=
 github.com/rss3-network/protocol-go v0.5.1 h1:0KYyIsb2N+aNpGrY7h6Bln0WVYyRJA5QnfEBq+WN1+w=
 github.com/rss3-network/protocol-go v0.5.1/go.mod h1:npcyduWt86uVbIi77xQaYk8eqltI9XNjk1FMGpjyIq0=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
