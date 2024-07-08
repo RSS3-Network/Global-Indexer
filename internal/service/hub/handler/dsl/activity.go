@@ -11,7 +11,9 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
+	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
+	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"go.uber.org/zap"
 )
@@ -52,12 +54,16 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
 	if err = c.Validate(&request); err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	if err = defaults.Set(&request); err != nil {
-		return errorx.BadRequestError(c, err)
+	if err = validParams(request.Tag, request.Network, request.Platform); err != nil {
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	// Resolve name to EVM address
@@ -91,12 +97,16 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
 	if err = c.Validate(&request); err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	if err = defaults.Set(&request); err != nil {
-		return errorx.BadRequestError(c, err)
+	if err = validParams(request.Tag, request.Network, request.Platform); err != nil {
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request)
@@ -120,12 +130,16 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
 	if err = c.Validate(&request); err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	if err = defaults.Set(&request); err != nil {
-		return errorx.BadRequestError(c, err)
+	if err = validParams(request.Tag, []string{request.Network}, request.Platform); err != nil {
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request)
@@ -149,12 +163,16 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
+	if err = defaults.Set(&request); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
 	if err = c.Validate(&request); err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	if err = defaults.Set(&request); err != nil {
-		return errorx.BadRequestError(c, err)
+	if err = validParams(request.Tag, request.Network, []string{request.Platform}); err != nil {
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request)
@@ -206,4 +224,27 @@ func parseParams(params url.Values, tags []string) ([]string, error) {
 	}
 
 	return types, nil
+}
+
+// validParams checks if the tags, networks, and platforms are valid.
+func validParams(tags, networks, platforms []string) error {
+	for _, tagX := range tags {
+		if _, err := tag.TagString(tagX); err != nil {
+			return err
+		}
+	}
+
+	for _, networkX := range networks {
+		if _, err := network.NetworkString(networkX); err != nil {
+			return err
+		}
+	}
+
+	for _, platform := range platforms {
+		if _, err := decentralized.PlatformString(platform); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
