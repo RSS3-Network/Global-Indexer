@@ -157,6 +157,142 @@
                 }
             }
         },
+        "/decentralized/accounts": {
+            "post": {
+                "summary": "Batch Get Accounts Activities",
+                "description": "Retrieve a batch of activities associated with multiple specified accounts in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "tags": [
+                    "Decentralized",
+                    "DSL"
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/BatchGetAccountsActivities"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/decentralized/network/{network}": {
+            "get": {
+                "summary": "Get Network Activities",
+                "description": "Retrieve a list of activities from the specified decentralized network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "tags": [
+                    "Decentralized",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/network_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/platform_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/decentralized/platform/{platform}": {
+            "get": {
+                "summary": "Get Platform Activities",
+                "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "tags": [
+                    "Decentralized",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/platform_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/network_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/ActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/rss/{path}": {
             "get": {
                 "summary": "Get RSS Activity by Path",
@@ -1019,7 +1155,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -2397,6 +2533,26 @@
                 },
                 "example": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
             },
+            "network_path": {
+                "description": "Retrieve activities from the specified network.",
+                "example": "ethereum",
+                "in": "path",
+                "name": "network",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "platform_path": {
+                "description": "Retrieve activities from the specified platform.",
+                "example": "Uniswap",
+                "in": "path",
+                "name": "platform",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
             "limit_query": {
                 "name": "limit",
                 "in": "query",
@@ -2508,6 +2664,30 @@
                     "items": {
                         "$ref": "#/components/schemas/Type"
                     }
+                }
+            },
+            "tag_query": {
+                "description": "Retrieve activities for the specified tag(s).",
+                "in": "query",
+                "name": "tag",
+                "required": false,
+                "schema": {
+                    "items": {
+                        "$ref": "#/components/schemas/Tag"
+                    },
+                    "type": "array"
+                }
+            },
+            "type_query": {
+                "description": "Retrieve activities for the specified type(s).",
+                "in": "query",
+                "name": "type",
+                "required": false,
+                "schema": {
+                    "items": {
+                        "$ref": "#/components/schemas/Type"
+                    },
+                    "type": "array"
                 }
             },
             "platform_query": {
@@ -2786,6 +2966,92 @@
                                     "type": "boolean",
                                     "description": "If true, only return the start and end min_tokens_to_stake.",
                                     "example": false
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "BatchGetAccountsActivities": {
+                "description": "Request body for batch retrieving activities for multiple accounts",
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "accounts": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "List of accounts to retrieve activities for",
+                                    "example": [
+                                        "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
+                                    ]
+                                },
+                                "limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of activities to retrieve",
+                                    "example": 20,
+                                    "default": 100,
+                                    "minimum": 1,
+                                    "maximum": 100
+                                },
+                                "action_limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of actions within the activity to retrieve",
+                                    "example": 10,
+                                    "default": 10,
+                                    "minimum": 1,
+                                    "maximum": 20
+                                },
+                                "cursor": {
+                                    "type": "string",
+                                    "description": "Specify the cursor used for pagination"
+                                },
+                                "since_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities starting from this timestamp"
+                                },
+                                "until_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities up to this timestamp"
+                                },
+                                "success": {
+                                    "type": "boolean",
+                                    "description": "Retrieve activities based on success status"
+                                },
+                                "direction": {
+                                    "$ref": "#/components/schemas/Direction"
+                                },
+                                "network": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Network"
+                                    },
+                                    "description": "Retrieve activities from the specified network(s)"
+                                },
+                                "tag": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Tag"
+                                    },
+                                    "description": "Retrieve activities for the specified tag(s)"
+                                },
+                                "type": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Type"
+                                    },
+                                    "description": "Retrieve activities for the specified type(s)"
+                                },
+                                "platform": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Platform"
+                                    },
+                                    "description": "Retrieve activities from the specified platform(s)"
                                 }
                             }
                         }

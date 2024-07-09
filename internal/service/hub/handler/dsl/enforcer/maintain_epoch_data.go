@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -347,7 +348,7 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint string) (*WorkerResponse, error) {
 	fullURL := endpoint + "/workers_status"
 
-	body, err := e.httpClient.Fetch(ctx, fullURL)
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, nil)
 	if err != nil {
 		return nil, err
 	}

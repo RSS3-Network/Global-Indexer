@@ -22,7 +22,7 @@ const (
 )
 
 type Client interface {
-	Fetch(ctx context.Context, path string) (io.ReadCloser, error)
+	FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (io.ReadCloser, error)
 }
 
 var _ Client = (*httpClient)(nil)
@@ -32,9 +32,9 @@ type httpClient struct {
 	attempts   uint
 }
 
-func (h *httpClient) Fetch(ctx context.Context, path string) (readCloser io.ReadCloser, err error) {
+func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (readCloser io.ReadCloser, err error) {
 	retryableFunc := func() error {
-		readCloser, err = h.fetch(ctx, path)
+		readCloser, err = h.fetchWithMethod(ctx, method, path, body)
 		return err
 	}
 
@@ -49,10 +49,14 @@ func (h *httpClient) Fetch(ctx context.Context, path string) (readCloser io.Read
 	return readCloser, nil
 }
 
-func (h *httpClient) fetch(ctx context.Context, path string) (io.ReadCloser, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
+func (h *httpClient) fetchWithMethod(ctx context.Context, method, path string, body io.Reader) (io.ReadCloser, error) {
+	request, err := http.NewRequestWithContext(ctx, method, path, body)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
+	}
+
+	if method == http.MethodPost {
+		request.Header.Set("Content-Type", "application/json")
 	}
 
 	response, err := h.httpClient.Do(request)

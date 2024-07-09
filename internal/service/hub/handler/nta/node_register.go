@@ -302,7 +302,7 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 
 // checkAvailable checks if the endpoint is available and contains the node's address.
 func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address common.Address) error {
-	response, err := n.httpClient.Fetch(ctx, endpoint)
+	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return fmt.Errorf("fetch node endpoint %s: %w", endpoint, err)
 	}

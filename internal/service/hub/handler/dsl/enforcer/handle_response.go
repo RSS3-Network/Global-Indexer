@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"runtime"
 	"sort"
 
@@ -228,7 +229,7 @@ func generateInvalidResponse(err error, activity *model.ActivityResponse) json.R
 func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*model.ActivityResponse, error) {
 	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
-	body, err := e.httpClient.Fetch(ctx, fullURL)
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, nil)
 	if err != nil {
 		return nil, err
 	}

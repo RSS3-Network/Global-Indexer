@@ -147,6 +147,10 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 		dsl.GET("/rss/*", instance.hub.dsl.GetRSSHub)
 		dsl.GET("/decentralized/tx/:id", instance.hub.dsl.GetActivity)
 		dsl.GET("/decentralized/:account", instance.hub.dsl.GetAccountActivities)
+		dsl.GET("/decentralized/network/:network", instance.hub.dsl.GetNetworkActivities)
+		dsl.GET("/decentralized/platform/:platform", instance.hub.dsl.GetPlatformActivities)
+
+		dsl.POST("/decentralized/accounts", instance.hub.dsl.BatchGetAccountsActivities)
 	}
 
 	return &instance, nil
