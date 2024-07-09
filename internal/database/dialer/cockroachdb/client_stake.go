@@ -404,6 +404,14 @@ func (c *client) SaveStakeTransaction(ctx context.Context, stakeTransaction *sch
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 
@@ -419,6 +427,14 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 

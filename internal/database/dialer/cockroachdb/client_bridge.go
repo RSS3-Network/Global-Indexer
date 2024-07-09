@@ -165,6 +165,14 @@ func (c *client) SaveBridgeTransaction(ctx context.Context, bridgeTransaction *s
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 
@@ -180,6 +188,14 @@ func (c *client) SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.Bridge
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 

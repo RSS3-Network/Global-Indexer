@@ -476,7 +476,14 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 				Name: "log_index",
 			},
 		},
-		UpdateAll: true,
+		Where: clause.Where{
+			Exprs: []clause.Expression{
+				clause.Eq{
+					Column: fmt.Sprintf("%s.finalized", event.TableName()),
+					Value:  false,
+				},
+			},
+		},
 	}
 
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&event).Error
