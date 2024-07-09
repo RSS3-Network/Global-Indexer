@@ -2,6 +2,7 @@ package httputil_test
 
 import (
 	"context"
+	"net/http"
 	"sync"
 	"testing"
 
@@ -23,7 +24,7 @@ func setup(t *testing.T) {
 	})
 }
 
-func TestHTTPClient_Fetch(t *testing.T) {
+func TestHTTPClient_FetchWithMethod(t *testing.T) {
 	t.Parallel()
 
 	setup(t)
@@ -56,7 +57,7 @@ func TestHTTPClient_Fetch(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := httpClient.Fetch(context.TODO(), testcase.arguments.url)
+			_, err := httpClient.FetchWithMethod(context.TODO(), http.MethodGet, testcase.arguments.url, nil)
 			require.NoError(t, err)
 		})
 	}
