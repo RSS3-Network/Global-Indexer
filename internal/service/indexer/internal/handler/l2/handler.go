@@ -8,8 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv1 "github.com/rss3-network/global-indexer/contract/l2/staking/v1"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/indexer/internal"
@@ -27,8 +25,7 @@ type handler struct {
 	contractL2CrossDomainMessenger *bindings.L2CrossDomainMessenger
 	contractL2StandardBridge       *bindings.L2StandardBridge
 	contractL2ToL1MessagePasser    *bindings.L2ToL1MessagePasser
-	contractStakingV1              *stakingv1.Staking
-	contractStakingV2              *stakingv2.Staking
+	contractStaking                *l2.Staking
 	contractChips                  *l2.Chips
 }
 
@@ -55,7 +52,7 @@ func (h *handler) Process(ctx context.Context, block *types.Block, receipts type
 
 	header := block.Header()
 
-	for transactionIndex, receipt := range receipts {
+	for _, receipt := range receipts {
 		// Discard all contract creation transactions.
 		if block.Transaction(receipt.TxHash).To() == nil {
 			continue
@@ -83,17 +80,8 @@ func (h *handler) Process(ctx context.Context, block *types.Block, receipts type
 					return fmt.Errorf("index bridge log: %w", err)
 				}
 			case l2.ContractMap[h.chainID].AddressStakingProxy:
-				transaction := block.Transaction(log.TxHash)
-
-				switch {
-				case l2.IsStakingV2Deployed(h.chainID, header.Number, uint(transactionIndex)): // Staking V2
-					if err := h.indexStakingV2Log(ctx, header, transaction, receipt, log, databaseTransaction); err != nil {
-						return fmt.Errorf("index staking v2 log: %w", err)
-					}
-				default:
-					if err := h.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction); err != nil {
-						return fmt.Errorf("index staking log: %w", err)
-					}
+				if err := h.indexStakingLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
+					return fmt.Errorf("index staking v2 log: %w", err)
 				}
 			case l2.ContractMap[h.chainID].AddressChipsProxy:
 				if err := h.indexChipsLog(ctx, header, block.Transaction(log.TxHash), receipt, log, databaseTransaction); err != nil {
@@ -121,8 +109,7 @@ func NewHandler(chainID uint64, ethereumClient *ethclient.Client, cacheClient ca
 		contractL2CrossDomainMessenger: lo.Must(bindings.NewL2CrossDomainMessenger(l2.AddressL2CrossDomainMessengerProxy, ethereumClient)),
 		contractL2StandardBridge:       lo.Must(bindings.NewL2StandardBridge(l2.AddressL2StandardBridgeProxy, ethereumClient)),
 		contractL2ToL1MessagePasser:    lo.Must(bindings.NewL2ToL1MessagePasser(l2.AddressL2ToL1MessagePasser, ethereumClient)),
-		contractStakingV1:              lo.Must(stakingv1.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)),
-		contractStakingV2:              lo.Must(stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)),
+		contractStaking:                lo.Must(l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)),
 		contractChips:                  lo.Must(l2.NewChips(contractAddresses.AddressChipsProxy, ethereumClient)),
 	}
 

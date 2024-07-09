@@ -8,7 +8,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
@@ -59,7 +58,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
 	}
 
-	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}

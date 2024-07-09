@@ -14,7 +14,6 @@ import (
 	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/config/flag"
@@ -36,7 +35,7 @@ type Server struct {
 	settlerConfig   *config.Settler
 	ethereumClient  *ethclient.Client
 	databaseClient  database.Client
-	stakingContract *stakingv2.Staking
+	stakingContract *l2.Staking
 	// specialRewards is a temporary rewards available at Alpha stage
 	// it will be removed in the future
 
@@ -232,7 +231,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
 	}
 
-	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
