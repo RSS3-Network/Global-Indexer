@@ -92,6 +92,7 @@ func (i *indexer) index(ctx context.Context) (err error) {
 			"waiting for a new block to be minted",
 			zap.Uint64("block.number.local", i.checkpoint.BlockNumber),
 			zap.Uint64("block.number.latest", i.blockNumberLatest),
+			zap.Bool("finalized", i.finalized),
 			zap.Duration("block.confirmationTime", blockConfirmationTime),
 		)
 
@@ -108,6 +109,13 @@ func (i *indexer) index(ctx context.Context) (err error) {
 	}
 
 	blockNumber := i.checkpoint.BlockNumber + 1
+
+	zap.L().Info(
+		"handing block",
+		zap.Uint64("block.number.local", i.checkpoint.BlockNumber),
+		zap.Uint64("block.number.latest", i.blockNumberLatest),
+		zap.Bool("finalized", i.finalized),
+	)
 
 	block, err := i.ethereumClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	if err != nil {
@@ -131,11 +139,11 @@ func (i *indexer) index(ctx context.Context) (err error) {
 		return fmt.Errorf("process block %d: %w", block.NumberU64(), err)
 	}
 
-	if i.finalized {
-		// Update and save checkpoint to memory and database.
-		i.checkpoint.BlockHash = block.Hash()
-		i.checkpoint.BlockNumber = block.NumberU64()
+	// Update and save checkpoint to memory and database.
+	i.checkpoint.BlockHash = block.Hash()
+	i.checkpoint.BlockNumber = block.NumberU64()
 
+	if i.finalized {
 		if err := databaseTransaction.SaveCheckpoint(ctx, i.checkpoint); err != nil {
 			return fmt.Errorf("save checkpoint: %w", err)
 		}
