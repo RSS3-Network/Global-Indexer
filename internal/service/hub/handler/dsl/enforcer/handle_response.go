@@ -25,6 +25,34 @@ const (
 	invalidPointUnit = 1
 )
 
+func (e *SimpleEnforcer) updateCacheRequest(ctx context.Context, responses []*model.DataResponse) {
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(responses) < 20*runtime.NumCPU(), len(responses), 20*runtime.NumCPU()))
+
+	for _, response := range responses {
+		response := response
+
+		statsPool.Go(func(ctx context.Context) error {
+			if response.InvalidPoint > 0 {
+				if err := e.cacheClient.IncrBy(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, response.Address.String()), int64(response.InvalidPoint)); err != nil {
+					return err
+				}
+			}
+
+			if response.ValidPoint > 0 {
+				if err := e.cacheClient.IncrBy(ctx, formatNodeStatRedisKey(model.ValidRequestCount, response.Address.String()), int64(response.ValidPoint)); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	if err := statsPool.Wait(); err != nil {
+		zap.L().Error("failed to update cache request", zap.Error(err))
+	}
+}
+
 func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model.DataResponse) (map[common.Address]*schema.Stat, error) {
 	stats, err := e.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
 		Addresses: lo.Map(responses, func(response *model.DataResponse, _ int) common.Address {
@@ -41,16 +69,41 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model
 	}), nil
 }
 
-func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, nodeStats []*schema.Stat) {
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
+func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, responses []*model.DataResponse) {
+	nodeStatsMap, _ := e.getNodeStatsMap(ctx, responses)
 
-	for i := range nodeStats {
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStatsMap) < 20*runtime.NumCPU(), len(nodeStatsMap), 20*runtime.NumCPU()))
+
+	for i := range responses {
 		i := i
 
-		statsPool.Go(func(_ context.Context) error {
-			calculateReliabilityScore(nodeStats[i])
+		statsPool.Go(func(ctx context.Context) error {
+			stat := nodeStatsMap[responses[i].Address]
 
-			e.updateScoreMaintainer(ctx, nodeStats[i])
+			var (
+				invalidCount int64
+				validCount   int64
+			)
+
+			if err := getCacheCount(ctx, e.cacheClient, model.InvalidRequestCount, stat.Address, &invalidCount, stat.EpochInvalidRequest); err != nil {
+				return err
+			}
+
+			if err := getCacheCount(ctx, e.cacheClient, model.ValidRequestCount, stat.Address, &validCount, stat.EpochRequest); err != nil {
+				return err
+			}
+
+			stat.EpochInvalidRequest = invalidCount
+
+			if stat.EpochRequest < validCount {
+				stat.TotalRequest += validCount - stat.EpochRequest
+			}
+
+			stat.EpochRequest = validCount
+
+			calculateReliabilityScore(stat)
+
+			e.updateScoreMaintainer(ctx, stat)
 
 			return nil
 		})
@@ -62,18 +115,11 @@ func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, nodeSta
 }
 
 func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStat *schema.Stat) {
-	nodeCache := &model.NodeEndpointCache{
-		Address:      nodeStat.Address.String(),
-		Score:        nodeStat.Score,
-		Endpoint:     nodeStat.Endpoint,
-		InvalidCount: nodeStat.EpochInvalidRequest,
-	}
-
-	if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, nodeCache); err != nil {
+	if err := e.fullNodeScoreMaintainer.addOrUpdateScore(ctx, model.FullNodeCacheKey, nodeStat); err != nil {
 		zap.L().Error("failed to update full node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
 	}
 
-	if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, nodeCache); err != nil {
+	if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, nodeStat); err != nil {
 		zap.L().Error("failed to update rss node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
 	}
 }
@@ -245,17 +291,6 @@ func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, 
 	}
 
 	return nil, fmt.Errorf("invalid data")
-}
-
-// updateStatsWithResults updates the stats based on the responses.
-func updateStatsWithResults(statsMap map[common.Address]*schema.Stat, responses []*model.DataResponse) {
-	for _, response := range responses {
-		if stat, exists := statsMap[response.Address]; exists {
-			stat.TotalRequest += int64(response.ValidPoint)
-			stat.EpochRequest += int64(response.ValidPoint)
-			stat.EpochInvalidRequest += int64(response.InvalidPoint)
-		}
-	}
 }
 
 // sortResponseByValidity sorts the responses based on the validity.

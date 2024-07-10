@@ -27,6 +27,11 @@ var (
 	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
 
+	// InvalidRequestCount is the prefix used for cache keys related to storing invalid request counts in the current epoch.
+	InvalidRequestCount = "node:request:count:invalid"
+	// ValidRequestCount is the prefix used for cache keys related to storing valid request counts in the current epoch.
+	ValidRequestCount = "node:request:count:valid"
+
 	// WorkerToNetworksMapKey is the cache key for the map of Workers to Networks.
 	WorkerToNetworksMapKey = "map:worker_to_networks"
 	// NetworkToWorkersMapKey is the cache key for the map of Networks to Workers.
@@ -63,10 +68,9 @@ var (
 
 // NodeEndpointCache stores the elements in the heap.
 type NodeEndpointCache struct {
-	Address      string `json:"address"`
-	Endpoint     string `json:"endpoint"`
-	Score        float64
-	InvalidCount int64
+	Address  string  `json:"address"`
+	Endpoint string  `json:"endpoint"`
+	Score    float64 `json:"score"`
 }
 
 // DataResponse represents the response returned by a Node.

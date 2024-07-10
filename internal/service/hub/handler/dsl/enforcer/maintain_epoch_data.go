@@ -261,7 +261,6 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			// different from the previous one.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
-				stats[i].EpochRequest = 0
 				stats[i].EpochInvalidRequest = 0
 			}
 
@@ -454,7 +453,7 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				return e.processNodeStats(ctx, stats)
+				return e.processNodeStats(ctx, stats, true)
 			}
 
 			zap.L().Error("Error setting cache", zap.Error(err))
@@ -514,45 +513,53 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error
 
 // updateSortedSetForNodeType updates the sorted set for different types of Nodes.
 func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+	nodeStats, err := retrieveNodeStatsFromDB(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return node.Address, node
+	nodesEndpointCachesMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (string, string) {
+		return stat.Address.String(), stat.Endpoint
 	})
 
+	// Get current members from Redis sorted set
 	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
 	if err != nil {
 		return err
 	}
 
-	membersToRemove := make([]string, 0)
-	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
+	// Prepare batch operations for Redis Sorted Set
+	membersToAdd, membersToRemove := prepareMembers(members, nodesEndpointCachesMap, nodeStats)
 
-	for _, member := range members {
-		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
-			membersToRemove = append(membersToRemove, member.Member.(string))
+	if len(membersToRemove) > 0 {
+		if err = e.cacheClient.ZRem(ctx, key, membersToRemove); err != nil {
+			return fmt.Errorf("failed to remove old members: %w", err)
 		}
-	}
-
-	for _, node := range nodesEndpointCaches {
-		membersToAdd = append(membersToAdd, redis.Z{
-			Member: node.Address,
-			Score:  node.Score,
-		})
 	}
 
 	if len(membersToAdd) > 0 {
 		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
-			return err
+			return fmt.Errorf("failed to add new members: %w", err)
 		}
 	}
 
-	if len(membersToRemove) == 0 {
-		return nil
+	return nil
+}
+
+// prepareMembers prepares the members to add and remove in the sorted set.
+func prepareMembers(members []redis.Z, nodesEndpointCachesMap map[string]string, nodeStats []*schema.Stat) ([]redis.Z, []string) {
+	membersToRemove := filterMembersToRemove(members, nodesEndpointCachesMap)
+
+	membersToAdd := make([]redis.Z, 0)
+
+	for _, stat := range nodeStats {
+		if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
+			membersToAdd = append(membersToAdd, redis.Z{
+				Member: stat.Address.String(),
+				Score:  stat.Score,
+			})
+		}
 	}
 
-	return e.cacheClient.ZRem(ctx, key, membersToRemove)
+	return membersToAdd, membersToRemove
 }
