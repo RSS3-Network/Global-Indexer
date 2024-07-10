@@ -25,12 +25,12 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if err = c.Validate(&request); err != nil {
-		return errorx.ValidationFailedError(c, err)
-	}
-
 	if err = defaults.Set(&request); err != nil {
 		return errorx.BadRequestError(c, err)
+	}
+
+	if err = c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request)
