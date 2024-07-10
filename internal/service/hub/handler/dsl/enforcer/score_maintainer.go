@@ -37,8 +37,6 @@ func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, 
 			if err := sm.cacheClient.ZRem(ctx, setKey, nodeStat.Address.String()); err != nil {
 				return err
 			}
-			// Remove from map.
-			delete(sm.nodeEndpointCaches, nodeStat.Address.String())
 		}
 
 		return nil
