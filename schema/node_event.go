@@ -9,9 +9,8 @@ import (
 type NodeEventType string
 
 const (
-	NodeEventNodeCreated            NodeEventType = "nodeCreated"
-	NodeEventNodeUpdated            NodeEventType = "nodeUpdated"
-	NodeEventNodeUpdated2PublicGood NodeEventType = "nodeUpdated2PublicGood"
+	NodeEventNodeCreated NodeEventType = "nodeCreated"
+	NodeEventNodeUpdated NodeEventType = "nodeUpdated"
 )
 
 type NodeEvent struct {
@@ -54,4 +53,12 @@ type NodeUpdatedMetadata struct {
 type NodeUpdated2PublicGoodMetadata struct {
 	Address    common.Address `json:"address"`
 	PublicGood bool           `json:"public_good"`
+}
+
+type NodeEventsQuery struct {
+	NodeAddress *common.Address
+	Cursor      *string
+	Limit       *int
+	Finalized   *bool
+	Type        *NodeEventType
 }

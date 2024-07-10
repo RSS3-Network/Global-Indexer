@@ -476,6 +476,7 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 				Name: "log_index",
 			},
 		},
+		UpdateAll: true,
 		Where: clause.Where{
 			Exprs: []clause.Expression{
 				clause.Eq{
@@ -489,13 +490,13 @@ func (c *client) SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent)
 	return c.database.WithContext(ctx).Clauses(onConflict).Create(&event).Error
 }
 
-func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address, cursor *string, limit int) ([]*schema.NodeEvent, error) {
+func (c *client) FindNodeEvents(ctx context.Context, query *schema.NodeEventsQuery) ([]*schema.NodeEvent, error) {
 	databaseStatement := c.database.WithContext(ctx)
 
-	if cursor != nil {
-		key := strings.Split(*cursor, ":")
+	if query.Cursor != nil {
+		key := strings.Split(*query.Cursor, ":")
 		if len(key) != 3 {
-			return nil, fmt.Errorf("invalid cursor: %s", *cursor)
+			return nil, fmt.Errorf("invalid cursor: %s", *query.Cursor)
 		}
 
 		var nodeEvent *table.NodeEvent
@@ -512,11 +513,25 @@ func (c *client) FindNodeEvents(ctx context.Context, nodeAddress common.Address,
 			Or("block_number = ? AND transaction_index < ? AND log_index < ?", nodeEvent.BlockNumber, nodeEvent.TransactionIndex, nodeEvent.LogIndex)
 	}
 
+	if query.NodeAddress != nil {
+		databaseStatement = databaseStatement.Where("address_from = ?", query.NodeAddress)
+	}
+
+	if query.Finalized != nil {
+		databaseStatement = databaseStatement.Where("finalized = ?", query.Finalized)
+	}
+
+	if query.Type != nil {
+		databaseStatement = databaseStatement.Where("type = ?", query.Type)
+	}
+
+	if query.Limit != nil {
+		databaseStatement = databaseStatement.Limit(*query.Limit)
+	}
+
 	var events table.NodeEvents
 
-	if err := databaseStatement.Where("address_from = ?", nodeAddress).
-		Order("block_number DESC, transaction_index DESC, log_index DESC").
-		Limit(limit).Find(&events).Error; err != nil {
+	if err := databaseStatement.Order("block_number DESC, transaction_index DESC, log_index DESC").Find(&events).Error; err != nil {
 		return nil, err
 	}
 

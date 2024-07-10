@@ -132,8 +132,19 @@ func (n *NTA) GetNodeAvatar(c echo.Context) error {
 
 func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node, error) {
 	node, err := n.databaseClient.FindNode(ctx, address)
-	if err != nil {
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, fmt.Errorf("get Node %s: %w", address, err)
+	}
+
+	if node == nil {
+		node = &schema.Node{
+			Status: schema.NodeStatusRegistered,
+			Avatar: &l2.ChipsTokenMetadata{
+				Name: "Node Avatar",
+			},
+			ActiveScore:       decimal.Zero,
+			StakingPoolTokens: decimal.Zero.String(),
+		}
 	}
 
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
@@ -144,7 +155,7 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 	var reliabilityScore decimal.Decimal
 
 	nodeStat, err := n.databaseClient.FindNodeStat(ctx, address)
-	if err != nil {
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, fmt.Errorf("get Node Stat %s: %w", address, err)
 	}
 
@@ -163,6 +174,8 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		nodeInfo.StakingPoolTokens = publicPool.StakingPoolTokens
 	}
 
+	node.ID = nodeInfo.NodeId
+	node.Address = nodeInfo.Account
 	node.Name = nodeInfo.Name
 	node.Description = nodeInfo.Description
 	node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
@@ -190,6 +203,40 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 	addresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
 		return node.Address
 	})
+
+	// Get uncertain node from event.
+	uncertainNodeEvents, err := n.databaseClient.FindNodeEvents(ctx, &schema.NodeEventsQuery{
+		Finalized: lo.ToPtr(false),
+		Type:      lo.ToPtr(schema.NodeEventNodeCreated),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get Node Events: %w", err)
+	}
+
+	for _, event := range uncertainNodeEvents {
+		if event.Metadata.NodeCreatedMetadata == nil {
+			zap.L().Error("invalid NodeCreatedMetadata", zap.Any("event", event))
+
+			continue
+		}
+
+		if _, exists := lo.Find(addresses, func(item common.Address) bool {
+			return item == event.Metadata.NodeCreatedMetadata.Address
+		}); exists {
+			continue
+		}
+
+		nodes = append(nodes, &schema.Node{
+			Address: event.Metadata.NodeCreatedMetadata.Address,
+			ID:      event.Metadata.NodeCreatedMetadata.NodeID,
+			Status:  schema.NodeStatusRegistered,
+			Avatar: &l2.ChipsTokenMetadata{
+				Name: "Node Avatar",
+			},
+		})
+
+		addresses = append(addresses, event.Metadata.NodeCreatedMetadata.Address)
+	}
 
 	// Get node info from VSL.
 	nodeInfo, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
@@ -219,7 +266,9 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		}
 
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
+			node.ID = nodeInfo.NodeId
 			node.Name = nodeInfo.Name
+			node.IsPublicGood = nodeInfo.PublicGood
 			node.Description = nodeInfo.Description
 			node.TaxRateBasisPoints = &nodeInfo.TaxRateBasisPoints
 			node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
@@ -236,7 +285,12 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte, error) {
 	avatar, err := n.databaseClient.FindNodeAvatar(ctx, address)
 	if err != nil {
-		return nil, fmt.Errorf("get Node avatar %s: %w", address, err)
+		zap.L().Error("get Node avatar failed", zap.Error(err))
+
+		avatar, err = n.buildNodeAvatar(ctx, address)
+		if err != nil {
+			return nil, fmt.Errorf("get Node avatar %s: %w", address, err)
+		}
 	}
 
 	data, ok := strings.CutPrefix(avatar.Image, "data:image/svg+xml;base64,")
