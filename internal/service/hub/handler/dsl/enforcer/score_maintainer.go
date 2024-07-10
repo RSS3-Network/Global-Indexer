@@ -236,7 +236,7 @@ func adjustMembersToSet(ctx context.Context, setKey string, newMembers []redis.Z
 
 // filterMembers filters out the members that are not in the nodeEndpointCaches.
 func filterMembersToRemove(members []redis.Z, nodeEndpointCaches map[string]string) []string {
-	membersToRemove := make([]string, 0)
+	membersToRemove := make([]string, 0, len(members))
 
 	for _, member := range members {
 		if _, ok := nodeEndpointCaches[member.Member.(string)]; !ok {

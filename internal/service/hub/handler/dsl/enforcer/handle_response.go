@@ -31,7 +31,7 @@ func (e *SimpleEnforcer) updateCacheRequest(ctx context.Context, responses []*mo
 	for _, response := range responses {
 		response := response
 
-		statsPool.Go(func(_ context.Context) error {
+		statsPool.Go(func(ctx context.Context) error {
 			if response.InvalidPoint > 0 {
 				if err := e.cacheClient.IncrBy(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, response.Address.String()), int64(response.InvalidPoint)); err != nil {
 					return err
@@ -77,7 +77,7 @@ func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, respons
 	for i := range responses {
 		i := i
 
-		statsPool.Go(func(_ context.Context) error {
+		statsPool.Go(func(ctx context.Context) error {
 			stat := nodeStatsMap[responses[i].Address]
 
 			var (
