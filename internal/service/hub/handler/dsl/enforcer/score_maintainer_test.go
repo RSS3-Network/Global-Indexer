@@ -125,7 +125,7 @@ func TestScoreMaintainer(t *testing.T) {
 		EpochInvalidRequest: int64(model.DemotionCountBeforeSlashing),
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 4, len(sm.nodeEndpointCaches))
+	assert.Equal(t, 5, len(sm.nodeEndpointCaches))
 
 	// Retrieve qualified nodes
 	nodes, err = sm.retrieveQualifiedNodes(context.Background(), setKey, 10)
