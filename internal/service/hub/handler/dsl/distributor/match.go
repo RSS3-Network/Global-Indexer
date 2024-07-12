@@ -6,8 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker/decentralized"
-	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/samber/lo"
 )
 
@@ -90,10 +88,8 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 	}
 
 	for n, workers := range networkWorkersMap.Workers {
-		nid, _ := network.NetworkString(n)
-
 		// Check if the workers match the required workers for the network.
-		requiredWorkers := model.NetworkToWorkersMap[nid.String()]
+		requiredWorkers := model.NetworkToWorkersMap[n]
 		if !AreSliceElementsIdentical(workers, requiredWorkers) {
 			return false
 		}
@@ -158,9 +154,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := decentralized.WorkerString(w)
-
-		requiredNetworks := model.WorkerToNetworksMap[wid.String()]
+		requiredNetworks := model.WorkerToNetworksMap[w]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
@@ -206,9 +200,7 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := decentralized.WorkerString(w)
-
-		workerRequiredNetworks := model.WorkerToNetworksMap[wid.String()]
+		workerRequiredNetworks := model.WorkerToNetworksMap[w]
 
 		requiredNetworks := IntersectUnique(workerRequiredNetworks, requestNetworks)
 

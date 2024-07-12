@@ -255,21 +255,21 @@ func validateCombinedParams(inputTags, inputNetworks, inputPlatforms []string) (
 	// If no common workers are found between tag workers and network workers,
 	// it indicates that tags and networks are not compatible.
 	if len(workers) == 0 && (len(tagWorkers) > 0 || len(networkWorks) > 0) {
-		return nil, nil, fmt.Errorf("no workers found for tags and networks")
+		return nil, nil, fmt.Errorf("no workers meet the conditions tags and networks")
 	}
 
 	workers = combineWorkers(networkWorks, platformWorkers)
 	// If no common workers are found between network workers and platform workers,
 	// it indicates that networks and platforms are not compatible.
 	if len(workers) == 0 && (len(networkWorks) > 0 || len(platformWorkers) > 0) {
-		return nil, nil, fmt.Errorf("no workers found for networks and platforms")
+		return nil, nil, fmt.Errorf("no workers meet the conditions networks and platforms")
 	}
 
 	workers = combineWorkers(tagWorkers, platformWorkers)
 	// If no common workers are found between tag workers and platform workers,
 	// it indicates that tags and platforms are not compatible.
 	if len(workers) == 0 && (len(tagWorkers) > 0 || len(platformWorkers) > 0) {
-		return nil, nil, fmt.Errorf("no workers found for tags and platforms")
+		return nil, nil, fmt.Errorf("no workers meet the conditions tags and platforms")
 	}
 
 	return lo.Keys(workers), networks, nil
