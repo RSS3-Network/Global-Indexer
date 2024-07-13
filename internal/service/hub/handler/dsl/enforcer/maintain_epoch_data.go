@@ -201,7 +201,7 @@ func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 		go func(i int) {
 			defer wg.Done()
 
-			if err := e.cacheClient.Set(ctx, keys[i], maps[i]); err != nil {
+			if err := e.cacheClient.Set(ctx, keys[i], maps[i], 0); err != nil {
 				errChan <- err
 			}
 		}(i)
@@ -508,7 +508,7 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error
 		}
 	}
 
-	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch)
+	return e.cacheClient.Set(ctx, model.SubscribeNodeCacheKey, epoch, 0)
 }
 
 // updateSortedSetForNodeType updates the sorted set for different types of Nodes.

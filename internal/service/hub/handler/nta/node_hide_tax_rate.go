@@ -30,7 +30,7 @@ func (n *NTA) PostNodeHideTaxRate(c echo.Context) error {
 	}
 
 	// Cache the hide tax rate status
-	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.NodeAddress), true); err != nil {
+	if err := n.cacheClient.Set(c.Request().Context(), n.buildNodeHideTaxRateKey(request.NodeAddress), true, 0); err != nil {
 		zap.L().Error("cache hide tax value", zap.Error(err))
 
 		return errorx.InternalError(c)

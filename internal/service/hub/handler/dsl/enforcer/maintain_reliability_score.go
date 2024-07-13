@@ -183,11 +183,11 @@ func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.
 			} else {
 				stats[i].EpochRequest = 0
 
-				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.ValidRequestCount, stats[i].Address.String()), 0); err != nil {
+				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.ValidRequestCount, stats[i].Address.String()), 0, 0); err != nil {
 					return fmt.Errorf("reset valid request count: %w", err)
 				}
 
-				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), stats[i].EpochInvalidRequest); err != nil {
+				if err := e.cacheClient.Set(ctx, formatNodeStatRedisKey(model.InvalidRequestCount, stats[i].Address.String()), stats[i].EpochInvalidRequest, 0); err != nil {
 					return fmt.Errorf("reset invalid request count: %w", err)
 				}
 			}
