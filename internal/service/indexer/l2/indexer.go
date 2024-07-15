@@ -244,8 +244,7 @@ func (s *server) indexBlock(ctx context.Context, block *types.Block, receipts ty
 
 	for _, receipt := range receipts {
 		// Discard all contract creation transactions.
-		tx := block.Transaction(receipt.TxHash)
-		if tx == nil || tx.To() == nil {
+		if tx := block.Transaction(receipt.TxHash); tx == nil || tx.To() == nil {
 			continue
 		}
 
