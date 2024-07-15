@@ -56,6 +56,12 @@ var (
 		decentralized.PlatformFarcaster.String(): {},
 	}
 
+	// RenameWorkerMap is a map of workers to their corresponding names.
+	// Dealing with some unclear expressions may lead to problems in distributing tasks to workers.
+	RenameWorkerMap = map[network.Network]string{
+		network.Farcaster: "farcaster",
+	}
+
 	// WorkerToNetworksMap is a map of workers to networks, filtering out the complete network types that workers support.
 	WorkerToNetworksMap = make(map[string][]string, len(decentralized.WorkerValues()))
 	// NetworkToWorkersMap is a map of Networks to Workers, filtering out the complete worker types that networks support.

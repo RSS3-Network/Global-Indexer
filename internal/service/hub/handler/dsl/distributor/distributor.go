@@ -67,7 +67,7 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 }
 
 // DistributeDecentralizedData distributes decentralized requests to qualified Nodes.
-func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}) ([]byte, error) {
+func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}, workers, networks []string) ([]byte, error) {
 	var (
 		nodes          []*model.NodeEndpointCache
 		processResults = d.processActivitiesResponses
@@ -80,28 +80,13 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 		nodes, err = d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
 		processResults = d.processActivityResponses
 	case model.DistributorRequestAccountActivities:
-		nodes, err = d.getQualifiedNodes(ctx, request.(dsl.ActivitiesRequest))
+		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
 	case model.DistributorRequestBatchAccountActivities:
-		req := request.(dsl.AccountsActivitiesRequest)
-		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
-			Network:  req.Network,
-			Platform: req.Platform,
-			Tag:      req.Tag,
-		})
+		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
 	case model.DistributorRequestNetworkActivities:
-		req := request.(dsl.NetworkActivitiesRequest)
-		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
-			Network:  []string{req.Network},
-			Platform: req.Platform,
-			Tag:      req.Tag,
-		})
+		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
 	case model.DistributorRequestPlatformActivities:
-		req := request.(dsl.PlatformActivitiesRequest)
-		nodes, err = d.getQualifiedNodes(ctx, dsl.ActivitiesRequest{
-			Platform: []string{req.Platform},
-			Network:  req.Network,
-			Tag:      req.Tag,
-		})
+		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
 	default:
 		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
