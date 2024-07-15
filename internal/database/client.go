@@ -79,6 +79,7 @@ type Client interface {
 	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
 	FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
+	DeleteStakeChipsByBlockNumber(ctx context.Context, blockNumber uint64) error
 	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error

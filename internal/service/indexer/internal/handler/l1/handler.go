@@ -26,12 +26,8 @@ type handler struct {
 }
 
 func (h *handler) Process(ctx context.Context, block *types.Block, receipts types.Receipts, databaseTransaction database.Client) error {
-	if err := databaseTransaction.DeleteBridgeTransactionsByBlockNumber(ctx, h.chainID, block.NumberU64()); err != nil {
-		return fmt.Errorf("delete bridge transactions by block number: %w", err)
-	}
-
-	if err := databaseTransaction.DeleteBridgeEventsByBlockNumber(ctx, h.chainID, block.NumberU64()); err != nil {
-		return fmt.Errorf("delete bridge events by block number: %w", err)
+	if err := h.deleteUnfinalizedBlock(ctx, block.NumberU64(), databaseTransaction); err != nil {
+		return fmt.Errorf("delete unfinalized block: %w", err)
 	}
 
 	header := block.Header()
@@ -65,6 +61,18 @@ func (h *handler) Process(ctx context.Context, block *types.Block, receipts type
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) error {
+	if err := databaseTransaction.DeleteBridgeTransactionsByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
+		return fmt.Errorf("delete bridge transactions by block number: %w", err)
+	}
+
+	if err := databaseTransaction.DeleteBridgeEventsByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
+		return fmt.Errorf("delete bridge events by block number: %w", err)
 	}
 
 	return nil

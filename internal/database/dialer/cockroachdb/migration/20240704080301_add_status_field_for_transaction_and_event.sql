@@ -9,6 +9,8 @@ ALTER TABLE "stake"."transactions"
     ADD COLUMN "finalized" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE "stake"."events"
     ADD COLUMN "finalized" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE "stake"."chips"
+    ADD COLUMN "finalized" BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER TABLE "node"."events"
     ADD COLUMN "finalized" BOOLEAN NOT NULL DEFAULT FALSE;
@@ -24,6 +26,8 @@ ALTER TABLE "bridge"."events"
 ALTER TABLE "stake"."transactions"
     DROP COLUMN "finalized";
 ALTER TABLE "stake"."events"
+    DROP COLUMN "finalized";
+ALTER TABLE "stake"."chips"
     DROP COLUMN "finalized";
 
 ALTER TABLE "node"."events"

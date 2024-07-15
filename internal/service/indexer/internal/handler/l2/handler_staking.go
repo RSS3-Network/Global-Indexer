@@ -267,11 +267,6 @@ func (h *handler) indexStakingStakedLog(ctx context.Context, header *types.Heade
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
-	// Skip save chips if the block is not finalized.
-	if !h.finalized {
-		return nil
-	}
-
 	resultPool := pool.
 		NewWithResults[*schema.StakeChip]().
 		WithContext(ctx).
@@ -310,6 +305,7 @@ func (h *handler) indexStakingStakedLog(ctx context.Context, header *types.Heade
 				Metadata:       metadata,
 				BlockNumber:    header.Number,
 				BlockTimestamp: header.Time,
+				Finalized:      h.finalized,
 			}
 
 			return &stakeChip, nil

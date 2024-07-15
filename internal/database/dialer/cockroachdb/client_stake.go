@@ -239,6 +239,13 @@ func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery)
 	return result, nil
 }
 
+func (c *client) DeleteStakeChipsByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.StakeChip), `"block_number" = ? AND NOT "finalized"`, blockNumber).
+		Error
+}
+
 func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error) {
 	databaseClient := c.database.
 		WithContext(ctx).
@@ -444,6 +451,20 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error {
 	values := make([]*table.StakeChip, 0, len(stakeChips))
 
+	clauses := []clause.Expression{
+		clause.OnConflict{
+			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", (*table.StakeChip)(nil).TableName()),
+						Value:  false,
+					},
+				},
+			},
+		},
+	}
+
 	for _, stakeChip := range stakeChips {
 		var value table.StakeChip
 
@@ -454,7 +475,7 @@ func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.Stake
 		values = append(values, &value)
 	}
 
-	return c.database.WithContext(ctx).Create(&values).Error
+	return c.database.WithContext(ctx).Create(&values).Clauses(clauses...).Error
 }
 
 func (c *client) UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChipIDs ...*big.Int) error {
