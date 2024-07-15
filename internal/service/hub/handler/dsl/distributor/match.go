@@ -2,114 +2,16 @@ package distributor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
-	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker/decentralized"
-	"github.com/rss3-network/protocol-go/schema/network"
-	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
 )
 
 // matchLightNodes matches light Nodes based on the given Activities request
 // A light Node is a non-Full Node
-func (d *Distributor) matchLightNodes(ctx context.Context, request dsl.ActivitiesRequest) ([]common.Address, error) {
-	// Find network nodes that match the network requests.
-	networks, err := getNetworks(request.Network)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find tag workers that match the tag requests.
-	tagWorkers, err := getWorkersByTag(request.Tag)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find platform workers that match the platform requests.
-	platformWorkers, err := getWorkersByPlatform(request.Platform)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find nodes that match the tag workers, platform workers, and networks.
-	return d.findQualifiedNodes(ctx, tagWorkers, platformWorkers, networks)
-}
-
-type WorkerSet map[string]struct{}
-
-// getNetworks returns a slice of networks based on the given network names.
-func getNetworks(networks []string) ([]string, error) {
-	for i, n := range networks {
-		nid, err := network.NetworkString(n)
-		if err != nil {
-			return nil, err
-		}
-
-		networks[i] = nid.String()
-	}
-
-	return networks, nil
-}
-
-// getWorkersByTag returns a set of workers based on the given tags.
-func getWorkersByTag(tags []string) (WorkerSet, error) {
-	tagWorkers := make(WorkerSet)
-
-	for _, tagX := range tags {
-		tid, err := tag.TagString(tagX)
-		if err != nil {
-			return nil, err
-		}
-
-		tagWorker, exists := model.TagToWorkersMap[tid.String()]
-		if !exists {
-			return nil, fmt.Errorf("no workers found for tag: %s", tid)
-		}
-
-		for _, w := range tagWorker {
-			tagWorkers[w] = struct{}{}
-		}
-	}
-
-	return tagWorkers, nil
-}
-
-// getWorkersByPlatform returns a set of workers based on the given platforms.
-func getWorkersByPlatform(platforms []string) (WorkerSet, error) {
-	platformWorkers := make(WorkerSet)
-
-	for _, platform := range platforms {
-		pid, err := decentralized.PlatformString(platform)
-		if err != nil {
-			return nil, err
-		}
-
-		workers, exists := model.PlatformToWorkersMap[pid.String()]
-		if !exists {
-			return nil, fmt.Errorf("no worker found for platform: %s", pid)
-		}
-
-		for _, w := range workers {
-			platformWorkers[w] = struct{}{}
-		}
-	}
-
-	return platformWorkers, nil
-}
-
-// findQualifiedNodes finds nodes that match the given tag workers, platform workers, and networks.
-func (d *Distributor) findQualifiedNodes(ctx context.Context, tagWorkers, platformWorkers WorkerSet, networks []string) ([]common.Address, error) {
-	workers := combineTagAndPlatformWorkers(tagWorkers, platformWorkers)
-	// If no common workers are found between tag workers and platform workers,
-	// it indicates that tags and platforms are not compatible.
-	if len(workers) == 0 && (len(tagWorkers) > 0 || len(platformWorkers) > 0) {
-		return nil, fmt.Errorf("no workers found for tags and platforms")
-	}
-
+func (d *Distributor) matchLightNodes(ctx context.Context, workers, networks []string) ([]common.Address, error) {
 	var (
 		nodes []common.Address
 		err   error
@@ -122,24 +24,9 @@ func (d *Distributor) findQualifiedNodes(ctx context.Context, tagWorkers, platfo
 		nodes, err = d.matchWorker(ctx, workers)
 	case len(networks) > 0:
 		nodes, err = d.matchNetwork(ctx, networks)
-	default:
 	}
 
 	return nodes, err
-}
-
-// combineTagAndPlatformWorkers combines tag workers and platform workers.
-func combineTagAndPlatformWorkers(tagWorkers, platformWorkers WorkerSet) []string {
-	if len(tagWorkers) == 0 {
-		return lo.Keys(platformWorkers)
-	}
-
-	if len(platformWorkers) == 0 {
-		return lo.Keys(tagWorkers)
-	}
-
-	// Find common workers between tag workers and platform workers.
-	return IntersectUnique(lo.Keys(tagWorkers), lo.Keys(platformWorkers))
 }
 
 // matchNetwork matches nodes based on the given network requests,
@@ -201,10 +88,8 @@ func isValidNetworkNode(networkWorkersMap NetworkWorkersMap, requestNetworks []s
 	}
 
 	for n, workers := range networkWorkersMap.Workers {
-		nid, _ := network.NetworkString(n)
-
 		// Check if the workers match the required workers for the network.
-		requiredWorkers := model.NetworkToWorkersMap[nid.String()]
+		requiredWorkers := model.NetworkToWorkersMap[n]
 		if !AreSliceElementsIdentical(workers, requiredWorkers) {
 			return false
 		}
@@ -269,9 +154,7 @@ func isValidWorkerNode(workerNetworksMap WorkerNetworksMap, workers []string) bo
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := decentralized.WorkerString(w)
-
-		requiredNetworks := model.WorkerToNetworksMap[wid.String()]
+		requiredNetworks := model.WorkerToNetworksMap[w]
 		if !AreSliceElementsIdentical(networks, requiredNetworks) {
 			return false
 		}
@@ -317,9 +200,7 @@ func isValidWorkerAndNetworkNode(workerNetworksMap WorkerNetworksMap, workers, r
 	}
 
 	for w, networks := range workerNetworksMap.Networks {
-		wid, _ := decentralized.WorkerString(w)
-
-		workerRequiredNetworks := model.WorkerToNetworksMap[wid.String()]
+		workerRequiredNetworks := model.WorkerToNetworksMap[w]
 
 		requiredNetworks := IntersectUnique(workerRequiredNetworks, requestNetworks)
 

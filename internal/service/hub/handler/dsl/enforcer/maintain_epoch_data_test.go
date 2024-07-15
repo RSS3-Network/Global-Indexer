@@ -171,12 +171,12 @@ func TestGenerateMaps(t *testing.T) {
 			network.Polygon.String():           {},
 			network.SatoshiVM.String():         {},
 			network.VSL.String():               {},
-			network.Farcaster.String():         {},
-			network.Crossbell.String():         {},
-			network.Arbitrum.String():          {},
-			network.Gnosis.String():            {},
-			network.Avalanche.String():         {},
-			network.Base.String():              {},
+			//network.Farcaster.String():         {},
+			network.Crossbell.String(): {},
+			network.Arbitrum.String():  {},
+			network.Gnosis.String():    {},
+			network.Avalanche.String(): {},
+			network.Base.String():      {},
 		},
 		decentralized.Curve.String(): {
 			network.Arbitrum.String():  {},
@@ -185,6 +185,9 @@ func TestGenerateMaps(t *testing.T) {
 			network.Gnosis.String():    {},
 			network.Optimism.String():  {},
 			network.Polygon.String():   {},
+		},
+		"farcaster": {
+			network.Farcaster.String(): {},
 		},
 		decentralized.Highlight.String(): {
 			network.Ethereum.String(): {},
@@ -346,7 +349,7 @@ func TestGenerateMaps(t *testing.T) {
 		},
 
 		network.Farcaster.String(): {
-			decentralized.Core.String(): {},
+			"farcaster": {},
 		},
 	}
 
@@ -369,7 +372,7 @@ func TestGenerateMaps(t *testing.T) {
 		decentralized.PlatformStargate.String():   {decentralized.Stargate.String(): {}},
 		decentralized.PlatformUniswap.String():    {decentralized.Uniswap.String(): {}},
 		decentralized.PlatformVSL.String():        {decentralized.VSL.String(): {}},
-		decentralized.PlatformFarcaster.String():  {decentralized.Core.String(): {}},
+		decentralized.PlatformFarcaster.String():  {"farcaster": {}},
 		decentralized.PlatformLens.String():       {decentralized.Lens.String(): {}, decentralized.Momoka.String(): {}},
 		decentralized.PlatformMirror.String():     {decentralized.Mirror.String(): {}},
 		decentralized.PlatformParagraph.String():  {decentralized.Paragraph.String(): {}},
@@ -402,7 +405,7 @@ func TestGenerateMaps(t *testing.T) {
 		tag.Social.String(): {
 			decentralized.KiwiStand.String(): {},
 			decentralized.IQWiki.String():    {},
-			decentralized.Core.String():      {},
+			"farcaster":                      {},
 			decentralized.Momoka.String():    {},
 			decentralized.Lens.String():      {},
 			decentralized.Mirror.String():    {},

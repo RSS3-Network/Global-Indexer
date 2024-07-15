@@ -68,7 +68,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			if err != nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
-				// Disqualifie the node from the current request distribution round
+				// Disqualified the node from the current request distribution round
 				// if retrieving the epoch status fails.
 				return
 			}
@@ -83,40 +83,50 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 					continue
 				}
 
-				mu.Lock()
-				if _, ok := networkToWorkersMap[workerInfo.Network.String()]; !ok {
-					networkToWorkersMap[workerInfo.Network.String()] = make(map[string]struct{})
+				networkName := workerInfo.Network.String()
+				platformName := workerInfo.Platform.String()
+				workerName := workerInfo.Worker.String()
+
+				if name, exist := model.RenameWorkerMap[workerInfo.Network]; exist {
+					workerName = name
 				}
 
-				networkToWorkersMap[workerInfo.Network.String()][workerInfo.Worker.String()] = struct{}{}
+				mu.Lock()
+				if _, ok := networkToWorkersMap[networkName]; !ok {
+					networkToWorkersMap[networkName] = make(map[string]struct{})
+				}
+
+				networkToWorkersMap[workerInfo.Network.String()][workerName] = struct{}{}
 				mu.Unlock()
 
 				mu.Lock()
-				if _, ok := platformToWorkersMap[workerInfo.Platform.String()]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
+				if _, ok := platformToWorkersMap[platformName]; !ok && platformName != decentralized.PlatformUnknown.String() {
 					platformToWorkersMap[workerInfo.Platform.String()] = make(map[string]struct{})
 				}
 
-				if workerInfo.Platform != decentralized.PlatformUnknown {
-					platformToWorkersMap[workerInfo.Platform.String()][workerInfo.Worker.String()] = struct{}{}
+				if platformName != decentralized.PlatformUnknown.String() {
+					platformToWorkersMap[platformName][workerName] = struct{}{}
 				}
 				mu.Unlock()
 
 				for _, tagX := range workerInfo.Tags {
 					mu.Lock()
-					if _, ok := tagToWorkersMap[tagX.String()]; !ok {
-						tagToWorkersMap[tagX.String()] = make(map[string]struct{})
+					tagName := tagX.String()
+
+					if _, ok := tagToWorkersMap[tagName]; !ok {
+						tagToWorkersMap[tagName] = make(map[string]struct{})
 					}
 
-					tagToWorkersMap[tagX.String()][workerInfo.Worker.String()] = struct{}{}
+					tagToWorkersMap[tagName][workerName] = struct{}{}
 					mu.Unlock()
 				}
 
 				mu.Lock()
-				if _, ok := fullNodeWorkerToNetworksMap[workerInfo.Worker.String()]; !ok {
-					fullNodeWorkerToNetworksMap[workerInfo.Worker.String()] = make(map[string]struct{})
+				if _, ok := fullNodeWorkerToNetworksMap[workerName]; !ok {
+					fullNodeWorkerToNetworksMap[workerName] = make(map[string]struct{})
 				}
 
-				fullNodeWorkerToNetworksMap[workerInfo.Worker.String()][workerInfo.Network.String()] = struct{}{}
+				fullNodeWorkerToNetworksMap[workerName][networkName] = struct{}{}
 				mu.Unlock()
 			}
 		}(stat)
@@ -319,11 +329,18 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 	workerToNetworksMap := make(map[string]map[string]struct{})
 
 	for _, w := range workers {
-		if _, exists := workerToNetworksMap[w.Worker.Name()]; !exists {
-			workerToNetworksMap[w.Worker.Name()] = make(map[string]struct{})
+		workerName := w.Worker.String()
+		networkName := w.Network.String()
+
+		if name, exist := model.RenameWorkerMap[w.Network]; exist {
+			workerName = name
 		}
 
-		workerToNetworksMap[w.Worker.Name()][w.Network.String()] = struct{}{}
+		if _, exists := workerToNetworksMap[workerName]; !exists {
+			workerToNetworksMap[workerName] = make(map[string]struct{})
+		}
+
+		workerToNetworksMap[workerName][networkName] = struct{}{}
 	}
 
 	// Ensure each worker has all required networks present.
