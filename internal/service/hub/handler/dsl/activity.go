@@ -204,7 +204,7 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
 	var err error
 
-	nsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError().WithMaxGoroutines(len(accounts))
+	nsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i := range accounts {
 		i := i
