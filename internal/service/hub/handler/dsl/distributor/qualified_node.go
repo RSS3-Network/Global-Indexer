@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
-	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 )
@@ -13,9 +12,9 @@ import (
 // A qualified Node has the capability to serve the incoming request.
 
 // getQualifiedNodes retrieves all qualified Nodes from the cache or database.
-func (d *Distributor) getQualifiedNodes(ctx context.Context, request dsl.ActivitiesRequest) ([]*model.NodeEndpointCache, error) {
+func (d *Distributor) getQualifiedNodes(ctx context.Context, workers, networks []string) ([]*model.NodeEndpointCache, error) {
 	// Match light Nodes.
-	lightNodes, err := d.matchLightNodes(ctx, request)
+	lightNodes, err := d.matchLightNodes(ctx, workers, networks)
 	if err != nil {
 		return nil, err
 	}
