@@ -76,9 +76,9 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 
 	// Resolve name to EVM address
 	if !validEvmAddress(request.Account) {
-		request.Account, err = d.getEVMAddress(c.Request().Context(), request.Account)
-		if err != nil {
-			return errorx.BadRequestError(c, err)
+		resolvedName, err := d.getEVMAddress(c.Request().Context(), request.Account)
+		if err == nil {
+			request.Account = resolvedName
 		}
 	}
 
@@ -211,9 +211,9 @@ func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
 
 		nsPool.Go(func(ctx context.Context) error {
 			if !validEvmAddress(accounts[i]) {
-				accounts[i], err = d.getEVMAddress(ctx, accounts[i])
-				if err != nil {
-					return err
+				resolvedName, err := d.getEVMAddress(ctx, accounts[i])
+				if err == nil {
+					accounts[i] = resolvedName
 				}
 			}
 
