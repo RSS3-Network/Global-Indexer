@@ -94,7 +94,7 @@ type MockHTTPClient struct {
 	mock.Mock
 }
 
-func (m *MockHTTPClient) Fetch(ctx context.Context, endpoint string) (io.ReadCloser, error) {
+func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ io.Reader) (io.ReadCloser, error) {
 	args := m.Called(ctx, endpoint)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
@@ -103,7 +103,7 @@ func TestGetNodeWorkerStatus(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(MockHTTPClient)
-	mockClient.On("Fetch", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
 
 	enforcer := &SimpleEnforcer{httpClient: mockClient}
 	response, err := enforcer.getNodeWorkerStatus(context.Background(), "http://localhost:8080")
@@ -116,9 +116,9 @@ func TestGenerateMaps(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(MockHTTPClient)
-	mockClient.On("Fetch", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
-	mockClient.On("Fetch", mock.Anything, "http://localhost:8081/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode2))), nil)
-	mockClient.On("Fetch", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode3))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode2))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode3))), nil)
 
 	enforcer := &SimpleEnforcer{httpClient: mockClient}
 	stats := []*schema.Stat{
@@ -171,12 +171,12 @@ func TestGenerateMaps(t *testing.T) {
 			network.Polygon.String():           {},
 			network.SatoshiVM.String():         {},
 			network.VSL.String():               {},
-			network.Farcaster.String():         {},
-			network.Crossbell.String():         {},
-			network.Arbitrum.String():          {},
-			network.Gnosis.String():            {},
-			network.Avalanche.String():         {},
-			network.Base.String():              {},
+			//network.Farcaster.String():         {},
+			network.Crossbell.String(): {},
+			network.Arbitrum.String():  {},
+			network.Gnosis.String():    {},
+			network.Avalanche.String(): {},
+			network.Base.String():      {},
 		},
 		decentralized.Curve.String(): {
 			network.Arbitrum.String():  {},
@@ -185,6 +185,9 @@ func TestGenerateMaps(t *testing.T) {
 			network.Gnosis.String():    {},
 			network.Optimism.String():  {},
 			network.Polygon.String():   {},
+		},
+		"farcaster": {
+			network.Farcaster.String(): {},
 		},
 		decentralized.Highlight.String(): {
 			network.Ethereum.String(): {},
@@ -346,7 +349,7 @@ func TestGenerateMaps(t *testing.T) {
 		},
 
 		network.Farcaster.String(): {
-			decentralized.Core.String(): {},
+			"farcaster": {},
 		},
 	}
 
@@ -369,7 +372,7 @@ func TestGenerateMaps(t *testing.T) {
 		decentralized.PlatformStargate.String():   {decentralized.Stargate.String(): {}},
 		decentralized.PlatformUniswap.String():    {decentralized.Uniswap.String(): {}},
 		decentralized.PlatformVSL.String():        {decentralized.VSL.String(): {}},
-		decentralized.PlatformFarcaster.String():  {decentralized.Core.String(): {}},
+		decentralized.PlatformFarcaster.String():  {"farcaster": {}},
 		decentralized.PlatformLens.String():       {decentralized.Lens.String(): {}, decentralized.Momoka.String(): {}},
 		decentralized.PlatformMirror.String():     {decentralized.Mirror.String(): {}},
 		decentralized.PlatformParagraph.String():  {decentralized.Paragraph.String(): {}},
@@ -402,7 +405,7 @@ func TestGenerateMaps(t *testing.T) {
 		tag.Social.String(): {
 			decentralized.KiwiStand.String(): {},
 			decentralized.IQWiki.String():    {},
-			decentralized.Core.String():      {},
+			"farcaster":                      {},
 			decentralized.Momoka.String():    {},
 			decentralized.Lens.String():      {},
 			decentralized.Mirror.String():    {},

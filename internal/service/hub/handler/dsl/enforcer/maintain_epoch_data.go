@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -67,7 +68,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			if err != nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
-				// Disqualifie the node from the current request distribution round
+				// Disqualified the node from the current request distribution round
 				// if retrieving the epoch status fails.
 				return
 			}
@@ -82,40 +83,50 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 					continue
 				}
 
-				mu.Lock()
-				if _, ok := networkToWorkersMap[workerInfo.Network.String()]; !ok {
-					networkToWorkersMap[workerInfo.Network.String()] = make(map[string]struct{})
+				networkName := workerInfo.Network.String()
+				platformName := workerInfo.Platform.String()
+				workerName := workerInfo.Worker.String()
+
+				if name, exist := model.RenameWorkerMap[workerInfo.Network]; exist {
+					workerName = name
 				}
 
-				networkToWorkersMap[workerInfo.Network.String()][workerInfo.Worker.String()] = struct{}{}
+				mu.Lock()
+				if _, ok := networkToWorkersMap[networkName]; !ok {
+					networkToWorkersMap[networkName] = make(map[string]struct{})
+				}
+
+				networkToWorkersMap[workerInfo.Network.String()][workerName] = struct{}{}
 				mu.Unlock()
 
 				mu.Lock()
-				if _, ok := platformToWorkersMap[workerInfo.Platform.String()]; !ok && workerInfo.Platform != decentralized.PlatformUnknown {
+				if _, ok := platformToWorkersMap[platformName]; !ok && platformName != decentralized.PlatformUnknown.String() {
 					platformToWorkersMap[workerInfo.Platform.String()] = make(map[string]struct{})
 				}
 
-				if workerInfo.Platform != decentralized.PlatformUnknown {
-					platformToWorkersMap[workerInfo.Platform.String()][workerInfo.Worker.String()] = struct{}{}
+				if platformName != decentralized.PlatformUnknown.String() {
+					platformToWorkersMap[platformName][workerName] = struct{}{}
 				}
 				mu.Unlock()
 
 				for _, tagX := range workerInfo.Tags {
 					mu.Lock()
-					if _, ok := tagToWorkersMap[tagX.String()]; !ok {
-						tagToWorkersMap[tagX.String()] = make(map[string]struct{})
+					tagName := tagX.String()
+
+					if _, ok := tagToWorkersMap[tagName]; !ok {
+						tagToWorkersMap[tagName] = make(map[string]struct{})
 					}
 
-					tagToWorkersMap[tagX.String()][workerInfo.Worker.String()] = struct{}{}
+					tagToWorkersMap[tagName][workerName] = struct{}{}
 					mu.Unlock()
 				}
 
 				mu.Lock()
-				if _, ok := fullNodeWorkerToNetworksMap[workerInfo.Worker.String()]; !ok {
-					fullNodeWorkerToNetworksMap[workerInfo.Worker.String()] = make(map[string]struct{})
+				if _, ok := fullNodeWorkerToNetworksMap[workerName]; !ok {
+					fullNodeWorkerToNetworksMap[workerName] = make(map[string]struct{})
 				}
 
-				fullNodeWorkerToNetworksMap[workerInfo.Worker.String()][workerInfo.Network.String()] = struct{}{}
+				fullNodeWorkerToNetworksMap[workerName][networkName] = struct{}{}
 				mu.Unlock()
 			}
 		}(stat)
@@ -260,7 +271,6 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			// different from the previous one.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
-				stats[i].EpochRequest = 0
 				stats[i].EpochInvalidRequest = 0
 			}
 
@@ -319,11 +329,18 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 	workerToNetworksMap := make(map[string]map[string]struct{})
 
 	for _, w := range workers {
-		if _, exists := workerToNetworksMap[w.Worker.Name()]; !exists {
-			workerToNetworksMap[w.Worker.Name()] = make(map[string]struct{})
+		workerName := w.Worker.String()
+		networkName := w.Network.String()
+
+		if name, exist := model.RenameWorkerMap[w.Network]; exist {
+			workerName = name
 		}
 
-		workerToNetworksMap[w.Worker.Name()][w.Network.String()] = struct{}{}
+		if _, exists := workerToNetworksMap[workerName]; !exists {
+			workerToNetworksMap[workerName] = make(map[string]struct{})
+		}
+
+		workerToNetworksMap[workerName][networkName] = struct{}{}
 	}
 
 	// Ensure each worker has all required networks present.
@@ -347,7 +364,7 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint string) (*WorkerResponse, error) {
 	fullURL := endpoint + "/workers_status"
 
-	body, err := e.httpClient.Fetch(ctx, fullURL)
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +470,7 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 					return err
 				}
 
-				return e.processNodeStats(ctx, stats)
+				return e.processNodeStats(ctx, stats, true)
 			}
 
 			zap.L().Error("Error setting cache", zap.Error(err))
@@ -513,45 +530,53 @@ func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error
 
 // updateSortedSetForNodeType updates the sorted set for different types of Nodes.
 func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key string) error {
-	nodesEndpointCaches, err := retrieveNodeEndpointCaches(ctx, key, e.databaseClient)
+	nodeStats, err := retrieveNodeStatsFromDB(ctx, key, e.databaseClient)
 	if err != nil {
 		return err
 	}
 
-	nodesEndpointCachesMap := lo.SliceToMap(nodesEndpointCaches, func(node *model.NodeEndpointCache) (string, *model.NodeEndpointCache) {
-		return node.Address, node
+	nodesEndpointCachesMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (string, string) {
+		return stat.Address.String(), stat.Endpoint
 	})
 
+	// Get current members from Redis sorted set
 	members, err := e.cacheClient.ZRevRangeWithScores(ctx, key, 0, -1)
 	if err != nil {
 		return err
 	}
 
-	membersToRemove := make([]string, 0)
-	membersToAdd := make([]redis.Z, 0, len(nodesEndpointCachesMap))
+	// Prepare batch operations for Redis Sorted Set
+	membersToAdd, membersToRemove := prepareMembers(members, nodesEndpointCachesMap, nodeStats)
 
-	for _, member := range members {
-		if _, ok := nodesEndpointCachesMap[member.Member.(string)]; !ok {
-			membersToRemove = append(membersToRemove, member.Member.(string))
+	if len(membersToRemove) > 0 {
+		if err = e.cacheClient.ZRem(ctx, key, membersToRemove); err != nil {
+			return fmt.Errorf("failed to remove old members: %w", err)
 		}
-	}
-
-	for _, node := range nodesEndpointCaches {
-		membersToAdd = append(membersToAdd, redis.Z{
-			Member: node.Address,
-			Score:  node.Score,
-		})
 	}
 
 	if len(membersToAdd) > 0 {
 		if err = e.cacheClient.ZAdd(ctx, key, membersToAdd...); err != nil {
-			return err
+			return fmt.Errorf("failed to add new members: %w", err)
 		}
 	}
 
-	if len(membersToRemove) == 0 {
-		return nil
+	return nil
+}
+
+// prepareMembers prepares the members to add and remove in the sorted set.
+func prepareMembers(members []redis.Z, nodesEndpointCachesMap map[string]string, nodeStats []*schema.Stat) ([]redis.Z, []string) {
+	membersToRemove := filterMembersToRemove(members, nodesEndpointCachesMap)
+
+	membersToAdd := make([]redis.Z, 0)
+
+	for _, stat := range nodeStats {
+		if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
+			membersToAdd = append(membersToAdd, redis.Z{
+				Member: stat.Address.String(),
+				Score:  stat.Score,
+			})
+		}
 	}
 
-	return e.cacheClient.ZRem(ctx, key, membersToRemove)
+	return membersToAdd, membersToRemove
 }

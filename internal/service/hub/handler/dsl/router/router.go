@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"sync"
 
@@ -26,8 +27,8 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(path string, query any, nodes []*model.NodeEndpointCache) (map[common.Address]string, error) {
-	if query != nil {
+func (r *SimpleRouter) BuildPath(method, path string, query any, nodes []*model.NodeEndpointCache, body io.Reader) (map[common.Address]model.RequestMeta, error) {
+	if method == http.MethodGet && query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
 		if err != nil {
@@ -37,7 +38,7 @@ func (r *SimpleRouter) BuildPath(path string, query any, nodes []*model.NodeEndp
 		path = fmt.Sprintf("%s?%s", path, values.Encode())
 	}
 
-	urls := make(map[common.Address]string, len(nodes))
+	urls := make(map[common.Address]model.RequestMeta, len(nodes))
 
 	for _, node := range nodes {
 		fullURL, err := url.JoinPath(node.Endpoint, path)
@@ -45,18 +46,26 @@ func (r *SimpleRouter) BuildPath(path string, query any, nodes []*model.NodeEndp
 			return nil, fmt.Errorf("failed to join path for node %s: %w", node.Address, err)
 		}
 
-		decodedURL, err := url.QueryUnescape(fullURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unescape url for node %s: %w", node.Address, err)
+		if method != http.MethodPost {
+			decodedURL, err := url.QueryUnescape(fullURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unescape url for node %s: %w", node.Address, err)
+			}
+
+			fullURL = decodedURL
 		}
 
-		urls[common.HexToAddress(node.Address)] = decodedURL
+		urls[common.HexToAddress(node.Address)] = model.RequestMeta{
+			Method:   method,
+			Endpoint: fullURL,
+			Body:     body,
+		}
 	}
 
 	return urls, nil
 }
 
-func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse)) (model.DataResponse, error) {
+func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]model.RequestMeta, processResponses func([]*model.DataResponse)) (model.DataResponse, error) {
 	// firstResponse is a channel that will be used to send the first response
 	var firstResponse = make(chan model.DataResponse, 1)
 
@@ -73,7 +82,7 @@ func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common
 }
 
 // distribute sends the request to the Nodes and processes the responses
-func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]string, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
+func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Address]model.RequestMeta, processResponses func([]*model.DataResponse), firstResponse chan<- model.DataResponse) {
 	var (
 		waitGroup sync.WaitGroup
 		mu        sync.Mutex
@@ -89,15 +98,15 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 	defer cancel()
 
-	for address, endpoint := range nodeMap {
+	for address, requestMeta := range nodeMap {
 		waitGroup.Add(1)
 
-		go func(address common.Address, endpoint string) {
+		go func(address common.Address, requestMeta model.RequestMeta) {
 			defer waitGroup.Done()
 
-			response := &model.DataResponse{Address: address, Endpoint: endpoint}
+			response := &model.DataResponse{Address: address, Endpoint: requestMeta.Endpoint}
 			// Fetch the data from the Node.
-			body, err := r.httpClient.Fetch(ctx, endpoint)
+			body, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, requestMeta.Body)
 
 			if err != nil {
 				zap.L().Error("failed to fetch request", zap.String("node", address.String()), zap.Error(err))
@@ -132,7 +141,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 			}
 
 			sendResponse(&mu, &responses, response, &responseSent, firstResponse, len(nodeMap))
-		}(address, endpoint)
+		}(address, requestMeta)
 	}
 
 	waitGroup.Wait()

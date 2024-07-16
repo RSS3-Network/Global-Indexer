@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/node/schema/worker/decentralized"
@@ -12,11 +13,24 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
+const (
+	DistributorRequestActivity               = "activity"
+	DistributorRequestAccountActivities      = "activities"
+	DistributorRequestBatchAccountActivities = "batch_activities"
+	DistributorRequestNetworkActivities      = "network_activities"
+	DistributorRequestPlatformActivities     = "platform_activities"
+)
+
 var (
 	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
 	RssNodeCacheKey = "nodes:rss"
 	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
+
+	// InvalidRequestCount is the prefix used for cache keys related to storing invalid request counts in the current epoch.
+	InvalidRequestCount = "node:request:count:invalid"
+	// ValidRequestCount is the prefix used for cache keys related to storing valid request counts in the current epoch.
+	ValidRequestCount = "node:request:count:valid"
 
 	// WorkerToNetworksMapKey is the cache key for the map of Workers to Networks.
 	WorkerToNetworksMapKey = "map:worker_to_networks"
@@ -42,6 +56,12 @@ var (
 		decentralized.PlatformFarcaster.String(): {},
 	}
 
+	// RenameWorkerMap is a map of workers to their corresponding names.
+	// Dealing with some unclear expressions may lead to problems in distributing tasks to workers.
+	RenameWorkerMap = map[network.Network]string{
+		network.Farcaster: "farcaster",
+	}
+
 	// WorkerToNetworksMap is a map of workers to networks, filtering out the complete network types that workers support.
 	WorkerToNetworksMap = make(map[string][]string, len(decentralized.WorkerValues()))
 	// NetworkToWorkersMap is a map of Networks to Workers, filtering out the complete worker types that networks support.
@@ -54,10 +74,9 @@ var (
 
 // NodeEndpointCache stores the elements in the heap.
 type NodeEndpointCache struct {
-	Address      string `json:"address"`
-	Endpoint     string `json:"endpoint"`
-	Score        float64
-	InvalidCount int64
+	Address  string  `json:"address"`
+	Endpoint string  `json:"endpoint"`
+	Score    float64 `json:"score"`
 }
 
 // DataResponse represents the response returned by a Node.
@@ -73,6 +92,12 @@ type DataResponse struct {
 	ValidPoint int
 	// InvalidPoint is the points given to the response when it is invalid
 	InvalidPoint int
+}
+
+type RequestMeta struct {
+	Method   string
+	Endpoint string
+	Body     io.Reader
 }
 
 type ErrResponse struct {
