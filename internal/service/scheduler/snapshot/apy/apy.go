@@ -173,7 +173,7 @@ func (s *server) saveAPYToSnapshots(ctx context.Context, latestEpochSnapshot uin
 		return fmt.Errorf("find epoch APY snapshots average: %w", err)
 	}
 
-	if err := s.cacheClient.Set(ctx, CacheKeyEpochAverageAPY, apy); err != nil {
+	if err := s.cacheClient.Set(ctx, CacheKeyEpochAverageAPY, apy, 0); err != nil {
 		return fmt.Errorf("set epoch average APY to cache: %w", err)
 	}
 

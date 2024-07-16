@@ -25,7 +25,7 @@ type ActivitiesRequest struct {
 
 // AccountsActivitiesRequest represents the request for activities by multiple accounts.
 type AccountsActivitiesRequest struct {
-	Accounts       []string `json:"accounts" validate:"required"`
+	Accounts       []string `json:"accounts" validate:"required,max=20"`
 	Limit          int      `json:"limit" validate:"min=1,max=100" default:"100"`
 	ActionLimit    int      `json:"action_limit" validate:"min=1,max=20" default:"10"`
 	Cursor         *string  `json:"cursor"`

@@ -3,13 +3,14 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type Client interface {
 	Get(ctx context.Context, key string, dest interface{}) error
-	Set(ctx context.Context, key string, value interface{}) error
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	IncrBy(ctx context.Context, key string, value int64) error
 	PSubscribe(ctx context.Context, pattern string) *redis.PubSub
 	ZAdd(ctx context.Context, key string, members ...redis.Z) error
@@ -33,13 +34,13 @@ func (c *client) Get(ctx context.Context, key string, dest interface{}) error {
 	return json.Unmarshal(data, dest)
 }
 
-func (c *client) Set(ctx context.Context, key string, value interface{}) error {
+func (c *client) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	return c.redisClient.Set(ctx, key, data, 0).Err()
+	return c.redisClient.Set(ctx, key, data, expiration).Err()
 }
 
 func (c *client) IncrBy(ctx context.Context, key string, value int64) error {

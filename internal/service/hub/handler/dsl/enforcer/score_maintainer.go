@@ -199,7 +199,7 @@ func getCacheCount(ctx context.Context, cacheClient cache.Client, key string, ad
 	if err := cacheClient.Get(ctx, formatNodeStatRedisKey(key, address.String()), resCount); err != nil {
 		if errors.Is(err, redis.Nil) {
 			*resCount = statCount
-			return cacheClient.Set(ctx, formatNodeStatRedisKey(key, address.String()), resCount)
+			return cacheClient.Set(ctx, formatNodeStatRedisKey(key, address.String()), resCount, 0)
 		}
 
 		return err
