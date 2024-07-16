@@ -26,34 +26,32 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *server) indexStakingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
-	switch eventHash := log.Topics[0]; eventHash {
-	case l2.EventHashStakingDeposited:
-		return s.indexStakingDepositedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingWithdrawRequested:
-		return s.indexStakingWithdrawRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingWithdrawalClaimed:
-		return s.indexStakingWithdrawalClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingStaked:
-		return s.indexStakingStakedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingUnstakeRequested:
-		return s.indexStakingUnstakeRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingUnstakeClaimed:
-		return s.indexStakingUnstakeClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingRewardDistributed:
-		return s.indexStakingRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingNodeCreated:
-		return s.indexStakingNodeCreated(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingNodeUpdated:
-		return s.indexStakingNodeUpdated(ctx, header, transaction, receipt, log, databaseTransaction)
-	case l2.EventHashStakingNodeUpdated2PublicGood:
-		return s.indexStakingNodeUpdated2PublicGood(ctx, header, transaction, receipt, log, databaseTransaction)
+func (h *handler) indexStakingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+	switch eventHash := log.Topics[0]; {
+	case eventHash == l2.EventHashStakingDeposited:
+		return h.indexStakingDepositedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingWithdrawRequested:
+		return h.indexStakingWithdrawRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingWithdrawalClaimed:
+		return h.indexStakingWithdrawalClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingStaked:
+		return h.indexStakingStakedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingUnstakeRequested:
+		return h.indexStakingUnstakeRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingUnstakeClaimed:
+		return h.indexStakingUnstakeClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case h.finalized && eventHash == l2.EventHashStakingRewardDistributed:
+		return h.indexStakingRewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingNodeCreated:
+		return h.indexStakingNodeCreated(ctx, header, transaction, receipt, log, databaseTransaction)
+	case eventHash == l2.EventHashStakingNodeUpdated:
+		return h.indexStakingNodeUpdated(ctx, header, transaction, receipt, log, databaseTransaction)
 	default: // Discard all unsupported events.
 		return nil
 	}
 }
 
-func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingDepositedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingDepositedLog")
 	defer span.End()
 
@@ -64,7 +62,7 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseDeposited(*log)
+	event, err := h.contractStaking.ParseDeposited(*log)
 	if err != nil {
 		return fmt.Errorf("parse Deposited event: %w", err)
 	}
@@ -83,6 +81,7 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -98,6 +97,7 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -107,7 +107,7 @@ func (s *server) indexStakingDepositedLog(ctx context.Context, header *types.Hea
 	return nil
 }
 
-func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingWithdrawRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingWithdrawRequestedLog")
 	defer span.End()
 
@@ -118,7 +118,7 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseWithdrawRequested(*log)
+	event, err := h.contractStaking.ParseWithdrawRequested(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawRequested event: %w", err)
 	}
@@ -137,6 +137,7 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -152,6 +153,7 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -161,7 +163,7 @@ func (s *server) indexStakingWithdrawRequestedLog(ctx context.Context, header *t
 	return nil
 }
 
-func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingWithdrawalClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingWithdrawalClaimedLog")
 	defer span.End()
 
@@ -172,7 +174,7 @@ func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *t
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseWithdrawalClaimed(*log)
+	event, err := h.contractStaking.ParseWithdrawalClaimed(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalClaimed event: %w", err)
 	}
@@ -186,6 +188,7 @@ func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *t
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -195,7 +198,7 @@ func (s *server) indexStakingWithdrawalClaimedLog(ctx context.Context, header *t
 	return nil
 }
 
-func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingStakedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingStakedLog")
 	defer span.End()
 
@@ -206,7 +209,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseStaked(*log)
+	event, err := h.contractStaking.ParseStaked(*log)
 	if err != nil {
 		return fmt.Errorf("parse Staked event: %w", err)
 	}
@@ -219,7 +222,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 	// If user staked token to a public good node, the event will be emitted with the genesis address.
 	// So we need to get the actual node address from the stake contract by the token ID.
 	if event.NodeAddr == ethereum.AddressGenesis {
-		chipsInfo, err := s.contractStaking.GetChipsInfo(&callOptions, event.StartTokenId)
+		chipsInfo, err := h.contractStaking.GetChipsInfo(&callOptions, event.StartTokenId)
 		if err != nil {
 			return fmt.Errorf("get the info of chips %s: %w", event.StartTokenId, err)
 		}
@@ -237,6 +240,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	for i := uint64(0); i+event.StartTokenId.Uint64() <= event.EndTokenId.Uint64(); i++ {
@@ -256,6 +260,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -272,7 +277,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 		chipID := chipID
 
 		resultPool.Go(func(_ context.Context) (*schema.StakeChip, error) {
-			tokenURI, err := s.contractChips.TokenURI(&callOptions, chipID)
+			tokenURI, err := h.contractChips.TokenURI(&callOptions, chipID)
 			if err != nil {
 				return nil, fmt.Errorf("get #%d token uri", chipID)
 			}
@@ -287,7 +292,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 				return nil, fmt.Errorf("decode #%d token metadata", chipID)
 			}
 
-			value, err := s.contractStaking.MinTokensToStake(&callOptions, stakeTransaction.Node)
+			value, err := h.contractStaking.MinTokensToStake(&callOptions, stakeTransaction.Node)
 			if err != nil {
 				return nil, fmt.Errorf("get the minimum stake requirement for node %s", stakeTransaction.Node)
 			}
@@ -300,6 +305,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 				Metadata:       metadata,
 				BlockNumber:    header.Number,
 				BlockTimestamp: header.Time,
+				Finalized:      h.finalized,
 			}
 
 			return &stakeChip, nil
@@ -318,7 +324,7 @@ func (s *server) indexStakingStakedLog(ctx context.Context, header *types.Header
 	return nil
 }
 
-func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingUnstakeRequestedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingUnstakeRequestedLog")
 	defer span.End()
 
@@ -329,7 +335,7 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseUnstakeRequested(*log)
+	event, err := h.contractStaking.ParseUnstakeRequested(*log)
 	if err != nil {
 		return fmt.Errorf("parse UnstakeRequested event: %w", err)
 	}
@@ -344,6 +350,7 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -359,6 +366,7 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -368,7 +376,7 @@ func (s *server) indexStakingUnstakeRequestedLog(ctx context.Context, header *ty
 	return nil
 }
 
-func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingUnstakeClaimedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingUnstakeClaimedLog")
 	defer span.End()
 
@@ -379,7 +387,7 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseUnstakeClaimed(*log)
+	event, err := h.contractStaking.ParseUnstakeClaimed(*log)
 	if err != nil {
 		return fmt.Errorf("parse UnstakeClaimed event: %w", err)
 	}
@@ -393,6 +401,7 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -402,7 +411,7 @@ func (s *server) indexStakingUnstakeClaimedLog(ctx context.Context, header *type
 	return nil
 }
 
-func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingRewardDistributedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingRewardDistributedLog")
 	defer span.End()
 
@@ -413,7 +422,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseRewardDistributed(*log)
+	event, err := h.contractStaking.ParseRewardDistributed(*log)
 	if err != nil {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
 	}
@@ -467,7 +476,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 	}
 
 	// Save Nodes
-	if err := s.saveEpochRelatedNodes(ctx, databaseTransaction, &epoch); err != nil {
+	if err := h.saveEpochRelatedNodes(ctx, databaseTransaction, &epoch); err != nil {
 		zap.L().Error("indexRewardDistributedLog: save epoch related nodes", zap.Error(err), zap.String("transaction.hash", transaction.Hash().Hex()))
 
 		return fmt.Errorf("save epoch related nodes: %w", err)
@@ -476,7 +485,7 @@ func (s *server) indexStakingRewardDistributedLog(ctx context.Context, header *t
 	return nil
 }
 
-func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingNodeCreated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeCreated")
 	defer span.End()
 
@@ -487,14 +496,14 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := s.contractStaking.ParseNodeCreated(*log)
+	event, err := h.contractStaking.ParseNodeCreated(*log)
 	if err != nil {
 		return fmt.Errorf("parse NodeCreated event: %w", err)
 	}
 
 	addressTo := transaction.To()
 	if addressTo == nil {
-		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
+		addressTo = &l2.ContractMap[h.chainID].AddressStakingProxy
 	}
 
 	// save createdNode event
@@ -506,7 +515,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 		AddressTo:        lo.FromPtr(addressTo),
 		Type:             schema.NodeEventNodeCreated,
 		LogIndex:         log.Index,
-		ChainID:          s.chainID.Uint64(),
+		ChainID:          h.chainID,
 		BlockHash:        header.Hash(),
 		BlockNumber:      header.Number,
 		BlockTimestamp:   int64(header.Time),
@@ -520,10 +529,16 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 				PublicGood:         event.PublicGood,
 			},
 		},
+		Finalized: h.finalized,
 	}
 
 	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
 		return fmt.Errorf("save Node event: %w", err)
+	}
+
+	// Skip save node info if the block is not finalized.
+	if !h.finalized {
+		return nil
 	}
 
 	// if node already exists, skip
@@ -544,20 +559,12 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	}
 
 	// Get from redis if the tax rate of the Node needs to be hidden.
-	if err := s.cacheClient.Get(ctx, s.buildNodeHideTaxRateKey(node.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+	if err := h.cacheClient.Get(ctx, h.buildNodeHideTaxRateKey(node.Address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
 		return fmt.Errorf("get hide tax rate: %w", err)
 	}
 
-	// Get node minTokensToStake
-	minTokensToStake, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
-	if err != nil {
-		return fmt.Errorf("get min tokens to stake: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
-
 	// Save Node avatar
-	avatar, err := s.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
+	avatar, err := h.contractStaking.GetNodeAvatar(&bind.CallOpts{}, event.NodeAddr)
 	if err != nil {
 		return fmt.Errorf("get Node avatar: %w", err)
 	}
@@ -583,7 +590,7 @@ func (s *server) indexStakingNodeCreated(ctx context.Context, header *types.Head
 	return nil
 }
 
-func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexStakingNodeUpdated(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeUpdated")
 	defer span.End()
 
@@ -595,20 +602,20 @@ func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Head
 	)
 
 	// Parse NodeUpdated event
-	event, err := s.contractStaking.ParseNodeUpdated(*log)
+	event, err := h.contractStaking.ParseNodeUpdated(*log)
 	if err != nil {
 		return fmt.Errorf("parse NodeUpdated event: %w", err)
 	}
 
 	// Query the Node from the contract
-	node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
+	node, err := h.contractStaking.GetNode(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
 	if err != nil {
 		return fmt.Errorf("get Node: %w", err)
 	}
 
 	addressTo := transaction.To()
 	if addressTo == nil {
-		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
+		addressTo = &l2.ContractMap[h.chainID].AddressStakingProxy
 	}
 
 	// Save NodeUpdated event
@@ -620,7 +627,7 @@ func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Head
 		AddressTo:        lo.FromPtr(addressTo),
 		Type:             schema.NodeEventNodeUpdated,
 		LogIndex:         log.Index,
-		ChainID:          s.chainID.Uint64(),
+		ChainID:          h.chainID,
 		BlockHash:        header.Hash(),
 		BlockNumber:      header.Number,
 		BlockTimestamp:   int64(header.Time),
@@ -631,6 +638,7 @@ func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Head
 				Description: event.Description,
 			},
 		},
+		Finalized: true,
 	}
 
 	// Only save the event
@@ -642,73 +650,11 @@ func (s *server) indexStakingNodeUpdated(ctx context.Context, header *types.Head
 	return nil
 }
 
-func (s *server) indexStakingNodeUpdated2PublicGood(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
-	ctx, span := otel.Tracer("").Start(ctx, "indexStakingNodeUpdated2PublicGood")
-	defer span.End()
-
-	span.SetAttributes(
-		attribute.Int64("block.number", header.Number.Int64()),
-		attribute.Stringer("block.hash", header.Hash()),
-		attribute.Stringer("transaction.hash", transaction.Hash()),
-		attribute.Int("log.index", int(log.Index)),
-	)
-
-	// Parse NodeUpdated2PublicGood event
-	event, err := s.contractStaking.ParseNodeUpdated2PublicGood(*log)
-	if err != nil {
-		return fmt.Errorf("parse NodeUpdated2PublicGood event: %w", err)
-	}
-
-	// Query the Node from the contract
-	node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: header.Number}, event.NodeAddr)
-	if err != nil {
-		return fmt.Errorf("get Node: %w", err)
-	}
-
-	addressTo := transaction.To()
-	if addressTo == nil {
-		addressTo = &l2.ContractMap[s.chainID.Uint64()].AddressStakingProxy
-	}
-
-	// Build Node event
-	nodeEvent := schema.NodeEvent{
-		TransactionHash:  transaction.Hash(),
-		TransactionIndex: receipt.TransactionIndex,
-		NodeID:           node.NodeId,
-		AddressFrom:      event.NodeAddr,
-		AddressTo:        lo.FromPtr(addressTo),
-		Type:             schema.NodeEventNodeUpdated2PublicGood,
-		LogIndex:         log.Index,
-		ChainID:          s.chainID.Uint64(),
-		BlockHash:        header.Hash(),
-		BlockNumber:      header.Number,
-		BlockTimestamp:   int64(header.Time),
-		Metadata: schema.NodeEventMetadata{
-			NodeUpdated2PublicGoodMetadata: &schema.NodeUpdated2PublicGoodMetadata{
-				Address:    event.NodeAddr,
-				PublicGood: true,
-			},
-		},
-	}
-
-	// Save NodeUpdated2PublicGood event to the database
-	if err := databaseTransaction.SaveNodeEvent(ctx, &nodeEvent); err != nil {
-		return fmt.Errorf("save Node event: %w", err)
-	}
-
-	// Update the Node's public good status
-	if err := databaseTransaction.UpdateNodePublicGood(ctx, event.NodeAddr, true); err != nil {
-		return fmt.Errorf("update Node public good status: %w", err)
-	}
-
-	return nil
-}
-
-func (s *server) buildNodeHideTaxRateKey(address common.Address) string {
+func (h *handler) buildNodeHideTaxRateKey(address common.Address) string {
 	return fmt.Sprintf("node::%s::hideTaxRate", strings.ToLower(address.String()))
 }
 
-func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction database.Client, epoch *schema.Epoch) error {
+func (h *handler) saveEpochRelatedNodes(ctx context.Context, databaseTransaction database.Client, epoch *schema.Epoch) error {
 	ctx, span := otel.Tracer("").Start(ctx, "saveEpochRelatedNodes")
 	defer span.End()
 
@@ -729,12 +675,12 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 
 		errorPool.Go(func(_ context.Context) error {
 			var (
-				apy, minTokensToStake decimal.Decimal
-				address               = epoch.RewardedNodes[i].NodeAddress
+				apy     decimal.Decimal
+				address = epoch.RewardedNodes[i].NodeAddress
 			)
 
 			// Calculate node APY
-			node, err := s.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
+			node, err := h.contractStaking.GetNode(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
 			if err != nil {
 				zap.L().Error("indexRewardDistributedLog: Get node from rpc", zap.Error(err), zap.String("address", address.String()))
 
@@ -752,20 +698,9 @@ func (s *server) saveEpochRelatedNodes(ctx context.Context, databaseTransaction 
 					Mul(decimal.NewFromFloat(486.6666666666667))
 			}
 
-			// Query the minTokensToStake of the Node
-			minTokens, err := s.contractStaking.MinTokensToStake(&bind.CallOpts{BlockNumber: epoch.BlockNumber}, address)
-			if err != nil {
-				zap.L().Error("indexRewardDistributedLog: get min tokens to stake", zap.Error(err), zap.String("address", address.String()))
-
-				return fmt.Errorf("get min tokens to stake: %w", err)
-			}
-
-			minTokensToStake = decimal.NewFromBigInt(minTokens, 0)
-
 			data[i] = &schema.BatchUpdateNode{
-				Address:          address,
-				Apy:              apy,
-				MinTokensToStake: minTokensToStake,
+				Address: address,
+				Apy:     apy,
 			}
 
 			return nil

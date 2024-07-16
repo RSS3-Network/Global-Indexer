@@ -30,6 +30,7 @@ type StakeChip struct {
 	Metadata       json.RawMessage `json:"metadata"`
 	BlockNumber    *big.Int        `json:"block_number"`
 	BlockTimestamp uint64          `json:"block_timestamp"`
+	Finalized      bool            `json:"finalized"`
 }
 
 type StakeChipQuery struct {

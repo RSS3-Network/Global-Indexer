@@ -24,6 +24,7 @@ type BridgeEvent struct {
 	BlockHash         string    `gorm:"column:block_hash;primaryKey"`
 	BlockNumber       uint64    `gorm:"column:block_number"`
 	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
+	Finalized         bool      `gorm:"column:finalized"`
 }
 
 func (b *BridgeEvent) TableName() string {
@@ -39,6 +40,7 @@ func (b *BridgeEvent) Import(bridgeEvent schema.BridgeEvent) error {
 	b.BlockHash = bridgeEvent.BlockHash.String()
 	b.BlockNumber = bridgeEvent.BlockNumber.Uint64()
 	b.BlockTimestamp = bridgeEvent.BlockTimestamp
+	b.Finalized = bridgeEvent.Finalized
 
 	return nil
 }
@@ -54,6 +56,7 @@ func (b *BridgeEvent) Export() (*schema.BridgeEvent, error) {
 		BlockHash:         common.HexToHash(b.BlockHash),
 		BlockNumber:       new(big.Int).SetUint64(b.BlockNumber),
 		BlockTimestamp:    b.BlockTimestamp,
+		Finalized:         b.Finalized,
 	}
 
 	return &bridgeEvent, nil
