@@ -1,13 +1,18 @@
 package dsl
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
+	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
@@ -16,6 +21,7 @@ import (
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -70,11 +76,9 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 
 	// Resolve name to EVM address
 	if !validEvmAddress(request.Account) {
-		request.Account, err = d.nameService.Resolve(c.Request().Context(), request.Account)
-		if err != nil {
-			zap.L().Error("name service resolve error", zap.Error(err), zap.String("account", request.Account))
-
-			return errorx.BadRequestError(c, err)
+		resolvedName, err := d.getEVMAddress(c.Request().Context(), request.Account)
+		if err == nil {
+			request.Account = resolvedName
 		}
 	}
 
@@ -111,6 +115,13 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
+
+	// Resolve names to EVM addresses
+	if err = d.transformAccounts(c.Request().Context(), request.Accounts); err != nil {
+		return errorx.BadRequestError(c, err)
+	}
+
+	request.Accounts = lo.Uniq(request.Accounts)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, workers, networks)
 	if err != nil {
@@ -188,6 +199,71 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 	}
 
 	return c.JSONBlob(http.StatusOK, activities)
+}
+
+func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
+	var err error
+
+	nsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+
+	for i := range accounts {
+		i := i
+
+		nsPool.Go(func(ctx context.Context) error {
+			if !validEvmAddress(accounts[i]) {
+				resolvedName, err := d.getEVMAddress(ctx, accounts[i])
+				if err == nil {
+					accounts[i] = resolvedName
+				}
+			}
+
+			return nil
+		})
+	}
+
+	if err = nsPool.Wait(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DSL) getEVMAddress(ctx context.Context, account string) (string, error) {
+	var (
+		err error
+
+		key = buildNameServiceKey(account)
+	)
+	// Try to get the resolved address from Redis cache first
+	if err = d.cacheClient.Get(ctx, key, &account); err == nil {
+		return account, nil
+	}
+
+	// If not found in cache, resolve the name to an EVM address
+	if errors.Is(err, redis.Nil) {
+		// Cache miss, need to resolve the name
+		account, err = d.nameService.Resolve(ctx, account)
+		if err != nil {
+			zap.L().Error("name service resolve error", zap.Error(err), zap.String("account", account))
+
+			return "", err
+		}
+
+		// Cache the resolved address, with a TTL of 10 minutes
+		// Fixme: The TTL should be configurable
+		if err = d.cacheClient.Set(ctx, key, account, 10*time.Minute); err != nil {
+			return "", err
+		}
+
+		return account, nil
+	}
+
+	return "", err
+}
+
+// buildNameServiceKey builds the key for the name service cache.
+func buildNameServiceKey(account string) string {
+	return fmt.Sprintf("name:service:%s", strings.ToLower(account))
 }
 
 // validEvmAddress checks if the address is a valid EVM address.
