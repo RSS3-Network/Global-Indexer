@@ -25,6 +25,7 @@ type NodeEvent struct {
 	LogIndex    uint                        `json:"log_index"`
 	ChainID     uint64                      `json:"chain_id"`
 	Metadata    schema.NodeEventMetadata    `json:"metadata"`
+	Finalized   bool                        `json:"finalized"`
 }
 
 func NewNodeEvent(event *schema.NodeEvent) NodeEventResponseData {
@@ -45,6 +46,7 @@ func NewNodeEvent(event *schema.NodeEvent) NodeEventResponseData {
 		LogIndex:    event.LogIndex,
 		ChainID:     event.ChainID,
 		Metadata:    event.Metadata,
+		Finalized:   event.Finalized,
 	}
 }
 

@@ -27,6 +27,7 @@ type StakeTransaction struct {
 	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
 	BlockNumber      uint64          `gorm:"column:block_number"`
 	TransactionIndex uint            `gorm:"column:transaction_index"`
+	Finalized        bool            `gorm:"column:finalized"`
 }
 
 func (s *StakeTransaction) TableName() string {
@@ -46,6 +47,7 @@ func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {
 		BlockTimestamp:   s.BlockTimestamp,
 		BlockNumber:      s.BlockNumber,
 		TransactionIndex: s.TransactionIndex,
+		Finalized:        s.Finalized,
 	}
 
 	return &stakeTransaction, nil
@@ -63,6 +65,7 @@ func (s *StakeTransaction) Import(stakeTransaction schema.StakeTransaction) erro
 	s.BlockTimestamp = stakeTransaction.BlockTimestamp
 	s.BlockNumber = stakeTransaction.BlockNumber
 	s.TransactionIndex = stakeTransaction.TransactionIndex
+	s.Finalized = stakeTransaction.Finalized
 
 	return nil
 }

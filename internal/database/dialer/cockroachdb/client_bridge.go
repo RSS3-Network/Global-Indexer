@@ -165,6 +165,14 @@ func (c *client) SaveBridgeTransaction(ctx context.Context, bridgeTransaction *s
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 
@@ -180,8 +188,30 @@ func (c *client) SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.Bridge
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", value.TableName()),
+						Value:  false,
+					},
+				},
+			},
 		},
 	}
 
 	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
+}
+
+func (c *client) DeleteBridgeTransactionsByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.BridgeTransaction), `"chain_id" = ? AND "block_number" = ? AND NOT "finalized"`, chainID, blockNumber).
+		Error
+}
+
+func (c *client) DeleteBridgeEventsByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Delete(new(table.BridgeEvent), `"chain_id" = ? AND "block_number" = ? AND NOT "finalized"`, chainID, blockNumber).
+		Error
 }

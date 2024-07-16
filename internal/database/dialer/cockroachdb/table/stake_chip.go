@@ -23,6 +23,7 @@ type StakeChip struct {
 	Metadata       json.RawMessage `gorm:"column:metadata"`
 	BlockNumber    decimal.Decimal `gorm:"column:block_number"`
 	BlockTimestamp time.Time       `gorm:"column:block_timestamp"`
+	Finalized      bool            `gorm:"column:finalized"`
 }
 
 func (s *StakeChip) TableName() string {
@@ -37,6 +38,7 @@ func (s *StakeChip) Import(stakeChip schema.StakeChip) error {
 	s.Metadata = stakeChip.Metadata
 	s.BlockNumber = decimal.NewFromBigInt(stakeChip.BlockNumber, 0)
 	s.BlockTimestamp = time.Unix(int64(stakeChip.BlockTimestamp), 0)
+	s.Finalized = stakeChip.Finalized
 
 	return nil
 }
@@ -50,6 +52,7 @@ func (s *StakeChip) Export() (*schema.StakeChip, error) {
 		Metadata:       s.Metadata,
 		BlockNumber:    s.BlockNumber.BigInt(),
 		BlockTimestamp: uint64(s.BlockTimestamp.Unix()),
+		Finalized:      s.Finalized,
 	}
 
 	return &stakeChip, nil

@@ -40,6 +40,7 @@ type BridgeTransaction struct {
 	BlockTimestamp   time.Time             `json:"block_timestamp"`
 	BlockNumber      uint64                `json:"block_number"`
 	TransactionIndex uint                  `json:"transaction_index"`
+	Finalized        bool                  `json:"finalized"`
 }
 
 type BridgeTransactionQuery struct {

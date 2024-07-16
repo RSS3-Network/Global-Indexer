@@ -10,6 +10,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
+	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
@@ -29,7 +30,11 @@ func (n *NTA) GetNodeEvents(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
-	events, err := n.databaseClient.FindNodeEvents(c.Request().Context(), request.NodeAddress, request.Cursor, request.Limit)
+	events, err := n.databaseClient.FindNodeEvents(c.Request().Context(), &schema.NodeEventsQuery{
+		NodeAddress: lo.ToPtr(request.NodeAddress),
+		Cursor:      request.Cursor,
+		Limit:       lo.ToPtr(request.Limit),
+	})
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)

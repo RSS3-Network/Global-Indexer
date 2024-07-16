@@ -24,11 +24,12 @@ type GetBridgeTransactionsResponseData []*BridgeTransaction
 type GetBridgeTransactionResponseData *BridgeTransaction
 
 type BridgeTransaction struct {
-	ID       common.Hash                 `json:"id"`
-	Sender   common.Address              `json:"sender"`
-	Receiver common.Address              `json:"receiver"`
-	Token    BridgeToken                 `json:"token"`
-	Event    BridgeTransactionEventTypes `json:"event"`
+	ID        common.Hash                 `json:"id"`
+	Sender    common.Address              `json:"sender"`
+	Receiver  common.Address              `json:"receiver"`
+	Token     BridgeToken                 `json:"token"`
+	Event     BridgeTransactionEventTypes `json:"event"`
+	Finalized bool                        `json:"finalized"`
 }
 
 type BridgeTransactionEventTypes struct {
@@ -74,6 +75,7 @@ func NewBridgeTransaction(transaction *schema.BridgeTransaction, events []*schem
 			},
 			Value: decimal.NewFromBigInt(transaction.TokenValue, 0),
 		},
+		Finalized: transaction.Finalized,
 	}
 
 	switch transaction.Type {

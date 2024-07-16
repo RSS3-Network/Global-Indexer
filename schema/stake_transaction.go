@@ -40,6 +40,7 @@ type StakeTransaction struct {
 	BlockTimestamp   time.Time
 	BlockNumber      uint64
 	TransactionIndex uint
+	Finalized        bool
 }
 
 type StakeTransactionQuery struct {

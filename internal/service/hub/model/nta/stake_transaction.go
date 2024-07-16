@@ -29,12 +29,13 @@ type GetStakeTransactionsResponseData []*StakeTransaction
 type GetStakeTransactionResponseData *StakeTransaction
 
 type StakeTransaction struct {
-	ID     common.Hash                `json:"id"`
-	Staker common.Address             `json:"staker"`
-	Node   common.Address             `json:"node"`
-	Value  decimal.Decimal            `json:"value"`
-	Chips  []*StakeChip               `json:"chips,omitempty"`
-	Event  StakeTransactionEventTypes `json:"event"`
+	ID        common.Hash                `json:"id"`
+	Staker    common.Address             `json:"staker"`
+	Node      common.Address             `json:"node"`
+	Value     decimal.Decimal            `json:"value"`
+	Chips     []*StakeChip               `json:"chips,omitempty"`
+	Event     StakeTransactionEventTypes `json:"event"`
+	Finalized bool                       `json:"finalized"`
 }
 
 type StakeTransactionEventTypes struct {
@@ -87,6 +88,7 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 
 			return NewStakeChip(stakeChip, baseURL), true
 		}),
+		Finalized: transaction.Finalized,
 	}
 
 	switch transaction.Type {

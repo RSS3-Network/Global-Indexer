@@ -40,6 +40,7 @@ type StakeChip struct {
 	Metadata    json.RawMessage `json:"metadata"`
 	Value       decimal.Decimal `json:"value"`
 	LatestValue decimal.Decimal `json:"latest_value"`
+	Finalized   bool            `json:"finalized"`
 }
 
 func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) GetStakeChipResponseData {
@@ -50,6 +51,7 @@ func NewStakeChip(stakeChip *schema.StakeChip, baseURL url.URL) GetStakeChipResp
 		Metadata:    stakeChip.Metadata,
 		Value:       stakeChip.Value,
 		LatestValue: stakeChip.LatestValue,
+		Finalized:   stakeChip.Finalized,
 	}
 
 	var tokenMetadata l2.ChipsTokenMetadata

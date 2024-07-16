@@ -17,18 +17,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *server) indexBridgingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (h *handler) indexBridgingLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
 	switch eventHash := log.Topics[0]; eventHash {
 	case l2.EventHashL2StandardBridgeDepositFinalized:
-		return s.indexL2StandardBridgeDepositFinalizedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
+		return h.indexL2StandardBridgeDepositFinalizedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
 	case l2.EventHashL2StandardBridgeWithdrawalInitiated:
-		return s.indexL2StandardWithdrawalInitiatedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
+		return h.indexL2StandardWithdrawalInitiatedLog(ctx, header, transaction, receipt, log, logIndex, databaseTransaction)
 	default: // Discard all unsupported event.
 		return nil
 	}
 }
 
-func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (h *handler) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexL2StandardBridgeDepositFinalizedLog")
 	defer span.End()
 
@@ -39,7 +39,7 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	depositFinalizedEvent, err := s.contractL2StandardBridge.ParseDepositFinalized(*log)
+	depositFinalizedEvent, err := h.contractL2StandardBridge.ParseDepositFinalized(*log)
 	if err != nil {
 		return fmt.Errorf("parse DepositFinalized event: %w", err)
 	}
@@ -52,7 +52,7 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 	for _, log := range receipt.Logs[logIndex:] {
 		if log.Address == l2.AddressL2CrossDomainMessengerProxy {
 			if len(log.Topics) > 0 && log.Topics[0] == l2.EventHashL2CrossDomainMessengerRelayedMessage {
-				if relayedMessageEvent, err = s.contractL2CrossDomainMessenger.ParseRelayedMessage(*log); err != nil {
+				if relayedMessageEvent, err = h.contractL2CrossDomainMessenger.ParseRelayedMessage(*log); err != nil {
 					return fmt.Errorf("parse RelayedMessage event: %w", err)
 				}
 			}
@@ -64,7 +64,7 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(relayedMessageEvent.MsgHash, schema.BridgeEventTypeDepositFinalized, s.chainID.Uint64(), header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(relayedMessageEvent.MsgHash, schema.BridgeEventTypeDepositFinalized, h.chainID, header, transaction, receipt, h.finalized)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge transaction: %w", err)
@@ -73,7 +73,7 @@ func (s *server) indexL2StandardBridgeDepositFinalizedLog(ctx context.Context, h
 	return nil
 }
 
-func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
+func (h *handler) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, logIndex int, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexL2StandardWithdrawalInitiatedLog")
 	defer span.End()
 
@@ -84,7 +84,7 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	withdrawalInitiatedEvent, err := s.contractL2StandardBridge.ParseWithdrawalInitiated(*log)
+	withdrawalInitiatedEvent, err := h.contractL2StandardBridge.ParseWithdrawalInitiated(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalInitiated event: %w", err)
 	}
@@ -97,7 +97,7 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 	for _, log := range receipt.Logs[logIndex:] {
 		if log.Address == l2.AddressL2ToL1MessagePasser {
 			if len(log.Topics) > 0 && log.Topics[0] == l2.EventHashL2ToL1MessagePasserMessagePassed {
-				if messagePassedEvent, err = s.contractL2ToL1MessagePasser.ParseMessagePassed(*log); err != nil {
+				if messagePassedEvent, err = h.contractL2ToL1MessagePasser.ParseMessagePassed(*log); err != nil {
 					return fmt.Errorf("parse MessagePassed event: %w", err)
 				}
 			}
@@ -118,10 +118,11 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 		TokenAddressL2:   lo.ToPtr(withdrawalInitiatedEvent.L2Token),
 		TokenValue:       withdrawalInitiatedEvent.Amount,
 		Data:             hexutil.Encode(messagePassedEvent.Data),
-		ChainID:          s.chainID.Uint64(),
+		ChainID:          h.chainID,
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	if err := databaseTransaction.SaveBridgeTransaction(ctx, &bridgeTransaction); err != nil {
@@ -129,7 +130,7 @@ func (s *server) indexL2StandardWithdrawalInitiatedLog(ctx context.Context, head
 	}
 
 	// Create the bridge event.
-	bridgeEvent := schema.NewBridgeEvent(messagePassedEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalInitialized, s.chainID.Uint64(), header, transaction, receipt)
+	bridgeEvent := schema.NewBridgeEvent(messagePassedEvent.WithdrawalHash, schema.BridgeEventTypeWithdrawalInitialized, h.chainID, header, transaction, receipt, h.finalized)
 
 	if err := databaseTransaction.SaveBridgeEvent(ctx, bridgeEvent); err != nil {
 		return fmt.Errorf("save bridge event: %w", err)

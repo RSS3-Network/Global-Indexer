@@ -28,6 +28,7 @@ type BridgeTransaction struct {
 	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
 	BlockNumber      uint64          `gorm:"column:block_number"`
 	TransactionIndex uint            `gorm:"column:transaction_index"`
+	Finalized        bool            `gorm:"column:finalized"`
 }
 
 func (b *BridgeTransaction) TableName() string {
@@ -47,6 +48,7 @@ func (b *BridgeTransaction) Import(bridgeTransaction schema.BridgeTransaction) e
 	b.BlockTimestamp = bridgeTransaction.BlockTimestamp
 	b.BlockNumber = bridgeTransaction.BlockNumber
 	b.TransactionIndex = bridgeTransaction.TransactionIndex
+	b.Finalized = bridgeTransaction.Finalized
 
 	return nil
 }
@@ -77,6 +79,7 @@ func (b *BridgeTransaction) Export() (*schema.BridgeTransaction, error) {
 		BlockTimestamp:   b.BlockTimestamp,
 		BlockNumber:      b.BlockNumber,
 		TransactionIndex: b.TransactionIndex,
+		Finalized:        b.Finalized,
 	}
 
 	return &bridgeTransaction, nil
