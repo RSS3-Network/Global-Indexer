@@ -34,8 +34,11 @@ type httpClient struct {
 }
 
 func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (readCloser io.ReadCloser, err error) {
+	var bodyBytes []byte
 	// Read the body into a byte slice to be able to retry the request
-	bodyBytes, _ := io.ReadAll(body)
+	if body != nil {
+		bodyBytes, _ = io.ReadAll(body)
+	}
 
 	retryableFunc := func() error {
 		readCloser, err = h.fetchWithMethod(ctx, method, path, bytes.NewReader(bodyBytes))
