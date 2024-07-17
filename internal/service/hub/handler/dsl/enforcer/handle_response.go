@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"runtime"
 	"sort"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -342,17 +343,46 @@ func isResponseIdentical(src, des []byte) bool {
 			// exclude the mutable platforms
 			srcActivity, desActivity := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
 
-			for i := range srcActivity {
-				if !isActivityIdentical(srcActivity[i], desActivity[i]) {
-					return false
-				}
-			}
-
-			return true
+			return checkActivities(srcActivity, desActivity)
 		}
 	}
 
 	return false
+}
+
+func checkActivities(srcActivities, desActivities []*model.Activity) bool {
+	desActivitiesMap := lo.SliceToMap(desActivities, func(activity *model.Activity) (string, *model.Activity) {
+		return activity.ID, activity
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	isIdentical := true
+
+	for _, activity := range srcActivities {
+		wg.Add(1)
+
+		go func(act *model.Activity) {
+			defer wg.Done()
+
+			if ctx.Err() != nil {
+				return
+			}
+
+			if matchedActivity, exist := desActivitiesMap[act.ID]; !exist || !isActivityIdentical(act, matchedActivity) {
+				isIdentical = false
+
+				cancel()
+			}
+		}(activity)
+	}
+
+	wg.Wait()
+
+	return isIdentical
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.
