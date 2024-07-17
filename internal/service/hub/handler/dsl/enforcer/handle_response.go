@@ -26,7 +26,7 @@ const (
 )
 
 func (e *SimpleEnforcer) updateCacheRequest(ctx context.Context, responses []*model.DataResponse) {
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(responses) < 20*runtime.NumCPU(), len(responses), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(responses) < 20*runtime.NumCPU() && len(responses) > 0, len(responses), 20*runtime.NumCPU()))
 
 	for _, response := range responses {
 		response := response
@@ -72,7 +72,7 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model
 func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, responses []*model.DataResponse) {
 	nodeStatsMap, _ := e.getNodeStatsMap(ctx, responses)
 
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStatsMap) < 20*runtime.NumCPU(), len(nodeStatsMap), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStatsMap) < 20*runtime.NumCPU() && len(nodeStatsMap) > 0, len(nodeStatsMap), 20*runtime.NumCPU()))
 
 	for i := range responses {
 		i := i
