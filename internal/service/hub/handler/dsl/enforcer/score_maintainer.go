@@ -133,7 +133,7 @@ func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, 
 	nodeEndpointMap := make(map[string]string, len(nodeStats))
 	members := make([]redis.Z, 0, len(nodeStats))
 
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU() && len(nodeStats) > 0, len(nodeStats), 20*runtime.NumCPU()))
 
 	for _, stat := range nodeStats {
 		stat := stat
