@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"runtime"
 	"sort"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -356,34 +355,33 @@ func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 		return activity.ID, activity
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
-	var wg sync.WaitGroup
-
-	isIdentical := true
+	p := pool.New().
+		WithContext(ctx).
+		WithFirstError().
+		WithCancelOnError().
+		WithMaxGoroutines(lo.Ternary(len(srcActivities) < 20*runtime.NumCPU() && len(srcActivities) > 0, len(srcActivities), 20*runtime.NumCPU()))
 
 	for _, activity := range srcActivities {
-		wg.Add(1)
+		act := activity
 
-		go func(act *model.Activity) {
-			defer wg.Done()
-
-			if ctx.Err() != nil {
-				return
-			}
-
+		p.Go(func(_ context.Context) error {
 			if matchedActivity, exist := desActivitiesMap[act.ID]; !exist || !isActivityIdentical(act, matchedActivity) {
-				isIdentical = false
-
-				cancel()
+				return fmt.Errorf("activities are not identical")
 			}
-		}(activity)
+
+			return nil
+		})
 	}
 
-	wg.Wait()
+	if err := p.Wait(); err != nil {
+		zap.L().Info("check activities", zap.Error(err))
 
-	return isIdentical
+		return false
+	}
+
+	return true
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.

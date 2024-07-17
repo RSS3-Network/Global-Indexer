@@ -63,7 +63,7 @@ func TestCompareData(t *testing.T) {
 		{
 			name:     "DifferentActivitiesResponses",
 			src:      []byte(activitiesResponseData),
-			des:      []byte(nullData),
+			des:      []byte(activitiesResponseData0),
 			expected: false,
 		},
 		{
