@@ -1,11 +1,9 @@
 package distributor
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -120,7 +118,8 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 		path   string
 		method = http.MethodGet
 
-		body io.Reader
+		body []byte
+		err  error
 	)
 
 	switch req := request.(type) {
@@ -131,13 +130,11 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 	case dsl.AccountsActivitiesRequest:
 		path = "/decentralized/accounts"
 		method = http.MethodPost
-		jsonData, err := json.Marshal(req)
+		body, err = json.Marshal(req)
 
 		if err != nil {
 			return nil, fmt.Errorf("marshal request data: %w", err)
 		}
-
-		body = bytes.NewReader(jsonData)
 	case dsl.NetworkActivitiesRequest:
 		path = fmt.Sprintf("/decentralized/network/%s", req.Network)
 	case dsl.PlatformActivitiesRequest:
