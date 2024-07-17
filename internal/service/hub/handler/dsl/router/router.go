@@ -1,6 +1,7 @@
 package router
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,7 +28,7 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(method, path string, query any, nodes []*model.NodeEndpointCache, body io.Reader) (map[common.Address]model.RequestMeta, error) {
+func (r *SimpleRouter) BuildPath(method, path string, query any, nodes []*model.NodeEndpointCache, body []byte) (map[common.Address]model.RequestMeta, error) {
 	if method == http.MethodGet && query != nil {
 		values, err := form.NewEncoder().Encode(query)
 
@@ -106,7 +107,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 			response := &model.DataResponse{Address: address, Endpoint: requestMeta.Endpoint}
 			// Fetch the data from the Node.
-			body, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, requestMeta.Body)
+			body, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, bytes.NewReader(requestMeta.Body))
 
 			if err != nil {
 				zap.L().Error("failed to fetch request", zap.String("node", address.String()), zap.Error(err))
