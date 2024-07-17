@@ -1,6 +1,7 @@
 package httputil
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -33,8 +34,11 @@ type httpClient struct {
 }
 
 func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (readCloser io.ReadCloser, err error) {
+	// Read the body into a byte slice to be able to retry the request
+	bodyBytes, _ := io.ReadAll(body)
+
 	retryableFunc := func() error {
-		readCloser, err = h.fetchWithMethod(ctx, method, path, body)
+		readCloser, err = h.fetchWithMethod(ctx, method, path, bytes.NewReader(bodyBytes))
 		return err
 	}
 
