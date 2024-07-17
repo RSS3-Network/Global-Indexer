@@ -350,6 +350,7 @@ func isResponseIdentical(src, des []byte) bool {
 	return false
 }
 
+// checkActivities checks if the activities are identical.
 func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 	desActivitiesMap := lo.SliceToMap(desActivities, func(activity *model.Activity) (string, *model.Activity) {
 		return activity.ID, activity
