@@ -26,7 +26,7 @@ const (
 )
 
 func (e *SimpleEnforcer) updateCacheRequest(ctx context.Context, responses []*model.DataResponse) {
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(responses) < 20*runtime.NumCPU(), len(responses), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(responses) < 20*runtime.NumCPU() && len(responses) > 0, len(responses), 20*runtime.NumCPU()))
 
 	for _, response := range responses {
 		response := response
@@ -72,7 +72,7 @@ func (e *SimpleEnforcer) getNodeStatsMap(ctx context.Context, responses []*model
 func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, responses []*model.DataResponse) {
 	nodeStatsMap, _ := e.getNodeStatsMap(ctx, responses)
 
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStatsMap) < 20*runtime.NumCPU(), len(nodeStatsMap), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStatsMap) < 20*runtime.NumCPU() && len(nodeStatsMap) > 0, len(nodeStatsMap), 20*runtime.NumCPU()))
 
 	for i := range responses {
 		i := i
@@ -342,17 +342,46 @@ func isResponseIdentical(src, des []byte) bool {
 			// exclude the mutable platforms
 			srcActivity, desActivity := excludeMutableActivity(srcActivities.Data), excludeMutableActivity(desActivities.Data)
 
-			for i := range srcActivity {
-				if !isActivityIdentical(srcActivity[i], desActivity[i]) {
-					return false
-				}
-			}
-
-			return true
+			return checkActivities(srcActivity, desActivity)
 		}
 	}
 
 	return false
+}
+
+// checkActivities checks if the activities are identical.
+func checkActivities(srcActivities, desActivities []*model.Activity) bool {
+	desActivitiesMap := lo.SliceToMap(desActivities, func(activity *model.Activity) (string, *model.Activity) {
+		return activity.ID, activity
+	})
+
+	ctx := context.Background()
+
+	p := pool.New().
+		WithContext(ctx).
+		WithFirstError().
+		WithCancelOnError().
+		WithMaxGoroutines(lo.Ternary(len(srcActivities) < 20*runtime.NumCPU() && len(srcActivities) > 0, len(srcActivities), 20*runtime.NumCPU()))
+
+	for _, activity := range srcActivities {
+		act := activity
+
+		p.Go(func(_ context.Context) error {
+			if matchedActivity, exist := desActivitiesMap[act.ID]; !exist || !isActivityIdentical(act, matchedActivity) {
+				return fmt.Errorf("activities are not identical")
+			}
+
+			return nil
+		})
+	}
+
+	if err := p.Wait(); err != nil {
+		zap.L().Info("check activities", zap.Error(err))
+
+		return false
+	}
+
+	return true
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.

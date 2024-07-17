@@ -80,7 +80,7 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStat
 
 	var mu sync.Mutex
 
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU(), len(nodeStats), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU() && len(nodeStats) > 0, len(nodeStats), 20*runtime.NumCPU()))
 
 	for _, stat := range nodeStats {
 		stat := stat

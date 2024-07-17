@@ -151,7 +151,7 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
 func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []l2.DataTypesNode, nodes []*schema.Node, reset bool) error {
-	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU(), len(stats), 20*runtime.NumCPU()))
+	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU() && len(stats) > 0, len(stats), 20*runtime.NumCPU()))
 
 	for i := range stats {
 		i := i
