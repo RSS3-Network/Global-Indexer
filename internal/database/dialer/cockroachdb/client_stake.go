@@ -289,7 +289,7 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 	if err := databaseClient.
 		Select(`"owner", "node", count(*) AS "count", sum("value") AS "value"`).
 		Group(`"owner", "node"`).
-		Order(`"count" DESC, "owner", "node"`).
+		Order(`"owner", "node"`).
 		Limit(query.Limit).
 		Find(&stakeStakings).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
