@@ -12,6 +12,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -86,7 +87,7 @@ func (d *Distributor) processNodeInvalidResponse(ctx context.Context, responses 
 
 // getLatestEpochID returns the recent epoch ID.
 func (d *Distributor) getLatestEpochID(ctx context.Context) (uint64, error) {
-	epochEvent, err := d.databaseClient.FindEpochs(ctx, 1, nil)
+	epochEvent, err := d.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return 0, err
 	}

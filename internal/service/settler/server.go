@@ -19,6 +19,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config/flag"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/schema"
+	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -104,7 +106,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 		s.checkpoint = indexedBlock
 
 		// Find the latest epoch event from database
-		lastEpoch, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+		lastEpoch, err := s.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch event from database", zap.Error(err))
 

@@ -54,7 +54,7 @@ func (s *server) Run(ctx context.Context) error {
 		}
 
 		// Query the latest epoch of the epoch events.
-		epochEvents, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+		epochEvents, err := s.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("find epochs", zap.Error(err))
 

@@ -11,6 +11,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	snapshot "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
+	"github.com/rss3-network/global-indexer/schema"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
@@ -30,7 +32,10 @@ func (n *NTA) GetEpochs(c echo.Context) error {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
-	epochs, err := n.databaseClient.FindEpochs(c.Request().Context(), request.Limit, request.Cursor)
+	epochs, err := n.databaseClient.FindEpochs(c.Request().Context(), &schema.FindEpochsQuery{
+		Limit:  lo.ToPtr(request.Limit),
+		Cursor: request.Cursor,
+	})
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
