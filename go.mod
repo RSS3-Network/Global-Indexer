@@ -12,7 +12,6 @@ require (
 	github.com/creasty/defaults v1.7.0
 	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.15
-	github.com/go-playground/form/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/go-redsync/redsync/v4 v4.11.0
 	github.com/labstack/echo/v4 v4.12.0
