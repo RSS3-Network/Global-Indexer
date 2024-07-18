@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/go-playground/form/v4"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"go.uber.org/zap"
@@ -28,15 +27,9 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(method, path string, query any, nodes []*model.NodeEndpointCache, body []byte) (map[common.Address]model.RequestMeta, error) {
+func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []*model.NodeEndpointCache, body []byte) (map[common.Address]model.RequestMeta, error) {
 	if method == http.MethodGet && query != nil {
-		values, err := form.NewEncoder().Encode(query)
-
-		if err != nil {
-			return nil, fmt.Errorf("build params %w", err)
-		}
-
-		path = fmt.Sprintf("%s?%s", path, values.Encode())
+		path = fmt.Sprintf("%s?%s", path, query.Encode())
 	}
 
 	urls := make(map[common.Address]model.RequestMeta, len(nodes))
