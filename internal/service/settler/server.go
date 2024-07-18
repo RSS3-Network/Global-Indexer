@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
@@ -202,17 +203,13 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 		return 0, 0, fmt.Errorf("get checkpoint from database: %w", err)
 	}
 
-	// Load latest block number from RPC.
-	latestBlock, err := s.ethereumClient.BlockNumber(ctx)
+	// Load latest finalized block number from RPC.
+	latestFinalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
 	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			return 0, 0, nil
-		}
-
-		return 0, 0, fmt.Errorf("get latest block from rpc: %w", err)
+		return 0, 0, fmt.Errorf("get latest finalized block from rpc: %w", err)
 	}
 
-	return indexedBlock.BlockNumber, latestBlock, nil
+	return indexedBlock.BlockNumber, latestFinalizedBlock.NumberU64(), nil
 }
 
 func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File) (service.Server, error) {
