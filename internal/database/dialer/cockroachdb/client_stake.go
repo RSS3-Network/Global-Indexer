@@ -619,3 +619,30 @@ func (c *client) DeleteStakeEventsByBlockNumber(ctx context.Context, blockNumber
 		Delete(new(table.StakeEvent), `"block_number" = ? AND NOT "finalized"`, blockNumber).
 		Error
 }
+
+func (c *client) UpdateStakeTransactionsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeTransaction).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) UpdateStakeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeEvent).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) UpdateStakeChipsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeChip).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}

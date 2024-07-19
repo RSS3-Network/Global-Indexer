@@ -34,6 +34,12 @@ func (h *handler) Process(ctx context.Context, block *types.Block, receipts type
 		return fmt.Errorf("delete unfinalized block: %w", err)
 	}
 
+	if h.finalized {
+		if err := h.confirmPreviousBlocks(ctx, block.NumberU64(), databaseTransaction); err != nil {
+			return fmt.Errorf("confirm previous blocks: %w", err)
+		}
+	}
+
 	header := block.Header()
 
 	for _, receipt := range receipts {
@@ -101,6 +107,22 @@ func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64
 
 	if err := databaseTransaction.DeleteNodeEventsByBlockNumber(ctx, blockNumber); err != nil {
 		return fmt.Errorf("delete node events by block number: %w", err)
+	}
+
+	return nil
+}
+
+func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) error {
+	if err := databaseTransaction.UpdateStakeTransactionsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+		return fmt.Errorf("update bridge transactions finalized by block number: %w", err)
+	}
+
+	if err := databaseTransaction.UpdateStakeEventsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+		return fmt.Errorf("update bridge events finalized by block number: %w", err)
+	}
+
+	if err := databaseTransaction.UpdateStakeChipsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+		return fmt.Errorf("update bridge chips finalized by block number: %w", err)
 	}
 
 	return nil
