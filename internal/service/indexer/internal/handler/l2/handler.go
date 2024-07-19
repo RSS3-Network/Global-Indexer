@@ -3,6 +3,7 @@ package l2
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/indexer/internal"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 var _ internal.Handler = (*handler)(nil)
@@ -27,6 +29,7 @@ type handler struct {
 	contractL2ToL1MessagePasser    *bindings.L2ToL1MessagePasser
 	contractStaking                *l2.Staking
 	contractChips                  *l2.Chips
+	confirmPreviousBlocksOnce      sync.Once
 }
 
 func (h *handler) Process(ctx context.Context, block *types.Block, receipts types.Receipts, databaseTransaction database.Client) error {
@@ -112,20 +115,40 @@ func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64
 	return nil
 }
 
-func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) error {
-	if err := databaseTransaction.UpdateStakeTransactionsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
-		return fmt.Errorf("update bridge transactions finalized by block number: %w", err)
-	}
+func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) (err error) {
+	h.confirmPreviousBlocksOnce.Do(func() {
+		if err = databaseTransaction.UpdateStakeTransactionsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for stake transactions by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+			)
 
-	if err := databaseTransaction.UpdateStakeEventsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
-		return fmt.Errorf("update bridge events finalized by block number: %w", err)
-	}
+			return
+		}
 
-	if err := databaseTransaction.UpdateStakeChipsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
-		return fmt.Errorf("update bridge chips finalized by block number: %w", err)
-	}
+		if err = databaseTransaction.UpdateStakeEventsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for stake events by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+			)
 
-	return nil
+			return
+		}
+
+		if err = databaseTransaction.UpdateStakeChipsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for stake chips by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+			)
+
+			return
+		}
+	})
+
+	return err
 }
 
 func NewHandler(chainID uint64, ethereumClient *ethclient.Client, cacheClient cache.Client, finalized bool) (internal.Handler, error) {

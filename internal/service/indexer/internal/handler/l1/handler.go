@@ -3,6 +3,7 @@ package l1
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -11,6 +12,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/indexer/internal"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 )
 
 var _ internal.Handler = (*handler)(nil)
@@ -23,6 +25,7 @@ type handler struct {
 	contractOptimismPortal         *bindings.OptimismPortal
 	contractL1CrossDomainMessenger *bindings.L1CrossDomainMessenger
 	contractL1StandardBridge       *bindings.L1StandardBridge
+	confirmPreviousBlocksOnce      sync.Once
 }
 
 func (h *handler) Process(ctx context.Context, block *types.Block, receipts types.Receipts, databaseTransaction database.Client) error {
@@ -84,16 +87,32 @@ func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64
 	return nil
 }
 
-func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) error {
-	if err := databaseTransaction.UpdateBridgeTransactionsFinalizedByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
-		return fmt.Errorf("update bridge transactions finalized by block number: %w", err)
-	}
+func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64, databaseTransaction database.Client) (err error) {
+	h.confirmPreviousBlocksOnce.Do(func() {
+		if err = databaseTransaction.UpdateBridgeTransactionsFinalizedByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for bridge transactions by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+				zap.Uint64("chain.id", h.chainID),
+			)
 
-	if err := databaseTransaction.UpdateBridgeTransactionsFinalizedByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
-		return fmt.Errorf("update bridge events finalized by block number: %w", err)
-	}
+			return
+		}
 
-	return nil
+		if err = databaseTransaction.UpdateBridgeTransactionsFinalizedByBlockNumber(ctx, h.chainID, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for bridge events by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+				zap.Uint64("chain.id", h.chainID),
+			)
+
+			return
+		}
+	})
+
+	return err
 }
 
 func NewHandler(chainID uint64, ethereumClient *ethclient.Client, finalized bool) (internal.Handler, error) {
