@@ -1,6 +1,9 @@
 package flag
 
-import "github.com/rss3-network/global-indexer/internal/client/ethereum"
+import (
+	"github.com/rss3-network/global-indexer/contract/l1"
+	"github.com/rss3-network/global-indexer/contract/l2"
+)
 
 const (
 	KeyConfig = "config"
@@ -11,6 +14,6 @@ const (
 )
 
 const (
-	ValueChainIDL1 = ethereum.ChainIDEthereum
-	ValueChainIDL2 = ethereum.ChainIDVSL
+	ValueChainIDL1 = l1.ChainIDMainnet
+	ValueChainIDL2 = l2.ChainIDMainnet
 )

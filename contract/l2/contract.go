@@ -10,6 +10,11 @@ import (
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Chips.abi --pkg l2 --type Chips --out contract_chips.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Settlement.abi --pkg l2 --type Settlement --out contract_settlement.go
 
+const (
+	ChainIDMainnet = 12553
+	ChainIDTestnet = 2331
+)
+
 var (
 	AddressGovernanceTokenProxy        = predeploys.GovernanceTokenAddr        // https://scan.testnet.rss3.io/token/0x4200000000000000000000000000000000000042
 	AddressL2StandardBridgeProxy       = predeploys.L2StandardBridgeAddr       // https://scan.testnet.rss3.io/address/0x4200000000000000000000000000000000000010
@@ -22,12 +27,12 @@ var ContractMap = map[uint64]*struct {
 	AddressChipsProxy      common.Address
 	AddressSettlementProxy common.Address
 }{
-	2331: {
+	ChainIDTestnet: {
 		AddressStakingProxy:    common.HexToAddress("0xb1b209Ee24272C7EE8076764DAa27563c5add9FF"), // https://scan.testnet.rss3.io/address/0xb1b209Ee24272C7EE8076764DAa27563c5add9FF
 		AddressChipsProxy:      common.HexToAddress("0x305A3cD2E972ceE48C362ABca02DfA699161edd6"), // https://scan.testnet.rss3.io/token/0x305A3cD2E972ceE48C362ABca02DfA699161edd6
 		AddressSettlementProxy: common.HexToAddress("0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b"), // https://scan.testnet.rss3.io/address/0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b
 	},
-	12553: {
+	ChainIDMainnet: {
 		AddressStakingProxy:    common.HexToAddress("0x28F14d917fddbA0c1f2923C406952478DfDA5578"), // https://scan.rss3.io/address/0x28F14d917fddbA0c1f2923C406952478DfDA5578
 		AddressChipsProxy:      common.HexToAddress("0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE"), // https://scan.rss3.io/token/0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE
 		AddressSettlementProxy: common.HexToAddress("0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B"), // https://scan.rss3.io/address/0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B
