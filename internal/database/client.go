@@ -40,6 +40,7 @@ type Client interface {
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeEventsQuery *schema.NodeEventsQuery) ([]*schema.NodeEvent, error)
 	DeleteNodeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error
+	UpdateNodeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)
@@ -69,6 +70,8 @@ type Client interface {
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)
 	FindBridgeEvents(ctx context.Context, query schema.BridgeEventsQuery) ([]*schema.BridgeEvent, error)
+	UpdateBridgeTransactionsFinalizedByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error
+	UpdateBridgeEventsFinalizedByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error
 	SaveBridgeTransaction(ctx context.Context, bridgeTransaction *schema.BridgeTransaction) error
 	SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.BridgeEvent) error
 	DeleteBridgeTransactionsByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error
@@ -79,6 +82,9 @@ type Client interface {
 	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
 	FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
+	UpdateStakeTransactionsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
+	UpdateStakeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
+	UpdateStakeChipsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 	DeleteStakeChipsByBlockNumber(ctx context.Context, blockNumber uint64) error
 	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error

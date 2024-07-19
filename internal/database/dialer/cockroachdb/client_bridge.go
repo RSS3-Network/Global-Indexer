@@ -215,3 +215,21 @@ func (c *client) DeleteBridgeEventsByBlockNumber(ctx context.Context, chainID, b
 		Delete(new(table.BridgeEvent), `"chain_id" = ? AND "block_number" = ? AND NOT "finalized"`, chainID, blockNumber).
 		Error
 }
+
+func (c *client) UpdateBridgeTransactionsFinalizedByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.BridgeTransaction).TableName(nil)).
+		Where(`"chain_id" = ? AND "block_number" < ? AND NOT "finalized"`, chainID, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) UpdateBridgeEventsFinalizedByBlockNumber(ctx context.Context, chainID, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.BridgeEvent).TableName(nil)).
+		Where(`"chain_id" = ? AND "block_number" < ? AND NOT "finalized"`, chainID, blockNumber).
+		Update("finalized", true).
+		Error
+}

@@ -720,3 +720,12 @@ func (c *client) DeleteNodeEventsByBlockNumber(ctx context.Context, blockNumber 
 		Delete(new(table.NodeEvent), `"block_number" = ? AND NOT "finalized"`, blockNumber).
 		Error
 }
+
+func (c *client) UpdateNodeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.NodeEvent).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
