@@ -52,7 +52,9 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	}
 
 	if length := len(stakeStakings); length > 0 && length == request.Limit {
-		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
+		latestStakeStaking := stakeStakings[length-1]
+
+		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s-%s", latestStakeStaking.Value, latestStakeStaking.Staker, latestStakeStaking.Node)))
 	}
 
 	return c.JSON(http.StatusOK, response)
