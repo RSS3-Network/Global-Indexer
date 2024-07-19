@@ -5,6 +5,8 @@ CREATE INDEX idx_events_chain_id_block_number ON bridge.events (chain_id, block_
 
 CREATE INDEX idx_transactions_block_number ON stake.transactions (block_number);
 CREATE INDEX idx_events_block_number ON stake.events (block_number);
+
+CREATE INDEX idx_events_block_number ON node.events (block_number);
 -- +goose StatementEnd
 
 -- +goose Down
@@ -14,4 +16,6 @@ DROP INDEX bridge.events@idx_events_chain_id_block_number;
 
 DROP INDEX stake.transactions@idx_transactions_block_number;
 DROP INDEX stake.events@idx_events_block_number;
+
+DROP INDEX node.events@idx_events_block_number;
 -- +goose StatementEnd

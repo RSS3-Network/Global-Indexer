@@ -40,6 +40,7 @@ type Client interface {
 	SaveNodeEvent(ctx context.Context, nodeEvent *schema.NodeEvent) error
 	FindNodeEvents(ctx context.Context, nodeEventsQuery *schema.NodeEventsQuery) ([]*schema.NodeEvent, error)
 	DeleteNodeEventsByBlockNumber(ctx context.Context, blockNumber uint64) error
+	UpdateNodeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 
 	FindNodeStat(ctx context.Context, nodeAddress common.Address) (*schema.Stat, error)
 	FindNodeStats(ctx context.Context, query *schema.StatQuery) ([]*schema.Stat, error)

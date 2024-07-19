@@ -146,6 +146,16 @@ func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64,
 
 			return
 		}
+
+		if err = databaseTransaction.UpdateNodeEventsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for node events by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+			)
+
+			return
+		}
 	})
 
 	return err
