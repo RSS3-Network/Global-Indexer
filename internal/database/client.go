@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/rss3-network/global-indexer/contract/l2"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pressly/goose/v3"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"

@@ -3,7 +3,6 @@ package hub
 import (
 	"context"
 	"fmt"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -11,6 +10,7 @@ import (
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
 	"github.com/rss3-network/global-indexer/internal/config/flag"

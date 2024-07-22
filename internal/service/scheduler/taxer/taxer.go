@@ -3,7 +3,6 @@ package taxer
 import (
 	"context"
 	"fmt"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"math/big"
 	"os"
 	"os/signal"
@@ -15,6 +14,7 @@ import (
 	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/database"

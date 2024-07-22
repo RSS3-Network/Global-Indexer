@@ -2,12 +2,12 @@ package settler
 
 import (
 	"fmt"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"

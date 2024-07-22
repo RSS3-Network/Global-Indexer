@@ -3,11 +3,11 @@ package snapshot
 import (
 	"context"
 	"fmt"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/apy"
@@ -41,11 +41,7 @@ func (s *server) Run(ctx context.Context) error {
 		})
 	}
 
-	if err := errorPool.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return errorPool.Wait()
 }
 
 func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client) (service.Server, error) {

@@ -6,14 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/shopspring/decimal"
-	"github.com/sourcegraph/conc/pool"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -21,6 +18,9 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
+	"go.uber.org/zap"
 )
 
 func (n *NTA) GetStakeChips(c echo.Context) error {
