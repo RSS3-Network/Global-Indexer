@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"fmt"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -52,7 +53,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
 	}
 
-	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}

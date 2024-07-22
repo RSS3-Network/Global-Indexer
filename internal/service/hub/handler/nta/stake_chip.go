@@ -1,15 +1,19 @@
 package nta
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 
 	"github.com/creasty/defaults"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -17,7 +21,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 )
 
 func (n *NTA) GetStakeChips(c echo.Context) error {
@@ -44,27 +47,33 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 
 	stakeChips, err := n.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
-		return fmt.Errorf("find stake chips: %w", err)
+		zap.L().Error("find stake chips from database", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
-	// Get current chip values
-	nodeAddresses := lo.Map(stakeChips, func(stakeChip *schema.StakeChip, _ int) common.Address {
-		return stakeChip.Node
-	})
-
-	node, err := n.databaseClient.FindNodes(c.Request().Context(), schema.FindNodesQuery{
-		NodeAddresses: nodeAddresses,
-	})
-	if err != nil {
-		return fmt.Errorf("find Nodes: %w", err)
-	}
-
-	values := lo.SliceToMap(node, func(node *schema.Node) (common.Address, decimal.Decimal) {
-		return node.Address, node.MinTokensToStake
-	})
+	// Parallel getting current chip values
+	errorPool := pool.New().WithContext(c.Request().Context()).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
 
 	for _, chip := range stakeChips {
-		chip.LatestValue = values[chip.Node]
+		chip := chip
+
+		errorPool.Go(func(ctx context.Context) error {
+			chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+			if err != nil {
+				zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
+
+				return fmt.Errorf("get chip info: %w", err)
+			}
+
+			chip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
+
+			return nil
+		})
+	}
+
+	if err = errorPool.Wait(); err != nil {
+		return errorx.InternalError(c)
 	}
 
 	var response nta.Response
@@ -103,15 +112,17 @@ func (n *NTA) GetStakeChip(c echo.Context) error {
 			return c.NoContent(http.StatusNoContent)
 		}
 
-		return err
+		return errorx.InternalError(c)
 	}
 
-	node, err := n.databaseClient.FindNode(c.Request().Context(), stakeChip.Node)
+	chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: c.Request().Context()}, stakeChip.ID)
 	if err != nil {
-		return fmt.Errorf("find Node: %w", err)
+		zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", stakeChip.ID.String()))
+
+		return fmt.Errorf("get chip info: %w", err)
 	}
 
-	stakeChip.LatestValue = node.MinTokensToStake
+	stakeChip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
 
 	var response nta.Response
 	response.Data = nta.NewStakeChip(stakeChip, n.baseURL(c))

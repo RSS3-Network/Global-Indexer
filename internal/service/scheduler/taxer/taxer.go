@@ -3,6 +3,7 @@ package taxer
 import (
 	"context"
 	"fmt"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"math/big"
 	"os"
 	"os/signal"
@@ -32,7 +33,7 @@ type Server struct {
 	cronJob         *cronjob.CronJob
 	databaseClient  database.Client
 	chainID         *big.Int
-	stakingContract *l2.Staking
+	stakingContract *stakingv2.Staking
 	settlerConfig   *config.Settler
 	txManager       txmgr.TxManager
 }
@@ -80,7 +81,7 @@ func New(databaseClient database.Client, redisClient *redis.Client, ethereumClie
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
 	}
 
-	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}

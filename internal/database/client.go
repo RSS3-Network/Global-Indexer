@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pressly/goose/v3"
-	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -53,8 +53,6 @@ type Client interface {
 
 	FindNodeCountSnapshots(ctx context.Context) ([]*schema.NodeSnapshot, error)
 	SaveNodeCountSnapshot(ctx context.Context, nodeSnapshot *schema.NodeSnapshot) error
-	FindNodeMinTokensToStakeSnapshots(ctx context.Context, nodeAddress []*common.Address, onlyStartAndEnd bool, limit *int) ([]*schema.NodeMinTokensToStakeSnapshot, error)
-	SaveNodeMinTokensToStakeSnapshots(ctx context.Context, nodeMinTokensToStakeSnapshot []*schema.NodeMinTokensToStakeSnapshot) error
 	FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error)
 	SaveStakerCountSnapshot(ctx context.Context, stakeSnapshot *schema.StakerCountSnapshot) error
 	FindStakerProfitSnapshots(ctx context.Context, query schema.StakerProfitSnapshotsQuery) ([]*schema.StakerProfitSnapshot, error)

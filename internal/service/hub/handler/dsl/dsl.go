@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/rss3-network/global-indexer/common/httputil"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/nameresolver"
@@ -18,7 +18,7 @@ type DSL struct {
 	nameService    *nameresolver.NameResolver
 }
 
-func NewDSL(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, nameService *nameresolver.NameResolver, stakingContract *l2.Staking, httpClient httputil.Client) (*DSL, error) {
+func NewDSL(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, nameService *nameresolver.NameResolver, stakingContract *stakingv2.Staking, httpClient httputil.Client) (*DSL, error) {
 	distributor, err := distributor.NewDistributor(ctx, databaseClient, cacheClient, httpClient, stakingContract)
 	if err != nil {
 		return nil, err
