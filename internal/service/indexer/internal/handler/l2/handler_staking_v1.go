@@ -292,16 +292,16 @@ func (h *handler) indexStakingV1StakedLog(ctx context.Context, header *types.Hea
 				return nil, fmt.Errorf("decode #%d token metadata", chipID)
 			}
 
-			value, err := h.contractStakingV1.MinTokensToStake(&callOptions, stakeTransaction.Node)
+			chipInfo, err := h.contractStakingV2.GetChipInfo(&callOptions, chipID)
 			if err != nil {
-				return nil, fmt.Errorf("get the minimum stake requirement for node %s", stakeTransaction.Node)
+				return nil, fmt.Errorf("get chip info from rpc: %w", err)
 			}
 
 			stakeChip := schema.StakeChip{
 				ID:             chipID,
 				Owner:          event.User,
 				Node:           event.NodeAddr,
-				Value:          decimal.NewFromBigInt(value, 0),
+				Value:          decimal.NewFromBigInt(chipInfo.Tokens, 0),
 				Metadata:       metadata,
 				BlockNumber:    header.Number,
 				BlockTimestamp: header.Time,
