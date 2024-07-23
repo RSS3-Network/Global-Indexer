@@ -87,7 +87,8 @@ func IsStakingV2Deployed(chainID *big.Int, blockNumber *big.Int, transactionInde
 	case ChainIDMainnet:
 		return false // TODO Need to deploy the contract on mainnet.
 	case ChainIDTestnet:
-		return blockNumber.Uint64() >= 5283916 && transactionIndex >= 0 // nolint:staticcheck // False positive.
+		// https://scan.testnet.rss3.io/tx/0xdfe5e81939f2183cb99076b0dd860b95718ceb42d163267e94c35f079761db93
+		return blockNumber.Uint64() >= 6516895 && transactionIndex >= 0 // nolint:staticcheck // False positive.
 	default:
 		return false
 	}
