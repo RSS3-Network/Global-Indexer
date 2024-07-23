@@ -73,6 +73,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,
+		Finalized:        h.finalized,
 	}
 
 	for i := uint64(0); i+event.StartTokenId.Uint64() <= event.EndTokenId.Uint64(); i++ {
@@ -92,6 +93,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
 	}
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
@@ -136,6 +138,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 				Metadata:       metadata,
 				BlockNumber:    header.Number,
 				BlockTimestamp: header.Time,
+				Finalized:      h.finalized,
 			}
 
 			return &stakeChip, nil
