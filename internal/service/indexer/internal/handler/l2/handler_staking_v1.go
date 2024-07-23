@@ -687,7 +687,7 @@ func (h *handler) saveEpochRelatedNodes(ctx context.Context, databaseTransaction
 				return fmt.Errorf("get Node: %w", err)
 			}
 
-			// APY = (operationRewards + StakingV1Rewards) / (StakingV1PoolTokens) * (1 - tax) * number of epochs in a year
+			// APY = (operationRewards + StakingRewards) / (StakingPoolTokens) * (1 - tax) * number of epochs in a year
 			// number of epochs in a year = 365 * 24 / 18 = 486.6666666666667
 			if node.StakingPoolTokens.Cmp(big.NewInt(0)) > 0 {
 				tax := 1 - float64(node.TaxRateBasisPoints)/10000

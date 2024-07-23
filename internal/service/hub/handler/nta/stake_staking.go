@@ -118,7 +118,7 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			break
 		}
 
-		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
+		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 
 		for _, chip := range chips {
 			chip := chip
@@ -139,6 +139,10 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 
 				return nil
 			})
+		}
+
+		if err := errorPool.Wait(); err != nil {
+			return nil, fmt.Errorf("get chip info: %w", err)
 		}
 
 		cursor = chips[len(chips)-1].ID
