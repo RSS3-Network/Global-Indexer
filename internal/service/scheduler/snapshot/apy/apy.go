@@ -12,7 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/redis/go-redis/v9"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -35,7 +35,7 @@ type server struct {
 	cronJob         *cronjob.CronJob
 	databaseClient  database.Client
 	cacheClient     cache.Client
-	stakingContract *l2.Staking
+	stakingContract *stakingv2.Staking
 }
 
 func (s *server) Name() string {
@@ -180,7 +180,7 @@ func (s *server) saveAPYToSnapshots(ctx context.Context, latestEpochSnapshot uin
 	return nil
 }
 
-func New(databaseClient database.Client, redisClient *redis.Client, stakingContract *l2.Staking) service.Server {
+func New(databaseClient database.Client, redisClient *redis.Client, stakingContract *stakingv2.Staking) service.Server {
 	return &server{
 		cronJob:         cronjob.New(redisClient, Name, Timeout),
 		cacheClient:     cache.New(redisClient),

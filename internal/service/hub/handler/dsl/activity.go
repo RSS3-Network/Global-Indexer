@@ -201,8 +201,6 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 }
 
 func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
-	var err error
-
 	nsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i := range accounts {
@@ -220,11 +218,7 @@ func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
 		})
 	}
 
-	if err = nsPool.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return nsPool.Wait()
 }
 
 func (d *DSL) getEVMAddress(ctx context.Context, account string) (string, error) {
