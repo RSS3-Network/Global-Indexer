@@ -5,9 +5,17 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type StakeStakingExporter interface {
+	Export() (*StakeStaking, error)
+}
+
+type StakeStakingTransformer interface {
+	StakeStakingExporter
+}
+
 type StakeStaking struct {
-	Staker common.Address    `json:"staker,omitempty"`
-	Node   common.Address    `json:"node,omitempty"`
+	Staker common.Address    `json:"staker"`
+	Node   common.Address    `json:"node"`
 	Value  decimal.Decimal   `json:"value"`
 	Chips  StakeStakingChips `json:"chips"`
 }

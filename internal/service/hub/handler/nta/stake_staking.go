@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/creasty/defaults"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -18,6 +20,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -52,7 +55,9 @@ func (n *NTA) GetStakeStakings(c echo.Context) error {
 	}
 
 	if length := len(stakeStakings); length > 0 && length == request.Limit {
-		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s", stakeStakings[length-1].Staker.String(), stakeStakings[length-1].Node.String())))
+		latestStakeStaking := stakeStakings[length-1]
+
+		response.Cursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s-%s", latestStakeStaking.Value, latestStakeStaking.Staker, latestStakeStaking.Node)))
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -95,6 +100,7 @@ func (n *NTA) GetStakerProfit(c echo.Context) error {
 func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakerProfitResponseData, error) {
 	var (
 		cursor *big.Int
+		mu     sync.Mutex
 		data   = &nta.GetStakerProfitResponseData{Owner: owner}
 	)
 
@@ -112,21 +118,31 @@ func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.
 			break
 		}
 
-		nodes := make(map[common.Address]int)
+		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
 
 		for _, chip := range chips {
 			chip := chip
-			nodes[chip.Node]++
+			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(1)))
+
+			errorPool.Go(func(ctx context.Context) error {
+				chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+				if err != nil {
+					zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
+
+					return fmt.Errorf("get chip info: %w", err)
+				}
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(chipInfo.Tokens, 0))
+
+				return nil
+			})
 		}
 
-		for node, count := range nodes {
-			minTokensToStake, err := n.stakingContract.MinTokensToStake(nil, node)
-			if err != nil {
-				return nil, fmt.Errorf("get min tokens from rpc: %w", err)
-			}
-
-			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(count)))
-			data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(minTokensToStake, 0).Mul(decimal.NewFromInt(int64(count))))
+		if err := errorPool.Wait(); err != nil {
+			return nil, fmt.Errorf("get chip info: %w", err)
 		}
 
 		cursor = chips[len(chips)-1].ID

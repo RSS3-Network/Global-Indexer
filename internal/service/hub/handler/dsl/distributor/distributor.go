@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
@@ -65,7 +66,7 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 }
 
 // DistributeDecentralizedData distributes decentralized requests to qualified Nodes.
-func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}, workers, networks []string) ([]byte, error) {
+func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}, params url.Values, workers, networks []string) ([]byte, error) {
 	var (
 		nodes          []*model.NodeEndpointCache
 		processResults = d.processActivitiesResponses
@@ -93,7 +94,7 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 		return nil, err
 	}
 
-	nodeMap, err := d.generateDecentralizedPath(requestType, request, nodes)
+	nodeMap, err := d.generateDecentralizedPath(requestType, request, params, nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 }
 
 // generateDecentralizedPath builds the path for decentralized requests.
-func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, params url.Values, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
 	var (
 		path   string
 		method = http.MethodGet
@@ -143,7 +144,7 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
 
-	endpointMap, err := d.simpleRouter.BuildPath(method, path, request, nodes, body)
+	endpointMap, err := d.simpleRouter.BuildPath(method, path, params, nodes, body)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}
@@ -152,7 +153,7 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 }
 
 // NewDistributor creates a new distributor.
-func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.Staking) (*Distributor, error) {
+func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *stakingv2.Staking) (*Distributor, error) {
 	simpleEnforcer, err := enforcer.NewSimpleEnforcer(ctx, database, cache, stakingContract, httpClient, true)
 
 	if err != nil {

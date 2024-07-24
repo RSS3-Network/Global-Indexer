@@ -2,10 +2,12 @@ package cockroachdb
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +17,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -247,84 +250,89 @@ func (c *client) DeleteStakeChipsByBlockNumber(ctx context.Context, blockNumber 
 }
 
 func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error) {
-	databaseClient := c.database.
-		WithContext(ctx).
-		Table((*table.StakeChip).TableName(nil))
-
-	databaseClient = databaseClient.Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+	databaseClient := c.database.WithContext(ctx)
 
 	if query.Cursor != nil {
 		cursor, err := base64.StdEncoding.DecodeString(*query.Cursor)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid curosr: %w", err)
 		}
 
 		splits := strings.Split(string(cursor), "-")
-		if len(splits) != 2 {
-			return nil, fmt.Errorf("invalid cursor: %w", err)
+		if length := len(splits); length != 3 {
+			return nil, fmt.Errorf("invalid curosr length: %d", length)
 		}
 
 		databaseClient = databaseClient.Where(
-			`"owner" > ? OR ("owner" = ? AND "node" > ?)`,
-			splits[0], splits[0], splits[1],
+			`"value" < @value OR ("value" = @value AND "staker" > @staker) OR ("value" = @value AND "staker" = @staker AND "node" > @node)`,
+			sql.Named("value", splits[0]),
+			sql.Named("staker", splits[1]),
+			sql.Named("node", splits[2]),
 		)
 	}
 
 	if query.Staker != nil {
-		databaseClient = databaseClient.Where(`"owner" = ?`, query.Staker.String())
+		databaseClient = databaseClient.Where(`"staker" = ?`, query.Staker.String())
 	}
 
 	if query.Node != nil {
 		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
 	}
 
-	type StakeStaking struct {
-		Owner string          `gorm:"column:owner"`
-		Node  string          `gorm:"column:node"`
-		Value decimal.Decimal `gorm:"column:value"`
-		Count uint64          `gorm:"column:count"`
-	}
-
-	var stakeStakings []*StakeStaking
+	var stakeStakings []*table.StakeStaking
 	if err := databaseClient.
-		Select(`"owner", "node", count(*) AS "count", sum("value") AS "value"`).
-		Group(`"owner", "node"`).
-		Order(`"owner", "node"`).
 		Limit(query.Limit).
+		Order(`"value" DESC, "staker", "node"`).
 		Find(&stakeStakings).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
-	results := make([]*schema.StakeStaking, 0, len(stakeStakings))
+	resultsPool := pool.NewWithResults[*schema.StakeStaking]().WithContext(ctx).WithFirstError().WithCancelOnError()
 
 	for _, stakeStaking := range stakeStakings {
-		databaseClient := c.database.WithContext(ctx)
+		stakeStaking := stakeStaking
 
-		var stakeChips []*table.StakeChip
-		if err := databaseClient.
-			Where(
-				`"owner" = ? AND "node" = ? AND "owner" != ?`, stakeStaking.Owner, stakeStaking.Node, ethereum.AddressGenesis.String(),
-			).
-			Order(`"id"`).
-			Limit(5).
-			Find(&stakeChips).Error; err != nil {
-			return nil, err
-		}
+		resultsPool.Go(func(ctx context.Context) (*schema.StakeStaking, error) {
+			databaseClient := c.database.WithContext(ctx)
 
-		results = append(results, &schema.StakeStaking{
-			Staker: common.HexToAddress(stakeStaking.Owner),
-			Node:   common.HexToAddress(stakeStaking.Node),
-			Value:  stakeStaking.Value,
-			Chips: schema.StakeStakingChips{
-				Total: stakeStaking.Count,
-				Showcase: lo.Map(stakeChips, func(stakeChip *table.StakeChip, _ int) *schema.StakeChip {
-					result, _ := stakeChip.Export()
+			var stakeChips []*table.StakeChip
+			if err := databaseClient.
+				Where(`"owner" = ? AND "node" = ?`, stakeStaking.Staker, stakeStaking.Node).
+				Order(`"id" DESC`).
+				Limit(5).
+				Find(&stakeChips).Error; err != nil {
+				return nil, err
+			}
 
-					return result
-				}),
-			},
+			stakeStaking, err := stakeStaking.Export()
+			if err != nil {
+				return nil, fmt.Errorf("export stake staking: %w", err)
+			}
+
+			stakeStaking.Chips.Showcase = lo.Map(stakeChips, func(stakeChip *table.StakeChip, _ int) *schema.StakeChip {
+				return lo.Must(stakeChip.Export())
+			})
+
+			return stakeStaking, nil
 		})
 	}
+
+	results, err := resultsPool.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	slices.SortStableFunc(results, func(left, right *schema.StakeStaking) int {
+		if n := right.Value.Cmp(left.Value); n != 0 { // DESC
+			return n
+		}
+
+		if n := strings.Compare(left.Staker.String(), right.Staker.String()); n != 0 { // ASC
+			return n
+		}
+
+		return strings.Compare(left.Node.String(), right.Node.String()) // ASC
+	})
 
 	return results, nil
 }
@@ -617,5 +625,32 @@ func (c *client) DeleteStakeEventsByBlockNumber(ctx context.Context, blockNumber
 	return c.database.
 		WithContext(ctx).
 		Delete(new(table.StakeEvent), `"block_number" = ? AND NOT "finalized"`, blockNumber).
+		Error
+}
+
+func (c *client) UpdateStakeTransactionsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeTransaction).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) UpdateStakeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeEvent).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) UpdateStakeChipsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.StakeChip).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
 		Error
 }

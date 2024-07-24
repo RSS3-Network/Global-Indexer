@@ -18,12 +18,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
-	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -119,7 +118,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.DataTypesNode) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -166,13 +165,6 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("update node status: %w", err)
 	}
 
-	minTokensToStake, err := n.stakingContract.MinTokensToStake(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return fmt.Errorf("get min token to stake from chain: %w", err)
-	}
-
-	node.MinTokensToStake = decimal.NewFromBigInt(minTokensToStake, 0)
-
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
 	if err != nil {
 		zap.L().Error("get Node local error", zap.Error(err))
@@ -193,7 +185,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) error {
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
@@ -202,7 +194,7 @@ func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo l
 	return n.databaseClient.SaveNodeStat(ctx, stat)
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo l2.DataTypesNode) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) (*schema.Stat, error) {
 	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)

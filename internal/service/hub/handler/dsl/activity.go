@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -40,7 +39,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request, nil, nil)
+	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		zap.L().Error("distribute activity request error", zap.Error(err))
 
@@ -57,7 +56,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+	if request.Type, err = parseTypes(c.QueryParams()["type"], request.Tag); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
@@ -82,7 +81,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		}
 	}
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request, workers, networks)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute activities data error", zap.Error(err))
 
@@ -99,7 +98,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+	if request.Type, err = parseTypes(request.Type, request.Tag); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
@@ -123,7 +122,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 
 	request.Accounts = lo.Uniq(request.Accounts)
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, workers, networks)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, nil, workers, networks)
 	if err != nil {
 		zap.L().Error("distribute batch activities data error", zap.Error(err))
 
@@ -140,7 +139,7 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+	if request.Type, err = parseTypes(c.QueryParams()["type"], request.Tag); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
@@ -157,7 +156,7 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request, workers, networks)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute network activities data error", zap.Error(err))
 
@@ -174,7 +173,7 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.BadRequestError(c, err)
 	}
 
-	if request.Type, err = parseParams(c.QueryParams(), request.Tag); err != nil {
+	if request.Type, err = parseTypes(c.QueryParams()["type"], request.Tag); err != nil {
 		return errorx.BadRequestError(c, err)
 	}
 
@@ -191,7 +190,7 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request, workers, networks)
+	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute platform activities data error", zap.Error(err))
 
@@ -202,8 +201,6 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 }
 
 func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
-	var err error
-
 	nsPool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
 	for i := range accounts {
@@ -221,11 +218,7 @@ func (d *DSL) transformAccounts(ctx context.Context, accounts []string) error {
 		})
 	}
 
-	if err = nsPool.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return nsPool.Wait()
 }
 
 func (d *DSL) getEVMAddress(ctx context.Context, account string) (string, error) {
@@ -272,15 +265,13 @@ func validEvmAddress(address string) bool {
 	return re.MatchString(address)
 }
 
-// parseParams parses the type parameter and returns the corresponding types.
-func parseParams(params url.Values, tags []string) ([]string, error) {
+// parseTypes parses the type parameter and returns the corresponding types.
+func parseTypes(types []string, tags []string) ([]string, error) {
 	if len(tags) == 0 {
 		return nil, nil
 	}
 
-	types := make([]string, 0)
-
-	for _, typeX := range params["type"] {
+	for _, typeX := range types {
 		for _, tagX := range tags {
 			t, err := tag.TagString(tagX)
 

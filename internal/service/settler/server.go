@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
 	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/config/flag"
@@ -37,7 +39,7 @@ type Server struct {
 	settlerConfig   *config.Settler
 	ethereumClient  *ethclient.Client
 	databaseClient  database.Client
-	stakingContract *l2.Staking
+	stakingContract *stakingv2.Staking
 	// specialRewards is a temporary rewards available at Alpha stage
 	// it will be removed in the future
 
@@ -204,17 +206,13 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 		return 0, 0, fmt.Errorf("get checkpoint from database: %w", err)
 	}
 
-	// Load latest block number from RPC.
-	latestBlock, err := s.ethereumClient.BlockNumber(ctx)
+	// Load latest finalized block number from RPC.
+	latestFinalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
 	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			return 0, 0, nil
-		}
-
-		return 0, 0, fmt.Errorf("get latest block from rpc: %w", err)
+		return 0, 0, fmt.Errorf("get latest finalized block from rpc: %w", err)
 	}
 
-	return indexedBlock.BlockNumber, latestBlock, nil
+	return indexedBlock.BlockNumber, latestFinalizedBlock.NumberU64(), nil
 }
 
 func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File) (service.Server, error) {
@@ -233,7 +231,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
 	}
 
-	stakingContract, err := l2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
+	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
