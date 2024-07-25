@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -139,8 +140,21 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 	}
 
 	waitGroup.Wait()
-	// Process the responses to calculate the actual request of each node
-	go processResponses(responses)
+
+	canceled := false
+	// If the context is canceled manually, do not process the responses
+	for _, response := range responses {
+		if errors.Is(response.Err, httputil.ErrorManuallyCanceled) {
+			canceled = true
+			break
+		}
+	}
+
+	if !canceled {
+		zap.L().Info("begin to process responses", zap.Any("responses", len(responses)))
+		// Process the responses to calculate the actual request of each node
+		go processResponses(responses)
+	}
 }
 
 // sendResponse sends the first valid response to the firstResponse channel
