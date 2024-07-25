@@ -404,7 +404,6 @@ func isActivityIdentical(src, des *model.Activity) bool {
 		src.Index != des.Index ||
 		src.From != des.From ||
 		src.To != des.To ||
-		src.Owner != des.Owner ||
 		src.Tag != des.Tag ||
 		src.Type != des.Type ||
 		src.Platform != des.Platform ||
