@@ -352,7 +352,7 @@ func isResponseIdentical(src, des []byte) bool {
 // checkActivities checks if the activities are identical.
 func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 	desActivitiesMap := lo.SliceToMap(desActivities, func(activity *model.Activity) (string, *model.Activity) {
-		return activity.ID, activity
+		return fmt.Sprintf("%s-%s-%s", activity.ID, activity.Network, activity.Owner), activity
 	})
 
 	ctx := context.Background()
@@ -367,7 +367,7 @@ func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 		act := activity
 
 		p.Go(func(_ context.Context) error {
-			if matchedActivity, exist := desActivitiesMap[act.ID]; !exist || !isActivityIdentical(act, matchedActivity) {
+			if matchedActivity, exist := desActivitiesMap[fmt.Sprintf("%s-%s-%s", act.ID, act.Network, act.Owner)]; !exist || !isActivityIdentical(act, matchedActivity) {
 				return fmt.Errorf("activities are not identical")
 			}
 
