@@ -85,7 +85,8 @@ type ChipsTokenMetadata struct {
 func IsStakingV2Deployed(chainID *big.Int, blockNumber *big.Int, transactionIndex uint) bool {
 	switch chainID.Uint64() {
 	case ChainIDMainnet:
-		return false // TODO Need to deploy the contract on mainnet.
+		// https://scan.rss3.io/tx/0x0360cc8c8c91063412551f2c6e97dbf5c0b4a352a77971f9ecaf75a128dcd2d2
+		return blockNumber.Uint64() >= 6023345 && transactionIndex >= 0 // nolint:staticcheck // False positive.
 	case ChainIDTestnet:
 		// https://scan.testnet.rss3.io/tx/0xdfe5e81939f2183cb99076b0dd860b95718ceb42d163267e94c35f079761db93
 		return blockNumber.Uint64() >= 6516895 && transactionIndex >= 0 // nolint:staticcheck // False positive.
