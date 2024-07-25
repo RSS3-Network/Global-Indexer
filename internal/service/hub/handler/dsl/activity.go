@@ -271,31 +271,37 @@ func parseTypes(types []string, tags []string) ([]string, error) {
 		return nil, nil
 	}
 
+	var schemaTypes []string
+
 	for _, typeX := range types {
+		var (
+			value schema.Type
+			t     tag.Tag
+
+			err error
+		)
+
 		for _, tagX := range tags {
-			t, err := tag.TagString(tagX)
+			t, err = tag.TagString(tagX)
 
 			if err != nil {
-				continue
+				return nil, err
 			}
 
-			value, err := schema.ParseTypeFromString(t, typeX)
+			value, err = schema.ParseTypeFromString(t, typeX)
 
-			if err != nil {
-				continue
+			if err == nil {
+				schemaTypes = append(schemaTypes, value.Name())
+				break
 			}
-
-			types = append(types, value.Name())
-
-			break
 		}
 
-		if len(types) == 0 {
+		if err != nil {
 			return nil, fmt.Errorf("invalid type: %s", typeX)
 		}
 	}
 
-	return types, nil
+	return schemaTypes, nil
 }
 
 // validateCombinedParams validates the input tags, networks, and platforms and matches the workers.
