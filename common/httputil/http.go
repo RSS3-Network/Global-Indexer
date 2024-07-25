@@ -14,7 +14,9 @@ import (
 )
 
 var (
-	ErrorNoResults = errors.New("no results")
+	ErrorNoResults        = errors.New("no results")
+	ErrorManuallyCanceled = errors.New("request was manually canceled")
+	ErrorTimeout          = errors.New("request timed out")
 )
 
 const (
@@ -46,11 +48,23 @@ func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, b
 	}
 
 	retryIfFunc := func(err error) bool {
-		return !errors.Is(err, ErrorNoResults)
+		nonRetryableErrors := []error{
+			ErrorNoResults,
+			ErrorManuallyCanceled,
+			ErrorTimeout,
+		}
+
+		for _, nonRetryableErr := range nonRetryableErrors {
+			if errors.Is(err, nonRetryableErr) {
+				return false
+			}
+		}
+
+		return true
 	}
 
-	if err := retry.Do(retryableFunc, retry.Attempts(h.attempts), retry.RetryIf(retryIfFunc)); err != nil {
-		return nil, fmt.Errorf("retry attempts: %w", err)
+	if err = retry.Do(retryableFunc, retry.Attempts(h.attempts), retry.RetryIf(retryIfFunc)); err != nil {
+		return nil, err
 	}
 
 	return readCloser, nil
@@ -68,6 +82,12 @@ func (h *httpClient) fetchWithMethod(ctx context.Context, method, path string, b
 
 	response, err := h.httpClient.Do(request)
 	if err != nil {
+		if cause := context.Cause(ctx); errors.Is(cause, context.Canceled) {
+			return nil, ErrorManuallyCanceled
+		} else if errors.Is(cause, context.DeadlineExceeded) {
+			return nil, ErrorTimeout
+		}
+
 		return nil, fmt.Errorf("send request: %w", err)
 	}
 
