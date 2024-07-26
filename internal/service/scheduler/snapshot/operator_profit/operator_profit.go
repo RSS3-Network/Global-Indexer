@@ -130,6 +130,10 @@ func (s *server) saveOperatorProfitSnapshots(ctx context.Context, latestEpochSna
 		for _, node := range nodes {
 			node := node
 
+			if node.Address == ethereum.AddressGenesis {
+				continue
+			}
+
 			errorPool.Go(func(ctx context.Context) error {
 				// Query the Node info from the staking contract.
 				nodeInfo, err := s.stakingContract.GetNode(&bind.CallOpts{Context: ctx, BlockNumber: epochItems[0].BlockNumber}, node.Address)

@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/ethereum"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cronjob"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -138,6 +139,10 @@ func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnaps
 			// Fetch the chips by the stakers.
 			for _, staker := range stakers {
 				staker := staker
+
+				if staker.Owner == ethereum.AddressGenesis {
+					continue
+				}
 
 				// Query the staker profit snapshots by the owner address and the epoch id.
 				exist, _ := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{
