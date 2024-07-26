@@ -5,13 +5,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/creasty/defaults"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -19,8 +16,6 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
-	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -74,96 +69,43 @@ func (n *NTA) GetStakerProfit(c echo.Context) error {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	// Find all stake chips
-	data, err := n.findChipsByOwner(c.Request().Context(), request.StakerAddress)
-	if err != nil {
-		zap.L().Error("find chips by owner", zap.Error(err))
-
-		return errorx.InternalError(c)
-	}
-
 	// Find history profit snapshots
-	changes, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.StakerAddress, data)
+	data, err := n.findStakerHistoryProfitSnapshots(c.Request().Context(), request.StakerAddress)
 	if err != nil {
 		zap.L().Error("find staker history profit snapshots", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}
 
-	data.OneDay, data.OneWeek, data.OneMonth = changes[0], changes[1], changes[2]
-
 	return c.JSON(http.StatusOK, nta.Response{
 		Data: data,
 	})
 }
 
-func (n *NTA) findChipsByOwner(ctx context.Context, owner common.Address) (*nta.GetStakerProfitResponseData, error) {
-	var (
-		cursor *big.Int
-		mu     sync.Mutex
-		data   = &nta.GetStakerProfitResponseData{Owner: owner}
-	)
-
-	for {
-		chips, err := n.databaseClient.FindStakeChips(ctx, schema.StakeChipsQuery{
-			Owner:  lo.ToPtr(owner),
-			Cursor: cursor,
-			Limit:  lo.ToPtr(500),
-		})
-		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-			return nil, fmt.Errorf("find stake chips: %w", err)
-		}
-
-		if len(chips) == 0 {
-			break
-		}
-
-		errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
-
-		for _, chip := range chips {
-			chip := chip
-			data.TotalChipAmount = data.TotalChipAmount.Add(decimal.NewFromInt(int64(1)))
-
-			errorPool.Go(func(ctx context.Context) error {
-				chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
-				if err != nil {
-					zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
-
-					return fmt.Errorf("get chip info: %w", err)
-				}
-
-				mu.Lock()
-				defer mu.Unlock()
-
-				data.TotalChipValue = data.TotalChipValue.Add(decimal.NewFromBigInt(chipInfo.Tokens, 0))
-
-				return nil
-			})
-		}
-
-		if err := errorPool.Wait(); err != nil {
-			return nil, fmt.Errorf("get chip info: %w", err)
-		}
-
-		cursor = chips[len(chips)-1].ID
+func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address) (*nta.GetStakerProfitResponseData, error) {
+	// Find current profit snapshot.
+	query := schema.StakerProfitSnapshotsQuery{
+		OwnerAddress: lo.ToPtr(owner),
+		Limit:        lo.ToPtr(1),
 	}
 
-	return data, nil
-}
+	currentProfit, err := n.databaseClient.FindStakerProfitSnapshots(ctx, query)
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
+	}
 
-func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common.Address, profit *nta.GetStakerProfitResponseData) ([]*nta.GetStakerProfitChangesSinceResponseData, error) {
-	if profit == nil {
+	if len(currentProfit) == 0 {
 		return nil, nil
 	}
 
-	now := time.Now()
-	query := schema.StakerProfitSnapshotsQuery{
+	// Find history profit snapshots.
+	yesterday := currentProfit[0].Date.AddDate(0, 0, -1)
+	weekAgo := currentProfit[0].Date.AddDate(0, 0, -7)
+	monthAgo := currentProfit[0].Date.AddDate(0, -1, 0)
+
+	query = schema.StakerProfitSnapshotsQuery{
 		OwnerAddress: lo.ToPtr(owner),
-		Dates: []time.Time{
-			now.Add(-24 * time.Hour),      // 1 day
-			now.Add(-7 * 24 * time.Hour),  // 1 week
-			now.Add(-30 * 24 * time.Hour), // 1 month
-		},
+		Dates:        []time.Time{yesterday, weekAgo, monthAgo},
 	}
 
 	snapshots, err := n.databaseClient.FindStakerProfitSnapshots(ctx, query)
@@ -171,26 +113,39 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
 	}
 
-	data := make([]*nta.GetStakerProfitChangesSinceResponseData, len(query.Dates))
+	data := &nta.GetStakerProfitResponseData{
+		Owner:           owner,
+		TotalChipAmount: currentProfit[0].TotalChipAmount,
+		TotalChipValue:  currentProfit[0].TotalChipValue,
+	}
 
 	for _, snapshot := range snapshots {
 		if snapshot.TotalChipValue.IsZero() {
 			continue
 		}
 
-		var index int
-
-		if snapshot.Date.After(query.Dates[2]) && snapshot.Date.Before(query.Dates[1]) {
-			index = 2
-		} else if snapshot.Date.After(query.Dates[1]) && snapshot.Date.Before(query.Dates[0]) {
-			index = 1
-		}
-
-		data[index] = &nta.GetStakerProfitChangesSinceResponseData{
-			Date:            snapshot.Date,
-			TotalChipAmount: snapshot.TotalChipAmount,
-			TotalChipValue:  snapshot.TotalChipValue,
-			ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+		switch {
+		case snapshot.Date.After(monthAgo) && snapshot.Date.Before(weekAgo):
+			data.OneMonth = &nta.GetStakerProfitChangesSinceResponseData{
+				Date:            snapshot.Date,
+				TotalChipAmount: snapshot.TotalChipAmount,
+				TotalChipValue:  snapshot.TotalChipValue,
+				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+			}
+		case snapshot.Date.After(weekAgo) && snapshot.Date.Before(yesterday):
+			data.OneWeek = &nta.GetStakerProfitChangesSinceResponseData{
+				Date:            snapshot.Date,
+				TotalChipAmount: snapshot.TotalChipAmount,
+				TotalChipValue:  snapshot.TotalChipValue,
+				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+			}
+		default:
+			data.OneDay = &nta.GetStakerProfitChangesSinceResponseData{
+				Date:            snapshot.Date,
+				TotalChipAmount: snapshot.TotalChipAmount,
+				TotalChipValue:  snapshot.TotalChipValue,
+				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+			}
 		}
 	}
 
