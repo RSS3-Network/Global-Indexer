@@ -51,4 +51,5 @@ type FindEpochsQuery struct {
 	Limit       *int
 	Cursor      *string
 	BlockNumber *uint64
+	Finalized   *bool
 }

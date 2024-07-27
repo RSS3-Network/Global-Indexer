@@ -72,7 +72,13 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 func (c *client) FindEpochs(ctx context.Context, query *schema.FindEpochsQuery) ([]*schema.Epoch, error) {
 	var data table.Epochs
 
-	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{}).Select("id")
+	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{})
+
+	if query.Distinct != nil && *query.Distinct {
+		subQuery = subQuery.Select("DISTINCT id")
+	} else {
+		subQuery = subQuery.Select("id")
+	}
 
 	if query.EpochID != nil {
 		subQuery = subQuery.Where("id = ?", *query.EpochID)
@@ -82,8 +88,8 @@ func (c *client) FindEpochs(ctx context.Context, query *schema.FindEpochsQuery) 
 		subQuery = subQuery.Where("block_number = ?", *query.BlockNumber)
 	}
 
-	if query.Distinct != nil && *query.Distinct {
-		subQuery = subQuery.Select("DISTINCT id")
+	if query.Finalized != nil {
+		subQuery = subQuery.Where("finalized = ?", *query.Finalized)
 	}
 
 	if query.Cursor != nil {
