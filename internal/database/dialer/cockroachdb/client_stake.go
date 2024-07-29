@@ -540,6 +540,10 @@ func (c *client) FindStakerProfitSnapshots(ctx context.Context, query schema.Sta
 		databaseClient = databaseClient.Where(`"date" >= ?`, query.AfterDate)
 	}
 
+	if query.EpochIDs != nil {
+		databaseClient = databaseClient.Where(`"epoch_id" IN ?`, query.EpochIDs)
+	}
+
 	if query.Limit != nil {
 		databaseClient = databaseClient.Limit(*query.Limit)
 	}
