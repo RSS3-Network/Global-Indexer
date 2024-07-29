@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
@@ -41,15 +42,17 @@ func (s *server) Name() string {
 
 func (s *server) Run(ctx context.Context) error {
 	for {
-		// Retrieve the latest block number from VSL.
-		blockEnd, err := s.ethereumClient.BlockNumber(ctx)
+		// Load latest finalized block number from RPC.
+		latestFinalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
 		if err != nil {
-			return fmt.Errorf("get block number: %w", err)
+			return fmt.Errorf("get latest finalized block from rpc: %w", err)
 		}
+
+		blockEnd := latestFinalizedBlock.NumberU64()
 
 		// If the block number matches the previous one, wait until a new block is minted.
 		if blockEnd <= s.blockNumber {
-			blockConfirmationTime := time.Second
+			blockConfirmationTime := 10 * time.Second
 			zap.L().Info(
 				"waiting for a new block to be minted",
 				zap.Uint64("block.number.local", s.blockNumber),
@@ -106,9 +109,6 @@ func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
 	}
 
-	// The Reward Distributed event indicates a new epoch has started. The event's epoch is the previous epoch (starting from 1).
-	// The current epoch in the settlement contract is the latest epoch (starting from 0).
-	// Thus, Reward Distributed event epoch = Current epoch.
 	if currentEpoch.Cmp(event.Epoch) == 0 {
 		if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
 			return err
