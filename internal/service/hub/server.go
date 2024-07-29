@@ -120,6 +120,11 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 		}
 
+		stakers := nta.Group("/stakers")
+		{
+			stakers.GET("/:address", instance.hub.nta.GetStaker)
+		}
+
 		snapshots := nta.Group("/snapshots")
 		{
 			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)

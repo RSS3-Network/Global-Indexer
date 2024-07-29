@@ -337,6 +337,25 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 	return results, nil
 }
 
+func (c *client) FindStakeStaker(ctx context.Context, address common.Address) (*schema.StakeStaker, error) {
+	databaseClient := c.database.WithContext(ctx)
+
+	var stakeStaker *table.StakeStaker
+	if err := databaseClient.
+		Where("address = ?", address.String()).
+		First(&stakeStaker).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			stakeStaker = &table.StakeStaker{
+				Address: address.String(),
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return stakeStaker.Export()
+}
+
 func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error) {
 	databaseClient := c.database.WithContext(ctx)
 

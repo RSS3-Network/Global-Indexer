@@ -513,6 +513,32 @@
                 }
             }
         },
+        "/nta/stakers/{staker_address}": {
+            "get": {
+                "summary": "Get staker's profile",
+                "description": "Retrieve the total number and value of chips for a specific staker.",
+                "tags": [
+                    "Stake",
+                    "NTA"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/staker_address_path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/StakerResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/nta/chips": {
             "get": {
                 "summary": "Get all chips",
@@ -3132,6 +3158,36 @@
                                         },
                                         "oneMonth": {
                                             "$ref": "#/components/schemas/ChipPNL"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakerResponse": {
+                "description": "A successful response containing a list of chips based on the provided filters. Each chip includes detailed information such as its ID, node address, owner address, and metadata. The response also includes a cursor for pagination to fetch subsequent sets of results.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "address": {
+                                    "type": "string",
+                                    "description": "Staker's wallet address",
+                                    "example": "0x69982e017acc0fde3d1542205089a8d3eafcd1b7"
+                                },
+                                "chips": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total_number": {
+                                            "type": "string",
+                                            "example": "0"
+                                        },
+                                        "total_value": {
+                                            "type": "string",
+                                            "example": "0"
                                         }
                                     }
                                 }
