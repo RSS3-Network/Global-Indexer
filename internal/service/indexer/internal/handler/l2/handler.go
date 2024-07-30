@@ -125,6 +125,10 @@ func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64
 		return fmt.Errorf("delete node events by block number: %w", err)
 	}
 
+	if err := databaseTransaction.DeleteEpochsByBlockNumber(ctx, blockNumber); err != nil {
+		return fmt.Errorf("delete epochs by block number: %w", err)
+	}
+
 	return nil
 }
 
@@ -163,6 +167,16 @@ func (h *handler) confirmPreviousBlocks(ctx context.Context, blockNumber uint64,
 		if err = databaseTransaction.UpdateNodeEventsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
 			zap.L().Error(
 				"update finalized field for node events by block number",
+				zap.Error(err),
+				zap.Uint64("block.number", blockNumber),
+			)
+
+			return
+		}
+
+		if err = databaseTransaction.UpdateEpochsFinalizedByBlockNumber(ctx, blockNumber); err != nil {
+			zap.L().Error(
+				"update finalized field for epochs by block number",
 				zap.Error(err),
 				zap.Uint64("block.number", blockNumber),
 			)

@@ -268,10 +268,18 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	return result, nil
 }
 
+func (c *client) UpdateEpochsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.Epoch).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
 func (c *client) DeleteEpochsByBlockNumber(ctx context.Context, blockNumber uint64) error {
 	epoch, err := c.FindEpochs(ctx, &schema.FindEpochsQuery{
 		BlockNumber: lo.ToPtr(blockNumber),
-		Limit:       lo.ToPtr(1),
 	})
 	if err != nil {
 		zap.L().Error("find epochs by block number", zap.Error(err), zap.Uint64("blockNumber", blockNumber))
@@ -289,7 +297,11 @@ func (c *client) DeleteEpochsByBlockNumber(ctx context.Context, blockNumber uint
 		return err
 	}
 
-	if err = c.database.WithContext(ctx).Where("epoch_id = ?", epoch[0].ID).Delete(&table.NodeRewardRecord{}).Error; err != nil {
+	transactionHashes := lo.Map(epoch, func(x *schema.Epoch, _ int) string {
+		return x.TransactionHash.String()
+	})
+
+	if err = c.database.WithContext(ctx).Where("transaction_hash IN (?)", transactionHashes).Delete(&table.NodeRewardRecord{}).Error; err != nil {
 		zap.L().Error("delete epoch items by block number", zap.Error(err), zap.Uint64("blockNumber", blockNumber))
 
 		return err

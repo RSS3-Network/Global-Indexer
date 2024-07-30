@@ -97,6 +97,7 @@ type Client interface {
 	FindEpochTransactions(ctx context.Context, id uint64, itemsLimit int, cursor *string) ([]*schema.Epoch, error)
 	FindEpochTransaction(ctx context.Context, transactionHash common.Hash, itemsLimit int, cursor *string) (*schema.Epoch, error)
 	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
+	UpdateEpochsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 	DeleteEpochsByBlockNumber(ctx context.Context, blockNumber uint64) error
 
 	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error
