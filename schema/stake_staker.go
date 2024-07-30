@@ -5,17 +5,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type StakeStakerExporter interface {
-	Export() (*StakeStaker, error)
-}
-
-type StakeStakerTransformer interface {
-	StakeStakerExporter
-}
-
 type StakeStaker struct {
-	Address           common.Address  `json:"address"`
-	TotalStakedNodes  uint64          `json:"total_staked_nodes"`
-	TotalOwnedChips   uint64          `json:"total_owned_chips"`
-	TotalStakedTokens decimal.Decimal `json:"total_staked_tokens"`
+	Address             common.Address  `json:"address"`
+	TotalStakedTokens   decimal.Decimal `json:"total_staked_tokens"`
+	CurrentStakedNodes  uint64          `json:"current_staked_nodes"`
+	CurrentOwnedChips   uint64          `json:"current_owned_chips"`
+	CurrentStakedTokens decimal.Decimal `json:"current_staked_tokens"`
 }
