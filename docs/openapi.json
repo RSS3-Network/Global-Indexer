@@ -516,7 +516,7 @@
         "/nta/stakers/{staker_address}": {
             "get": {
                 "summary": "Get the total staked node and total owned chips of a staker",
-                "description": "Retrieve the total number and value of chips for a specific staker.",
+                "description": "Retrieve the total number and value of chips for a specific staker at the time of staking.",
                 "tags": [
                     "Stake",
                     "NTA"
