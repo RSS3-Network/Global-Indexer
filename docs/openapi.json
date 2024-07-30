@@ -515,7 +515,7 @@
         },
         "/nta/stakers/{staker_address}": {
             "get": {
-                "summary": "Get staker's profile",
+                "summary": "Get the total staked node and total owned chips of a staker",
                 "description": "Retrieve the total number and value of chips for a specific staker.",
                 "tags": [
                     "Stake",
@@ -1157,7 +1157,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -3167,7 +3167,7 @@
                 }
             },
             "StakerResponse": {
-                "description": "A successful response containing a list of chips based on the provided filters. Each chip includes detailed information such as its ID, node address, owner address, and metadata. The response also includes a cursor for pagination to fetch subsequent sets of results.",
+                "description": "A successful response with the address of the staker and the number of nodes staked, as well as the number of chips and their total value.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -3175,21 +3175,23 @@
                             "properties": {
                                 "address": {
                                     "type": "string",
-                                    "description": "Staker's wallet address",
+                                    "description": "The wallet address of the staker.",
                                     "example": "0x69982e017acc0fde3d1542205089a8d3eafcd1b7"
                                 },
-                                "chips": {
-                                    "type": "object",
-                                    "properties": {
-                                        "total_number": {
-                                            "type": "string",
-                                            "example": "0"
-                                        },
-                                        "total_value": {
-                                            "type": "string",
-                                            "example": "0"
-                                        }
-                                    }
+                                "total_staked_nodes": {
+                                    "type": "integer",
+                                    "description": "Total number of nodes staked by the staker.",
+                                    "example": 1
+                                },
+                                "total_owned_chips": {
+                                    "type": "string",
+                                    "description": "Total number of chips owned by the staker.",
+                                    "example": "374"
+                                },
+                                "total_staked_value": {
+                                    "type": "string",
+                                    "description": "Total staked value of chips owned by the staker.",
+                                    "example": "199547980194376366760196"
                                 }
                             }
                         }

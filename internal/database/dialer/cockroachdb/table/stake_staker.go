@@ -25,12 +25,10 @@ func (s *StakeStaker) TableName() string {
 
 func (s *StakeStaker) Export() (*schema.StakeStaker, error) {
 	stakeStaker := schema.StakeStaker{
-		Address: common.HexToAddress(s.Address),
-		Nodes:   s.Nodes,
-		Chips: schema.StakeStakerChips{
-			TotalNumber: s.ChipNumber,
-			TotalValue:  s.ChipValue,
-		},
+		Address:           common.HexToAddress(s.Address),
+		TotalStakedNodes:  s.Nodes,
+		TotalOwnedChips:   s.ChipNumber,
+		TotalStakedTokens: s.ChipValue,
 	}
 
 	return &stakeStaker, nil
