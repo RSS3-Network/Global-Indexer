@@ -72,7 +72,7 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 func (c *client) FindEpochs(ctx context.Context, query *schema.FindEpochsQuery) ([]*schema.Epoch, error) {
 	var data table.Epochs
 
-	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{})
+	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{}).Select("id")
 
 	if query.EpochID != nil {
 		subQuery = subQuery.Where("id = ?", *query.EpochID)

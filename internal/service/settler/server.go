@@ -168,6 +168,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 
 			timer.Reset(time.Minute)
 			<-timer.C
+
+			continue
 		}
 
 		// Check if epochInterval has passed since the last epoch event
@@ -199,6 +201,8 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 						<-timer.C
 					} else if lastEpochTrigger.EpochID > currentEpoch.Uint64() {
 						// If a block reorganization occurs, the epoch trigger's ID is greater than the current epoch, retry this epoch trigger.
+						zap.L().Info("retry epoch trigger", zap.Uint64("epoch_id", lastEpochTrigger.EpochID))
+
 						if err := s.retryEpochProof(ctx, lastEpochTrigger.EpochID); err != nil {
 							zap.L().Error("retry epoch trigger", zap.Error(err))
 
