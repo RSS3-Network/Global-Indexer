@@ -25,7 +25,7 @@ const (
 )
 
 type Client interface {
-	FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (io.ReadCloser, error)
+	FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, error)
 }
 
 var _ Client = (*httpClient)(nil)
@@ -35,7 +35,7 @@ type httpClient struct {
 	attempts   uint
 }
 
-func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, body io.Reader) (readCloser io.ReadCloser, err error) {
+func (h *httpClient) FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (readCloser io.ReadCloser, err error) {
 	var bodyBytes []byte
 	// Read the body into a byte slice to be able to retry the request
 	if body != nil {
@@ -43,7 +43,7 @@ func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, b
 	}
 
 	retryableFunc := func() error {
-		readCloser, err = h.fetchWithMethod(ctx, method, path, bytes.NewReader(bodyBytes))
+		readCloser, err = h.fetchWithMethod(ctx, method, path, authorization, bytes.NewReader(bodyBytes))
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (h *httpClient) FetchWithMethod(ctx context.Context, method, path string, b
 	return readCloser, nil
 }
 
-func (h *httpClient) fetchWithMethod(ctx context.Context, method, path string, body io.Reader) (io.ReadCloser, error) {
+func (h *httpClient) fetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, error) {
 	request, err := http.NewRequestWithContext(ctx, method, path, body)
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
@@ -78,6 +78,10 @@ func (h *httpClient) fetchWithMethod(ctx context.Context, method, path string, b
 
 	if method == http.MethodPost {
 		request.Header.Set("Content-Type", "application/json")
+	}
+
+	if authorization != "" {
+		request.Header.Set("Authorization", authorization)
 	}
 
 	response, err := h.httpClient.Do(request)
