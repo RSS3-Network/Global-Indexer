@@ -40,7 +40,7 @@ func (h *handler) indexStakingV1Log(ctx context.Context, header *types.Header, t
 		return h.indexStakingV1UnstakeRequestedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case eventHash == l2.EventHashStakingV1UnstakeClaimed:
 		return h.indexStakingV1UnstakeClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
-	case h.finalized && eventHash == l2.EventHashStakingV1RewardDistributed:
+	case eventHash == l2.EventHashStakingV1RewardDistributed:
 		return h.indexStakingV1RewardDistributedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case eventHash == l2.EventHashStakingV1NodeCreated:
 		return h.indexStakingV1NodeCreated(ctx, header, transaction, receipt, log, databaseTransaction)

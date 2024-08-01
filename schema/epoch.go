@@ -29,6 +29,7 @@ type Epoch struct {
 	RewardedNodes []*RewardedNode `json:"rewarded_nodes,omitempty"`
 	// the total number of DSL requests made during the Epoch.
 	TotalRequestCounts decimal.Decimal `json:"total_request_counts"`
+	Finalized          bool            `json:"-"`
 	CreatedAt          int64           `json:"-"`
 	UpdatedAt          int64           `json:"-"`
 }
@@ -42,4 +43,13 @@ type RewardedNode struct {
 	StakingRewards   decimal.Decimal `json:"staking_rewards"`
 	TaxCollected     decimal.Decimal `json:"tax_collected"`
 	RequestCount     decimal.Decimal `json:"request_count"`
+}
+
+type FindEpochsQuery struct {
+	EpochID     *uint64
+	Distinct    *bool
+	Limit       *int
+	Cursor      *string
+	BlockNumber *uint64
+	Finalized   *bool
 }

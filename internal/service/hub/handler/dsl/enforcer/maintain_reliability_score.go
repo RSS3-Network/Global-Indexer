@@ -48,7 +48,7 @@ const (
 
 // getCurrentEpoch returns the current epoch.
 func (e *SimpleEnforcer) getCurrentEpoch(ctx context.Context) (int64, error) {
-	epochEvent, err := e.databaseClient.FindEpochs(ctx, 1, nil)
+	epochEvent, err := e.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		zap.L().Error("get latest epoch event from database", zap.Error(err))
 		return 0, err
