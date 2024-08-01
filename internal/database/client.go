@@ -85,6 +85,7 @@ type Client interface {
 	UpdateStakeChipsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 	DeleteStakeChipsByBlockNumber(ctx context.Context, blockNumber uint64) error
 	FindStakeStakings(ctx context.Context, query schema.StakeStakingsQuery) ([]*schema.StakeStaking, error)
+	FindStakeStaker(ctx context.Context, address common.Address) (*schema.StakeStaker, error)
 	SaveStakeTransaction(ctx context.Context, stakeTransaction *schema.StakeTransaction) error
 	SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEvent) error
 	DeleteStakeTransactionsByBlockNumber(ctx context.Context, blockNumber uint64) error

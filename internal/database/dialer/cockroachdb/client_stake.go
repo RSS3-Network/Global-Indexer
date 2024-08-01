@@ -337,6 +337,69 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 	return results, nil
 }
 
+func (c *client) FindStakeStaker(ctx context.Context, address common.Address) (*schema.StakeStaker, error) {
+	databaseTransaction := c.database.WithContext(ctx).Begin(&sql.TxOptions{ReadOnly: true})
+	defer databaseTransaction.Rollback()
+
+	var totalStakedTokens decimal.Decimal
+
+	/*
+		SELECT
+			coalesce(sum(value), 0) AS staked_tokens
+		FROM stake.transactions
+		WHERE user = $1 AND type = 'stake' AND finalized;
+	*/
+
+	if err := databaseTransaction.
+		Select("coalesce(sum(value), 0) AS staked_tokens").
+		Table((*table.StakeTransaction).TableName(nil)).
+		Where(`"user" = ? AND type = 'stake' AND finalized`, address.String()).
+		Pluck("staked_tokens", &totalStakedTokens).
+		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	/*
+		SELECT
+			count(node) AS staked_nodes,
+			sum(count) 	AS owned_chips,
+			sum(value) 	AS stake_tokens
+		FROM stake.stakings
+		WHERE staker = $1;
+	*/
+
+	type StakeStakingAggregate struct {
+		StakedNodes  uint64
+		OwnedChips   uint64
+		StakedTokens decimal.Decimal
+	}
+
+	var aggregate StakeStakingAggregate
+
+	if err := databaseTransaction.
+		Select("count(node) AS staked_nodes, sum(count) AS owned_chips, sum(value) AS staked_tokens").
+		Table((*table.StakeStaking).TableName(nil)).
+		Where(`"staker" = ?`, address.String()).
+		Scan(&aggregate).
+		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
+
+	_ = databaseTransaction.Commit().Error
+
+	stakeStaker := schema.StakeStaker{
+		Address:             address,
+		TotalStakedNodes:    aggregate.StakedNodes,
+		TotalChips:          aggregate.OwnedChips,
+		TotalStakedTokens:   totalStakedTokens,
+		CurrentStakedTokens: aggregate.StakedTokens,
+	}
+
+	return &stakeStaker, nil
+}
+
 func (c *client) FindStakerCountSnapshots(ctx context.Context) ([]*schema.StakerCountSnapshot, error) {
 	databaseClient := c.database.WithContext(ctx)
 

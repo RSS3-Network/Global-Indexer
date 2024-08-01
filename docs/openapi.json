@@ -513,6 +513,32 @@
                 }
             }
         },
+        "/nta/stakers/{staker_address}": {
+            "get": {
+                "summary": "Get the number of nodes, chips, and tokens staked of a staker",
+                "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
+                "tags": [
+                    "Stake",
+                    "NTA"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/staker_address_path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/StakerResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/nta/chips": {
             "get": {
                 "summary": "Get all chips",
@@ -1131,7 +1157,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -3134,6 +3160,43 @@
                                             "$ref": "#/components/schemas/ChipPNL"
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "StakerResponse": {
+                "description": "A successful response containing detailed information about the specified staker. The data includes the staker's wallet address, total staked nodes, total chips, total staked tokens, and current staked tokens.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "address": {
+                                    "type": "string",
+                                    "description": "The wallet address of the staker.",
+                                    "example": "0x69982e017acc0fde3d1542205089a8d3eafcd1b7"
+                                },
+                                "total_staked_nodes": {
+                                    "type": "integer",
+                                    "description": "Total number of nodes staked by the staker.",
+                                    "example": 1
+                                },
+                                "total_chips": {
+                                    "type": "string",
+                                    "description": "Total number of chips by the staker.",
+                                    "example": "374"
+                                },
+                                "total_staked_tokens": {
+                                    "type": "string",
+                                    "description": "Total number of tokens historically staked (including unstaked tokens).",
+                                    "example": "199547980194376366760196"
+                                },
+                                "current_staked_tokens": {
+                                    "type": "string",
+                                    "description": "Total amount of tokens currently staked.",
+                                    "example": "199547980194376366760196"
                                 }
                             }
                         }
