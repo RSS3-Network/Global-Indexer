@@ -33,6 +33,7 @@ type Node struct {
 	ActiveScore            decimal.Decimal        `json:"active_score"`
 	ReliabilityScore       decimal.Decimal        `json:"reliability_score"`
 	Type                   string                 `json:"type"`
+	AccessToken            string                 `json:"-"`
 	CreatedAt              int64                  `json:"created_at"`
 }
 
