@@ -516,7 +516,7 @@
         "/nta/stakers/{staker_address}": {
             "get": {
                 "summary": "Get the number of nodes, chips, and tokens staked of a staker",
-                "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, the amount of chips and tokens staked, and the total value of the staker's assets.",
+                "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
                 "tags": [
                     "Stake",
                     "NTA"
