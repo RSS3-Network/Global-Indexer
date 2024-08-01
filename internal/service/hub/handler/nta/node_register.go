@@ -144,6 +144,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
+	node.AccessToken = request.AccessToken
 
 	// Checks begin from the beta stage.
 	if node.Type == "beta" {
