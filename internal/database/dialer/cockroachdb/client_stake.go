@@ -368,19 +368,19 @@ func (c *client) FindStakeStaker(ctx context.Context, address common.Address) (*
 		WHERE staker = $1;
 	*/
 
-	type Result struct {
+	type StakeStakingAggregate struct {
 		StakedNodes  uint64
 		OwnedChips   uint64
 		StakedTokens decimal.Decimal
 	}
 
-	var current Result
+	var aggregate StakeStakingAggregate
 
 	if err := databaseTransaction.
 		Select("count(node) AS staked_nodes, sum(count) AS owned_chips, sum(value) AS staked_tokens").
 		Table((*table.StakeStaking).TableName(nil)).
 		Where(`"staker" = ?`, address.String()).
-		Scan(&current).
+		Scan(&aggregate).
 		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
@@ -391,10 +391,10 @@ func (c *client) FindStakeStaker(ctx context.Context, address common.Address) (*
 
 	stakeStaker := schema.StakeStaker{
 		Address:             address,
+		TotalStakedNodes:    aggregate.StakedNodes,
+		TotalChips:          aggregate.OwnedChips,
 		TotalStakedTokens:   totalStakedTokens,
-		CurrentStakedNodes:  current.StakedNodes,
-		CurrentOwnedChips:   current.OwnedChips,
-		CurrentStakedTokens: current.StakedTokens,
+		CurrentStakedTokens: aggregate.StakedTokens,
 	}
 
 	return &stakeStaker, nil
