@@ -69,14 +69,38 @@ func (c *client) SaveEpoch(ctx context.Context, epoch *schema.Epoch) error {
 	return nil
 }
 
-func (c *client) FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error) {
+func (c *client) FindEpochs(ctx context.Context, query *schema.FindEpochsQuery) ([]*schema.Epoch, error) {
 	var data table.Epochs
 
-	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{}).Select("DISTINCT id").Limit(limit).Order("id DESC")
+	subQuery := c.database.WithContext(ctx).Model(&table.Epoch{})
 
-	if cursor != nil {
-		subQuery = subQuery.Where("id < ?", cursor)
+	if query.Distinct != nil && *query.Distinct {
+		subQuery = subQuery.Select("DISTINCT id")
+	} else {
+		subQuery = subQuery.Select("id")
 	}
+
+	if query.EpochID != nil {
+		subQuery = subQuery.Where("id = ?", *query.EpochID)
+	}
+
+	if query.BlockNumber != nil {
+		subQuery = subQuery.Where("block_number = ?", *query.BlockNumber)
+	}
+
+	if query.Finalized != nil {
+		subQuery = subQuery.Where("finalized = ?", *query.Finalized)
+	}
+
+	if query.Cursor != nil {
+		subQuery = subQuery.Where("id < ?", query.Cursor)
+	}
+
+	if query.Limit != nil {
+		subQuery = subQuery.Limit(*query.Limit)
+	}
+
+	subQuery = subQuery.Order("id DESC")
 
 	if err := c.database.WithContext(ctx).Model(&table.Epoch{}).Where("id IN (?)", subQuery).Order("id DESC, block_number DESC").Find(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -250,6 +274,48 @@ func (c *client) FindEpochNodeRewards(ctx context.Context, nodeAddress common.Ad
 	return result, nil
 }
 
+func (c *client) UpdateEpochsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	return c.database.
+		WithContext(ctx).
+		Table((*table.Epoch).TableName(nil)).
+		Where(`"block_number" < ? AND NOT "finalized"`, blockNumber).
+		Update("finalized", true).
+		Error
+}
+
+func (c *client) DeleteEpochsByBlockNumber(ctx context.Context, blockNumber uint64) error {
+	epoch, err := c.FindEpochs(ctx, &schema.FindEpochsQuery{
+		BlockNumber: lo.ToPtr(blockNumber),
+	})
+	if err != nil {
+		zap.L().Error("find epochs by block number", zap.Error(err), zap.Uint64("blockNumber", blockNumber))
+
+		return err
+	}
+
+	if len(epoch) == 0 {
+		return nil
+	}
+
+	if err = c.database.WithContext(ctx).Where(`block_number = ? AND NOT "finalized"`, blockNumber).Delete(&table.Epoch{}).Error; err != nil {
+		zap.L().Error("delete epochs by block number", zap.Error(err), zap.Uint64("blockNumber", blockNumber))
+
+		return err
+	}
+
+	transactionHashes := lo.Map(epoch, func(x *schema.Epoch, _ int) string {
+		return x.TransactionHash.String()
+	})
+
+	if err = c.database.WithContext(ctx).Where("transaction_hash IN (?)", transactionHashes).Delete(&table.NodeRewardRecord{}).Error; err != nil {
+		zap.L().Error("delete epoch items by block number", zap.Error(err), zap.Uint64("blockNumber", blockNumber))
+
+		return err
+	}
+
+	return nil
+}
+
 func (c *client) SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error {
 	// Save epoch trigger.
 	var data table.EpochTrigger
@@ -277,6 +343,22 @@ func (c *client) FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigg
 		}
 
 		zap.L().Error("find latest epoch trigger", zap.Error(err))
+
+		return nil, err
+	}
+
+	return data.Export()
+}
+
+func (c *client) FindEpochTriggers(ctx context.Context, epochID uint64) ([]*schema.EpochTrigger, error) {
+	var data table.EpochTriggers
+
+	if err := c.database.WithContext(ctx).Model(&table.EpochTrigger{}).Where("epoch_id = ?", epochID).Order("created_at ASC").Find(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, database.ErrorRowNotFound
+		}
+
+		zap.L().Error("find epoch triggers", zap.Error(err), zap.Uint64("epochID", epochID))
 
 		return nil, err
 	}

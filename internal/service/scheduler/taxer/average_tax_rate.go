@@ -29,7 +29,7 @@ func (s *Server) checkAndSubmitAverageTaxRate(ctx context.Context) error {
 	}
 
 	// Query the latest of epoch events
-	latestEvent, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+	latestEvent, err := s.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 	if err != nil {
 		zap.L().Error("find epochs", zap.Error(err))
 

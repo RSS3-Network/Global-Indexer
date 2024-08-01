@@ -45,3 +45,20 @@ func (e *EpochTrigger) Export() (*schema.EpochTrigger, error) {
 		UpdatedAt:       e.UpdatedAt,
 	}, nil
 }
+
+type EpochTriggers []*EpochTrigger
+
+func (e EpochTriggers) Export() ([]*schema.EpochTrigger, error) {
+	result := make([]*schema.EpochTrigger, 0)
+
+	for _, epochTrigger := range e {
+		exported, err := epochTrigger.Export()
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, exported)
+	}
+
+	return result, nil
+}

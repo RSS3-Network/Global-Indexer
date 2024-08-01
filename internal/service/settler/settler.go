@@ -61,13 +61,25 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 		zap.L().Info(msg, zap.Any("transactionData", transactionData))
 
 		// Invoke the Settlement contract
-		if err = retry.Do(func() error {
-			return s.invokeSettlementContract(ctx, *transactionData)
-		}, retry.Delay(time.Second), retry.Attempts(5)); err != nil {
+		receipt, err := retry.DoWithData(
+			func() (*types.Receipt, error) {
+				return s.invokeSettlementContract(ctx, *transactionData)
+			},
+			retry.Delay(time.Second),
+			retry.Attempts(5),
+		)
+		if err != nil {
 			zap.L().Error("retry submitEpochProof invokeSettlementContract", zap.Error(err))
 
 			return err
 		}
+
+		// Save the Settlement to the database, as the reference point for the next Epoch
+		if err := s.saveSettlement(ctx, receipt, *transactionData); err != nil {
+			return err
+		}
+
+		zap.L().Info("Settlement contracted invoked successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", *transactionData))
 
 		firstInvoke = false
 
@@ -85,6 +97,48 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 	}
 
 	zap.L().Info("Epoch Proof submitted successfully", zap.Uint64("settler", epoch))
+
+	return nil
+}
+
+// retryEpochProof retries the epoch proof submission.
+// When a block reorganization occurs, the original epoch proof needs to be resubmitted.
+func (s *Server) retryEpochProof(ctx context.Context, epochID uint64) error {
+	if err := s.mutex.Lock(); err != nil {
+		zap.L().Error("lock error", zap.String("key", s.mutex.Name()), zap.Error(err))
+
+		return nil
+	}
+
+	defer func() {
+		if _, err := s.mutex.Unlock(); err != nil {
+			zap.L().Error("release lock error", zap.String("key", s.mutex.Name()), zap.Error(err))
+		}
+	}()
+
+	// Find the EpochTrigger by the epochID
+	epochTriggers, err := s.databaseClient.FindEpochTriggers(ctx, epochID)
+	if err != nil {
+		zap.L().Error("find epoch triggers", zap.Error(err))
+
+		return err
+	}
+
+	for _, trigger := range epochTriggers {
+		// Invoke the Settlement contract
+		receipt, err := retry.DoWithData(func() (*types.Receipt, error) {
+			return s.invokeSettlementContract(ctx, trigger.Data)
+		}, retry.Delay(time.Second), retry.Attempts(5))
+
+		if err != nil {
+			zap.L().Error("retry submitEpochProof invokeSettlementContract", zap.Error(err))
+
+			return err
+		}
+
+		// Skip saving the Settlement to the database, just log the result
+		zap.L().Info("Settlement contracted invoked successfully", zap.Uint64("epoch_id", epochID), zap.String("tx", receipt.TxHash.String()), zap.Any("data", trigger.Data))
+	}
 
 	return nil
 }
@@ -193,25 +247,18 @@ func parseScores(scores []*big.Float) ([]decimal.Decimal, error) {
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
 // and saves the Settlement to the database
-func (s *Server) invokeSettlementContract(ctx context.Context, data schema.SettlementData) error {
+func (s *Server) invokeSettlementContract(ctx context.Context, data schema.SettlementData) (*types.Receipt, error) {
 	input, err := s.prepareInputData(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	receipt, err := s.sendTransaction(ctx, input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Save the Settlement to the database, as the reference point for the next Epoch
-	if err := s.saveSettlement(ctx, receipt, data); err != nil {
-		return err
-	}
-
-	zap.L().Info("Settlement contracted invoked successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", data))
-
-	return nil
+	return receipt, nil
 }
 
 // sendTransaction sends the transaction and returns the receipt if successful

@@ -84,6 +84,10 @@ func (h *handler) deleteUnfinalizedBlock(ctx context.Context, blockNumber uint64
 		return fmt.Errorf("delete bridge events by block number: %w", err)
 	}
 
+	if err := databaseTransaction.DeleteEpochsByBlockNumber(ctx, blockNumber); err != nil {
+		return fmt.Errorf("delete epoch by block number: %w", err)
+	}
+
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/go-redsync/redsync/v4"
@@ -21,6 +22,8 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config/flag"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
+	"github.com/rss3-network/global-indexer/schema"
+	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -29,15 +32,16 @@ import (
 const Name = "settler"
 
 type Server struct {
-	txManager       txmgr.TxManager
-	checkpoint      uint64
-	chainID         *big.Int
-	mutex           *redsync.Mutex
-	currentEpoch    uint64
-	settlerConfig   *config.Settler
-	ethereumClient  *ethclient.Client
-	databaseClient  database.Client
-	stakingContract *stakingv2.Staking
+	txManager          txmgr.TxManager
+	checkpoint         uint64
+	chainID            *big.Int
+	mutex              *redsync.Mutex
+	currentEpoch       uint64
+	settlerConfig      *config.Settler
+	ethereumClient     *ethclient.Client
+	databaseClient     database.Client
+	stakingContract    *stakingv2.Staking
+	settlementContract *l2.Settlement
 	// specialRewards is a temporary rewards available at Alpha stage
 	// it will be removed in the future
 
@@ -106,7 +110,7 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 		s.checkpoint = indexedBlock
 
 		// Find the latest epoch event from database
-		lastEpoch, err := s.databaseClient.FindEpochs(ctx, 1, nil)
+		lastEpoch, err := s.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 			zap.L().Error("get latest epoch event from database", zap.Error(err))
 
@@ -158,6 +162,16 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 			}
 		}
 
+		// Wait for the finalization of the last epoch
+		if len(lastEpoch) > 0 && !lastEpoch[0].Finalized {
+			zap.L().Info("wait for the finalization of the last epoch", zap.Int64("block_number", lastEpoch[0].BlockNumber.Int64()))
+
+			timer.Reset(time.Minute)
+			<-timer.C
+
+			continue
+		}
+
 		// Check if epochInterval has passed since the last epoch event
 		if timeSinceLastEpoch >= epochInterval {
 			// Check if the epochInterval has passed since the last epoch trigger
@@ -169,13 +183,33 @@ func (s *Server) listenEpochEvent(ctx context.Context) error {
 					return err
 				}
 			} else if timeSinceLastTrigger < epochInterval {
-				// Check if epochInterval has NOT passed since the last epoch trigger
-				// If so, delay the trigger by 5 seconds
-				zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochTime),
-					zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
+				// Get current epoch
+				currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{Context: ctx})
+				if err != nil {
+					zap.L().Error("get current epoch from chain", zap.Error(err))
 
-				timer.Reset(5 * time.Second)
-				<-timer.C
+					return err
+				}
+
+				if lastEpochTrigger != nil {
+					if lastEpochTrigger.EpochID == currentEpoch.Uint64() {
+						// If the epoch trigger has already fired for the current epoch, wait for the epoch event indexer to catch up
+						zap.L().Info("wait for epoch event indexer", zap.Time("last_epoch_event_time", lastEpochTime),
+							zap.Time("last_epoch_trigger_time", lastEpochTriggerTime))
+
+						timer.Reset(5 * time.Second)
+						<-timer.C
+					} else if lastEpochTrigger.EpochID > currentEpoch.Uint64() {
+						// If a block reorganization occurs, the epoch trigger's ID is greater than the current epoch, retry this epoch trigger.
+						zap.L().Info("retry epoch trigger", zap.Uint64("epoch_id", lastEpochTrigger.EpochID))
+
+						if err := s.retryEpochProof(ctx, lastEpochTrigger.EpochID); err != nil {
+							zap.L().Error("retry epoch trigger", zap.Error(err))
+
+							return err
+						}
+					}
+				}
 			}
 		} else if timeSinceLastEpoch < epochInterval {
 			// If epochInterval has NOT passed since the last epoch event
@@ -234,6 +268,11 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	settlementContract, err := l2.NewSettlement(contractAddresses.AddressSettlementProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new settlement contract: %w", err)
+	}
+
 	signerFactory, from, err := gicrypto.NewSignerFactory(config.Settler.PrivateKey, config.Settler.SignerEndpoint, config.Settler.WalletAddress)
 
 	if err != nil {
@@ -258,14 +297,15 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 	}
 
 	server := &Server{
-		chainID:         chainID,
-		mutex:           rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
-		settlerConfig:   config.Settler,
-		ethereumClient:  ethereumClient,
-		databaseClient:  databaseClient,
-		txManager:       txManager,
-		stakingContract: stakingContract,
-		specialRewards:  config.SpecialRewards,
+		chainID:            chainID,
+		mutex:              rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
+		settlerConfig:      config.Settler,
+		ethereumClient:     ethereumClient,
+		databaseClient:     databaseClient,
+		txManager:          txManager,
+		stakingContract:    stakingContract,
+		specialRewards:     config.SpecialRewards,
+		settlementContract: settlementContract,
 	}
 
 	return server, nil

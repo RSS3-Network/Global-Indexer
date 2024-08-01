@@ -94,13 +94,16 @@ type Client interface {
 	UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChips ...*big.Int) error
 
 	SaveEpoch(ctx context.Context, epoch *schema.Epoch) error
-	FindEpochs(ctx context.Context, limit int, cursor *string) ([]*schema.Epoch, error)
+	FindEpochs(ctx context.Context, query *schema.FindEpochsQuery) ([]*schema.Epoch, error)
 	FindEpochTransactions(ctx context.Context, id uint64, itemsLimit int, cursor *string) ([]*schema.Epoch, error)
 	FindEpochTransaction(ctx context.Context, transactionHash common.Hash, itemsLimit int, cursor *string) (*schema.Epoch, error)
 	FindEpochNodeRewards(ctx context.Context, nodeAddress common.Address, limit int, cursor *string) ([]*schema.Epoch, error)
+	UpdateEpochsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
+	DeleteEpochsByBlockNumber(ctx context.Context, blockNumber uint64) error
 
 	SaveEpochTrigger(ctx context.Context, epochTrigger *schema.EpochTrigger) error
 	FindLatestEpochTrigger(ctx context.Context) (*schema.EpochTrigger, error)
+	FindEpochTriggers(ctx context.Context, epochID uint64) ([]*schema.EpochTrigger, error)
 
 	FindAverageTaxSubmissions(ctx context.Context, query schema.AverageTaxRateSubmissionQuery) ([]*schema.AverageTaxRateSubmission, error)
 	SaveAverageTaxSubmission(ctx context.Context, averageTaxSubmission *schema.AverageTaxRateSubmission) error
