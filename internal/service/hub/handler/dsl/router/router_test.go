@@ -42,7 +42,7 @@ type MockHTTPClient struct {
 	mock.Mock
 }
 
-func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ io.Reader) (io.ReadCloser, error) {
+func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ string, _ io.Reader) (io.ReadCloser, error) {
 	args := m.Called(ctx, endpoint)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }

@@ -10,6 +10,7 @@ import (
 type Stat struct {
 	Address              common.Address `gorm:"column:address;primaryKey"`
 	Endpoint             string         `gorm:"column:endpoint"`
+	AccessToken          string         `gorm:"column:access_token"`
 	Points               float64        `gorm:"column:points"`
 	IsPublicGood         bool           `gorm:"column:is_public_good"`
 	IsFullNode           bool           `gorm:"column:is_full_node"`
@@ -34,6 +35,7 @@ func (*Stat) TableName() string {
 func (s *Stat) Import(stat *schema.Stat) (err error) {
 	s.Address = stat.Address
 	s.Endpoint = stat.Endpoint
+	s.AccessToken = stat.AccessToken
 	s.Points = stat.Score
 	s.IsPublicGood = stat.IsPublicGood
 	s.IsFullNode = stat.IsFullNode
@@ -55,6 +57,7 @@ func (s *Stat) Export() (*schema.Stat, error) {
 	stat := schema.Stat{
 		Address:              s.Address,
 		Endpoint:             s.Endpoint,
+		AccessToken:          s.AccessToken,
 		Score:                s.Points,
 		IsPublicGood:         s.IsPublicGood,
 		IsFullNode:           s.IsFullNode,

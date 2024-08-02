@@ -225,7 +225,7 @@ func (e *SimpleEnforcer) verifyActivityByStats(ctx context.Context, activity *mo
 		if _, exists := statMap[stat.Address.String()]; !exists {
 			statMap[stat.Address.String()] = struct{}{}
 
-			activityFetched, err := e.fetchActivityByTxID(ctx, stat.Endpoint, activity.ID)
+			activityFetched, err := e.fetchActivityByTxID(ctx, stat.Endpoint, stat.AccessToken, activity.ID)
 
 			if err != nil || activityFetched.Data == nil || !isActivityIdentical(activity, activityFetched.Data) {
 				stat.EpochInvalidRequest += invalidPointUnit
@@ -272,10 +272,10 @@ func generateInvalidResponse(err error, activity *model.ActivityResponse) json.R
 }
 
 // fetchActivityByTxID fetches the activity by txID from a Node.
-func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, txID string) (*model.ActivityResponse, error) {
+func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, accessToken, txID string) (*model.ActivityResponse, error) {
 	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, nil)
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}

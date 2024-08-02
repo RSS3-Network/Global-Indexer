@@ -144,6 +144,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
+	node.AccessToken = request.AccessToken
 
 	// Checks begin from the beta stage.
 	if node.Type == "beta" {
@@ -207,12 +208,14 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo st
 		stat = &schema.Stat{
 			Address:      node.Address,
 			Endpoint:     node.Endpoint,
+			AccessToken:  node.AccessToken,
 			IsPublicGood: node.IsPublicGood,
 			Staking:      staking,
 			ResetAt:      time.Now(),
 		}
 	} else {
 		stat.Endpoint = node.Endpoint
+		stat.AccessToken = node.AccessToken
 		stat.IsPublicGood = node.IsPublicGood
 		stat.Staking = staking
 		stat.ResetAt = time.Now()
@@ -294,7 +297,7 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 
 // checkAvailable checks if the endpoint is available and contains the node's address.
 func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address common.Address) error {
-	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, nil)
+	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
 	if err != nil {
 		return fmt.Errorf("fetch node endpoint %s: %w", endpoint, err)
 	}

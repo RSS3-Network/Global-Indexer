@@ -51,9 +51,10 @@ func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []
 		}
 
 		urls[common.HexToAddress(node.Address)] = model.RequestMeta{
-			Method:   method,
-			Endpoint: fullURL,
-			Body:     body,
+			Method:      method,
+			Endpoint:    fullURL,
+			AccessToken: node.AccessToken,
+			Body:        body,
 		}
 	}
 
@@ -101,7 +102,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 			response := &model.DataResponse{Address: address, Endpoint: requestMeta.Endpoint}
 			// Fetch the data from the Node.
-			body, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, bytes.NewReader(requestMeta.Body))
+			body, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, requestMeta.AccessToken, bytes.NewReader(requestMeta.Body))
 
 			if err != nil {
 				zap.L().Error("failed to fetch request", zap.String("node", address.String()), zap.Error(err))

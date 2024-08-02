@@ -23,8 +23,13 @@ import (
 // This structure helps in quickly and efficiently updating and retrieving scores and statuses of nodes in distributed systems.
 type ScoreMaintainer struct {
 	cacheClient        cache.Client
-	nodeEndpointCaches map[string]string
+	nodeEndpointCaches map[string]*EndpointCache
 	lock               sync.RWMutex
+}
+
+type EndpointCache struct {
+	Endpoint    string
+	AccessToken string
 }
 
 // addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
@@ -43,7 +48,10 @@ func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, 
 	}
 
 	sm.lock.Lock()
-	sm.nodeEndpointCaches[nodeStat.Address.String()] = nodeStat.Endpoint
+	sm.nodeEndpointCaches[nodeStat.Address.String()] = &EndpointCache{
+		Endpoint:    nodeStat.Endpoint,
+		AccessToken: nodeStat.AccessToken,
+	}
 	sm.lock.Unlock()
 
 	return sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
@@ -63,10 +71,11 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 	qualifiedNodes := make([]*model.NodeEndpointCache, 0, n)
 
 	for _, item := range result {
-		if endpoint, ok := sm.nodeEndpointCaches[item.Member.(string)]; ok {
+		if endpointCache, ok := sm.nodeEndpointCaches[item.Member.(string)]; ok {
 			qualifiedNodes = append(qualifiedNodes, &model.NodeEndpointCache{
-				Address:  item.Member.(string),
-				Endpoint: endpoint,
+				Address:     item.Member.(string),
+				Endpoint:    endpointCache.Endpoint,
+				AccessToken: endpointCache.AccessToken,
 			})
 		}
 	}
@@ -76,7 +85,7 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 
 // updateQualifiedNodesMap replaces the current nodeEndpointCaches.
 func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStats []*schema.Stat) error {
-	nodeStatsCaches := make(map[string]string, len(nodeStats))
+	nodeStatsCaches := make(map[string]*EndpointCache, len(nodeStats))
 
 	var mu sync.Mutex
 
@@ -88,7 +97,10 @@ func (sm *ScoreMaintainer) updateQualifiedNodesMap(ctx context.Context, nodeStat
 		statsPool.Go(func(_ context.Context) error {
 			if stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing) {
 				mu.Lock()
-				nodeStatsCaches[stat.Address.String()] = stat.Endpoint
+				nodeStatsCaches[stat.Address.String()] = &EndpointCache{
+					Endpoint:    stat.Endpoint,
+					AccessToken: stat.AccessToken,
+				}
 				mu.Unlock()
 			}
 
@@ -127,10 +139,10 @@ func newScoreMaintainer(ctx context.Context, setKey string, nodeStats []*schema.
 }
 
 // prepareNodeCachesAndMembers set node request caches and prepares the members for the sorted set.
-func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, cacheClient cache.Client) (map[string]string, []redis.Z, error) {
+func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, cacheClient cache.Client) (map[string]*EndpointCache, []redis.Z, error) {
 	var mu sync.Mutex
 
-	nodeEndpointMap := make(map[string]string, len(nodeStats))
+	nodeEndpointMap := make(map[string]*EndpointCache, len(nodeStats))
 	members := make([]redis.Z, 0, len(nodeStats))
 
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(nodeStats) < 20*runtime.NumCPU() && len(nodeStats) > 0, len(nodeStats), 20*runtime.NumCPU()))
@@ -173,7 +185,11 @@ func prepareNodeCachesAndMembers(ctx context.Context, nodeStats []*schema.Stat, 
 				calculateReliabilityScore(stat)
 
 				mu.Lock()
-				nodeEndpointMap[stat.Address.String()] = stat.Endpoint
+				nodeEndpointMap[stat.Address.String()] = &EndpointCache{
+					Endpoint:    stat.Endpoint,
+					AccessToken: stat.AccessToken,
+				}
+
 				members = append(members, redis.Z{
 					Member: stat.Address.String(),
 					Score:  stat.Score,
@@ -210,7 +226,7 @@ func getCacheCount(ctx context.Context, cacheClient cache.Client, key string, ad
 
 // adjustMembersToSet modifies the existing members of a sorted set based on specific criteria or updates.
 // This function may add, update, or remove members to ensure the set reflects current data states or conditions.
-func adjustMembersToSet(ctx context.Context, setKey string, newMembers []redis.Z, nodeEndpointCaches map[string]string, cacheClient cache.Client) error {
+func adjustMembersToSet(ctx context.Context, setKey string, newMembers []redis.Z, nodeEndpointCaches map[string]*EndpointCache, cacheClient cache.Client) error {
 	if len(newMembers) > 0 {
 		if err := cacheClient.ZAdd(ctx, setKey, newMembers...); err != nil {
 			return err
@@ -233,7 +249,7 @@ func adjustMembersToSet(ctx context.Context, setKey string, newMembers []redis.Z
 }
 
 // filterMembers filters out the members that are not in the nodeEndpointCaches.
-func filterMembersToRemove(members []redis.Z, nodeEndpointCaches map[string]string) []string {
+func filterMembersToRemove(members []redis.Z, nodeEndpointCaches map[string]*EndpointCache) []string {
 	membersToRemove := make([]string, 0, len(members))
 
 	for _, member := range members {
