@@ -9,6 +9,7 @@ import (
 type Stat struct {
 	Address              common.Address `json:"address"`
 	Endpoint             string         `json:"-"`
+	AccessToken          string         `json:"-"`
 	Score                float64        `json:"score"`
 	IsPublicGood         bool           `json:"is_public_good"`
 	IsFullNode           bool           `json:"is_full_node"`

@@ -101,7 +101,7 @@ func (n *NTA) getNodeEndpoint(c echo.Context) (string, error) {
 
 // fetchResponse fetches data from the provided endpoint.
 func (n *NTA) fetchResponse(c echo.Context, url string) error {
-	response, err := n.httpClient.FetchWithMethod(c.Request().Context(), http.MethodGet, url, nil)
+	response, err := n.httpClient.FetchWithMethod(c.Request().Context(), http.MethodGet, url, "", nil)
 	if err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("network: %w", err))
 	}

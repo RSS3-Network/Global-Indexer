@@ -73,9 +73,9 @@ var (
 
 // NodeEndpointCache stores the elements in the heap.
 type NodeEndpointCache struct {
-	Address  string  `json:"address"`
-	Endpoint string  `json:"endpoint"`
-	Score    float64 `json:"score"`
+	Address     string `json:"address"`
+	Endpoint    string `json:"endpoint"`
+	AccessToken string `json:"access_token"`
 }
 
 // DataResponse represents the response returned by a Node.
@@ -94,9 +94,10 @@ type DataResponse struct {
 }
 
 type RequestMeta struct {
-	Method   string
-	Endpoint string
-	Body     []byte
+	Method      string
+	Endpoint    string
+	AccessToken string
+	Body        []byte
 }
 
 type ErrResponse struct {

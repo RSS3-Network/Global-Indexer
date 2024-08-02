@@ -57,7 +57,7 @@ func TestHTTPClient_FetchWithMethod(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := httpClient.FetchWithMethod(context.TODO(), http.MethodGet, testcase.arguments.url, nil)
+			_, err := httpClient.FetchWithMethod(context.TODO(), http.MethodGet, testcase.arguments.url, "", nil)
 			require.NoError(t, err)
 		})
 	}

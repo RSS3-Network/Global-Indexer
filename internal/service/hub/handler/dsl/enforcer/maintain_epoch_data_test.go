@@ -94,7 +94,7 @@ type MockHTTPClient struct {
 	mock.Mock
 }
 
-func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ io.Reader) (io.ReadCloser, error) {
+func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ string, _ io.Reader) (io.ReadCloser, error) {
 	args := m.Called(ctx, endpoint)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
@@ -106,7 +106,7 @@ func TestGetNodeWorkerStatus(t *testing.T) {
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
 
 	enforcer := &SimpleEnforcer{httpClient: mockClient}
-	response, err := enforcer.getNodeWorkerStatus(context.Background(), "http://localhost:8080")
+	response, err := enforcer.getNodeWorkerStatus(context.Background(), "http://localhost:8080", "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, workerInfoNode1, response.Data.Decentralized)

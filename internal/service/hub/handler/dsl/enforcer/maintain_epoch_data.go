@@ -64,7 +64,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			defer wg.Done()
 			// Retrieve the status of the node's worker,
 			// including details like name, network, tags, and platform information.
-			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint)
+			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint, stat.AccessToken)
 			if err != nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
@@ -361,10 +361,10 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 }
 
 // getNodeWorkerStatus retrieves the worker status for the node.
-func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint string) (*WorkerResponse, error) {
+func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkerResponse, error) {
 	fullURL := endpoint + "/workers_status"
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, nil)
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -535,8 +535,11 @@ func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key str
 		return err
 	}
 
-	nodesEndpointCachesMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (string, string) {
-		return stat.Address.String(), stat.Endpoint
+	nodesEndpointCachesMap := lo.SliceToMap(nodeStats, func(stat *schema.Stat) (string, *EndpointCache) {
+		return stat.Address.String(), &EndpointCache{
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
+		}
 	})
 
 	// Get current members from Redis sorted set
@@ -564,7 +567,7 @@ func (e *SimpleEnforcer) updateSortedSetForNodeType(ctx context.Context, key str
 }
 
 // prepareMembers prepares the members to add and remove in the sorted set.
-func prepareMembers(members []redis.Z, nodesEndpointCachesMap map[string]string, nodeStats []*schema.Stat) ([]redis.Z, []string) {
+func prepareMembers(members []redis.Z, nodesEndpointCachesMap map[string]*EndpointCache, nodeStats []*schema.Stat) ([]redis.Z, []string) {
 	membersToRemove := filterMembersToRemove(members, nodesEndpointCachesMap)
 
 	membersToAdd := make([]redis.Z, 0)
