@@ -144,7 +144,8 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
-	node.AccessToken = request.AccessToken
+	// Implement RSS3 node authentication using Bearer tokens.
+	node.AccessToken = fmt.Sprintf("Bearer %s", request.AccessToken)
 
 	// Checks begin from the beta stage.
 	if node.Type == "beta" {
