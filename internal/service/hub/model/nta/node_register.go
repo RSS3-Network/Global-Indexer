@@ -12,8 +12,8 @@ type RegisterNodeRequest struct {
 	Endpoint    string          `json:"endpoint" validate:"required"`
 	Stream      json.RawMessage `json:"stream,omitempty"`
 	Config      json.RawMessage `json:"config,omitempty"`
-	Type        string          `json:"type" validate:"required,oneof=alpha beta" default:"alpha"`
-	AccessToken string          `json:"access_token" validate:"required_unless=Type alpha"`
+	Type        string          `json:"type" validate:"required,oneof=alpha beta normal" default:"alpha"`
+	AccessToken string          `json:"access_token" validate:"required_if=Type normal"`
 }
 
 type NodeHeartbeatRequest struct {
