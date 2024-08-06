@@ -345,16 +345,34 @@ func (c *client) FindStakeStaker(ctx context.Context, address common.Address) (*
 
 	/*
 		SELECT
-			coalesce(sum(value), 0) AS staked_tokens
+		    coalesce(sum(
+		        CASE
+		            WHEN transactions.type = 'stake' AND events.type = 'staked' THEN value
+		            WHEN transactions.type = 'unstake' AND events.type = 'claimed' THEN -value
+		            ELSE 0
+		        END
+		        ), 0) AS total_staked_tokens
 		FROM stake.transactions
-		WHERE user = $1 AND type = 'stake' AND finalized;
+		         LEFT JOIN stake.events ON transactions.id = events.id
+		WHERE transactions.user = $1 AND transactions.finalized;
 	*/
 
-	if err := databaseTransaction.
-		Select("coalesce(sum(value), 0) AS staked_tokens").
+	if err := databaseTransaction.Debug().
+		Select(`
+			coalesce(sum(
+				CASE
+					WHEN transactions.type = ? AND events.type = ? THEN value
+					WHEN transactions.type = ? AND events.type = ? THEN -value
+					ELSE 0
+				END
+			), 0) AS total_staked_tokens`,
+			schema.StakeTransactionTypeStake, schema.StakeEventTypeStakeStaked,
+			schema.StakeTransactionTypeUnstake, schema.StakeEventTypeUnstakeClaimed,
+		).
 		Table((*table.StakeTransaction).TableName(nil)).
-		Where(`"user" = ? AND type = 'stake' AND finalized`, address.String()).
-		Pluck("staked_tokens", &totalStakedTokens).
+		Joins("LEFT JOIN stake.events ON transactions.id = events.id").
+		Where(`"transactions"."user" = ? AND transactions.finalized`, address.String()).
+		Scan(&totalStakedTokens).
 		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
