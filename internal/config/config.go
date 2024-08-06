@@ -2,11 +2,15 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"unsafe"
 
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
 	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,6 +26,7 @@ type File struct {
 	Redis          *Redis          `yaml:"redis"`
 	RSS3Chain      *RSS3Chain      `yaml:"rss3_chain"`
 	Settler        *Settler        `yaml:"settler"`
+	Distributor    *Distributor    `yaml:"distributor"`
 	SpecialRewards *SpecialRewards `yaml:"special_rewards"`
 	GeoIP          *GeoIP          `yaml:"geo_ip"`
 	RPC            *RPC            `yaml:"rpc"`
@@ -54,6 +59,15 @@ type Settler struct {
 	// BatchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
 	BatchSize int `yaml:"batch_size" default:"200"`
+}
+
+type Distributor struct {
+	// The number of demotions that trigger a slashing.
+	MaxDemotionCount int `yaml:"max_demotion_count"`
+	// The required number of qualified Nodes
+	QualifiedNodeCount int `yaml:"qualified_node_count" default:"3"`
+	// The required number of verifications before a request is considered valid
+	VerificationCount int `yaml:"verification_count" default:"3"`
 }
 
 type SpecialRewards struct {
@@ -118,5 +132,26 @@ func Setup(configFilePath string) (*File, error) {
 		return nil, fmt.Errorf("validate config file: %w", err)
 	}
 
+	// Initialize some common global variables.
+	initGlobalVars(&configFile)
+
 	return &configFile, nil
+}
+
+func initGlobalVars(file *File) {
+	if file.Distributor.MaxDemotionCount == 0 {
+		var i int
+
+		if unsafe.Sizeof(i) == 4 {
+			file.Distributor.MaxDemotionCount = math.MaxInt32
+		} else {
+			file.Distributor.MaxDemotionCount = math.MaxInt64
+		}
+	}
+
+	model.DemotionCountBeforeSlashing = file.Distributor.MaxDemotionCount
+	model.RequiredVerificationCount = file.Distributor.VerificationCount
+	model.RequiredQualifiedNodeCount = file.Distributor.QualifiedNodeCount
+
+	zap.L().Info("init constants", zap.Any("MaxDemotionCount", model.DemotionCountBeforeSlashing), zap.Any("VerificationCount", model.RequiredVerificationCount), zap.Any("QualifiedNodeCount", model.RequiredQualifiedNodeCount))
 }
