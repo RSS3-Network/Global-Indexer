@@ -64,9 +64,9 @@ type Settler struct {
 type Distributor struct {
 	// The number of demotions that triggers a slashing.
 	MaxDemotionCount int `yaml:"max_demotion_count"`
-	// The required number of qualified Nodes
+	// The number of nodes required to meet the criteria during distribution.
 	QualifiedNodeCount int `yaml:"qualified_node_count" default:"3"`
-	// The required number of verifications before a request is considered valid
+	// The number of verification activities selected during the second verification.
 	VerificationCount int `yaml:"verification_count" default:"3"`
 }
 
