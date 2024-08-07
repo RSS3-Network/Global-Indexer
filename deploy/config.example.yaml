@@ -53,7 +53,7 @@ telemetry:
   insecure: true
 
 distributor:
-  max_demotion_count: 0
+  max_demotion_count: -1
   qualified_node_count: 3
   verification_count: 3
 

@@ -63,7 +63,7 @@ type Settler struct {
 
 type Distributor struct {
 	// The number of demotions that triggers a slashing.
-	MaxDemotionCount int `yaml:"max_demotion_count"`
+	MaxDemotionCount int `yaml:"max_demotion_count" default:"4"`
 	// The number of nodes required to meet the criteria during distribution.
 	QualifiedNodeCount int `yaml:"qualified_node_count" default:"3"`
 	// The number of verification activities selected during the second verification.
@@ -139,7 +139,7 @@ func Setup(configFilePath string) (*File, error) {
 }
 
 func initGlobalVars(file *File) {
-	if file.Distributor.MaxDemotionCount == 0 {
+	if file.Distributor.MaxDemotionCount == -1 {
 		var i int
 
 		if unsafe.Sizeof(i) == 4 {
