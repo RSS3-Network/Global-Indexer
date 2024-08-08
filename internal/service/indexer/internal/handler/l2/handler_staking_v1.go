@@ -373,6 +373,13 @@ func (h *handler) indexStakingV1UnstakeRequestedLog(ctx context.Context, header 
 		return fmt.Errorf("save stake event: %w", err)
 	}
 
+	// destroy chips
+	if err := databaseTransaction.UpdateStakeChipsOwner(ctx, ethereum.AddressGenesis, event.ChipsIds...); err != nil {
+		zap.L().Error("update stake chips to destroy", zap.Error(err), zap.Any("chip ids", event.ChipsIds))
+
+		return fmt.Errorf("update stake chips to destroy: %w", err)
+	}
+
 	return nil
 }
 
