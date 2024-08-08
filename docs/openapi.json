@@ -1512,10 +1512,10 @@
                                 "type": "object",
                                 "nullable": true,
                                 "properties": {
-                                    "withdrawRequested": {
+                                    "requested": {
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     },
-                                    "withdrawClaimed": {
+                                    "claimed": {
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     }
                                 }
@@ -1533,10 +1533,10 @@
                                 "type": "object",
                                 "nullable": true,
                                 "properties": {
-                                    "unstakeRequested": {
+                                    "requested": {
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     },
-                                    "unstakeClaimed": {
+                                    "claimed": {
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     }
                                 }
