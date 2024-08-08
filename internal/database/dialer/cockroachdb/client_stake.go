@@ -520,21 +520,22 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 		return fmt.Errorf("import stake event: %w", err)
 	}
 
-	clauses := []clause.Expression{
-		clause.OnConflict{
-			UpdateAll: true,
-			Where: clause.Where{
-				Exprs: []clause.Expression{
-					clause.Eq{
-						Column: fmt.Sprintf("%s.finalized", value.TableName()),
-						Value:  false,
-					},
-				},
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "transaction_hash",
+			},
+			{
+				Name: "block_hash",
+			},
+			{
+				Name: "id",
 			},
 		},
+		UpdateAll: true,
 	}
 
-	return c.database.WithContext(ctx).Clauses(clauses...).Create(&value).Error
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
 }
 
 func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.StakeChip) error {
@@ -543,12 +544,9 @@ func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.Stake
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
-			Where: clause.Where{
-				Exprs: []clause.Expression{
-					clause.Eq{
-						Column: fmt.Sprintf("%s.finalized", (*table.StakeChip)(nil).TableName()),
-						Value:  false,
-					},
+			Columns: []clause.Column{
+				{
+					Name: "id",
 				},
 			},
 		},
