@@ -532,6 +532,14 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 				Name: "id",
 			},
 		},
+		Where: clause.Where{
+			Exprs: []clause.Expression{
+				clause.Eq{
+					Column: fmt.Sprintf("%s.finalized", value.TableName()),
+					Value:  false,
+				},
+			},
+		},
 		UpdateAll: true,
 	}
 
@@ -547,6 +555,14 @@ func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.Stake
 			Columns: []clause.Column{
 				{
 					Name: "id",
+				},
+			},
+			Where: clause.Where{
+				Exprs: []clause.Expression{
+					clause.Eq{
+						Column: fmt.Sprintf("%s.finalized", (*table.StakeChip)(nil).TableName()),
+						Value:  false,
+					},
 				},
 			},
 		},
