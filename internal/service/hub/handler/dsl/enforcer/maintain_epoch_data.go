@@ -74,6 +74,8 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			}
 
 			mu.Lock()
+			workerStatus.Data.Decentralized = filterDuplicateWorkers(workerStatus.Data.Decentralized)
+
 			nodeToDataMap[stat.Address] = workerStatus.Data
 			mu.Unlock()
 
@@ -135,6 +137,35 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 	wg.Wait()
 
 	return nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap
+}
+
+// filterDuplicateWorkers filters out duplicate workers.
+func filterDuplicateWorkers(workers []*DecentralizedWorkerInfo) []*DecentralizedWorkerInfo {
+	seen := make(map[string]*DecentralizedWorkerInfo, len(workers))
+
+	for _, workerInfo := range workers {
+		key := fmt.Sprintf("%s-%s", workerInfo.Network.String(), workerInfo.Worker.String())
+
+		if existingWorker, ok := seen[key]; ok {
+			if existingWorker.Status == worker.StatusReady && workerInfo.Status == worker.StatusReady {
+				continue
+			}
+
+			if workerInfo.Status != worker.StatusReady {
+				seen[key] = workerInfo
+			}
+		} else {
+			seen[key] = workerInfo
+		}
+	}
+
+	filteredWorkers := make([]*DecentralizedWorkerInfo, 0, len(seen))
+
+	for _, workerInfo := range seen {
+		filteredWorkers = append(filteredWorkers, workerInfo)
+	}
+
+	return filteredWorkers
 }
 
 // mapTransformAssign transforms the map and assigns the result to a global variable.
