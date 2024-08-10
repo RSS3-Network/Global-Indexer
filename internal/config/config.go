@@ -68,6 +68,7 @@ type Distributor struct {
 	QualifiedNodeCount int `yaml:"qualified_node_count" default:"3"`
 	// The number of verification activities selected during the second verification.
 	VerificationCount int `yaml:"verification_count" default:"3"`
+	ToleranceSeconds  int `yaml:"tolerance_seconds" default:"1200"`
 }
 
 type SpecialRewards struct {
@@ -152,6 +153,7 @@ func initGlobalVars(file *File) {
 	model.DemotionCountBeforeSlashing = file.Distributor.MaxDemotionCount
 	model.RequiredVerificationCount = file.Distributor.VerificationCount
 	model.RequiredQualifiedNodeCount = file.Distributor.QualifiedNodeCount
+	model.ToleranceSeconds = file.Distributor.ToleranceSeconds
 
-	zap.L().Info("init constants", zap.Any("MaxDemotionCount", model.DemotionCountBeforeSlashing), zap.Any("VerificationCount", model.RequiredVerificationCount), zap.Any("QualifiedNodeCount", model.RequiredQualifiedNodeCount))
+	zap.L().Info("init constants", zap.Any("MaxDemotionCount", model.DemotionCountBeforeSlashing), zap.Any("VerificationCount", model.RequiredVerificationCount), zap.Any("QualifiedNodeCount", model.RequiredQualifiedNodeCount), zap.Any("ToleranceSeconds", model.ToleranceSeconds))
 }

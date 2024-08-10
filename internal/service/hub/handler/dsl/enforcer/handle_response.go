@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"runtime"
 	"sort"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -141,6 +142,13 @@ func (e *SimpleEnforcer) verifyPartialActivities(ctx context.Context, epochID ui
 		// We cannot determine whether this activity belongs to a readable worker，
 		// therefore it is skipped.
 		if len(activity.Platform) == 0 {
+			continue
+		}
+
+		toleranceTime := time.Now().Unix() - int64(model.ToleranceSeconds)
+
+		// This usually indicates that the activity timestamp is too new to be verified.
+		if activity.Timestamp > uint64(toleranceTime) {
 			continue
 		}
 
@@ -325,7 +333,11 @@ func isResponseIdentical(src, des []byte) bool {
 			return true
 		} else if srcActivity.Data != nil && desActivity.Data != nil {
 			if _, exist := model.MutablePlatformMap[srcActivity.Data.Platform]; !exist {
-				return isActivityIdentical(srcActivity.Data, desActivity.Data)
+				toleranceTime := time.Now().Unix() - int64(model.ToleranceSeconds)
+
+				if srcActivity.Data.Timestamp <= uint64(toleranceTime) && desActivity.Data.Timestamp <= uint64(toleranceTime) {
+					return isActivityIdentical(srcActivity.Data, desActivity.Data)
+				}
 			}
 
 			return true
@@ -351,7 +363,21 @@ func isResponseIdentical(src, des []byte) bool {
 
 // checkActivities checks if the activities are identical.
 func checkActivities(srcActivities, desActivities []*model.Activity) bool {
-	desActivitiesMap := lo.SliceToMap(desActivities, func(activity *model.Activity) (string, *model.Activity) {
+	srcFilterActivities, desFilterActivities := filterToleranceActivity(srcActivities), filterToleranceActivity(desActivities)
+
+	// Check if the original activities are empty.
+	if (len(srcActivities) == 0 && len(desFilterActivities) > 0) || (len(desActivities) == 0 && len(srcFilterActivities) > 0) {
+		return false
+	}
+
+	// Keep the same length of activities.
+	if len(srcFilterActivities)-len(desFilterActivities) > 0 {
+		srcFilterActivities = srcFilterActivities[:len(desFilterActivities)]
+	} else {
+		desFilterActivities = desFilterActivities[:len(srcFilterActivities)]
+	}
+
+	desActivitiesMap := lo.SliceToMap(desFilterActivities, func(activity *model.Activity) (string, *model.Activity) {
 		return fmt.Sprintf("%s-%s-%s", activity.ID, activity.Network, activity.Owner), activity
 	})
 
@@ -361,9 +387,9 @@ func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 		WithContext(ctx).
 		WithFirstError().
 		WithCancelOnError().
-		WithMaxGoroutines(lo.Ternary(len(srcActivities) < 20*runtime.NumCPU() && len(srcActivities) > 0, len(srcActivities), 20*runtime.NumCPU()))
+		WithMaxGoroutines(lo.Ternary(len(srcFilterActivities) < 20*runtime.NumCPU() && len(srcFilterActivities) > 0, len(srcFilterActivities), 20*runtime.NumCPU()))
 
-	for _, activity := range srcActivities {
+	for _, activity := range srcFilterActivities {
 		act := activity
 
 		p.Go(func(_ context.Context) error {
@@ -382,6 +408,21 @@ func checkActivities(srcActivities, desActivities []*model.Activity) bool {
 	}
 
 	return true
+}
+
+// filterToleranceActivity filters the activities based on the tolerance time.
+func filterToleranceActivity(activities []*model.Activity) []*model.Activity {
+	toleranceTime := time.Now().Unix() - int64(model.ToleranceSeconds)
+
+	filterActivities := make([]*model.Activity, 0, len(activities))
+
+	for i := range activities {
+		if activities[i].Timestamp <= uint64(toleranceTime) {
+			filterActivities = append(filterActivities, activities[i])
+		}
+	}
+
+	return filterActivities
 }
 
 // excludeMutableActivity excludes the mutable platforms from the activities.

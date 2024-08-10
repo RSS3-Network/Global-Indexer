@@ -36,7 +36,11 @@ type EndpointCache struct {
 // If the invalidCount is greater than or equal to DemotionCountBeforeSlashing, the nodeEndpointCache is removed.
 func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, nodeStat *schema.Stat) error {
 	if nodeStat.EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
-		if _, ok := sm.nodeEndpointCaches[nodeStat.Address.String()]; ok {
+		sm.lock.RLock()
+		_, ok := sm.nodeEndpointCaches[nodeStat.Address.String()]
+		sm.lock.RUnlock()
+
+		if ok {
 			// Fixme: add redis lock
 			// Remove from sorted set.
 			if err := sm.cacheClient.ZRem(ctx, setKey, nodeStat.Address.String()); err != nil {
@@ -69,6 +73,9 @@ func (sm *ScoreMaintainer) retrieveQualifiedNodes(ctx context.Context, setKey st
 	}
 
 	qualifiedNodes := make([]*model.NodeEndpointCache, 0, n)
+
+	sm.lock.RLock()
+	defer sm.lock.RUnlock()
 
 	for _, item := range result {
 		if endpointCache, ok := sm.nodeEndpointCaches[item.Member.(string)]; ok {

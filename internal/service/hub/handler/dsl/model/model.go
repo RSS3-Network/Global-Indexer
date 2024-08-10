@@ -49,6 +49,8 @@ var (
 	RequiredVerificationCount = 3
 	// DemotionCountBeforeSlashing the number of demotions that trigger a slashing
 	DemotionCountBeforeSlashing = 4
+	// ToleranceSeconds is the tolerance seconds for the activity.
+	ToleranceSeconds = 20 * 60
 
 	// MutablePlatformMap is a map of mutable platforms which should be excluded from the data comparison.
 	MutablePlatformMap = map[string]struct{}{
@@ -122,16 +124,17 @@ type MetaCursor struct {
 
 // Activity represents an activity.
 type Activity struct {
-	ID       string    `json:"id"`
-	Owner    string    `json:"owner,omitempty"`
-	Network  string    `json:"network"`
-	Index    uint      `json:"index"`
-	From     string    `json:"from"`
-	To       string    `json:"to"`
-	Tag      string    `json:"tag"`
-	Type     string    `json:"type"`
-	Platform string    `json:"platform,omitempty"`
-	Actions  []*Action `json:"actions"`
+	ID        string    `json:"id"`
+	Owner     string    `json:"owner,omitempty"`
+	Network   string    `json:"network"`
+	Index     uint      `json:"index"`
+	From      string    `json:"from"`
+	To        string    `json:"to"`
+	Tag       string    `json:"tag"`
+	Type      string    `json:"type"`
+	Platform  string    `json:"platform,omitempty"`
+	Actions   []*Action `json:"actions"`
+	Timestamp uint64    `json:"timestamp"`
 }
 
 // Action represents an action within an Activity.
