@@ -120,11 +120,6 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			nodes.POST("/:node_address/hide_tax_rate", instance.hub.nta.PostNodeHideTaxRate)
 		}
 
-		stakers := nta.Group("/stakers")
-		{
-			stakers.GET("/:address", instance.hub.nta.GetStaker)
-		}
-
 		snapshots := nta.Group("/snapshots")
 		{
 			snapshots.GET("/nodes/count", instance.hub.nta.GetNodeCountSnapshots)
@@ -140,6 +135,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			// FIXME: GetStakeStakings needs to be refactored
 			// see https://github.com/RSS3-Network/Global-Indexer/issues/233
 			stake.GET("/stakings", instance.hub.nta.GetStakeStakings)
+			stake.GET("/:staker_address/stat", instance.hub.nta.GetStakingStat)
 			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
 			stake.GET("/transactions/:transaction_hash", instance.hub.nta.GetStakeTransaction)
 		}

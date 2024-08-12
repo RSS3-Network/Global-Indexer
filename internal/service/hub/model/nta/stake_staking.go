@@ -39,6 +39,10 @@ type GetStakerProfitChangesSinceResponseData struct {
 	ProfitAndLoss   decimal.Decimal `json:"profit_and_loss"`
 }
 
+type GetStakingStatRequest struct {
+	Address common.Address `param:"staker_address" validate:"required"`
+}
+
 type StakeStaking struct {
 	Staker common.Address    `json:"staker,omitempty"`
 	Node   common.Address    `json:"node,omitempty"`
