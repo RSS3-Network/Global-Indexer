@@ -12,7 +12,7 @@ type RegisterNodeRequest struct {
 	Endpoint    string          `json:"endpoint" validate:"required"`
 	Stream      json.RawMessage `json:"stream,omitempty"`
 	Config      json.RawMessage `json:"config,omitempty"`
-	Type        string          `json:"type" validate:"required,oneof=alpha beta normal" default:"alpha"`
+	Type        string          `json:"type" validate:"required,oneof=normal" default:"normal"`
 	AccessToken string          `json:"access_token" validate:"required_if=Type normal"`
 }
 

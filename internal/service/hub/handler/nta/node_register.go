@@ -147,19 +147,16 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	// Implement RSS3 node authentication using Bearer tokens.
 	node.AccessToken = fmt.Sprintf("Bearer %s", request.AccessToken)
 
-	// Checks begin from the beta stage.
-	if node.Type == "beta" || node.Type == "normal" {
-		node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
-		if err != nil {
-			zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
+	node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
+	if err != nil {
+		zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
 
-			return fmt.Errorf("parse endpoint: %w", err)
-		}
+		return fmt.Errorf("parse endpoint: %w", err)
+	}
 
-		// Check if the endpoint is available and contains the node's address before update the node's status to online.
-		if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
-			return fmt.Errorf("check endpoint available: %w", err)
-		}
+	// Check if the endpoint is available and contains the node's address before update the node's status to online.
+	if err = n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+		return fmt.Errorf("check endpoint available: %w", err)
 	}
 
 	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
@@ -177,16 +174,14 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
 	}
 
-	if request.Type != "alpha" {
-		if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
-			return err
-		}
+	if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// updateNodeStats updates node stats on nodes registered during the non-alpha phase.
+// updateNodeStats updates node stats on nodes registered.
 func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
@@ -236,11 +231,9 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	if node.Type == "beta" || node.Type == "normal" {
-		// Check if the endpoint is available and contains the node's address.
-		if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
-			return fmt.Errorf("check endpoint available: %w", err)
-		}
+	// Check if the endpoint is available and contains the node's address.
+	if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
+		return fmt.Errorf("check endpoint available: %w", err)
 	}
 
 	// Get node local info.

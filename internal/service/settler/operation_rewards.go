@@ -10,22 +10,20 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-// calculateOperationRewards calculates the Operation Rewards for all Nodes
-// For Alpha, there is no Operation Rewards, but a Special Rewards is calculated
-// TODO: Implement the actual calculation logic
-func calculateOperationRewards(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, specialRewards *config.SpecialRewards) ([]*big.Int, []*big.Float, error) {
+// calculateActiveScores calculates the active scores for all Nodes
+func calculateNodeActiveScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, activeScores *config.ActiveScores) ([]*big.Float, error) {
 	// If there are no nodes, return nil
 	if len(nodes) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
-	operationRewards, activeScores, err := calculateAlphaSpecialRewards(nodes, recentStakers, specialRewards)
+	scores, err := calculateActiveScores(nodes, recentStakers, activeScores)
 
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to calculate special rewards: %w", err)
+		return nil, fmt.Errorf("failed to calculate active scores: %w", err)
 	}
 
-	return operationRewards, activeScores, nil
+	return scores, nil
 }
 
 // prepareRequestCounts prepares the request counts for all Nodes

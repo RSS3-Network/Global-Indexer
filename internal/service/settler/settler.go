@@ -152,6 +152,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	// Find qualified Nodes from the database
 	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
 		Status: lo.ToPtr(schema.NodeStatusOnline),
+		Type:   lo.ToPtr(schema.NodeTypeNormal),
 		Cursor: cursor,
 		Limit:  lo.ToPtr(batchSize + 1),
 	})
@@ -184,23 +185,24 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.activeScores.EpochLimit)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
 	}
 
-	// Calculate the operation rewards for the Nodes
-	operationRewards, scores, err := calculateOperationRewards(nodes, recentStakers, s.specialRewards)
+	// Calculate the active scores for the Nodes
+	scores, err := calculateNodeActiveScores(nodes, recentStakers, s.activeScores)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	// Pause AlphaSpecialRewards
+	// Fixme: How to pass the operation rewards parameter?
+	operationRewards := make([]*big.Int, len(nodeAddresses))
 	for i := range operationRewards {
 		operationRewards[i] = big.NewInt(0)
 	}
 
-	// Calculate the operation rewards for the Nodes
+	// Calculate the number of requests for the Nodes
 	requestCount, err := s.prepareRequestCounts(ctx, nodeAddresses)
 	if err != nil {
 		return nil, nil, nil, err

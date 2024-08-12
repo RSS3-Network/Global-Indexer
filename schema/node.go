@@ -21,7 +21,6 @@ type Node struct {
 	StakingPoolTokens      string                 `json:"staking_pool_tokens"`
 	TotalShares            string                 `json:"total_shares"`
 	SlashedTokens          string                 `json:"slashed_tokens"`
-	Alpha                  bool                   `json:"alpha"`
 	Endpoint               string                 `json:"-"`
 	Stream                 json.RawMessage        `json:"-"`
 	Config                 json.RawMessage        `json:"-"`
@@ -84,6 +83,24 @@ const (
 	NodeStatusExiting // exiting
 )
 
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeType --linecomment --output node_type_string.go --json --yaml --sql
+type NodeType int
+
+const (
+	// NodeTypeAlpha
+	// Nodes in the alpha phase of the network will receive staking rewards, but they do not actually contribute to the information network.
+	NodeTypeAlpha NodeType = iota // alpha
+
+	// NodeTypeBeta
+	// Nodes in the beta phase of the network do not require staking and will not receive rewards, but they do contribute to the information network and are referred to as public good nodes.
+	NodeTypeBeta NodeType = iota // beta
+
+	// NodeTypeNormal
+	// Nodes in the production phase of the network are required to contribute to the information network. All nodes, except for public good nodes that do not require staking, will receive staking and operation rewards.
+	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to normal node types.
+	NodeTypeNormal NodeType = iota // normal
+)
+
 type BatchUpdateNode struct {
 	Address common.Address
 	Apy     decimal.Decimal
@@ -92,6 +109,7 @@ type BatchUpdateNode struct {
 type FindNodesQuery struct {
 	NodeAddresses []common.Address
 	Status        *NodeStatus
+	Type          *NodeType
 	Cursor        *string
 	Limit         *int
 	OrderByScore  bool
