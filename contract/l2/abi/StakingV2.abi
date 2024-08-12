@@ -901,17 +901,25 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      }
-    ],
-    "name": "WithdrawalClaimed",
-    "type": "event"
+ 	"inputs": [{
+ 		"internalType": "uint256",
+ 		"name": "requestId",
+ 		"type": "uint256",
+ 		"indexed": true
+ 	}, {
+ 		"internalType": "address",
+ 		"name": "nodeAddr",
+ 		"type": "address",
+ 		"indexed": true
+ 	}, {
+ 		"internalType": "uint256",
+ 		"name": "amount",
+ 		"type": "uint256",
+ 		"indexed": true
+ 	}],
+ 	"type": "event",
+ 	"name": "WithdrawalClaimed",
+ 	"anonymous": false
   },
   {
     "inputs": [],
