@@ -151,3 +151,24 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 
 	return data, nil
 }
+
+func (n *NTA) GetStakingStat(c echo.Context) error {
+	var request nta.GetStakingStatRequest
+
+	if err := c.Bind(&request); err != nil {
+		return fmt.Errorf("bind request: %w", err)
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return fmt.Errorf("validate request: %w", err)
+	}
+
+	stakingStat, err := n.databaseClient.FindStakeStaker(c.Request().Context(), request.Address)
+	if err != nil {
+		return fmt.Errorf("fetch stake staker by address %s: %w", request.Address, err)
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: stakingStat,
+	})
+}
