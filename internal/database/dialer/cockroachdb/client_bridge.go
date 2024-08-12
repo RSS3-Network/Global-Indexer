@@ -165,12 +165,12 @@ func (c *client) SaveBridgeTransaction(ctx context.Context, bridgeTransaction *s
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
-			Where: clause.Where{
-				Exprs: []clause.Expression{
-					clause.Eq{
-						Column: fmt.Sprintf("%s.finalized", value.TableName()),
-						Value:  false,
-					},
+			Columns: []clause.Column{
+				{
+					Name: "id",
+				},
+				{
+					Name: "type",
 				},
 			},
 		},
@@ -188,12 +188,12 @@ func (c *client) SaveBridgeEvent(ctx context.Context, bridgeEvent *schema.Bridge
 	clauses := []clause.Expression{
 		clause.OnConflict{
 			UpdateAll: true,
-			Where: clause.Where{
-				Exprs: []clause.Expression{
-					clause.Eq{
-						Column: fmt.Sprintf("%s.finalized", value.TableName()),
-						Value:  false,
-					},
+			Columns: []clause.Column{
+				{
+					Name: "transaction_hash",
+				},
+				{
+					Name: "block_hash",
 				},
 			},
 		},
