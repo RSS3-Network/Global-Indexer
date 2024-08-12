@@ -562,7 +562,7 @@ func (c *client) SaveStakeChips(ctx context.Context, stakeChips ...*schema.Stake
 		values = append(values, &value)
 	}
 
-	return c.database.WithContext(ctx).Create(&values).Clauses(clauses...).Error
+	return c.database.WithContext(ctx).Clauses(clauses...).Create(&values).Error
 }
 
 func (c *client) UpdateStakeChipsOwner(ctx context.Context, owner common.Address, stakeChipIDs ...*big.Int) error {
