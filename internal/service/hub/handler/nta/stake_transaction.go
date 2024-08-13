@@ -1,9 +1,12 @@
 package nta
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"math/big"
 	"net/http"
 
@@ -89,6 +92,32 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
 	}
 
+	// Get the latest value of the stake chips
+	errorPool := pool.New().WithContext(c.Request().Context()).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
+
+	for _, chip := range stakeChips {
+		chip := chip
+
+		errorPool.Go(func(ctx context.Context) error {
+			chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+			if err != nil {
+				zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
+
+				return fmt.Errorf("get chip info: %w", err)
+			}
+
+			chip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
+
+			return nil
+		})
+	}
+
+	if err := errorPool.Wait(); err != nil {
+		zap.L().Error("get chip info", zap.Error(err))
+
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	stakeTransactionModels := make([]*nta.StakeTransaction, 0, len(stakeTransactions))
 
 	for _, stakeTransaction := range stakeTransactions {
@@ -116,25 +145,12 @@ func (n *NTA) GetStakeTransaction(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	databaseTransactionOptions := sql.TxOptions{
-		ReadOnly: true,
-	}
-
-	databaseTransaction, err := n.databaseClient.Begin(c.Request().Context(), &databaseTransactionOptions)
-	if err != nil {
-		zap.L().Error("begin database transaction", zap.Error(err), zap.Any("request", request))
-
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	defer lo.Try(databaseTransaction.Rollback)
-
 	stakeTransactionQuery := schema.StakeTransactionQuery{
 		ID:   request.TransactionHash,
 		Type: request.Type,
 	}
 
-	stakeTransaction, err := databaseTransaction.FindStakeTransaction(c.Request().Context(), stakeTransactionQuery)
+	stakeTransaction, err := n.databaseClient.FindStakeTransaction(c.Request().Context(), stakeTransactionQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -149,7 +165,7 @@ func (n *NTA) GetStakeTransaction(c echo.Context) error {
 		IDs: []common.Hash{stakeTransaction.ID},
 	}
 
-	stakeEvents, err := databaseTransaction.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
+	stakeEvents, err := n.databaseClient.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -164,7 +180,7 @@ func (n *NTA) GetStakeTransaction(c echo.Context) error {
 		IDs: stakeTransaction.Chips,
 	}
 
-	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	stakeChips, err := n.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -173,8 +189,30 @@ func (n *NTA) GetStakeTransaction(c echo.Context) error {
 		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
 	}
 
-	if err := databaseTransaction.Commit(); err != nil {
-		return fmt.Errorf("commit database transaction")
+	// Get the latest value of the stake chips
+	errorPool := pool.New().WithContext(c.Request().Context()).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
+
+	for _, chip := range stakeChips {
+		chip := chip
+
+		errorPool.Go(func(ctx context.Context) error {
+			chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
+			if err != nil {
+				zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
+
+				return fmt.Errorf("get chip info: %w", err)
+			}
+
+			chip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
+
+			return nil
+		})
+	}
+
+	if err := errorPool.Wait(); err != nil {
+		zap.L().Error("get chip info", zap.Error(err))
+
+		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	stakeEvents = lo.Filter(stakeEvents, func(stakeEvent *schema.StakeEvent, _ int) bool {
