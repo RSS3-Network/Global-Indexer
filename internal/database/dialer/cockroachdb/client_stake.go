@@ -100,7 +100,7 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		subQuery := c.database.WithContext(ctx).
 			Select("TRUE").
 			Table((*table.StakeEvent).TableName(nil)).
-			Where(`"transactions"."id" = "events"."id" AND "events"."type" = 'claimed'`)
+			Where(`"transactions"."id" = "events"."id" AND "events"."type" IN ('withdrawClaimed', 'unstakeClaimed')`)
 
 		databaseClient = databaseClient.
 			Where(`"type" IN (?, ?)`, schema.StakeTransactionTypeUnstake, schema.StakeTransactionTypeWithdraw).

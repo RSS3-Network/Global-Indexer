@@ -32,19 +32,6 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		return errorx.InternalError(c)
 	}
 
-	databaseTransactionOptions := sql.TxOptions{
-		ReadOnly: true,
-	}
-
-	databaseTransaction, err := n.databaseClient.Begin(c.Request().Context(), &databaseTransactionOptions)
-	if err != nil {
-		zap.L().Error("begin database transaction", zap.Error(err), zap.Any("request", request))
-
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	defer lo.Try(databaseTransaction.Rollback)
-
 	stakeTransactionsQuery := schema.StakeTransactionsQuery{
 		Cursor:  request.Cursor,
 		User:    request.Staker,
@@ -54,7 +41,8 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		Limit:   request.Limit,
 	}
 
-	stakeTransactions, err := databaseTransaction.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
+	// Find staking transactions
+	stakeTransactions, err := n.databaseClient.FindStakeTransactions(c.Request().Context(), stakeTransactionsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -71,7 +59,8 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		}),
 	}
 
-	stakeEvents, err := databaseTransaction.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
+	// Find staking events
+	stakeEvents, err := n.databaseClient.FindStakeEvents(c.Request().Context(), stakeEventsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
@@ -90,17 +79,14 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		IDs: chipsIDs,
 	}
 
-	stakeChips, err := databaseTransaction.FindStakeChips(c.Request().Context(), stakeChipsQuery)
+	// Find staking chips
+	stakeChips, err := n.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
 	if err != nil {
 		if errors.Is(err, database.ErrorRowNotFound) {
 			return c.NoContent(http.StatusNotFound)
 		}
 
 		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
-	}
-
-	if err := databaseTransaction.Commit(); err != nil {
-		return fmt.Errorf("commit database transaction")
 	}
 
 	stakeTransactionModels := make([]*nta.StakeTransaction, 0, len(stakeTransactions))
