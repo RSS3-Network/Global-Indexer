@@ -261,6 +261,8 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return stat.Address, stat.Score
 	})
 
+	var publicGoodPool *stakingv2.DataTypesNode
+
 	for _, node := range nodes {
 		if score, exists := nodeStatsMap[node.Address]; exists {
 			node.ReliabilityScore = decimal.NewFromFloat(score)
@@ -277,6 +279,21 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 			node.TotalShares = nodeInfo.TotalShares.String()
 			node.SlashedTokens = nodeInfo.SlashedTokens.String()
 			node.Alpha = nodeInfo.Alpha
+		}
+
+		if node.IsPublicGood {
+			if publicGoodPool == nil {
+				publicPool, err := n.stakingContract.GetPublicPool(&bind.CallOpts{})
+				if err != nil {
+					return nil, fmt.Errorf("get Public Pool from chain: %w", err)
+				}
+
+				publicGoodPool = &publicPool
+			}
+
+			node.TaxRateBasisPoints = &publicGoodPool.TaxRateBasisPoints
+			node.OperationPoolTokens = publicGoodPool.OperationPoolTokens.String()
+			node.StakingPoolTokens = publicGoodPool.StakingPoolTokens.String()
 		}
 	}
 
