@@ -1157,7 +1157,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialShare"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -1540,6 +1540,21 @@
                                         "$ref": "#/components/schemas/TransactionEvent"
                                     }
                                 }
+                            },
+                            "mergeChips": {
+                                "type": "object",
+                                "nullable": true,
+                                "properties": {
+                                    "merged": {
+                                        "$ref": "#/components/schemas/TransactionEvent"
+                                    },
+                                    "burned": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/components/schemas/TransactionEvent"
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1573,6 +1588,15 @@
                                 "type": "string"
                             },
                             "index": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                            "chip_id": {
                                 "type": "integer"
                             }
                         }

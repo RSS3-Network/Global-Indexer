@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
@@ -16,6 +17,9 @@ const (
 	StakeEventTypeWithdrawClaimed   StakeEventType = "withdrawClaimed"
 
 	StakeEventTypeStakeStaked StakeEventType = "staked"
+
+	StakeEventTypeChipsMerged = "merged"
+	StakeEventTypeChipsBurned = "burned"
 
 	StakeEventTypeUnstakeRequested StakeEventType = "unstakeRequested"
 	StakeEventTypeUnstakeClaimed   StakeEventType = "unstakeClaimed"
@@ -35,14 +39,16 @@ type StakeEventTransformer interface {
 }
 
 type StakeEvent struct {
-	ID                common.Hash    `json:"id"`
-	Type              StakeEventType `json:"type"`
-	TransactionHash   common.Hash    `json:"transaction_hash"`
-	TransactionIndex  uint           `json:"transaction_index"`
-	TransactionStatus uint64         `json:"transaction_status"`
-	BlockHash         common.Hash    `json:"block_hash"`
-	BlockNumber       *big.Int       `json:"block_number"`
-	BlockTimestamp    time.Time      `json:"block_timestamp"`
+	ID                common.Hash     `json:"id"`
+	Type              StakeEventType  `json:"type"`
+	TransactionHash   common.Hash     `json:"transaction_hash"`
+	TransactionIndex  uint            `json:"transaction_index"`
+	TransactionStatus uint64          `json:"transaction_status"`
+	LogIndex          uint            `json:"log_index"`
+	Metadata          json.RawMessage `json:"metadata"`
+	BlockHash         common.Hash     `json:"block_hash"`
+	BlockNumber       *big.Int        `json:"block_number"`
+	BlockTimestamp    time.Time       `json:"block_timestamp"`
 	Finalized         bool
 }
 
@@ -52,4 +58,8 @@ type StakeEventQuery struct {
 
 type StakeEventsQuery struct {
 	IDs []common.Hash `query:"ids"`
+}
+
+type StakeEventChipsMergedMetadata struct {
+	ChipID *big.Int `json:"chip_id"`
 }
