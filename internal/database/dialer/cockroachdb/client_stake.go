@@ -526,7 +526,7 @@ func (c *client) SaveStakeEvent(ctx context.Context, stakeEvent *schema.StakeEve
 				Name: "transaction_hash",
 			},
 			{
-				Name: "block_hash",
+				Name: "log_index",
 			},
 			{
 				Name: "id",

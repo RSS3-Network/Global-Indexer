@@ -3,6 +3,7 @@ package l2
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -98,6 +99,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 		TransactionHash:   transaction.Hash(),
 		TransactionIndex:  receipt.TransactionIndex,
 		TransactionStatus: receipt.Status,
+		LogIndex:          log.Index,
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),
@@ -165,7 +167,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 	return nil
 }
 
-func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, _ *types.Receipt, log *types.Log, _ database.Client) error {
+func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	_, span := otel.Tracer("").Start(ctx, "indexStakingV2ChipsMergedLog")
 	defer span.End()
 
@@ -176,8 +178,90 @@ func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *type
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	if _, err := h.contractStakingV2.ParseChipsMerged(*log); err != nil {
+	event, err := h.contractStakingV2.ParseChipsMerged(*log)
+	if err != nil {
 		return fmt.Errorf("parse ChipsMerged event: %w", err)
+	}
+
+	callOptions := bind.CallOpts{
+		Context:     ctx,
+		BlockNumber: header.Number,
+	}
+
+	stakeTransaction := schema.StakeTransaction{
+		ID:               transaction.Hash(),
+		Type:             schema.StakeTransactionTypeMergeChips,
+		User:             event.User,
+		Node:             event.NodeAddr,
+		Chips:            append(event.BurnedTokenIds, event.NewTokenId),
+		BlockTimestamp:   time.Unix(int64(header.Time), 0),
+		BlockNumber:      header.Number.Uint64(),
+		TransactionIndex: receipt.TransactionIndex,
+		Value:            big.NewInt(0),
+		Finalized:        h.finalized,
+	}
+
+	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
+		return fmt.Errorf("save stake transaction: %w", err)
+	}
+
+	metadata, err := json.Marshal(schema.StakeEventChipsMergedMetadata{ChipID: event.NewTokenId})
+	if err != nil {
+		return fmt.Errorf("marshal chips merged metadata: %w", err)
+	}
+
+	stakeEvent := schema.StakeEvent{
+		ID:                transaction.Hash(),
+		Type:              schema.StakeEventTypeChipsMerged,
+		TransactionHash:   transaction.Hash(),
+		TransactionIndex:  receipt.TransactionIndex,
+		TransactionStatus: receipt.Status,
+		LogIndex:          log.Index,
+		Metadata:          metadata,
+		BlockHash:         header.Hash(),
+		BlockNumber:       header.Number,
+		BlockTimestamp:    time.Unix(int64(header.Time), 0),
+		Finalized:         h.finalized,
+	}
+
+	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
+		return fmt.Errorf("save stake event: %w", err)
+	}
+
+	// Save New Chip
+	tokenURI, err := h.contractChips.TokenURI(&callOptions, event.NewTokenId)
+	if err != nil {
+		return fmt.Errorf("get #%d token uri", event.NewTokenId)
+	}
+
+	encodedMetadata, found := strings.CutPrefix(tokenURI, "data:application/json;base64,")
+	if !found {
+		return fmt.Errorf("invalid #%d token uri", event.NewTokenId)
+	}
+
+	chipMetadata, err := base64.StdEncoding.DecodeString(encodedMetadata)
+	if err != nil {
+		return fmt.Errorf("decode #%d token metadata", event.NewTokenId)
+	}
+
+	chipInfo, err := h.contractStakingV2.GetChipInfo(&callOptions, event.NewTokenId)
+	if err != nil {
+		return fmt.Errorf("get chips #%d info", event.NewTokenId)
+	}
+
+	stakeChip := &schema.StakeChip{
+		ID:             event.NewTokenId,
+		Owner:          event.User,
+		Node:           event.NodeAddr,
+		Value:          decimal.NewFromBigInt(chipInfo.Tokens, 0),
+		Metadata:       chipMetadata,
+		BlockNumber:    header.Number,
+		BlockTimestamp: header.Time,
+		Finalized:      h.finalized,
+	}
+
+	if err := databaseTransaction.SaveStakeChips(ctx, stakeChip); err != nil {
+		return fmt.Errorf("save stake chips: %w", err)
 	}
 
 	return nil
@@ -205,6 +289,7 @@ func (h *handler) indexStakingV2WithdrawalClaimedLog(ctx context.Context, header
 		TransactionHash:   transaction.Hash(),
 		TransactionIndex:  receipt.TransactionIndex,
 		TransactionStatus: receipt.Status,
+		LogIndex:          log.Index,
 		BlockHash:         header.Hash(),
 		BlockNumber:       header.Number,
 		BlockTimestamp:    time.Unix(int64(header.Time), 0),

@@ -1,6 +1,7 @@
 package nta
 
 import (
+	"encoding/json"
 	"math/big"
 	"net/url"
 
@@ -39,10 +40,11 @@ type StakeTransaction struct {
 }
 
 type StakeTransactionEventTypes struct {
-	Deposit  *StakeTransactionEventTypeDeposit  `json:"deposit,omitempty"`
-	Withdraw *StakeTransactionEventTypeWithdraw `json:"withdraw,omitempty"`
-	Stake    *StakeTransactionEventTypeStake    `json:"stake,omitempty"`
-	Unstake  *StakeTransactionEventTypeUnstake  `json:"unstake,omitempty"`
+	Deposit    *StakeTransactionEventTypeDeposit    `json:"deposit,omitempty"`
+	Withdraw   *StakeTransactionEventTypeWithdraw   `json:"withdraw,omitempty"`
+	Stake      *StakeTransactionEventTypeStake      `json:"stake,omitempty"`
+	Unstake    *StakeTransactionEventTypeUnstake    `json:"unstake,omitempty"`
+	MergeChips *StakeTransactionEventTypeMergeChips `json:"mergeChips,omitempty"`
 }
 
 type StakeTransactionEventTypeDeposit struct {
@@ -63,9 +65,15 @@ type StakeTransactionEventTypeUnstake struct {
 	Claimed   *StakeTransactionEvent `json:"claimed,omitempty"`
 }
 
+type StakeTransactionEventTypeMergeChips struct {
+	Merged *StakeTransactionEvent   `json:"merged,omitempty"`
+	Burned []*StakeTransactionEvent `json:"burned,omitempty"`
+}
+
 type StakeTransactionEvent struct {
 	Block       TransactionEventBlock       `json:"block"`
 	Transaction TransactionEventTransaction `json:"transaction"`
+	Metadata    json.RawMessage             `json:"metadata,omitempty"`
 }
 
 func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent, stakeChips []*schema.StakeChip, baseURL url.URL) GetStakeTransactionResponseData {
@@ -100,13 +108,11 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 		transactionModel.Event.Stake = new(StakeTransactionEventTypeStake)
 	case schema.StakeTransactionTypeUnstake:
 		transactionModel.Event.Unstake = new(StakeTransactionEventTypeUnstake)
+	case schema.StakeTransactionTypeMergeChips:
+		transactionModel.Event.MergeChips = new(StakeTransactionEventTypeMergeChips)
 	}
 
 	for _, event := range events {
-		if event.ID != transaction.ID {
-			continue
-		}
-
 		eventModel := StakeTransactionEvent{
 			Block: TransactionEventBlock{
 				Hash:      event.BlockHash,
@@ -117,6 +123,7 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 				Hash:  event.TransactionHash,
 				Index: event.TransactionIndex,
 			},
+			Metadata: event.Metadata,
 		}
 
 		switch transaction.Type {
@@ -143,6 +150,17 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 				transactionModel.Event.Unstake.Requested = &eventModel
 			case schema.StakeEventTypeUnstakeClaimed:
 				transactionModel.Event.Unstake.Claimed = &eventModel
+			}
+		case schema.StakeTransactionTypeMergeChips:
+			switch event.Type {
+			case schema.StakeEventTypeChipsMerged:
+				transactionModel.Event.MergeChips.Merged = &eventModel
+			case schema.StakeEventTypeChipsBurned:
+				if transactionModel.Event.MergeChips == nil {
+					transactionModel.Event.MergeChips = new(StakeTransactionEventTypeMergeChips)
+				}
+
+				transactionModel.Event.MergeChips.Burned = append(transactionModel.Event.MergeChips.Burned, &eventModel)
 			}
 		}
 	}
