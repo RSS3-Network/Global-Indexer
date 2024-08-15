@@ -19,7 +19,6 @@ const (
 	StakeEventTypeStakeStaked StakeEventType = "staked"
 
 	StakeEventTypeChipsMerged = "merged"
-	StakeEventTypeChipsBurned = "burned"
 
 	StakeEventTypeUnstakeRequested StakeEventType = "unstakeRequested"
 	StakeEventTypeUnstakeClaimed   StakeEventType = "unstakeClaimed"
@@ -61,5 +60,6 @@ type StakeEventsQuery struct {
 }
 
 type StakeEventChipsMergedMetadata struct {
-	ChipID *big.Int `json:"chip_id"`
+	BurnedTokenIDs []*big.Int `json:"burned_token_ids"`
+	NewTokenID     *big.Int   `json:"new_token_id"`
 }
