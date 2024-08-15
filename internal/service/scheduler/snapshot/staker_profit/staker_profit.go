@@ -102,6 +102,13 @@ func (s *server) Run(ctx context.Context) error {
 }
 
 func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnapshot, latestEpochEvent uint64) error {
+	transaction, err := s.databaseClient.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer lo.Try(transaction.Rollback)
+
 	// Iterate the epoch id from the latest epoch snapshot to the latest epoch event.
 	for epochID := latestEpochSnapshot + 1; epochID <= latestEpochEvent; epochID++ {
 		// Fetch the epoch items by the epoch id.
@@ -168,12 +175,16 @@ func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnaps
 
 			// Save the staker profit snapshots.
 			if len(snapshots) > 0 {
-				if err := s.databaseClient.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
+				if err := transaction.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
 					return fmt.Errorf("save staker profit snapshots: %w", err)
 				}
 			}
 
 			cursor = stakers[len(stakers)-1].ID
+		}
+
+		if err := transaction.Commit(); err != nil {
+			return fmt.Errorf("commit transaction: %w", err)
 		}
 	}
 
