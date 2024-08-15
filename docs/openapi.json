@@ -1547,12 +1547,6 @@
                                 "properties": {
                                     "merged": {
                                         "$ref": "#/components/schemas/TransactionEvent"
-                                    },
-                                    "burned": {
-                                        "type": "array",
-                                        "items": {
-                                            "$ref": "#/components/schemas/TransactionEvent"
-                                        }
                                     }
                                 }
                             }
@@ -2853,7 +2847,8 @@
                         "deposit",
                         "withdraw",
                         "stake",
-                        "unstake"
+                        "unstake",
+                        "merge_chips"
                     ]
                 }
             },

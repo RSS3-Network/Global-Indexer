@@ -102,6 +102,27 @@ func (s *server) Run(ctx context.Context) error {
 }
 
 func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnapshot, latestEpochEvent uint64) error {
+	// Iterate the epoch id from the latest epoch snapshot to the latest epoch event.
+	for epochID := latestEpochSnapshot + 1; epochID <= latestEpochEvent; epochID++ {
+		if err := s.saveStakerProfitSnapshotsByEpochID(ctx, epochID); err != nil {
+			return fmt.Errorf("save staker profit snapshots by epoch id: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *server) saveStakerProfitSnapshotsByEpochID(ctx context.Context, epochID uint64) error {
+	// Fetch the epoch items by the epoch id.
+	epochItems, err := s.databaseClient.FindEpochTransactions(ctx, epochID, 1, nil)
+	if err != nil {
+		return fmt.Errorf("find epoch transactions: %w", err)
+	}
+
+	if len(epochItems) == 0 {
+		return nil
+	}
+
 	transaction, err := s.databaseClient.Begin(ctx)
 	if err != nil {
 		return err
@@ -109,83 +130,66 @@ func (s *server) saveStakerProfitSnapshots(ctx context.Context, latestEpochSnaps
 
 	defer lo.Try(transaction.Rollback)
 
-	// Iterate the epoch id from the latest epoch snapshot to the latest epoch event.
-	for epochID := latestEpochSnapshot + 1; epochID <= latestEpochEvent; epochID++ {
-		// Fetch the epoch items by the epoch id.
-		epochItems, err := s.databaseClient.FindEpochTransactions(ctx, epochID, 1, nil)
+	var cursor *big.Int
+
+	for {
+		// Fetch the distinct stakers from the chips table.
+		findStakeChips := schema.StakeChipsQuery{
+			Cursor:        cursor,
+			Limit:         lo.ToPtr(500),
+			DistinctOwner: true,
+			BlockNumber:   epochItems[0].BlockNumber,
+		}
+
+		stakers, err := s.databaseClient.FindStakeChips(ctx, findStakeChips)
+		if errors.Is(err, database.ErrorRowNotFound) || len(stakers) == 0 {
+			break
+		}
+
 		if err != nil {
-			return fmt.Errorf("find epoch transactions: %w", err)
+			return fmt.Errorf("find stake chips: %w", err)
 		}
 
-		if len(epochItems) == 0 {
-			continue
-		}
+		snapshots := make([]*schema.StakerProfitSnapshot, 0, len(stakers))
 
-		var cursor *big.Int
+		// Fetch the chips by the stakers.
+		for _, staker := range stakers {
+			staker := staker
 
-		for {
-			// Fetch the distinct stakers from the chips table.
-			findStakeChips := schema.StakeChipsQuery{
-				Cursor:        cursor,
-				Limit:         lo.ToPtr(500),
-				DistinctOwner: true,
-				BlockNumber:   epochItems[0].BlockNumber,
+			if staker.Owner == ethereum.AddressGenesis {
+				continue
 			}
 
-			stakers, err := s.databaseClient.FindStakeChips(ctx, findStakeChips)
-			if errors.Is(err, database.ErrorRowNotFound) || len(stakers) == 0 {
-				break
+			// Query the staker profit snapshots by the owner address and the epoch id.
+			exist, _ := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{
+				OwnerAddress: lo.ToPtr(staker.Owner),
+				EpochID:      lo.ToPtr(epochID),
+				Limit:        lo.ToPtr(1),
+			})
+			if len(exist) > 0 {
+				continue
 			}
 
+			data, err := s.buildStakerProfitSnapshots(ctx, epochItems[0], staker.Owner)
 			if err != nil {
-				return fmt.Errorf("find stake chips: %w", err)
+				return fmt.Errorf("build staker profit snapshots: %w", err)
 			}
 
-			snapshots := make([]*schema.StakerProfitSnapshot, 0, len(stakers))
-
-			// Fetch the chips by the stakers.
-			for _, staker := range stakers {
-				staker := staker
-
-				if staker.Owner == ethereum.AddressGenesis {
-					continue
-				}
-
-				// Query the staker profit snapshots by the owner address and the epoch id.
-				exist, _ := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{
-					OwnerAddress: lo.ToPtr(staker.Owner),
-					EpochID:      lo.ToPtr(epochID),
-					Limit:        lo.ToPtr(1),
-				})
-				if len(exist) > 0 {
-					continue
-				}
-
-				data, err := s.buildStakerProfitSnapshots(ctx, epochItems[0], staker.Owner)
-				if err != nil {
-					return fmt.Errorf("build staker profit snapshots: %w", err)
-				}
-
-				if data.TotalChipValue.IsZero() {
-					continue
-				}
-
-				snapshots = append(snapshots, data)
-			}
-
-			// Save the staker profit snapshots.
-			if len(snapshots) > 0 {
-				if err := transaction.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
-					return fmt.Errorf("save staker profit snapshots: %w", err)
-				}
-			}
-
-			cursor = stakers[len(stakers)-1].ID
+			snapshots = append(snapshots, data)
 		}
 
-		if err := transaction.Commit(); err != nil {
-			return fmt.Errorf("commit transaction: %w", err)
+		// Save the staker profit snapshots.
+		if len(snapshots) > 0 {
+			if err := transaction.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
+				return fmt.Errorf("save staker profit snapshots: %w", err)
+			}
 		}
+
+		cursor = stakers[len(stakers)-1].ID
+	}
+
+	if err := transaction.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil
