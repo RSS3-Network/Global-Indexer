@@ -3,6 +3,7 @@ package l2
 import (
 	"context"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -19,7 +20,7 @@ func (h *handler) indexChipsLog(ctx context.Context, header *types.Header, trans
 	}
 }
 
-func (h *handler) indexChipsTransferLog(ctx context.Context, header *types.Header, transaction *types.Transaction, receipt *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
+func (h *handler) indexChipsTransferLog(ctx context.Context, header *types.Header, transaction *types.Transaction, _ *types.Receipt, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexChipsTransferLog")
 	defer span.End()
 

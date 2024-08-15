@@ -60,6 +60,6 @@ type StakeEventsQuery struct {
 }
 
 type StakeEventChipsMergedMetadata struct {
-	BurnedTokenIds []*big.Int `json:"burned_token_ids"`
-	NewTokenId     *big.Int   `json:"new_token_id"`
+	BurnedTokenIDs []*big.Int `json:"burned_token_ids"`
+	NewTokenID     *big.Int   `json:"new_token_id"`
 }

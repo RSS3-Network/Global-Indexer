@@ -206,8 +206,8 @@ func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *type
 	}
 
 	metadata, err := json.Marshal(schema.StakeEventChipsMergedMetadata{
-		BurnedTokenIds: event.BurnedTokenIds,
-		NewTokenId:     event.NewTokenId,
+		BurnedTokenIDs: event.BurnedTokenIds,
+		NewTokenID:     event.NewTokenId,
 	})
 	if err != nil {
 		return fmt.Errorf("marshal chips merged metadata: %w", err)
