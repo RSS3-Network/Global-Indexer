@@ -2,15 +2,10 @@ package l2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
-
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/schema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -40,37 +35,8 @@ func (h *handler) indexChipsTransferLog(ctx context.Context, header *types.Heade
 		return fmt.Errorf("parse Transfer event: %w", err)
 	}
 
-	if h.finalized {
-		if err := databaseTransaction.UpdateStakeChipsOwner(ctx, event.To, event.TokenId); err != nil {
-			return fmt.Errorf("update stake chips owner: %w", err)
-		}
-	}
-
-	if event.To != ethereum.AddressGenesis {
-		return nil
-	}
-
-	metadata, err := json.Marshal(schema.StakeEventChipsMergedMetadata{ChipID: event.TokenId})
-	if err != nil {
-		return fmt.Errorf("marshal chips merged metadata: %w", err)
-	}
-
-	stakeEvent := schema.StakeEvent{
-		ID:                transaction.Hash(),
-		Type:              schema.StakeEventTypeChipsBurned,
-		TransactionHash:   transaction.Hash(),
-		TransactionIndex:  receipt.TransactionIndex,
-		TransactionStatus: receipt.Status,
-		LogIndex:          log.Index,
-		Metadata:          metadata,
-		BlockHash:         header.Hash(),
-		BlockNumber:       header.Number,
-		BlockTimestamp:    time.Unix(int64(header.Time), 0),
-		Finalized:         h.finalized,
-	}
-
-	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
-		return fmt.Errorf("save stake event: %w", err)
+	if err := databaseTransaction.UpdateStakeChipsOwner(ctx, event.To, event.TokenId); err != nil {
+		return fmt.Errorf("update stake chips owner: %w", err)
 	}
 
 	return nil
