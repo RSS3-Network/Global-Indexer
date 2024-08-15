@@ -13,15 +13,15 @@ type StakeEventType string
 const (
 	StakeEventTypeDepositDeposited StakeEventType = "deposited"
 
-	StakeEventTypeWithdrawRequested StakeEventType = "withdrawRequested"
-	StakeEventTypeWithdrawClaimed   StakeEventType = "withdrawClaimed"
+	StakeEventTypeWithdrawRequested StakeEventType = "withdraw_requested"
+	StakeEventTypeWithdrawClaimed   StakeEventType = "withdraw_claimed"
 
 	StakeEventTypeStakeStaked StakeEventType = "staked"
 
 	StakeEventTypeChipsMerged = "merged"
 
-	StakeEventTypeUnstakeRequested StakeEventType = "unstakeRequested"
-	StakeEventTypeUnstakeClaimed   StakeEventType = "unstakeClaimed"
+	StakeEventTypeUnstakeRequested StakeEventType = "unstake_requested"
+	StakeEventTypeUnstakeClaimed   StakeEventType = "unstake_claimed"
 )
 
 type StakeEventImporter interface {
