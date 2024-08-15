@@ -15,7 +15,7 @@ const (
 	StakeTransactionTypeWithdraw   StakeTransactionType = "withdraw"
 	StakeTransactionTypeStake      StakeTransactionType = "stake"
 	StakeTransactionTypeUnstake    StakeTransactionType = "unstake"
-	StakeTransactionTypeMergeChips StakeTransactionType = "mergeChips"
+	StakeTransactionTypeMergeChips StakeTransactionType = "merge_chips"
 )
 
 type StakeTransactionImporter interface {
