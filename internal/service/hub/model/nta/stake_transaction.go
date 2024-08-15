@@ -44,7 +44,7 @@ type StakeTransactionEventTypes struct {
 	Withdraw   *StakeTransactionEventTypeWithdraw   `json:"withdraw,omitempty"`
 	Stake      *StakeTransactionEventTypeStake      `json:"stake,omitempty"`
 	Unstake    *StakeTransactionEventTypeUnstake    `json:"unstake,omitempty"`
-	MergeChips *StakeTransactionEventTypeMergeChips `json:"mergeChips,omitempty"`
+	MergeChips *StakeTransactionEventTypeMergeChips `json:"merge_chips,omitempty"`
 }
 
 type StakeTransactionEventTypeDeposit struct {
@@ -155,12 +155,6 @@ func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.
 			switch event.Type {
 			case schema.StakeEventTypeChipsMerged:
 				transactionModel.Event.MergeChips.Merged = &eventModel
-			case schema.StakeEventTypeChipsBurned:
-				if transactionModel.Event.MergeChips == nil {
-					transactionModel.Event.MergeChips = new(StakeTransactionEventTypeMergeChips)
-				}
-
-				transactionModel.Event.MergeChips.Burned = append(transactionModel.Event.MergeChips.Burned, &eventModel)
 			}
 		}
 	}
