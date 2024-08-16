@@ -11,8 +11,8 @@ func TestCalculateFinalRewards(t *testing.T) {
 	correctRewards := []string{
 		"1761000000000000000000",
 		"3522000000000000000000",
-		"5283000000000000000000",
 		"1761000000000000000000",
+		"5283000000000000000000",
 	}
 
 	expectedRewards := make([]*big.Int, len(correctRewards))
