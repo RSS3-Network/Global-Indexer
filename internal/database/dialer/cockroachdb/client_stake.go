@@ -218,6 +218,44 @@ func (c *client) FindStakeChips(ctx context.Context, query schema.StakeChipsQuer
 	return results, nil
 }
 
+func (c *client) FindStakerCount(ctx context.Context, query schema.StakeChipsQuery) (int64, error) {
+	databaseClient := c.database.WithContext(ctx).Table((*table.StakeChip).TableName(nil)).
+		Distinct(`"owner"`).
+		Where(`"owner" != ?`, ethereum.AddressGenesis.String())
+
+	if query.BlockNumber != nil {
+		databaseClient = databaseClient.Where(`"block_number" <= ?`, query.BlockNumber)
+	}
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" > ?`, query.Cursor.String())
+	}
+
+	if len(query.IDs) > 0 {
+		databaseClient = databaseClient.Where(`"id" IN ?`, lo.Map(query.IDs, func(id *big.Int, _ int) uint64 { return id.Uint64() }))
+	}
+
+	if query.Node != nil {
+		databaseClient = databaseClient.Where(`"node" = ?`, query.Node.String())
+	}
+
+	if query.Owner != nil {
+		databaseClient = databaseClient.Where(`"owner" = ?`, query.Owner.String())
+	}
+
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
+
+	var count int64
+
+	if err := databaseClient.Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func (c *client) FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error) {
 	databaseClient := c.database.WithContext(ctx)
 
