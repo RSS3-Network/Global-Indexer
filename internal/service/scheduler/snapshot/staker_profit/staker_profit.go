@@ -50,14 +50,6 @@ func (s *server) Spec() string {
 
 func (s *server) Run(ctx context.Context) error {
 	err := s.cronJob.AddFunc(ctx, s.Spec(), func() {
-		// Query the latest epoch of the staker profit snapshots.
-		snapshot, err := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{Limit: lo.ToPtr(1)})
-		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
-			zap.L().Error("find staker profit snapshots", zap.Error(err))
-
-			return
-		}
-
 		// Query the latest epoch of the epoch events.
 		epochEvents, err := s.databaseClient.FindEpochs(ctx, &schema.FindEpochsQuery{Limit: lo.ToPtr(1)})
 		if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
@@ -66,19 +58,54 @@ func (s *server) Run(ctx context.Context) error {
 			return
 		}
 
-		var latestEpochSnapshot, latestEpochEvent uint64
-
-		if len(snapshot) > 0 {
-			latestEpochSnapshot = snapshot[0].EpochID
+		if len(epochEvents) == 0 {
+			return
 		}
 
-		if len(epochEvents) > 0 {
-			latestEpochEvent = epochEvents[0].ID
+		var latestEpochSnapshot uint64
+
+		// Check the latest epoch of the staker profit snapshots.
+		for epochID := epochEvents[0].ID; epochID > 0; epochID-- {
+			// Query the epoch of the staker profit snapshots.
+			snapshots, err := s.databaseClient.FindStakerProfitSnapshots(ctx, schema.StakerProfitSnapshotsQuery{EpochID: lo.ToPtr(epochID)})
+			if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+				zap.L().Error("find staker profit snapshots", zap.Error(err))
+
+				return
+			}
+
+			if len(snapshots) == 0 {
+				continue
+			}
+
+			epochItems, err := s.databaseClient.FindEpochTransactions(ctx, epochID, 1, nil)
+			if err != nil {
+				zap.L().Error("find epoch transactions", zap.Error(err))
+
+				return
+			}
+
+			stakerCount, err := s.databaseClient.FindStakerCount(ctx, schema.StakeChipsQuery{
+				BlockNumber: epochItems[0].BlockNumber,
+			})
+			if err != nil {
+				zap.L().Error("find staker count", zap.Error(err))
+
+				return
+			}
+
+			if int64(len(snapshots)) < stakerCount {
+				continue
+			}
+
+			latestEpochSnapshot = epochID
+
+			break
 		}
 
 		// Save the staker profit snapshots.
-		if latestEpochSnapshot < latestEpochEvent {
-			if err := s.saveStakerProfitSnapshots(ctx, latestEpochSnapshot, latestEpochEvent); err != nil {
+		if latestEpochSnapshot < epochEvents[0].ID {
+			if err := s.saveStakerProfitSnapshots(ctx, latestEpochSnapshot, epochEvents[0].ID); err != nil {
 				zap.L().Error("save staker profit snapshots", zap.Error(err))
 
 				return
@@ -122,13 +149,6 @@ func (s *server) saveStakerProfitSnapshotsByEpochID(ctx context.Context, epochID
 	if len(epochItems) == 0 {
 		return nil
 	}
-
-	transaction, err := s.databaseClient.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer lo.Try(transaction.Rollback)
 
 	var cursor *big.Int
 
@@ -180,16 +200,12 @@ func (s *server) saveStakerProfitSnapshotsByEpochID(ctx context.Context, epochID
 
 		// Save the staker profit snapshots.
 		if len(snapshots) > 0 {
-			if err := transaction.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
+			if err := s.databaseClient.SaveStakerProfitSnapshots(ctx, snapshots); err != nil {
 				return fmt.Errorf("save staker profit snapshots: %w", err)
 			}
 		}
 
 		cursor = stakers[len(stakers)-1].ID
-	}
-
-	if err := transaction.Commit(); err != nil {
-		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil

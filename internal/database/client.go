@@ -80,6 +80,7 @@ type Client interface {
 	FindStakeEvents(ctx context.Context, query schema.StakeEventsQuery) ([]*schema.StakeEvent, error)
 	FindStakeChip(ctx context.Context, query schema.StakeChipQuery) (*schema.StakeChip, error)
 	FindStakeChips(ctx context.Context, query schema.StakeChipsQuery) ([]*schema.StakeChip, error)
+	FindStakerCount(ctx context.Context, query schema.StakeChipsQuery) (int64, error)
 	UpdateStakeTransactionsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 	UpdateStakeEventsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
 	UpdateStakeChipsFinalizedByBlockNumber(ctx context.Context, blockNumber uint64) error
