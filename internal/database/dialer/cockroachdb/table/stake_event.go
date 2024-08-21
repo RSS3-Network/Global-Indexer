@@ -1,6 +1,7 @@
 package table
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
@@ -15,15 +16,17 @@ var (
 )
 
 type StakeEvent struct {
-	ID                string    `gorm:"column:id"`
-	Type              string    `gorm:"column:type"`
-	TransactionHash   string    `gorm:"column:transaction_hash;primaryKey"`
-	TransactionIndex  uint      `gorm:"column:transaction_index"`
-	TransactionStatus uint64    `gorm:"column:transaction_status"`
-	BlockHash         string    `gorm:"column:block_hash;primaryKey"`
-	BlockNumber       uint64    `gorm:"column:block_number"`
-	BlockTimestamp    time.Time `gorm:"column:block_timestamp"`
-	Finalized         bool      `gorm:"column:finalized"`
+	ID                string          `gorm:"column:id"`
+	Type              string          `gorm:"column:type"`
+	TransactionHash   string          `gorm:"column:transaction_hash;primaryKey"`
+	TransactionIndex  uint            `gorm:"column:transaction_index"`
+	TransactionStatus uint64          `gorm:"column:transaction_status"`
+	LogIndex          uint            `gorm:"column:log_index"`
+	Metadata          json.RawMessage `gorm:"column:metadata"`
+	BlockHash         string          `gorm:"column:block_hash;primaryKey"`
+	BlockNumber       uint64          `gorm:"column:block_number"`
+	BlockTimestamp    time.Time       `gorm:"column:block_timestamp"`
+	Finalized         bool            `gorm:"column:finalized"`
 }
 
 func (b *StakeEvent) TableName() string {
@@ -36,6 +39,8 @@ func (b *StakeEvent) Import(stakeEvent schema.StakeEvent) error {
 	b.TransactionHash = stakeEvent.TransactionHash.String()
 	b.TransactionIndex = stakeEvent.TransactionIndex
 	b.TransactionStatus = stakeEvent.TransactionStatus
+	b.LogIndex = stakeEvent.LogIndex
+	b.Metadata = stakeEvent.Metadata
 	b.BlockHash = stakeEvent.BlockHash.String()
 	b.BlockNumber = stakeEvent.BlockNumber.Uint64()
 	b.BlockTimestamp = stakeEvent.BlockTimestamp
@@ -51,6 +56,8 @@ func (b *StakeEvent) Export() (*schema.StakeEvent, error) {
 		TransactionHash:   common.HexToHash(b.TransactionHash),
 		TransactionIndex:  b.TransactionIndex,
 		TransactionStatus: b.TransactionStatus,
+		LogIndex:          b.LogIndex,
+		Metadata:          b.Metadata,
 		BlockHash:         common.HexToHash(b.BlockHash),
 		BlockNumber:       new(big.Int).SetUint64(b.BlockNumber),
 		BlockTimestamp:    b.BlockTimestamp,

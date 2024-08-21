@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
@@ -12,13 +13,15 @@ type StakeEventType string
 const (
 	StakeEventTypeDepositDeposited StakeEventType = "deposited"
 
-	StakeEventTypeWithdrawRequested StakeEventType = "withdrawRequested"
-	StakeEventTypeWithdrawClaimed   StakeEventType = "withdrawClaimed"
+	StakeEventTypeWithdrawRequested StakeEventType = "withdraw_requested"
+	StakeEventTypeWithdrawClaimed   StakeEventType = "withdraw_claimed"
 
 	StakeEventTypeStakeStaked StakeEventType = "staked"
 
-	StakeEventTypeUnstakeRequested StakeEventType = "unstakeRequested"
-	StakeEventTypeUnstakeClaimed   StakeEventType = "unstakeClaimed"
+	StakeEventTypeChipsMerged = "merged"
+
+	StakeEventTypeUnstakeRequested StakeEventType = "unstake_requested"
+	StakeEventTypeUnstakeClaimed   StakeEventType = "unstake_claimed"
 )
 
 type StakeEventImporter interface {
@@ -35,14 +38,16 @@ type StakeEventTransformer interface {
 }
 
 type StakeEvent struct {
-	ID                common.Hash    `json:"id"`
-	Type              StakeEventType `json:"type"`
-	TransactionHash   common.Hash    `json:"transaction_hash"`
-	TransactionIndex  uint           `json:"transaction_index"`
-	TransactionStatus uint64         `json:"transaction_status"`
-	BlockHash         common.Hash    `json:"block_hash"`
-	BlockNumber       *big.Int       `json:"block_number"`
-	BlockTimestamp    time.Time      `json:"block_timestamp"`
+	ID                common.Hash     `json:"id"`
+	Type              StakeEventType  `json:"type"`
+	TransactionHash   common.Hash     `json:"transaction_hash"`
+	TransactionIndex  uint            `json:"transaction_index"`
+	TransactionStatus uint64          `json:"transaction_status"`
+	LogIndex          uint            `json:"log_index"`
+	Metadata          json.RawMessage `json:"metadata"`
+	BlockHash         common.Hash     `json:"block_hash"`
+	BlockNumber       *big.Int        `json:"block_number"`
+	BlockTimestamp    time.Time       `json:"block_timestamp"`
 	Finalized         bool
 }
 
@@ -52,4 +57,9 @@ type StakeEventQuery struct {
 
 type StakeEventsQuery struct {
 	IDs []common.Hash `query:"ids"`
+}
+
+type StakeEventChipsMergedMetadata struct {
+	BurnedTokenIDs []*big.Int `json:"burned_token_ids"`
+	NewTokenID     *big.Int   `json:"new_token_id"`
 }

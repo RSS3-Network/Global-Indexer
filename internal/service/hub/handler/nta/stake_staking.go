@@ -95,7 +95,18 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 	}
 
 	if len(currentProfit) == 0 {
-		return nil, nil
+		return &nta.GetStakerProfitResponseData{
+			Owner: owner,
+			OneDay: &nta.GetStakerProfitChangesSinceResponseData{
+				Date: time.Now().AddDate(0, 0, -1),
+			},
+			OneWeek: &nta.GetStakerProfitChangesSinceResponseData{
+				Date: time.Now().AddDate(0, 0, -7),
+			},
+			OneMonth: &nta.GetStakerProfitChangesSinceResponseData{
+				Date: time.Now().AddDate(0, -1, 0),
+			},
+		}, nil
 	}
 
 	// Find history profit snapshots.

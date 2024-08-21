@@ -11,10 +11,11 @@ import (
 type StakeTransactionType string
 
 const (
-	StakeTransactionTypeDeposit  StakeTransactionType = "deposit"
-	StakeTransactionTypeWithdraw StakeTransactionType = "withdraw"
-	StakeTransactionTypeStake    StakeTransactionType = "stake"
-	StakeTransactionTypeUnstake  StakeTransactionType = "unstake"
+	StakeTransactionTypeDeposit    StakeTransactionType = "deposit"
+	StakeTransactionTypeWithdraw   StakeTransactionType = "withdraw"
+	StakeTransactionTypeStake      StakeTransactionType = "stake"
+	StakeTransactionTypeUnstake    StakeTransactionType = "unstake"
+	StakeTransactionTypeMergeChips StakeTransactionType = "merge_chips"
 )
 
 type StakeTransactionImporter interface {
