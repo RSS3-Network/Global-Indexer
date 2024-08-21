@@ -2,11 +2,13 @@ package epochfresher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -41,81 +43,81 @@ func (s *server) Name() string {
 }
 
 func (s *server) Run(ctx context.Context) error {
-	for {
-		// Load latest finalized block number from RPC.
-		latestFinalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
-		if err != nil {
-			return fmt.Errorf("get latest finalized block from rpc: %w", err)
-		}
-
-		blockEnd := latestFinalizedBlock.NumberU64()
-
-		// If the block number matches the previous one, wait until a new block is minted.
-		if blockEnd <= s.blockNumber {
-			blockConfirmationTime := 10 * time.Second
-			zap.L().Info(
-				"waiting for a new block to be minted",
-				zap.Uint64("block.number.local", s.blockNumber),
-				zap.Uint64("block.number.latest", blockEnd),
-				zap.Duration("block.confirmationTime", blockConfirmationTime),
-			)
-
-			timer := time.NewTimer(blockConfirmationTime)
-			<-timer.C
-
-			continue
-		}
-
-		// Fetch logs from the previous block number to the latest block number.
-		logs, err := s.fetchLogs(ctx, s.blockNumber, blockEnd)
-
-		if err != nil {
-			return fmt.Errorf("fetch logs: %w", err)
-		}
-
-		// Presence of logs indicates the start of a new epoch.
-		if len(logs) > 0 {
-			if err = s.processLogs(ctx, logs); err != nil {
+	retryableFunc := func() error {
+		for {
+			err := s.process(ctx)
+			if err != nil {
 				return err
 			}
-
-			// Wait for a new epoch
-			newEpochWaitTime := 17 * time.Hour
-
-			zap.L().Info(
-				"waiting for a new epoch",
-				zap.Duration("newEpochWaitTime", newEpochWaitTime),
-			)
-
-			timer := time.NewTimer(newEpochWaitTime)
-			<-timer.C
 		}
-
-		s.blockNumber = blockEnd
 	}
+
+	onRetry := retry.OnRetry(func(n uint, err error) {
+		if !errors.Is(ctx.Err(), context.Canceled) {
+			zap.L().Error("run process", zap.Error(err), zap.Uint("attempts", n))
+		}
+	})
+
+	return retry.Do(retryableFunc, retry.Context(ctx), retry.DelayType(retry.FixedDelay), retry.Delay(time.Second), retry.Attempts(30), onRetry)
 }
 
-// processLogs processes the logs to maintain the epoch data.
-func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
-	// Retrieve the current epoch from the settlement contract.
-	currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
+func (s *server) process(ctx context.Context) error {
+	// Load latest finalized block number from RPC.
+	latestFinalizedBlock, err := s.ethereumClient.BlockByNumber(ctx, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
 	if err != nil {
-		return fmt.Errorf("get current epoch: %w", err)
+		zap.L().Error("get latest finalized block from rpc", zap.Any("server", s.Name()), zap.Error(err))
+
+		return err
 	}
 
-	// Parse the RewardDistributed event to get the epoch.
-	event, err := s.stakingContract.ParseRewardDistributed(logs[0])
-	if err != nil {
-		return fmt.Errorf("parse RewardDistributed event: %w", err)
+	blockEnd := latestFinalizedBlock.NumberU64()
+
+	// If the block number matches the previous one, wait until a new block is minted.
+	if blockEnd <= s.blockNumber {
+		blockConfirmationTime := 10 * time.Second
+		zap.L().Info(
+			"waiting for a new block to be minted",
+			zap.Uint64("block.number.local", s.blockNumber),
+			zap.Uint64("block.number.latest", blockEnd),
+			zap.Duration("block.confirmationTime", blockConfirmationTime),
+		)
+
+		timer := time.NewTimer(blockConfirmationTime)
+		<-timer.C
+
+		return nil
 	}
 
-	if currentEpoch.Cmp(event.Epoch) == 0 {
-		if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
+	// Fetch logs from the previous block number to the latest block number.
+	logs, err := s.fetchLogs(ctx, s.blockNumber, blockEnd)
+
+	if err != nil {
+		zap.L().Error("fetch logs", zap.Any("server", s.Name()), zap.Error(err))
+
+		return err
+	}
+
+	// Presence of logs indicates the start of a new epoch.
+	if len(logs) > 0 {
+		if err = s.processLogs(ctx, logs); err != nil {
+			zap.L().Error("process logs", zap.Any("server", s.Name()), zap.Error(err))
+
 			return err
 		}
 
-		zap.L().Info("maintain new epoch data completed", zap.Int64("epoch", event.Epoch.Int64()))
+		// Wait for a new epoch
+		newEpochWaitTime := 17 * time.Hour
+
+		zap.L().Info(
+			"waiting for a new epoch",
+			zap.Duration("newEpochWaitTime", newEpochWaitTime),
+		)
+
+		timer := time.NewTimer(newEpochWaitTime)
+		<-timer.C
 	}
+
+	s.blockNumber = blockEnd
 
 	return nil
 }
@@ -144,6 +146,31 @@ func (s *server) fetchLogs(ctx context.Context, blockStart, blockEnd uint64) ([]
 	})
 
 	return logs, nil
+}
+
+// processLogs processes the logs to maintain the epoch data.
+func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
+	// Retrieve the current epoch from the settlement contract.
+	currentEpoch, err := s.settlementContract.CurrentEpoch(&bind.CallOpts{})
+	if err != nil {
+		return fmt.Errorf("get current epoch: %w", err)
+	}
+
+	// Parse the RewardDistributed event to get the epoch.
+	event, err := s.stakingContract.ParseRewardDistributed(logs[0])
+	if err != nil {
+		return fmt.Errorf("parse RewardDistributed event: %w", err)
+	}
+
+	if currentEpoch.Cmp(event.Epoch) == 0 {
+		if err = s.simpleEnforcer.MaintainEpochData(ctx, event.Epoch.Int64()); err != nil {
+			return err
+		}
+
+		zap.L().Info("maintain new epoch data completed", zap.Int64("epoch", event.Epoch.Int64()))
+	}
+
+	return nil
 }
 
 func New(redis *redis.Client, ethereumClient *ethclient.Client, blockNumber uint64, simpleEnforcer *enforcer.SimpleEnforcer, stakingContract *stakingv2.Staking, settlementContract *l2.Settlement, settlementContractAddress common.Address) service.Server {
