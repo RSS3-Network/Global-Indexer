@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	DefaultTimeout  = 3 * time.Second
+	DefaultTimeout  = 30 * time.Second
 	DefaultAttempts = 3
 )
 
