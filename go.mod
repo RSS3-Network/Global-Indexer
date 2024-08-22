@@ -14,6 +14,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/go-redsync/redsync/v4 v4.11.0
+	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 	github.com/maxmind/geoipupdate/v6 v6.1.0
@@ -108,7 +109,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/labstack/echo-contrib v0.17.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
