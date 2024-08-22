@@ -55,15 +55,19 @@ func incrementRequestCounter(direction *string, network []string, tag []string, 
 	if direction != nil {
 		requestCounterByDirection.WithLabelValues(*direction).Inc()
 	}
+
 	for _, t := range network {
 		requestCounterByNetwork.WithLabelValues(t).Inc()
 	}
+
 	for _, t := range tag {
 		requestCounterByTag.WithLabelValues(t).Inc()
 	}
+
 	for _, t := range platform {
 		requestCounterByPlatform.WithLabelValues(t).Inc()
 	}
+
 	for _, t := range theType {
 		requestCounterByType.WithLabelValues(t).Inc()
 	}

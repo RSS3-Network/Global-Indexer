@@ -21,6 +21,7 @@ require (
 	github.com/orlangure/gnomock v0.31.0
 	github.com/oschwald/geoip2-golang v1.9.0
 	github.com/pressly/goose/v3 v3.21.1
+	github.com/prometheus/client_golang v1.19.1
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rss3-network/node v0.5.39
@@ -135,7 +136,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
