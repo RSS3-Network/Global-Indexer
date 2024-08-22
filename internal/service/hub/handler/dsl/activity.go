@@ -68,6 +68,8 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
+	incrementRequestCounter("GetAccountActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
@@ -110,6 +112,8 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
+	incrementRequestCounter("BatchGetAccountsActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
@@ -151,6 +155,8 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
+	incrementRequestCounter("GetNetworkActivities", request.Direction, []string{request.Network}, request.Tag, request.Platform, request.Type)
+
 	workers, networks, err := validateCombinedParams(request.Tag, []string{request.Network}, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
@@ -184,6 +190,8 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 	if err = c.Validate(&request); err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
+
+	incrementRequestCounter("GetPlatformActivities", request.Direction, request.Network, request.Tag, []string{request.Platform}, request.Type)
 
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, []string{request.Platform})
 	if err != nil {
