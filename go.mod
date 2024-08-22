@@ -23,7 +23,7 @@ require (
 	github.com/pressly/goose/v3 v3.21.1
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rss3-network/node v0.5.36
+	github.com/rss3-network/node v0.5.39
 	github.com/rss3-network/protocol-go v0.5.1
 	github.com/samber/lo v1.46.0
 	github.com/shopspring/decimal v1.4.0
