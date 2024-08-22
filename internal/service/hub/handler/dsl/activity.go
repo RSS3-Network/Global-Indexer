@@ -68,7 +68,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter(request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("GetAccountActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
 
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
@@ -112,7 +112,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter(request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("BatchGetAccountsActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
 
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
@@ -155,7 +155,7 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter(request.Direction, []string{request.Network}, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("GetNetworkActivities", request.Direction, []string{request.Network}, request.Tag, request.Platform, request.Type)
 
 	workers, networks, err := validateCombinedParams(request.Tag, []string{request.Network}, request.Platform)
 	if err != nil {
@@ -191,7 +191,7 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter(request.Direction, request.Network, request.Tag, []string{request.Platform}, request.Type)
+	incrementRequestCounter("GetPlatformActivities", request.Direction, request.Network, request.Tag, []string{request.Platform}, request.Type)
 
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, []string{request.Platform})
 	if err != nil {
