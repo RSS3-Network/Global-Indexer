@@ -3,6 +3,9 @@ package dsl
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/protocol-go/schema/network"
+	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
 var (
@@ -12,13 +15,6 @@ var (
 			Help: "Total number of GetActivity requests",
 		},
 		[]string{"endpoint"},
-	)
-	requestCounterByDirection = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "dsl_get_activity_requests_by_direction_total",
-			Help: "Total number of GetActivity requests by direction",
-		},
-		[]string{"endpoint", "direction"},
 	)
 	requestCounterByNetwork = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -34,13 +30,6 @@ var (
 		},
 		[]string{"endpoint", "tag"},
 	)
-	requestCounterByType = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "dsl_get_activity_requests_by_type_total",
-			Help: "Total number of GetActivity requests by type",
-		},
-		[]string{"endpoint", "type"},
-	)
 	requestCounterByPlatform = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "dsl_get_activity_requests_by_platform_total",
@@ -50,26 +39,36 @@ var (
 	)
 )
 
-func incrementRequestCounter(endpoint string, direction *string, network []string, tag []string, platform []string, theType []string) {
+func incrementRequestCounter(endpoint string, networks []string, tags []string, platforms []string) {
 	requestCounter.WithLabelValues(endpoint).Inc()
 
-	if direction != nil {
-		requestCounterByDirection.WithLabelValues(endpoint, *direction).Inc()
+	if len(networks) > 0 {
+		for _, t := range networks {
+			requestCounterByNetwork.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		for _, item := range network.NetworkStrings() {
+			requestCounterByNetwork.WithLabelValues(endpoint, item).Inc()
+		}
 	}
 
-	for _, t := range network {
-		requestCounterByNetwork.WithLabelValues(endpoint, t).Inc()
+	if len(tags) > 0 {
+		for _, t := range tags {
+			requestCounterByTag.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		for _, item := range tag.TagStrings() {
+			requestCounterByTag.WithLabelValues(endpoint, item).Inc()
+		}
 	}
 
-	for _, t := range tag {
-		requestCounterByTag.WithLabelValues(endpoint, t).Inc()
-	}
-
-	for _, t := range platform {
-		requestCounterByPlatform.WithLabelValues(endpoint, t).Inc()
-	}
-
-	for _, t := range theType {
-		requestCounterByType.WithLabelValues(endpoint, t).Inc()
+	if len(platforms) > 0 {
+		for _, t := range platforms {
+			requestCounterByPlatform.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		for _, item := range decentralized.PlatformStrings() {
+			requestCounterByPlatform.WithLabelValues(endpoint, item).Inc()
+		}
 	}
 }

@@ -39,6 +39,8 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
+	requestCounter.WithLabelValues("GetActivity").Inc()
+
 	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		zap.L().Error("distribute activity request error", zap.Error(err))
@@ -68,8 +70,6 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetAccountActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
-
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
@@ -82,6 +82,8 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 			request.Account = resolvedName
 		}
 	}
+
+	incrementRequestCounter("GetAccountActivities", request.Network, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
@@ -112,8 +114,6 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("BatchGetAccountsActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
-
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
@@ -125,6 +125,8 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 	}
 
 	request.Accounts = lo.Uniq(request.Accounts)
+
+	incrementRequestCounter("BatchGetAccountsActivities", request.Network, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, nil, workers, networks)
 	if err != nil {
@@ -155,12 +157,12 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetNetworkActivities", request.Direction, []string{request.Network}, request.Tag, request.Platform, request.Type)
-
 	workers, networks, err := validateCombinedParams(request.Tag, []string{request.Network}, request.Platform)
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
+
+	incrementRequestCounter("GetNetworkActivities", []string{request.Network}, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
@@ -191,12 +193,12 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetPlatformActivities", request.Direction, request.Network, request.Tag, []string{request.Platform}, request.Type)
-
 	workers, networks, err := validateCombinedParams(request.Tag, request.Network, []string{request.Platform})
 	if err != nil {
 		return errorx.ValidationFailedError(c, err)
 	}
+
+	incrementRequestCounter("GetPlatformActivities", request.Network, request.Tag, []string{request.Platform})
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
