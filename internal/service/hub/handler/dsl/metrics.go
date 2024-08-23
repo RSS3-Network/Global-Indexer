@@ -55,21 +55,39 @@ func incrementRequestCounter(endpoint string, direction *string, network []strin
 
 	if direction != nil {
 		requestCounterByDirection.WithLabelValues(endpoint, *direction).Inc()
+	} else {
+		requestCounterByDirection.WithLabelValues(endpoint, "N/A").Inc()
 	}
 
-	for _, t := range network {
-		requestCounterByNetwork.WithLabelValues(endpoint, t).Inc()
+	if len(network) > 0 {
+		for _, t := range network {
+			requestCounterByNetwork.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		requestCounterByNetwork.WithLabelValues(endpoint, "N/A").Inc()
 	}
 
-	for _, t := range tag {
-		requestCounterByTag.WithLabelValues(endpoint, t).Inc()
+	if len(tag) > 0 {
+		for _, t := range tag {
+			requestCounterByTag.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		requestCounterByTag.WithLabelValues(endpoint, "N/A").Inc()
 	}
 
-	for _, t := range platform {
-		requestCounterByPlatform.WithLabelValues(endpoint, t).Inc()
+	if len(platform) > 0 {
+		for _, t := range platform {
+			requestCounterByPlatform.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		requestCounterByPlatform.WithLabelValues(endpoint, "N/A").Inc()
 	}
 
-	for _, t := range theType {
-		requestCounterByType.WithLabelValues(endpoint, t).Inc()
+	if len(theType) > 0 {
+		for _, t := range theType {
+			requestCounterByType.WithLabelValues(endpoint, t).Inc()
+		}
+	} else {
+		requestCounterByType.WithLabelValues(endpoint, "N/A").Inc()
 	}
 }
