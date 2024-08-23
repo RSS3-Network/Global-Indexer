@@ -81,7 +81,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		}
 	}
 
-	incrementRequestCounter("GetAccountActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("GetAccountActivities", request.Network, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
@@ -124,7 +124,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 
 	request.Accounts = lo.Uniq(request.Accounts)
 
-	incrementRequestCounter("BatchGetAccountsActivities", request.Direction, request.Network, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("BatchGetAccountsActivities", request.Network, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, nil, workers, networks)
 	if err != nil {
@@ -160,7 +160,7 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetNetworkActivities", request.Direction, []string{request.Network}, request.Tag, request.Platform, request.Type)
+	incrementRequestCounter("GetNetworkActivities", []string{request.Network}, request.Tag, request.Platform)
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
@@ -196,7 +196,7 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetPlatformActivities", request.Direction, request.Network, request.Tag, []string{request.Platform}, request.Type)
+	incrementRequestCounter("GetPlatformActivities", request.Network, request.Tag, []string{request.Platform})
 
 	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request, c.QueryParams(), workers, networks)
 	if err != nil {
