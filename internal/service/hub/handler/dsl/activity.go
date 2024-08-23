@@ -39,6 +39,8 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
+	requestCounter.WithLabelValues("GetActivity").Inc()
+
 	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		zap.L().Error("distribute activity request error", zap.Error(err))
