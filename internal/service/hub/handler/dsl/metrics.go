@@ -3,9 +3,7 @@ package dsl
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/rss3-network/node/schema/worker/decentralized"
-	"github.com/rss3-network/protocol-go/schema/network"
-	"github.com/rss3-network/protocol-go/schema/tag"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 )
 
 var (
@@ -47,7 +45,7 @@ func incrementRequestCounter(endpoint string, networks []string, tags []string, 
 			requestCounterByNetwork.WithLabelValues(endpoint, t).Inc()
 		}
 	} else {
-		for _, item := range network.NetworkStrings() {
+		for item := range model.NetworkToWorkersMap {
 			requestCounterByNetwork.WithLabelValues(endpoint, item).Inc()
 		}
 	}
@@ -57,7 +55,7 @@ func incrementRequestCounter(endpoint string, networks []string, tags []string, 
 			requestCounterByTag.WithLabelValues(endpoint, t).Inc()
 		}
 	} else {
-		for _, item := range tag.TagStrings() {
+		for item := range model.TagToWorkersMap {
 			requestCounterByTag.WithLabelValues(endpoint, item).Inc()
 		}
 	}
@@ -67,7 +65,7 @@ func incrementRequestCounter(endpoint string, networks []string, tags []string, 
 			requestCounterByPlatform.WithLabelValues(endpoint, t).Inc()
 		}
 	} else {
-		for _, item := range decentralized.PlatformStrings() {
+		for item := range model.PlatformToWorkersMap {
 			requestCounterByPlatform.WithLabelValues(endpoint, item).Inc()
 		}
 	}
