@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
-	github.com/creasty/defaults v1.7.0
+	github.com/creasty/defaults v1.8.0
 	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/go-playground/validator/v10 v10.22.0
