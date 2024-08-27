@@ -67,6 +67,17 @@ func (n *NTA) GetEndpointConfig(c echo.Context) error {
 	return n.fetchResponse(c, fmt.Sprintf("%s/networks/endpoint_config", endpoint))
 }
 
+// GetWorkersInfo returns details about all workers.
+func (n *NTA) GetWorkersInfo(c echo.Context) error {
+	endpoint, err := n.getNodeEndpoint(c)
+
+	if err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
+	}
+
+	return n.fetchResponse(c, fmt.Sprintf("%s/workers_info", endpoint))
+}
+
 // bindAndValidateRequest binds and validates the request.
 func (n *NTA) bindAndValidateRequest(c echo.Context, request interface{}) error {
 	if err := c.Bind(request); err != nil {
