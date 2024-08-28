@@ -1,4 +1,4 @@
-FROM rss3/go-builder AS base
+FROM ghcr.io/rss3-network/go-image/go-builder AS base
 
 WORKDIR /root/gi
 
@@ -19,7 +19,7 @@ ENV CGO_ENABLED=0
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     go build cmd/main.go
 
-FROM rss3/go-runtime AS runner
+FROM ghcr.io/rss3-network/go-image/go-runtime AS runner
 
 WORKDIR /root/gi
 

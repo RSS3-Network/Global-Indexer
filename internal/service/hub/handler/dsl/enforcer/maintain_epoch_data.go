@@ -331,11 +331,9 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 }
 
 // determineRssNode determines if the node is an RSS node.
-func determineRssNode(workers []*RSSWorkerInfo) bool {
-	for _, w := range workers {
-		if w.Worker == rss.RSSHub && w.Status == worker.StatusReady {
-			return true
-		}
+func determineRssNode(w *RSSWorkerInfo) bool {
+	if w != nil && w.Worker == rss.RSSHub && w.Status == worker.StatusReady {
+		return true
 	}
 
 	return false
@@ -538,7 +536,7 @@ type FederatedInfo struct {
 
 type ComponentInfo struct {
 	Decentralized []*DecentralizedWorkerInfo `json:"decentralized"`
-	RSS           []*RSSWorkerInfo           `json:"rss"`
+	RSS           *RSSWorkerInfo             `json:"rss"`
 	Federated     []*FederatedInfo           `json:"federated"`
 }
 

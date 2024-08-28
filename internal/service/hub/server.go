@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/redis/go-redis/v9"
@@ -50,6 +51,12 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	instance := Server{
 		httpServer: echo.New(),
 		hub:        hub,
+	}
+
+	{
+		// setup prometheus metrics
+		instance.httpServer.Use(echoprometheus.NewMiddleware(Name))
+		instance.httpServer.GET("/metrics", echoprometheus.NewHandler())
 	}
 
 	instance.httpServer.HideBanner = true
@@ -106,6 +113,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			networks.GET("/:network_name/list_workers", instance.hub.nta.GetWorkersByNetwork)
 			networks.GET("/:network_name/workers/:worker_name", instance.hub.nta.GetWorkerDetail)
 			networks.GET("/endpoint_config", instance.hub.nta.GetEndpointConfig)
+			networks.GET("/workers_info", instance.hub.nta.GetWorkersInfo)
 		}
 
 		nodes := nta.Group("/nodes")
