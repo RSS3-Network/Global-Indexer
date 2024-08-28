@@ -26,7 +26,7 @@ type Node struct {
 	Avatar                 json.RawMessage   `gorm:"column:avatar;type:jsonb"`
 	APY                    decimal.Decimal   `gorm:"column:apy"`
 	Score                  decimal.Decimal   `gorm:"column:score"`
-	Type                   string            `gorm:"column:type"`
+	Version                string            `gorm:"column:version"`
 	AccessToken            string            `gorm:"column:access_token"`
 	CreatedAt              time.Time         `gorm:"column:created_at"`
 	UpdatedAt              time.Time         `gorm:"column:updated_at"`
@@ -48,7 +48,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.Config = node.Config
 	n.APY = node.APY
 	n.Score = node.ActiveScore
-	n.Type = node.Type
+	n.Version = node.Version
 	n.AccessToken = node.AccessToken
 
 	n.Location, err = json.Marshal(node.Location)
@@ -90,7 +90,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		Avatar:                 avatar,
 		APY:                    n.APY,
 		ActiveScore:            n.Score,
-		Type:                   n.Type,
+		Version:                n.Version,
 		AccessToken:            n.AccessToken,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil

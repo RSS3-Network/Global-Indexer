@@ -143,12 +143,12 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Type = request.Type
+	node.Version = request.Type
 	// Implement RSS3 node authentication using Bearer tokens.
 	node.AccessToken = fmt.Sprintf("Bearer %s", request.AccessToken)
 
 	// Checks begin from the beta stage.
-	if node.Type != "alpha" && !node.Alpha {
+	if node.Version != "alpha" && !node.Alpha {
 		node.Endpoint, err = n.parseEndpoint(ctx, request.Endpoint)
 		if err != nil {
 			zap.L().Error("parse endpoint", zap.Error(err), zap.String("endpoint", request.Endpoint))
@@ -177,7 +177,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		return fmt.Errorf("save Node: %s, %w", node.Address.String(), err)
 	}
 
-	if request.Type != "alpha" {
+	if node.Version != "alpha" {
 		if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
 			return err
 		}
@@ -236,7 +236,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 		return fmt.Errorf("node %s not found", request.Address)
 	}
 
-	if node.Type != "alpha" && !node.Alpha {
+	if node.Version != "alpha" && !node.Alpha {
 		// Check if the endpoint is available and contains the node's address.
 		if err := n.checkAvailable(ctx, node.Endpoint, node.Address); err != nil {
 			return fmt.Errorf("check endpoint available: %w", err)
