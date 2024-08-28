@@ -184,6 +184,7 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 	node.TotalShares = nodeInfo.TotalShares.String()
 	node.SlashedTokens = nodeInfo.SlashedTokens.String()
+	node.Alpha = nodeInfo.Alpha
 	node.ReliabilityScore = reliabilityScore
 
 	return node, nil
@@ -277,6 +278,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			node.TotalShares = nodeInfo.TotalShares.String()
 			node.SlashedTokens = nodeInfo.SlashedTokens.String()
+			node.Alpha = nodeInfo.Alpha
 		}
 
 		if node.IsPublicGood {
