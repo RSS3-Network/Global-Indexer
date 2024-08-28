@@ -150,12 +150,19 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	batchSize := s.settlerConfig.BatchSize
 
 	// Find qualified Nodes from the database
-	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		Status:  lo.ToPtr(schema.NodeStatusOnline),
-		Version: lo.ToPtr(schema.NodeVersionNormal),
-		Cursor:  cursor,
-		Limit:   lo.ToPtr(batchSize + 1),
-	})
+	query := schema.FindNodesQuery{
+		Status: lo.ToPtr(schema.NodeStatusOnline),
+		Cursor: cursor,
+		Limit:  lo.ToPtr(batchSize + 1),
+	}
+
+	// Set the Node version to Normal after the grace period
+	if epoch >= uint64(s.settlerConfig.ProductionStartEpoch+s.settlerConfig.GracePeriodEpochs) {
+		query.Version = lo.ToPtr(schema.NodeVersionNormal)
+	}
+
+	nodes, err := s.databaseClient.FindNodes(ctx, query)
+
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
@@ -186,7 +193,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.operationRewards)
+	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.rewards)
 	if err != nil {
 		return nil, nil, nil, err
 	}

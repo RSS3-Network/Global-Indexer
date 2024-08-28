@@ -10,19 +10,19 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-func calculateOperationRewards(nodes []*schema.Node, requestCount []*big.Int, operationRewards *config.OperationRewards) ([]*big.Int, error) {
+func calculateOperationRewards(nodes []*schema.Node, requestCount []*big.Int, rewards *config.Rewards) ([]*big.Int, error) {
 	// If there are no nodes, return nil
 	if len(nodes) == 0 {
 		return nil, nil
 	}
 
-	rewards, err := calculateFinalRewards(requestCount, operationRewards.Rewards)
+	operationRewards, err := calculateFinalRewards(requestCount, rewards.OperationRewards)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate operation rewards: %w", err)
 	}
 
-	return rewards, nil
+	return operationRewards, nil
 }
 
 // calculateFinalRewards calculates the final rewards for each node based on the request count and total rewards.

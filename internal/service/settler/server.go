@@ -42,7 +42,7 @@ type Server struct {
 	databaseClient     database.Client
 	stakingContract    *stakingv2.Staking
 	settlementContract *l2.Settlement
-	operationRewards   *config.OperationRewards
+	rewards            *config.Rewards
 }
 
 func (s *Server) Name() string {
@@ -301,7 +301,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		databaseClient:     databaseClient,
 		txManager:          txManager,
 		stakingContract:    stakingContract,
-		operationRewards:   config.OperationRewards,
+		rewards:            config.Rewards,
 		settlementContract: settlementContract,
 	}
 
