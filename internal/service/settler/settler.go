@@ -151,10 +151,10 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 
 	// Find qualified Nodes from the database
 	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		Status: lo.ToPtr(schema.NodeStatusOnline),
-		Type:   lo.ToPtr(schema.NodeTypeNormal),
-		Cursor: cursor,
-		Limit:  lo.ToPtr(batchSize + 1),
+		Status:  lo.ToPtr(schema.NodeStatusOnline),
+		Version: lo.ToPtr(schema.NodeVersionNormal),
+		Cursor:  cursor,
+		Limit:   lo.ToPtr(batchSize + 1),
 	})
 	if err != nil {
 		// No qualified Nodes found in the database

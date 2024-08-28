@@ -84,22 +84,22 @@ const (
 	NodeStatusExiting // exiting
 )
 
-//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeType --linecomment --output node_type_string.go --json --yaml --sql
-type NodeType int
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeVersion --linecomment --output node_version_string.go --json --yaml --sql
+type NodeVersion int
 
 const (
-	// NodeTypeAlpha
+	// NodeVersionAlpha
 	// Nodes in the alpha phase of the network will receive staking rewards, but they do not actually contribute to the information network.
-	NodeTypeAlpha NodeType = iota // alpha
+	NodeVersionAlpha NodeVersion = iota // alpha
 
-	// NodeTypeBeta
+	// NodeVersionBeta
 	// Nodes in the beta phase of the network do not require staking and will not receive rewards, but they do contribute to the information network and are referred to as public good nodes.
-	NodeTypeBeta NodeType = iota // beta
+	NodeVersionBeta // beta
 
-	// NodeTypeNormal
+	// NodeVersionNormal
 	// Nodes in the production phase of the network are required to contribute to the information network. All nodes, except for public good nodes that do not require staking, will receive staking and operation rewards.
 	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to normal node types.
-	NodeTypeNormal NodeType = iota // normal
+	NodeVersionNormal // normal
 )
 
 type BatchUpdateNode struct {
@@ -110,7 +110,7 @@ type BatchUpdateNode struct {
 type FindNodesQuery struct {
 	NodeAddresses []common.Address
 	Status        *NodeStatus
-	Type          *NodeType
+	Version       *NodeVersion
 	Cursor        *string
 	Limit         *int
 	OrderByScore  bool
