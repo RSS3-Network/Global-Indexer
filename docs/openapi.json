@@ -1804,7 +1804,7 @@
                         "enum": [
                             "alpha",
                             "beta",
-                            "normal"
+                            "production"
                         ],
                         "description": "The version of the node"
                     },
@@ -1845,7 +1845,7 @@
                     "apy": "0.3928765550642588002426864199264",
                     "active_score": "0.2712648142772680586868915",
                     "reliability_score": "0",
-                    "type": "alpha",
+                    "version": "production",
                     "created_at": 1710278898
                 }
             },
