@@ -144,17 +144,25 @@ func (s *Server) retryEpochProof(ctx context.Context, epochID uint64) error {
 }
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
-func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Float, error) {
+func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Int, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
 	batchSize := s.settlerConfig.BatchSize
 
 	// Find qualified Nodes from the database
-	nodes, err := s.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
+	query := schema.FindNodesQuery{
 		Status: lo.ToPtr(schema.NodeStatusOnline),
 		Cursor: cursor,
 		Limit:  lo.ToPtr(batchSize + 1),
-	})
+	}
+
+	// Set the Node version to Normal after the grace period
+	if epoch >= uint64(s.settlerConfig.ProductionStartEpoch+s.settlerConfig.GracePeriodEpochs) {
+		query.Version = lo.ToPtr(schema.NodeVersionNormal)
+	}
+
+	nodes, err := s.databaseClient.FindNodes(ctx, query)
+
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
@@ -178,30 +186,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	// Update the Node staking data from the VSL.
-	if err := s.fetchNodePoolSizes(nodeAddresses, nodes); err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.specialRewards.EpochLimit)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
-	}
-
-	// Calculate the operation rewards for the Nodes
-	operationRewards, scores, err := calculateOperationRewards(nodes, recentStakers, s.specialRewards)
+	// Calculate the number of requests for the Nodes
+	requestCount, totalRequestCount, err := s.prepareRequestCounts(ctx, nodeAddresses)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	// Pause AlphaSpecialRewards
-	for i := range operationRewards {
-		operationRewards[i] = big.NewInt(0)
-	}
-
-	// Calculate the operation rewards for the Nodes
-	requestCount, err := s.prepareRequestCounts(ctx, nodeAddresses)
+	// Calculate the Operation rewards for the Nodes
+	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.rewards)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -212,37 +204,15 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		OperationRewards: operationRewards,
 		RequestCount:     requestCount,
 		IsFinal:          isFinal,
-	}, nodes, scores, nil
+	}, nodes, totalRequestCount, nil
 }
 
-func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, nodes []*schema.Node) error {
-	scoreDecimals, err := parseScores(scores)
-	if err != nil {
-		return fmt.Errorf("failed to parse scores: %w", err)
-	}
-
+func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Int, nodes []*schema.Node) error {
 	for i, node := range nodes {
-		node.ActiveScore = scoreDecimals[i]
+		node.ActiveScore = decimal.NewFromBigInt(scores[i], 0)
 	}
 
 	return s.databaseClient.UpdateNodesScore(ctx, nodes)
-}
-
-func parseScores(scores []*big.Float) ([]decimal.Decimal, error) {
-	scoreDecimals := make([]decimal.Decimal, len(scores))
-
-	for i, score := range scores {
-		strValue := score.Text('f', -1)
-
-		decimalValue, err := decimal.NewFromString(strValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse score %d: %w", i, err)
-		}
-
-		scoreDecimals[i] = decimalValue
-	}
-
-	return scoreDecimals, nil
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data

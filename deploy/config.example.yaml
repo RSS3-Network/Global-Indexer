@@ -21,16 +21,11 @@ settler:
   epoch_interval_in_hours: 18
   gas_limit: 3000000
   batch_size: 200
+  production_start_epoch: 227
+  grace_period_epochs: 28
 
-special_rewards:
-  gini_coefficient: 2
-  staker_factor: 0.05
-  epoch_limit: 10
-  node_threshold: 0.4
-  rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
-  rewards_ceiling: 1000
-  rewards_ratio_active: 0.5
-  rewards_ratio_operation: 0.5
+rewards:
+  operation_rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
 
 geo_ip:
   account:

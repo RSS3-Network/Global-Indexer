@@ -42,10 +42,7 @@ type Server struct {
 	databaseClient     database.Client
 	stakingContract    *stakingv2.Staking
 	settlementContract *l2.Settlement
-	// specialRewards is a temporary rewards available at Alpha stage
-	// it will be removed in the future
-
-	specialRewards *config.SpecialRewards
+	rewards            *config.Rewards
 }
 
 func (s *Server) Name() string {
@@ -304,7 +301,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		databaseClient:     databaseClient,
 		txManager:          txManager,
 		stakingContract:    stakingContract,
-		specialRewards:     config.SpecialRewards,
+		rewards:            config.Rewards,
 		settlementContract: settlementContract,
 	}
 
