@@ -143,7 +143,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.ID = nodeInfo.NodeId
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	node.Version = lo.Ternary(nodeInfo.Alpha, schema.NodeVersionAlpha.String(), schema.NodeVersionNormal.String())
+	node.Version = request.Type
 	// Implement RSS3 node authentication using Bearer tokens.
 	node.AccessToken = fmt.Sprintf("Bearer %s", request.AccessToken)
 
