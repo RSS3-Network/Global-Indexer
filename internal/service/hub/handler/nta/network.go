@@ -96,6 +96,7 @@ func (n *NTA) getNodeEndpoint(c echo.Context) (string, error) {
 	stats, err := n.databaseClient.FindNodeStats(c.Request().Context(), &schema.StatQuery{
 		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
 		Limit:        lo.ToPtr(model.RequiredQualifiedNodeCount),
+		IsFullNode:   lo.ToPtr(true),
 		PointsOrder:  lo.ToPtr("DESC"),
 	})
 
