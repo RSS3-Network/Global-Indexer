@@ -67,15 +67,15 @@ func (n *NTA) GetEndpointConfig(c echo.Context) error {
 	return n.fetchResponse(c, fmt.Sprintf("%s/networks/endpoint_config", endpoint))
 }
 
-// GetWorkersInfo returns details about all workers.
-func (n *NTA) GetWorkersInfo(c echo.Context) error {
+// GetAssets returns all assets supported by the DSL.
+func (n *NTA) GetAssets(c echo.Context) error {
 	endpoint, err := n.getNodeEndpoint(c)
 
 	if err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/workers_info", endpoint))
+	return n.fetchResponse(c, fmt.Sprintf("%s/assets", endpoint))
 }
 
 // bindAndValidateRequest binds and validates the request.
