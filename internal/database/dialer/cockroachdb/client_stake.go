@@ -96,6 +96,10 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
 	}
 
+	if query.BlockTimestamp != nil {
+		databaseClient = databaseClient.Where(`"block_timestamp" >= ?`, query.BlockTimestamp)
+	}
+
 	if query.Pending != nil && *query.Pending {
 		subQuery := c.database.WithContext(ctx).
 			Select("TRUE").
@@ -107,9 +111,19 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 			Not(`EXISTS (?)`, subQuery)
 	}
 
+	if query.Order != "" {
+		databaseClient = databaseClient.Order(query.Order)
+	} else {
+		databaseClient = databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`)
+	}
+
+	if query.Limit != 0 {
+		databaseClient = databaseClient.Limit(query.Limit)
+	}
+
 	var rows []table.StakeTransaction
 
-	if err := databaseClient.Order(`"block_timestamp" DESC, "block_number" DESC, "transaction_index" DESC`).Limit(query.Limit).Find(&rows).Error; err != nil {
+	if err := databaseClient.Find(&rows).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, database.ErrorRowNotFound
 		}
