@@ -16,6 +16,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -94,40 +95,60 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
 	}
 
-	if len(currentProfit) == 0 {
-		return &nta.GetStakerProfitResponseData{
-			Owner: owner,
-			OneDay: &nta.GetStakerProfitChangesSinceResponseData{
-				Date: time.Now().AddDate(0, 0, -1),
-			},
-			OneWeek: &nta.GetStakerProfitChangesSinceResponseData{
-				Date: time.Now().AddDate(0, 0, -7),
-			},
-			OneMonth: &nta.GetStakerProfitChangesSinceResponseData{
-				Date: time.Now().AddDate(0, -1, 0),
-			},
-		}, nil
+	var blockTimestamp time.Time
+
+	profit := nta.GetStakerProfitResponseData{
+		Owner: owner,
+		OneDay: &nta.GetStakerProfitChangesSinceResponseData{
+			Date: time.Now().AddDate(0, 0, -1),
+		},
+		OneWeek: &nta.GetStakerProfitChangesSinceResponseData{
+			Date: time.Now().AddDate(0, 0, -7),
+		},
+		OneMonth: &nta.GetStakerProfitChangesSinceResponseData{
+			Date: time.Now().AddDate(0, -1, 0),
+		},
+	}
+
+	if len(currentProfit) > 0 {
+		blockTimestamp = currentProfit[0].Date
+
+		profit.TotalChipAmount = currentProfit[0].TotalChipAmount
+		profit.TotalChipValue = currentProfit[0].TotalChipValue
+	}
+
+	// Caculate profit changes from staking transactions.
+	transactions, err := n.databaseClient.FindStakeTransactions(ctx, schema.StakeTransactionsQuery{
+		User:           lo.ToPtr(owner),
+		BlockTimestamp: lo.ToPtr(blockTimestamp),
+		Order:          "block_timestamp ASC",
+	})
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		return nil, fmt.Errorf("find stake transactions: %w", err)
+	}
+
+	for _, transaction := range transactions {
+		switch transaction.Type {
+		case schema.StakeTransactionTypeStake:
+			profit.TotalChipAmount = profit.TotalChipAmount.Add(decimal.NewFromInt(int64(len(transaction.Chips))))
+			profit.TotalChipValue = profit.TotalChipValue.Add(decimal.NewFromBigInt(transaction.Value, 0))
+		case schema.StakeTransactionTypeUnstake:
+			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips))))
+			profit.TotalChipValue = profit.TotalChipValue.Sub(decimal.NewFromBigInt(transaction.Value, 0))
+		case schema.StakeEventTypeChipsMerged:
+			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips) - 2))) // Exclude the merged chips.
+		}
 	}
 
 	// Find history profit snapshots.
-	yesterday := currentProfit[0].Date.AddDate(0, 0, -1)
-	weekAgo := currentProfit[0].Date.AddDate(0, 0, -7)
-	monthAgo := currentProfit[0].Date.AddDate(0, -1, 0)
-
 	query = schema.StakerProfitSnapshotsQuery{
 		OwnerAddress: lo.ToPtr(owner),
-		Dates:        []time.Time{yesterday, weekAgo, monthAgo},
+		Dates:        []time.Time{profit.OneDay.Date, profit.OneWeek.Date, profit.OneMonth.Date},
 	}
 
 	snapshots, err := n.databaseClient.FindStakerProfitSnapshots(ctx, query)
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, fmt.Errorf("find staker profit snapshots: %w", err)
-	}
-
-	data := &nta.GetStakerProfitResponseData{
-		Owner:           owner,
-		TotalChipAmount: currentProfit[0].TotalChipAmount,
-		TotalChipValue:  currentProfit[0].TotalChipValue,
 	}
 
 	for _, snapshot := range snapshots {
@@ -136,31 +157,31 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		}
 
 		switch {
-		case snapshot.Date.After(monthAgo) && snapshot.Date.Before(weekAgo):
-			data.OneMonth = &nta.GetStakerProfitChangesSinceResponseData{
+		case snapshot.Date.After(profit.OneMonth.Date) && snapshot.Date.Before(profit.OneWeek.Date):
+			profit.OneMonth = &nta.GetStakerProfitChangesSinceResponseData{
 				Date:            snapshot.Date,
 				TotalChipAmount: snapshot.TotalChipAmount,
 				TotalChipValue:  snapshot.TotalChipValue,
-				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+				ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
 			}
-		case snapshot.Date.After(weekAgo) && snapshot.Date.Before(yesterday):
-			data.OneWeek = &nta.GetStakerProfitChangesSinceResponseData{
+		case snapshot.Date.After(profit.OneWeek.Date) && snapshot.Date.Before(profit.OneDay.Date):
+			profit.OneWeek = &nta.GetStakerProfitChangesSinceResponseData{
 				Date:            snapshot.Date,
 				TotalChipAmount: snapshot.TotalChipAmount,
 				TotalChipValue:  snapshot.TotalChipValue,
-				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+				ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
 			}
 		default:
-			data.OneDay = &nta.GetStakerProfitChangesSinceResponseData{
+			profit.OneDay = &nta.GetStakerProfitChangesSinceResponseData{
 				Date:            snapshot.Date,
 				TotalChipAmount: snapshot.TotalChipAmount,
 				TotalChipValue:  snapshot.TotalChipValue,
-				ProfitAndLoss:   data.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
+				ProfitAndLoss:   profit.TotalChipValue.Sub(snapshot.TotalChipValue).Div(snapshot.TotalChipValue),
 			}
 		}
 	}
 
-	return data, nil
+	return &profit, nil
 }
 
 func (n *NTA) GetStakingStat(c echo.Context) error {

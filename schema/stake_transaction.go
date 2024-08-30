@@ -53,14 +53,16 @@ type StakeTransactionQuery struct {
 }
 
 type StakeTransactionsQuery struct {
-	Cursor  *common.Hash
-	IDs     []common.Hash
-	User    *common.Address
-	Node    *common.Address
-	Address *common.Address
-	Type    *StakeTransactionType
-	Pending *bool
-	Limit   int
+	Cursor         *common.Hash
+	IDs            []common.Hash
+	User           *common.Address
+	Node           *common.Address
+	Address        *common.Address
+	Type           *StakeTransactionType
+	BlockTimestamp *time.Time
+	Pending        *bool
+	Limit          int
+	Order          string
 }
 
 type StakeRecentCount struct {
