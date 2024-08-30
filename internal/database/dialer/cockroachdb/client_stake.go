@@ -100,6 +100,10 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		databaseClient = databaseClient.Where(`"block_timestamp" >= ?`, query.BlockTimestamp)
 	}
 
+	if query.Finalized != nil {
+		databaseClient = databaseClient.Where(`"finalized" = ?`, *query.Finalized)
+	}
+
 	if query.Pending != nil && *query.Pending {
 		subQuery := c.database.WithContext(ctx).
 			Select("TRUE").

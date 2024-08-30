@@ -10,5 +10,5 @@ type StakeStaker struct {
 	TotalStakedNodes    uint64          `json:"total_staked_nodes"`
 	TotalChips          uint64          `json:"total_chips"`
 	TotalStakedTokens   decimal.Decimal `json:"total_staked_tokens"`
-	CurrentStakedTokens decimal.Decimal `json:"current_staked_tokens"`
+	CurrentStakedTokens decimal.Decimal `json:"current_staked_tokens"` // Exclude the staked tokens that are already withdrawn.
 }
