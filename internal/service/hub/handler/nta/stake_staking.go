@@ -117,7 +117,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		profit.TotalChipValue = currentProfit[0].TotalChipValue
 	}
 
-	// Caculate profit changes from staking transactions.
+	// Calculate profit changes from staking transactions.
 	transactions, err := n.databaseClient.FindStakeTransactions(ctx, schema.StakeTransactionsQuery{
 		User:           lo.ToPtr(owner),
 		BlockTimestamp: lo.ToPtr(blockTimestamp),
@@ -188,16 +188,41 @@ func (n *NTA) GetStakingStat(c echo.Context) error {
 	var request nta.GetStakingStatRequest
 
 	if err := c.Bind(&request); err != nil {
-		return fmt.Errorf("bind request: %w", err)
+		return errorx.BadParamsError(c, err)
 	}
 
 	if err := c.Validate(&request); err != nil {
-		return fmt.Errorf("validate request: %w", err)
+		return errorx.ValidationFailedError(c, err)
 	}
 
 	stakingStat, err := n.databaseClient.FindStakeStaker(c.Request().Context(), request.Address)
 	if err != nil {
-		return fmt.Errorf("fetch stake staker by address %s: %w", request.Address, err)
+		return errorx.ValidationFailedError(c, fmt.Errorf("fetch stake staker by address %s: %w", request.Address, err))
+	}
+
+	// Calculate profit changes from staking transactions.
+	transactions, err := n.databaseClient.FindStakeTransactions(c.Request().Context(), schema.StakeTransactionsQuery{
+		User:      lo.ToPtr(request.Address),
+		Finalized: lo.ToPtr(false),
+		Order:     "block_timestamp ASC",
+	})
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
+		return errorx.ValidationFailedError(c, fmt.Errorf("find stake transactions: %w", err))
+	}
+
+	for _, transaction := range transactions {
+		switch transaction.Type {
+		case schema.StakeTransactionTypeStake:
+			stakingStat.TotalChips = stakingStat.TotalChips + uint64(len(transaction.Chips))
+			stakingStat.TotalStakedTokens = stakingStat.TotalStakedTokens.Add(decimal.NewFromBigInt(transaction.Value, 0))
+			stakingStat.CurrentStakedTokens = stakingStat.CurrentStakedTokens.Add(decimal.NewFromBigInt(transaction.Value, 0))
+		case schema.StakeTransactionTypeUnstake:
+			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips))
+			stakingStat.TotalStakedTokens = stakingStat.TotalStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
+			stakingStat.CurrentStakedTokens = stakingStat.CurrentStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
+		case schema.StakeEventTypeChipsMerged:
+			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips)-2) // Exclude the merged chips.
+		}
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{

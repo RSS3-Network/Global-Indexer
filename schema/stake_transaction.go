@@ -63,6 +63,7 @@ type StakeTransactionsQuery struct {
 	Pending        *bool
 	Limit          int
 	Order          string
+	Finalized      *bool
 }
 
 type StakeRecentCount struct {
