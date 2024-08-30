@@ -135,7 +135,7 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 		case schema.StakeTransactionTypeUnstake:
 			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips))))
 			profit.TotalChipValue = profit.TotalChipValue.Sub(decimal.NewFromBigInt(transaction.Value, 0))
-		case schema.StakeEventTypeChipsMerged:
+		case schema.StakeTransactionTypeMergeChips:
 			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips) - 2))) // Exclude the merged chips.
 		}
 	}
@@ -220,7 +220,7 @@ func (n *NTA) GetStakingStat(c echo.Context) error {
 			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips))
 			stakingStat.TotalStakedTokens = stakingStat.TotalStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
 			stakingStat.CurrentStakedTokens = stakingStat.CurrentStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
-		case schema.StakeEventTypeChipsMerged:
+		case schema.StakeTransactionTypeMergeChips:
 			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips)-2) // Exclude the merged chips.
 		}
 	}
