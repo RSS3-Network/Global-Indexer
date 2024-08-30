@@ -21,16 +21,16 @@ const (
 )
 
 type File struct {
-	Environment    string          `yaml:"environment" validate:"required" default:"development"`
-	Database       *Database       `yaml:"database"`
-	Redis          *Redis          `yaml:"redis"`
-	RSS3Chain      *RSS3Chain      `yaml:"rss3_chain"`
-	Settler        *Settler        `yaml:"settler"`
-	Distributor    *Distributor    `yaml:"distributor"`
-	SpecialRewards *SpecialRewards `yaml:"special_rewards"`
-	GeoIP          *GeoIP          `yaml:"geo_ip"`
-	RPC            *RPC            `yaml:"rpc"`
-	Telemetry      *Telemetry      `json:"telemetry"`
+	Environment string       `yaml:"environment" validate:"required" default:"development"`
+	Database    *Database    `yaml:"database"`
+	Redis       *Redis       `yaml:"redis"`
+	RSS3Chain   *RSS3Chain   `yaml:"rss3_chain"`
+	Settler     *Settler     `yaml:"settler"`
+	Distributor *Distributor `yaml:"distributor"`
+	Rewards     *Rewards     `yaml:"rewards"`
+	GeoIP       *GeoIP       `yaml:"geo_ip"`
+	RPC         *RPC         `yaml:"rpc"`
+	Telemetry   *Telemetry   `json:"telemetry"`
 }
 
 type Database struct {
@@ -58,7 +58,9 @@ type Settler struct {
 	GasLimit             uint64 `yaml:"gas_limit" default:"2500000"`
 	// BatchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
-	BatchSize int `yaml:"batch_size" default:"200"`
+	BatchSize            int `yaml:"batch_size" default:"200"`
+	ProductionStartEpoch int `yaml:"production_start_epoch" default:"227"`
+	GracePeriodEpochs    int `yaml:"grace_period_epochs" default:"28"`
 }
 
 type Distributor struct {
@@ -71,15 +73,8 @@ type Distributor struct {
 	ToleranceSeconds  int `yaml:"tolerance_seconds" default:"1200"`
 }
 
-type SpecialRewards struct {
-	GiniCoefficient       float64 `yaml:"gini_coefficient" validate:"required"`
-	StakerFactor          float64 `yaml:"staker_factor" validate:"required"`
-	NodeThreshold         float64 `yaml:"node_threshold" validate:"required"`
-	EpochLimit            int     `yaml:"epoch_limit" validate:"required"`
-	Rewards               float64 `yaml:"rewards" validate:"required"`
-	RewardsCeiling        float64 `yaml:"rewards_ceiling" validate:"required"`
-	RewardsRatioActive    float64 `yaml:"rewards_ratio_active" validate:"required"`
-	RewardsRatioOperation float64 `yaml:"rewards_ratio_operation" validate:"required"`
+type Rewards struct {
+	OperationRewards float64 `yaml:"operation_rewards" validate:"required"`
 }
 
 type GeoIP struct {

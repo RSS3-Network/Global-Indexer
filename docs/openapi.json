@@ -1083,17 +1083,17 @@
                 }
             }
         },
-        "/nta/networks/workers_info": {
+        "/nta/networks/assets": {
             "get": {
-                "summary": "Get Node Worker Info Detail",
-                "description": "Retrieve node worker info details.",
+                "summary": "Get Node Assets",
+                "description": "Retrieve node assets details.",
                 "tags": [
                     "Networks",
                     "NTA"
                 ],
                 "responses": {
                     "200": {
-                        "$ref": "#/components/responses/WorkerDetailResponse"
+                        "$ref": "#/components/responses/AssetsResponse"
                     },
                     "500": {
                         "$ref": "#/components/responses/500"
@@ -1175,7 +1175,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"}]},
+                    ,"anyOf":[{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"}]},
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -2354,29 +2354,43 @@
                     }
                 }
             },
-            "WorkerInfoDetail": {
+            "NetworkAssetDetail": {
                 "type": "object",
-                "description": "The info details of the worker.",
+                "description": "The details of an asset for network.",
                 "properties": {
                     "type": {
-                        "description": "The type of worker.",
-                        "type": "string",
-                        "example": "decentralized"
+                        "description": "The type of the asset.",
+                        "type": "string"
                     },
                     "name": {
-                        "description": "The worker name.",
-                        "type": "string",
-                        "example": "aave"
-                    },
-                    "platform": {
-                        "description": "The platform of worker.",
-                        "type": "string",
-                        "example": "AAVE"
+                        "description": "The name of the asset.",
+                        "type": "string"
                     },
                     "icon_url": {
-                        "description": "The icon url of worker.",
-                        "type": "string",
-                        "example": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/aave.svg"
+                        "description": "The URL of the asset's icon.",
+                        "type": "string"
+                    }
+                }
+            },
+            "WorkerAssetDetail": {
+                "type": "object",
+                "description": "The details of an asset for worker.",
+                "properties": {
+                    "type": {
+                        "description": "The type of the asset.",
+                        "type": "string"
+                    },
+                    "name": {
+                        "description": "The name of the asset.",
+                        "type": "string"
+                    },
+                    "platform": {
+                        "description": "The platform of the asset (for workers only).",
+                        "type": "string"
+                    },
+                    "icon_url": {
+                        "description": "The URL of the asset's icon.",
+                        "type": "string"
                     }
                 }
             },
@@ -3683,8 +3697,8 @@
                     }
                 }
             },
-            "WorkerDetailResponse": {
-                "description": "A successful response containing a list of available workers info details.",
+            "AssetsResponse": {
+                "description": "A successful response containing the details of an asset (network and worker).",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -3692,10 +3706,244 @@
                             "required": ["data"],
                             "properties": {
                                 "data": {
-                                    "type": "array",
-                                    "description": "Array of worker info details.",
-                                    "items": {
-                                        "$ref": "#/components/schemas/WorkerInfoDetail"
+                                    "type": "object",
+                                    "properties": {
+                                        "networks": {
+                                            "type": "array",
+                                            "description": "Array of network info details.",
+                                            "items":{
+                                                "$ref": "#/components/schemas/NetworkAssetDetail"
+                                            }
+                                        },
+                                        "workers": {
+                                            "type": "array",
+                                            "description": "Array of worker info details.",
+                                            "items":{
+                                                "$ref": "#/components/schemas/WorkerAssetDetail"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "example": {
+                                "data": {
+                                    "networks": {
+                                        "arbitrum": {
+                                            "type": "ethereum",
+                                            "name": "Arbitrum",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/arbitrum.svg"
+                                        },
+                                        "arweave": {
+                                            "type": "arweave",
+                                            "name": "Arweave",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/arweave.svg"
+                                        },
+                                        "avax": {
+                                            "type": "ethereum",
+                                            "name": "Avalanche",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/avalanche.svg"
+                                        },
+                                        "base": {
+                                            "type": "ethereum",
+                                            "name": "Base",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/base.svg"
+                                        },
+                                        "binance-smart-chain": {
+                                            "type": "ethereum",
+                                            "name": "Binance Smart Chain",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/binance-smart-chain.svg"
+                                        },
+                                        "crossbell": {
+                                            "type": "ethereum",
+                                            "name": "Crossbell",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/crossbell.svg"
+                                        },
+                                        "ethereum": {
+                                            "type": "ethereum",
+                                            "name": "Ethereum",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/ethereum.svg"
+                                        },
+                                        "farcaster": {
+                                            "type": "farcaster",
+                                            "name": "Farcaster",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/farcaster.svg"
+                                        },
+                                        "gnosis": {
+                                            "type": "ethereum",
+                                            "name": "Gnosis",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/gnosis-chain.svg"
+                                        },
+                                        "linea": {
+                                            "type": "ethereum",
+                                            "name": "Linea",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/linea.svg"
+                                        },
+                                        "optimism": {
+                                            "type": "ethereum",
+                                            "name": "Optimism",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/optimism.svg"
+                                        },
+                                        "polygon": {
+                                            "type": "ethereum",
+                                            "name": "Polygon",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/polygon.svg"
+                                        },
+                                        "vsl": {
+                                            "type": "ethereum",
+                                            "name": "VSL",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/rss3-vsl.svg"
+                                        },
+                                        "x-layer": {
+                                            "type": "ethereum",
+                                            "name": "X Layer",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/x-layer.svg"
+                                        }
+                                    },
+                                    "workers": {
+                                        "1inch": {
+                                            "type": "decentralized",
+                                            "name": "1inch",
+                                            "platform": "1inch",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/1inch.svg"
+                                        },
+                                        "aave": {
+                                            "type": "decentralized",
+                                            "name": "aave",
+                                            "platform": "AAVE",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/aave.svg"
+                                        },
+                                        "aavegotchi": {
+                                            "type": "decentralized",
+                                            "name": "aavegotchi",
+                                            "platform": "Aavegotchi",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/aavegotchi.svg"
+                                        },
+                                        "core": {
+                                            "type": "decentralized",
+                                            "name": "core",
+                                            "platform": "Unknown",
+                                            "icon_url": ""
+                                        },
+                                        "crossbell": {
+                                            "type": "decentralized",
+                                            "name": "crossbell",
+                                            "platform": "Crossbell",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/crossbell.svg"
+                                        },
+                                        "curve": {
+                                            "type": "decentralized",
+                                            "name": "curve",
+                                            "platform": "Curve",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/curve.svg"
+                                        },
+                                        "ens": {
+                                            "type": "decentralized",
+                                            "name": "ens",
+                                            "platform": "ENS",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/ens.svg"
+                                        },
+                                        "highlight": {
+                                            "type": "decentralized",
+                                            "name": "highlight",
+                                            "platform": "Highlight",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/highlight.svg"
+                                        },
+                                        "iqwiki": {
+                                            "type": "decentralized",
+                                            "name": "iqwiki",
+                                            "platform": "IQWiki",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/iqwiki.svg"
+                                        },
+                                        "kiwistand": {
+                                            "type": "decentralized",
+                                            "name": "kiwistand",
+                                            "platform": "KiwiStand",
+                                            "icon_url": "https://storage.googleapis.com/rss3-icon/kiwistand.png"
+                                        },
+                                        "lens": {
+                                            "type": "decentralized",
+                                            "name": "lens",
+                                            "platform": "Lens",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/lens.svg"
+                                        },
+                                        "lido": {
+                                            "type": "decentralized",
+                                            "name": "lido",
+                                            "platform": "Lido",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/lido.svg"
+                                        },
+                                        "looksrare": {
+                                            "type": "decentralized",
+                                            "name": "looksrare",
+                                            "platform": "LooksRare",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/looks-rare.svg"
+                                        },
+                                        "matters": {
+                                            "type": "decentralized",
+                                            "name": "matters",
+                                            "platform": "Matters",
+                                            "icon_url": "https://storage.googleapis.com/rss3-icon/matters.jpg"
+                                        },
+                                        "mirror": {
+                                            "type": "decentralized",
+                                            "name": "mirror",
+                                            "platform": "Mirror",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/mirror.svg"
+                                        },
+                                        "momoka": {
+                                            "type": "decentralized",
+                                            "name": "momoka",
+                                            "platform": "Lens",
+                                            "icon_url": "https://storage.googleapis.com/rss3-icon/momoka.png"
+                                        },
+                                        "opensea": {
+                                            "type": "decentralized",
+                                            "name": "opensea",
+                                            "platform": "OpenSea",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/opensea.svg"
+                                        },
+                                        "optimism": {
+                                            "type": "decentralized",
+                                            "name": "optimism",
+                                            "platform": "Optimism",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/optimism.svg"
+                                        },
+                                        "paragraph": {
+                                            "type": "decentralized",
+                                            "name": "paragraph",
+                                            "platform": "Paragraph",
+                                            "icon_url": "https://storage.googleapis.com/rss3-icon/paragraph.png"
+                                        },
+                                        "rss3": {
+                                            "type": "decentralized",
+                                            "name": "rss3",
+                                            "platform": "RSS3",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/rss3.svg"
+                                        },
+                                        "rsshub": {
+                                            "type": "rss",
+                                            "name": "rsshub",
+                                            "platform": "RSSHub",
+                                            "icon_url": "https://storage.googleapis.com/rss3-icon/rsshub.png"
+                                        },
+                                        "stargate": {
+                                            "type": "decentralized",
+                                            "name": "stargate",
+                                            "platform": "Stargate",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/stargate.svg"
+                                        },
+                                        "uniswap": {
+                                            "type": "decentralized",
+                                            "name": "uniswap",
+                                            "platform": "Uniswap",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/uniswap.svg"
+                                        },
+                                        "vsl": {
+                                            "type": "decentralized",
+                                            "name": "vsl",
+                                            "platform": "VSL",
+                                            "icon_url": "https://unpkg.com/@rss3/web3-icons-svg@latest/icons/rss3-vsl.svg"
+                                        }
                                     }
                                 }
                             }
