@@ -96,10 +96,10 @@ const (
 	// Nodes in the beta phase of the network do not require staking and will not receive rewards, but they do contribute to the information network and are referred to as public good nodes.
 	NodeVersionBeta // beta
 
-	// NodeVersionNormal
+	// NodeVersionProduction
 	// Nodes in the production phase of the network are required to contribute to the information network. All nodes, except for public good nodes that do not require staking, will receive staking and operation rewards.
-	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to normal node types.
-	NodeVersionNormal // normal
+	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to production node version.
+	NodeVersionProduction // production
 )
 
 type BatchUpdateNode struct {

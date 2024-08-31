@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeVersionName = "alphabetanormal"
+const _NodeVersionName = "alphabetaproduction"
 
-var _NodeVersionIndex = [...]uint8{0, 5, 9, 15}
+var _NodeVersionIndex = [...]uint8{0, 5, 9, 19}
 
-const _NodeVersionLowerName = "alphabetanormal"
+const _NodeVersionLowerName = "alphabetaproduction"
 
 func (i NodeVersion) String() string {
 	if i < 0 || i >= NodeVersion(len(_NodeVersionIndex)-1) {
@@ -32,24 +32,24 @@ func _NodeVersionNoOp() {
 	var x [1]struct{}
 	_ = x[NodeVersionAlpha-(0)]
 	_ = x[NodeVersionBeta-(1)]
-	_ = x[NodeVersionNormal-(2)]
+	_ = x[NodeVersionProduction-(2)]
 }
 
-var _NodeVersionValues = []NodeVersion{NodeVersionAlpha, NodeVersionBeta, NodeVersionNormal}
+var _NodeVersionValues = []NodeVersion{NodeVersionAlpha, NodeVersionBeta, NodeVersionProduction}
 
 var _NodeVersionNameToValueMap = map[string]NodeVersion{
 	_NodeVersionName[0:5]:       NodeVersionAlpha,
 	_NodeVersionLowerName[0:5]:  NodeVersionAlpha,
 	_NodeVersionName[5:9]:       NodeVersionBeta,
 	_NodeVersionLowerName[5:9]:  NodeVersionBeta,
-	_NodeVersionName[9:15]:      NodeVersionNormal,
-	_NodeVersionLowerName[9:15]: NodeVersionNormal,
+	_NodeVersionName[9:19]:      NodeVersionProduction,
+	_NodeVersionLowerName[9:19]: NodeVersionProduction,
 }
 
 var _NodeVersionNames = []string{
 	_NodeVersionName[0:5],
 	_NodeVersionName[5:9],
-	_NodeVersionName[9:15],
+	_NodeVersionName[9:19],
 }
 
 // NodeVersionString retrieves an enum value from the enum constants string name.
