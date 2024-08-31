@@ -58,6 +58,11 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
+	networkParamsContract, err := l2.NewNetworkParams(contractAddresses.AddressNetworkParamsProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new network contract: %w", err)
+	}
+
 	cacheClient := cache.New(redisClient)
 
 	dsl, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, httpClient)
@@ -67,6 +72,6 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	return &Hub{
 		dsl: dsl,
-		nta: nta.NewNTA(ctx, databaseClient, stakingContract, geoLite2, cacheClient, httpClient),
+		nta: nta.NewNTA(ctx, databaseClient, stakingContract, networkParamsContract, geoLite2, cacheClient, httpClient),
 	}, nil
 }
