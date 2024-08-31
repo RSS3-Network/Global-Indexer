@@ -1,10 +1,13 @@
 package nta
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
@@ -69,13 +72,25 @@ func (n *NTA) GetEndpointConfig(c echo.Context) error {
 
 // GetAssets returns all assets supported by the DSL.
 func (n *NTA) GetAssets(c echo.Context) error {
-	endpoint, err := n.getNodeEndpoint(c)
+	// Get parameters for the current epoch from networkParams
+	params, err := n.networkParamsContract.GetParams(&bind.CallOpts{}, math.MaxUint64)
 
 	if err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("get node endpoint: %w", err))
+		return errorx.BadParamsError(c, fmt.Errorf("failed to get params for epoch %w", err))
 	}
 
-	return n.fetchResponse(c, fmt.Sprintf("%s/assets", endpoint))
+	var networkParam nta.NetworkParamsData
+	if err = json.Unmarshal([]byte(params), &networkParam); err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("failed to unmarshal network params %w", err))
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{Data: struct {
+		Networks map[string]nta.Asset `json:"networks"`
+		Workers  map[string]nta.Asset `json:"workers"`
+	}{
+		Networks: networkParam.NetworkAssets,
+		Workers:  networkParam.WorkerAssets,
+	}})
 }
 
 // bindAndValidateRequest binds and validates the request.
