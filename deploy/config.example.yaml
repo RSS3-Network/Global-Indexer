@@ -27,6 +27,11 @@ settler:
 rewards:
   operation_rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
 
+active_scores:
+  gini_coefficient: 2
+  staker_factor: 0.05
+  epoch_limit: 10
+
 geo_ip:
   account:
   license_key:

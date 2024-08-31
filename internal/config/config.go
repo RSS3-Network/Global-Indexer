@@ -21,16 +21,17 @@ const (
 )
 
 type File struct {
-	Environment string       `yaml:"environment" validate:"required" default:"development"`
-	Database    *Database    `yaml:"database"`
-	Redis       *Redis       `yaml:"redis"`
-	RSS3Chain   *RSS3Chain   `yaml:"rss3_chain"`
-	Settler     *Settler     `yaml:"settler"`
-	Distributor *Distributor `yaml:"distributor"`
-	Rewards     *Rewards     `yaml:"rewards"`
-	GeoIP       *GeoIP       `yaml:"geo_ip"`
-	RPC         *RPC         `yaml:"rpc"`
-	Telemetry   *Telemetry   `json:"telemetry"`
+	Environment  string        `yaml:"environment" validate:"required" default:"development"`
+	Database     *Database     `yaml:"database"`
+	Redis        *Redis        `yaml:"redis"`
+	RSS3Chain    *RSS3Chain    `yaml:"rss3_chain"`
+	Settler      *Settler      `yaml:"settler"`
+	Distributor  *Distributor  `yaml:"distributor"`
+	Rewards      *Rewards      `yaml:"rewards"`
+	ActiveScores *ActiveScores `yaml:"active_scores"`
+	GeoIP        *GeoIP        `yaml:"geo_ip"`
+	RPC          *RPC          `yaml:"rpc"`
+	Telemetry    *Telemetry    `json:"telemetry"`
 }
 
 type Database struct {
@@ -75,6 +76,12 @@ type Distributor struct {
 
 type Rewards struct {
 	OperationRewards float64 `yaml:"operation_rewards" validate:"required"`
+}
+
+type ActiveScores struct {
+	GiniCoefficient float64 `yaml:"gini_coefficient" validate:"required"`
+	StakerFactor    float64 `yaml:"staker_factor" validate:"required"`
+	EpochLimit      int     `yaml:"epoch_limit" validate:"required"`
 }
 
 type GeoIP struct {
