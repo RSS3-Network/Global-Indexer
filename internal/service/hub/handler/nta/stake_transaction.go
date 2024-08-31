@@ -78,44 +78,11 @@ func (n *NTA) GetStakeTransactions(c echo.Context) error {
 		return stakeTransaction.Chips, len(stakeTransaction.Chips) != 0
 	}))
 
-	stakeChipsQuery := schema.StakeChipsQuery{
-		IDs: chipsIDs,
-	}
-
 	// Find staking chips
-	stakeChips, err := n.databaseClient.FindStakeChips(c.Request().Context(), stakeChipsQuery)
-	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			return c.NoContent(http.StatusNotFound)
-		}
+	stakeChips := make([]*schema.StakeChip, 0, len(chipsIDs))
 
-		zap.L().Error("find stake chips", zap.Error(err), zap.Any("request", request))
-	}
-
-	// Get the latest value of the stake chips
-	errorPool := pool.New().WithContext(c.Request().Context()).WithMaxGoroutines(50).WithCancelOnError().WithFirstError()
-
-	for _, chip := range stakeChips {
-		chip := chip
-
-		errorPool.Go(func(ctx context.Context) error {
-			chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
-			if err != nil {
-				zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
-
-				return fmt.Errorf("get chip info: %w", err)
-			}
-
-			chip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
-
-			return nil
-		})
-	}
-
-	if err := errorPool.Wait(); err != nil {
-		zap.L().Error("get chip info", zap.Error(err))
-
-		return c.NoContent(http.StatusInternalServerError)
+	for _, chipID := range chipsIDs {
+		stakeChips = append(stakeChips, &schema.StakeChip{ID: chipID})
 	}
 
 	stakeTransactionModels := make([]*nta.StakeTransaction, 0, len(stakeTransactions))
