@@ -23,7 +23,7 @@ type StakeTransaction struct {
 	User             string          `gorm:"column:user"`
 	Node             string          `gorm:"column:node"`
 	Value            decimal.Decimal `gorm:"column:value"`
-	Chips            pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
+	ChipIDs          pq.Int64Array   `gorm:"column:chips;type:bigint[]"`
 	BlockTimestamp   time.Time       `gorm:"column:block_timestamp"`
 	BlockNumber      uint64          `gorm:"column:block_number"`
 	TransactionIndex uint            `gorm:"column:transaction_index"`
@@ -41,7 +41,7 @@ func (s *StakeTransaction) Export() (*schema.StakeTransaction, error) {
 		User:  common.HexToAddress(s.User),
 		Node:  common.HexToAddress(s.Node),
 		Value: s.Value.BigInt(),
-		Chips: lo.Map(s.Chips, func(value int64, _ int) *big.Int {
+		ChipIDs: lo.Map(s.ChipIDs, func(value int64, _ int) *big.Int {
 			return new(big.Int).SetInt64(value)
 		}),
 		BlockTimestamp:   s.BlockTimestamp,
@@ -59,7 +59,7 @@ func (s *StakeTransaction) Import(stakeTransaction schema.StakeTransaction) erro
 	s.User = stakeTransaction.User.String()
 	s.Node = stakeTransaction.Node.String()
 	s.Value = decimal.NewFromBigInt(stakeTransaction.Value, 0)
-	s.Chips = lo.Map(stakeTransaction.Chips, func(value *big.Int, _ int) int64 {
+	s.ChipIDs = lo.Map(stakeTransaction.ChipIDs, func(value *big.Int, _ int) int64 {
 		return value.Int64()
 	})
 	s.BlockTimestamp = stakeTransaction.BlockTimestamp

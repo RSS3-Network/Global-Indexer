@@ -37,7 +37,7 @@ type StakeTransaction struct {
 	User             common.Address
 	Node             common.Address
 	Value            *big.Int
-	Chips            []*big.Int
+	ChipIDs          []*big.Int
 	BlockTimestamp   time.Time
 	BlockNumber      uint64
 	TransactionIndex uint

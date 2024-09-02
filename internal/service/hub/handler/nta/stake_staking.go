@@ -130,13 +130,13 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 	for _, transaction := range transactions {
 		switch transaction.Type {
 		case schema.StakeTransactionTypeStake:
-			profit.TotalChipAmount = profit.TotalChipAmount.Add(decimal.NewFromInt(int64(len(transaction.Chips))))
+			profit.TotalChipAmount = profit.TotalChipAmount.Add(decimal.NewFromInt(int64(len(transaction.ChipIDs))))
 			profit.TotalChipValue = profit.TotalChipValue.Add(decimal.NewFromBigInt(transaction.Value, 0))
 		case schema.StakeTransactionTypeUnstake:
-			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips))))
+			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.ChipIDs))))
 			profit.TotalChipValue = profit.TotalChipValue.Sub(decimal.NewFromBigInt(transaction.Value, 0))
 		case schema.StakeTransactionTypeMergeChips:
-			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.Chips) - 2))) // Exclude the merged chips.
+			profit.TotalChipAmount = profit.TotalChipAmount.Sub(decimal.NewFromInt(int64(len(transaction.ChipIDs) - 2))) // Exclude the merged chips.
 		}
 	}
 
@@ -213,15 +213,15 @@ func (n *NTA) GetStakingStat(c echo.Context) error {
 	for _, transaction := range transactions {
 		switch transaction.Type {
 		case schema.StakeTransactionTypeStake:
-			stakingStat.TotalChips = stakingStat.TotalChips + uint64(len(transaction.Chips))
+			stakingStat.TotalChips = stakingStat.TotalChips + uint64(len(transaction.ChipIDs))
 			stakingStat.TotalStakedTokens = stakingStat.TotalStakedTokens.Add(decimal.NewFromBigInt(transaction.Value, 0))
 			stakingStat.CurrentStakedTokens = stakingStat.CurrentStakedTokens.Add(decimal.NewFromBigInt(transaction.Value, 0))
 		case schema.StakeTransactionTypeUnstake:
-			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips))
+			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.ChipIDs))
 			stakingStat.TotalStakedTokens = stakingStat.TotalStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
 			stakingStat.CurrentStakedTokens = stakingStat.CurrentStakedTokens.Sub(decimal.NewFromBigInt(transaction.Value, 0))
 		case schema.StakeTransactionTypeMergeChips:
-			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.Chips)-2) // Exclude the merged chips.
+			stakingStat.TotalChips = stakingStat.TotalChips - uint64(len(transaction.ChipIDs)-2) // Exclude the merged chips.
 		}
 	}
 
