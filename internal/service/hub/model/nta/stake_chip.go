@@ -18,7 +18,7 @@ type GetStakeChipsRequest struct {
 	IDs    []*big.Int      `query:"id"`
 	Node   *common.Address `query:"node"`
 	Owner  *common.Address `query:"owner"`
-	Limit  int             `query:"limit" default:"10" min:"1" max:"10"`
+	Limit  int             `query:"limit" default:"30" min:"1" max:"200"`
 }
 
 type GetStakeChipRequest struct {
