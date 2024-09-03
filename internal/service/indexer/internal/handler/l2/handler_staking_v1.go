@@ -247,7 +247,7 @@ func (h *handler) indexStakingV1StakedLog(ctx context.Context, header *types.Hea
 	}
 
 	for i := uint64(0); i+event.StartTokenId.Uint64() <= event.EndTokenId.Uint64(); i++ {
-		stakeTransaction.Chips = append(stakeTransaction.Chips, new(big.Int).SetUint64(i+event.StartTokenId.Uint64()))
+		stakeTransaction.ChipIDs = append(stakeTransaction.ChipIDs, new(big.Int).SetUint64(i+event.StartTokenId.Uint64()))
 	}
 
 	if err := databaseTransaction.SaveStakeTransaction(ctx, &stakeTransaction); err != nil {
@@ -277,7 +277,7 @@ func (h *handler) indexStakingV1StakedLog(ctx context.Context, header *types.Hea
 		WithCancelOnError().
 		WithFirstError()
 
-	for _, chipID := range stakeTransaction.Chips {
+	for _, chipID := range stakeTransaction.ChipIDs {
 		chipID := chipID
 
 		resultPool.Go(func(_ context.Context) (*schema.StakeChip, error) {
@@ -350,7 +350,7 @@ func (h *handler) indexStakingV1UnstakeRequestedLog(ctx context.Context, header 
 		User:             event.User,
 		Node:             event.NodeAddr,
 		Value:            event.UnstakeAmount,
-		Chips:            event.ChipsIds,
+		ChipIDs:          event.ChipsIds,
 		BlockTimestamp:   time.Unix(int64(header.Time), 0),
 		BlockNumber:      header.Number.Uint64(),
 		TransactionIndex: receipt.TransactionIndex,

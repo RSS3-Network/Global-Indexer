@@ -3,11 +3,9 @@ package nta
 import (
 	"encoding/json"
 	"math/big"
-	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -34,7 +32,7 @@ type StakeTransaction struct {
 	Staker    common.Address             `json:"staker"`
 	Node      common.Address             `json:"node"`
 	Value     decimal.Decimal            `json:"value"`
-	Chips     []*StakeChip               `json:"chips,omitempty"`
+	ChipIDs   []*big.Int                 `json:"chip_ids,omitempty"`
 	Event     StakeTransactionEventTypes `json:"event"`
 	Finalized bool                       `json:"finalized"`
 }
@@ -76,26 +74,13 @@ type StakeTransactionEvent struct {
 	Metadata    json.RawMessage             `json:"metadata,omitempty"`
 }
 
-func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent, stakeChips []*schema.StakeChip, baseURL url.URL) GetStakeTransactionResponseData {
+func NewStakeTransaction(transaction *schema.StakeTransaction, events []*schema.StakeEvent) GetStakeTransactionResponseData {
 	transactionModel := StakeTransaction{
-		ID:     transaction.ID,
-		Staker: transaction.User,
-		Node:   transaction.Node,
-		Value:  decimal.NewFromBigInt(transaction.Value, 0),
-		Chips: lo.FilterMap(transaction.Chips, func(id *big.Int, _ int) (*StakeChip, bool) {
-			stakeChip, found := lo.Find(stakeChips, func(stakeChip *schema.StakeChip) bool {
-				return stakeChip.ID.Cmp(id) == 0
-			})
-
-			if !found {
-				return nil, false
-			}
-
-			// Rewrite the owner address to restore the history.
-			stakeChip.Owner = transaction.User
-
-			return NewStakeChip(stakeChip, baseURL), true
-		}),
+		ID:        transaction.ID,
+		Staker:    transaction.User,
+		Node:      transaction.Node,
+		ChipIDs:   transaction.ChipIDs,
+		Value:     decimal.NewFromBigInt(transaction.Value, 0),
 		Finalized: transaction.Finalized,
 	}
 
