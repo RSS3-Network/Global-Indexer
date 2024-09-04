@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeStatusName = "registeredonlineofflineexitedslashedexiting"
+const _NodeStatusName = "noneregisteredinitializingoutdatedonlineofflineslashingslashedexitingexited"
 
-var _NodeStatusIndex = [...]uint8{0, 10, 16, 23, 29, 36, 43}
+var _NodeStatusIndex = [...]uint8{0, 4, 14, 26, 34, 40, 47, 55, 62, 69, 75}
 
-const _NodeStatusLowerName = "registeredonlineofflineexitedslashedexiting"
+const _NodeStatusLowerName = "noneregisteredinitializingoutdatedonlineofflineslashingslashedexitingexited"
 
 func (i NodeStatus) String() string {
 	if i < 0 || i >= NodeStatus(len(_NodeStatusIndex)-1) {
@@ -30,38 +30,54 @@ func (NodeStatus) Values() []string {
 // Re-run the stringer command to generate them again.
 func _NodeStatusNoOp() {
 	var x [1]struct{}
-	_ = x[NodeStatusRegistered-(0)]
-	_ = x[NodeStatusOnline-(1)]
-	_ = x[NodeStatusOffline-(2)]
-	_ = x[NodeStatusExited-(3)]
-	_ = x[NodeStatusSlashed-(4)]
-	_ = x[NodeStatusExiting-(5)]
+	_ = x[NodeStatusNone-(0)]
+	_ = x[NodeStatusRegistered-(1)]
+	_ = x[NodeStatusInitializing-(2)]
+	_ = x[NodeStatusOutdated-(3)]
+	_ = x[NodeStatusOnline-(4)]
+	_ = x[NodeStatusOffline-(5)]
+	_ = x[NodeStatusSlashing-(6)]
+	_ = x[NodeStatusSlashed-(7)]
+	_ = x[NodeStatusExiting-(8)]
+	_ = x[NodeStatusExited-(9)]
 }
 
-var _NodeStatusValues = []NodeStatus{NodeStatusRegistered, NodeStatusOnline, NodeStatusOffline, NodeStatusExited, NodeStatusSlashed, NodeStatusExiting}
+var _NodeStatusValues = []NodeStatus{NodeStatusNone, NodeStatusRegistered, NodeStatusInitializing, NodeStatusOutdated, NodeStatusOnline, NodeStatusOffline, NodeStatusSlashing, NodeStatusSlashed, NodeStatusExiting, NodeStatusExited}
 
 var _NodeStatusNameToValueMap = map[string]NodeStatus{
-	_NodeStatusName[0:10]:       NodeStatusRegistered,
-	_NodeStatusLowerName[0:10]:  NodeStatusRegistered,
-	_NodeStatusName[10:16]:      NodeStatusOnline,
-	_NodeStatusLowerName[10:16]: NodeStatusOnline,
-	_NodeStatusName[16:23]:      NodeStatusOffline,
-	_NodeStatusLowerName[16:23]: NodeStatusOffline,
-	_NodeStatusName[23:29]:      NodeStatusExited,
-	_NodeStatusLowerName[23:29]: NodeStatusExited,
-	_NodeStatusName[29:36]:      NodeStatusSlashed,
-	_NodeStatusLowerName[29:36]: NodeStatusSlashed,
-	_NodeStatusName[36:43]:      NodeStatusExiting,
-	_NodeStatusLowerName[36:43]: NodeStatusExiting,
+	_NodeStatusName[0:4]:        NodeStatusNone,
+	_NodeStatusLowerName[0:4]:   NodeStatusNone,
+	_NodeStatusName[4:14]:       NodeStatusRegistered,
+	_NodeStatusLowerName[4:14]:  NodeStatusRegistered,
+	_NodeStatusName[14:26]:      NodeStatusInitializing,
+	_NodeStatusLowerName[14:26]: NodeStatusInitializing,
+	_NodeStatusName[26:34]:      NodeStatusOutdated,
+	_NodeStatusLowerName[26:34]: NodeStatusOutdated,
+	_NodeStatusName[34:40]:      NodeStatusOnline,
+	_NodeStatusLowerName[34:40]: NodeStatusOnline,
+	_NodeStatusName[40:47]:      NodeStatusOffline,
+	_NodeStatusLowerName[40:47]: NodeStatusOffline,
+	_NodeStatusName[47:55]:      NodeStatusSlashing,
+	_NodeStatusLowerName[47:55]: NodeStatusSlashing,
+	_NodeStatusName[55:62]:      NodeStatusSlashed,
+	_NodeStatusLowerName[55:62]: NodeStatusSlashed,
+	_NodeStatusName[62:69]:      NodeStatusExiting,
+	_NodeStatusLowerName[62:69]: NodeStatusExiting,
+	_NodeStatusName[69:75]:      NodeStatusExited,
+	_NodeStatusLowerName[69:75]: NodeStatusExited,
 }
 
 var _NodeStatusNames = []string{
-	_NodeStatusName[0:10],
-	_NodeStatusName[10:16],
-	_NodeStatusName[16:23],
-	_NodeStatusName[23:29],
-	_NodeStatusName[29:36],
-	_NodeStatusName[36:43],
+	_NodeStatusName[0:4],
+	_NodeStatusName[4:14],
+	_NodeStatusName[14:26],
+	_NodeStatusName[26:34],
+	_NodeStatusName[34:40],
+	_NodeStatusName[40:47],
+	_NodeStatusName[47:55],
+	_NodeStatusName[55:62],
+	_NodeStatusName[62:69],
+	_NodeStatusName[69:75],
 }
 
 // NodeStatusString retrieves an enum value from the enum constants string name.

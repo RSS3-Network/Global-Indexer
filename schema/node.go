@@ -49,39 +49,48 @@ type NodeLocation struct {
 type NodeStatus int64
 
 const (
+	// NodeStatusNone
+	// The Node has been created on the VSL, but has not been registered yet.
+	NodeStatusNone NodeStatus = iota // none
+
 	// NodeStatusRegistered
-	// Node has been registered but does not meet the minimum requirements to be enter NodeStatusOnline.
-	// Possible reasons:
-	// - Node is not reachable by the Network.
-	// - Node Operator has not deposited the minimum amount of tokens required.
-	NodeStatusRegistered NodeStatus = iota // registered
+	// The Node is registered on the VSL with a sufficient deposit.
+	NodeStatusRegistered // registered
+
+	// NodeStatusInitializing
+	// The Node is operating on the DSL.
+	// Automated tasks will be executed at this stage to ensure the Node is in a healthy condition.
+	// This state applies to the initial startup or the first startup following any change in the Node’s coverage.
+	NodeStatusInitializing // initializing
+
+	// NodeStatusOutdated
+	// The Node is outdated and needs to be updated to the minimum required version.
+	NodeStatusOutdated // outdated
 
 	// NodeStatusOnline
-	// Node is online and fully operational.
+	// The Node is online and fully operational.
 	NodeStatusOnline // online
 
 	// NodeStatusOffline
-	// Node was previously in NodeStatusOnline, but is currently offline.
-	// Possible reasons:
-	// - [Alpha only] Node missed a heartbeat.
-	// - Node was slashed in the previous epoch, and was kicked out of the Network, the Operator did not acknowledge the slash and rejoin the Network.
-	// - Node did not perform the mandatory upgrade before the deadline required by the Network.
+	// The Node is not operational and not participating in network activities on the DSL.
 	NodeStatusOffline // offline
 
-	// NodeStatusExited
-	// Node was previously in NodeStatusOnline, but is not anymore.
-	// Possible reasons:
-	// - Node announced its intention to leave the Network and gracefully exited after the mandatory waiting period.
-	// - Node has been offline for a long time and is considered as exited.
-	NodeStatusExited // exited
+	// NodeStatusSlashing
+	// The Node has been reached the demotion threshold and is currently in the appeal period.
+	NodeStatusSlashing // slashing
 
 	// NodeStatusSlashed
-	// Node was slashed in the current epoch, and was kicked out of the Network.
+	// The Node has been slashed due to a violation of network rules or malicious behavior on the VSL.
 	NodeStatusSlashed // slashed
 
 	// NodeStatusExiting
-	// Node announced its intention to leave the Network, and is now in the mandatory waiting period.
+	// The Node is in the process of exiting the Network on the VSL.
 	NodeStatusExiting // exiting
+
+	// NodeStatusExited
+	// The Node has successfully exited the Network on the VSL.
+	NodeStatusExited // exited
+
 )
 
 //go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeVersion --linecomment --output node_version_string.go --json --yaml --sql

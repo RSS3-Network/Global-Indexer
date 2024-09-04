@@ -59,6 +59,8 @@ func (n *NTA) GetNodes(c echo.Context) error {
 		cursor = nodes[len(nodes)-1].Address.String()
 	}
 
+	// TODO: retrieve node status from vsl.
+
 	// If the ActiveScore is the same, sort by staking pool size.
 	// TODO: Since Node's StakingPoolTokens needs to be obtained from vsl.
 	//  Now only the Nodes of the current page can be sorted.
