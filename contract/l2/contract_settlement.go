@@ -31,7 +31,7 @@ var (
 
 // SettlementMetaData contains all meta data concerning the Settlement contract.
 var SettlementMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"EPOCH_DURATION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ORACLE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TOTAL_REWARDS_PER_YEAR\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"currentEpoch\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"distributeRewards\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"operationRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"requestCounts\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"isFinal\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getBonusInfo\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMember\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMemberCount\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"staking\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"oracleAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"startTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"operationRewardsPercent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4PublicPool\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"slashNodes\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stakingContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateRewardsRatio\",\"inputs\":[{\"name\":\"operationRewardsPercent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AlphaWithdrawNotAllowed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AlreadyClaimed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AmountTooSmall\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"BatchSizeZero\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"CallerNotStaking\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ChipNotAuthorized\",\"inputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"ChipNotPublicGood\",\"inputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"ChipNotValid\",\"inputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"ChipsIdOverflow\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ChipsNotSameOwner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ClaimIdNotExists\",\"inputs\":[{\"name\":\"claimId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"ClaimTimeNotReady\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"CreateNodeToZeroAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"EmptyChipsIds\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"EmptyNodeList\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExcessWithdrawalAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InsufficientValue\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidArrayLength\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidEpoch\",\"inputs\":[{\"name\":\"expected\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"actual\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidEpochNumber\",\"inputs\":[{\"name\":\"current\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"got\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidTraitId\",\"inputs\":[{\"name\":\"traitId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"NodeAlreadyPublicGood\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NodeExists\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NodeNotExists\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NodeNotPublicGood\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NodeStakedOrDeposited\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OperationRewardsExceed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"PublicGoodNodeNotDeposited\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"PublicGoodNodeNotInAlphaPhase\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RewardsAlreadyDistributed\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"SettlementPhase\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"StakeToPublicGoodNode\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"StakingRewardsExceed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SubmissionIntervalNotElapsed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"TaxRateBasisPointsTooLarge\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"TaxRateBasisPointsTooSmall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"TransferFailed\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"checkEpochInterval\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"receive\",\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"CHECK_EPOCH_INTERVAL\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"EPOCH_DURATION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ORACLE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TOTAL_REWARDS_PER_YEAR\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"commitSlashing\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"epochs\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"currentEpoch\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"distributeRewards\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"operationRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"requestCounts\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"isFinal\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getBonusInfo\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMember\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMemberCount\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"staking\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"oracleAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"startTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"operationRewardsPercent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"multicall\",\"inputs\":[{\"name\":\"data\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"outputs\":[{\"name\":\"results\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeDemotions\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"demotionIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setNodeStatus\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"status\",\"type\":\"uint8[]\",\"internalType\":\"enumNodeStatus[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4PublicPool\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stakingContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"submitDemotions\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"reasons\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"reporters\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"version\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AddressEmptyCode\",\"inputs\":[{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"CommitEpochNotElapsed\",\"inputs\":[{\"name\":\"recordedEpoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"currentEpoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"FailedInnerCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidArrayLength\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidEpochNumber\",\"inputs\":[{\"name\":\"current\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"got\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OperationRewardsExceed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RewardsAlreadyDistributed\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"SubmissionIntervalNotElapsed\",\"inputs\":[]}]",
 }
 
 // SettlementABI is the input ABI used to generate the binding from.
@@ -178,6 +178,37 @@ func (_Settlement *SettlementTransactorRaw) Transfer(opts *bind.TransactOpts) (*
 // Transact invokes the (paid) contract method with params as input values.
 func (_Settlement *SettlementTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Settlement.Contract.contract.Transact(opts, method, params...)
+}
+
+// CHECKEPOCHINTERVAL is a free data retrieval call binding the contract method 0x3d102615.
+//
+// Solidity: function CHECK_EPOCH_INTERVAL() view returns(bool)
+func (_Settlement *SettlementCaller) CHECKEPOCHINTERVAL(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _Settlement.contract.Call(opts, &out, "CHECK_EPOCH_INTERVAL")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// CHECKEPOCHINTERVAL is a free data retrieval call binding the contract method 0x3d102615.
+//
+// Solidity: function CHECK_EPOCH_INTERVAL() view returns(bool)
+func (_Settlement *SettlementSession) CHECKEPOCHINTERVAL() (bool, error) {
+	return _Settlement.Contract.CHECKEPOCHINTERVAL(&_Settlement.CallOpts)
+}
+
+// CHECKEPOCHINTERVAL is a free data retrieval call binding the contract method 0x3d102615.
+//
+// Solidity: function CHECK_EPOCH_INTERVAL() view returns(bool)
+func (_Settlement *SettlementCallerSession) CHECKEPOCHINTERVAL() (bool, error) {
+	return _Settlement.Contract.CHECKEPOCHINTERVAL(&_Settlement.CallOpts)
 }
 
 // DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
@@ -553,6 +584,58 @@ func (_Settlement *SettlementCallerSession) SupportsInterface(interfaceId [4]byt
 	return _Settlement.Contract.SupportsInterface(&_Settlement.CallOpts, interfaceId)
 }
 
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(string)
+func (_Settlement *SettlementCaller) Version(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _Settlement.contract.Call(opts, &out, "version")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(string)
+func (_Settlement *SettlementSession) Version() (string, error) {
+	return _Settlement.Contract.Version(&_Settlement.CallOpts)
+}
+
+// Version is a free data retrieval call binding the contract method 0x54fd4d50.
+//
+// Solidity: function version() view returns(string)
+func (_Settlement *SettlementCallerSession) Version() (string, error) {
+	return _Settlement.Contract.Version(&_Settlement.CallOpts)
+}
+
+// CommitSlashing is a paid mutator transaction binding the contract method 0x92679cf4.
+//
+// Solidity: function commitSlashing(address[] nodeAddrs, uint256[] epochs) returns()
+func (_Settlement *SettlementTransactor) CommitSlashing(opts *bind.TransactOpts, nodeAddrs []common.Address, epochs []*big.Int) (*types.Transaction, error) {
+	return _Settlement.contract.Transact(opts, "commitSlashing", nodeAddrs, epochs)
+}
+
+// CommitSlashing is a paid mutator transaction binding the contract method 0x92679cf4.
+//
+// Solidity: function commitSlashing(address[] nodeAddrs, uint256[] epochs) returns()
+func (_Settlement *SettlementSession) CommitSlashing(nodeAddrs []common.Address, epochs []*big.Int) (*types.Transaction, error) {
+	return _Settlement.Contract.CommitSlashing(&_Settlement.TransactOpts, nodeAddrs, epochs)
+}
+
+// CommitSlashing is a paid mutator transaction binding the contract method 0x92679cf4.
+//
+// Solidity: function commitSlashing(address[] nodeAddrs, uint256[] epochs) returns()
+func (_Settlement *SettlementTransactorSession) CommitSlashing(nodeAddrs []common.Address, epochs []*big.Int) (*types.Transaction, error) {
+	return _Settlement.Contract.CommitSlashing(&_Settlement.TransactOpts, nodeAddrs, epochs)
+}
+
 // DistributeRewards is a paid mutator transaction binding the contract method 0x5c3d3078.
 //
 // Solidity: function distributeRewards(uint256 epoch, address[] nodeAddrs, uint256[] operationRewards, uint256[] requestCounts, bool isFinal) returns()
@@ -616,6 +699,27 @@ func (_Settlement *SettlementTransactorSession) Initialize(staking common.Addres
 	return _Settlement.Contract.Initialize(&_Settlement.TransactOpts, staking, oracleAccount, startTime, operationRewardsPercent)
 }
 
+// Multicall is a paid mutator transaction binding the contract method 0xac9650d8.
+//
+// Solidity: function multicall(bytes[] data) returns(bytes[] results)
+func (_Settlement *SettlementTransactor) Multicall(opts *bind.TransactOpts, data [][]byte) (*types.Transaction, error) {
+	return _Settlement.contract.Transact(opts, "multicall", data)
+}
+
+// Multicall is a paid mutator transaction binding the contract method 0xac9650d8.
+//
+// Solidity: function multicall(bytes[] data) returns(bytes[] results)
+func (_Settlement *SettlementSession) Multicall(data [][]byte) (*types.Transaction, error) {
+	return _Settlement.Contract.Multicall(&_Settlement.TransactOpts, data)
+}
+
+// Multicall is a paid mutator transaction binding the contract method 0xac9650d8.
+//
+// Solidity: function multicall(bytes[] data) returns(bytes[] results)
+func (_Settlement *SettlementTransactorSession) Multicall(data [][]byte) (*types.Transaction, error) {
+	return _Settlement.Contract.Multicall(&_Settlement.TransactOpts, data)
+}
+
 // RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
 //
 // Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
@@ -635,6 +739,27 @@ func (_Settlement *SettlementSession) RenounceRole(role [32]byte, callerConfirma
 // Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
 func (_Settlement *SettlementTransactorSession) RenounceRole(role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
 	return _Settlement.Contract.RenounceRole(&_Settlement.TransactOpts, role, callerConfirmation)
+}
+
+// RevokeDemotions is a paid mutator transaction binding the contract method 0x6d623207.
+//
+// Solidity: function revokeDemotions(address nodeAddr, uint256 epoch, uint256[] demotionIds) returns()
+func (_Settlement *SettlementTransactor) RevokeDemotions(opts *bind.TransactOpts, nodeAddr common.Address, epoch *big.Int, demotionIds []*big.Int) (*types.Transaction, error) {
+	return _Settlement.contract.Transact(opts, "revokeDemotions", nodeAddr, epoch, demotionIds)
+}
+
+// RevokeDemotions is a paid mutator transaction binding the contract method 0x6d623207.
+//
+// Solidity: function revokeDemotions(address nodeAddr, uint256 epoch, uint256[] demotionIds) returns()
+func (_Settlement *SettlementSession) RevokeDemotions(nodeAddr common.Address, epoch *big.Int, demotionIds []*big.Int) (*types.Transaction, error) {
+	return _Settlement.Contract.RevokeDemotions(&_Settlement.TransactOpts, nodeAddr, epoch, demotionIds)
+}
+
+// RevokeDemotions is a paid mutator transaction binding the contract method 0x6d623207.
+//
+// Solidity: function revokeDemotions(address nodeAddr, uint256 epoch, uint256[] demotionIds) returns()
+func (_Settlement *SettlementTransactorSession) RevokeDemotions(nodeAddr common.Address, epoch *big.Int, demotionIds []*big.Int) (*types.Transaction, error) {
+	return _Settlement.Contract.RevokeDemotions(&_Settlement.TransactOpts, nodeAddr, epoch, demotionIds)
 }
 
 // RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
@@ -658,6 +783,27 @@ func (_Settlement *SettlementTransactorSession) RevokeRole(role [32]byte, accoun
 	return _Settlement.Contract.RevokeRole(&_Settlement.TransactOpts, role, account)
 }
 
+// SetNodeStatus is a paid mutator transaction binding the contract method 0x03b0d316.
+//
+// Solidity: function setNodeStatus(address[] nodeAddrs, uint8[] status) returns()
+func (_Settlement *SettlementTransactor) SetNodeStatus(opts *bind.TransactOpts, nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Settlement.contract.Transact(opts, "setNodeStatus", nodeAddrs, status)
+}
+
+// SetNodeStatus is a paid mutator transaction binding the contract method 0x03b0d316.
+//
+// Solidity: function setNodeStatus(address[] nodeAddrs, uint8[] status) returns()
+func (_Settlement *SettlementSession) SetNodeStatus(nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Settlement.Contract.SetNodeStatus(&_Settlement.TransactOpts, nodeAddrs, status)
+}
+
+// SetNodeStatus is a paid mutator transaction binding the contract method 0x03b0d316.
+//
+// Solidity: function setNodeStatus(address[] nodeAddrs, uint8[] status) returns()
+func (_Settlement *SettlementTransactorSession) SetNodeStatus(nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Settlement.Contract.SetNodeStatus(&_Settlement.TransactOpts, nodeAddrs, status)
+}
+
 // SetTaxRateBasisPoints4PublicPool is a paid mutator transaction binding the contract method 0xe3fb8dca.
 //
 // Solidity: function setTaxRateBasisPoints4PublicPool(uint64 taxRateBasisPoints) returns()
@@ -679,46 +825,46 @@ func (_Settlement *SettlementTransactorSession) SetTaxRateBasisPoints4PublicPool
 	return _Settlement.Contract.SetTaxRateBasisPoints4PublicPool(&_Settlement.TransactOpts, taxRateBasisPoints)
 }
 
-// SlashNodes is a paid mutator transaction binding the contract method 0xa2f641c3.
+// SubmitDemotions is a paid mutator transaction binding the contract method 0x6668c7cf.
 //
-// Solidity: function slashNodes(address[] nodeAddrs) returns()
-func (_Settlement *SettlementTransactor) SlashNodes(opts *bind.TransactOpts, nodeAddrs []common.Address) (*types.Transaction, error) {
-	return _Settlement.contract.Transact(opts, "slashNodes", nodeAddrs)
+// Solidity: function submitDemotions(address[] nodeAddrs, string[] reasons, address[] reporters) returns()
+func (_Settlement *SettlementTransactor) SubmitDemotions(opts *bind.TransactOpts, nodeAddrs []common.Address, reasons []string, reporters []common.Address) (*types.Transaction, error) {
+	return _Settlement.contract.Transact(opts, "submitDemotions", nodeAddrs, reasons, reporters)
 }
 
-// SlashNodes is a paid mutator transaction binding the contract method 0xa2f641c3.
+// SubmitDemotions is a paid mutator transaction binding the contract method 0x6668c7cf.
 //
-// Solidity: function slashNodes(address[] nodeAddrs) returns()
-func (_Settlement *SettlementSession) SlashNodes(nodeAddrs []common.Address) (*types.Transaction, error) {
-	return _Settlement.Contract.SlashNodes(&_Settlement.TransactOpts, nodeAddrs)
+// Solidity: function submitDemotions(address[] nodeAddrs, string[] reasons, address[] reporters) returns()
+func (_Settlement *SettlementSession) SubmitDemotions(nodeAddrs []common.Address, reasons []string, reporters []common.Address) (*types.Transaction, error) {
+	return _Settlement.Contract.SubmitDemotions(&_Settlement.TransactOpts, nodeAddrs, reasons, reporters)
 }
 
-// SlashNodes is a paid mutator transaction binding the contract method 0xa2f641c3.
+// SubmitDemotions is a paid mutator transaction binding the contract method 0x6668c7cf.
 //
-// Solidity: function slashNodes(address[] nodeAddrs) returns()
-func (_Settlement *SettlementTransactorSession) SlashNodes(nodeAddrs []common.Address) (*types.Transaction, error) {
-	return _Settlement.Contract.SlashNodes(&_Settlement.TransactOpts, nodeAddrs)
+// Solidity: function submitDemotions(address[] nodeAddrs, string[] reasons, address[] reporters) returns()
+func (_Settlement *SettlementTransactorSession) SubmitDemotions(nodeAddrs []common.Address, reasons []string, reporters []common.Address) (*types.Transaction, error) {
+	return _Settlement.Contract.SubmitDemotions(&_Settlement.TransactOpts, nodeAddrs, reasons, reporters)
 }
 
-// UpdateRewardsRatio is a paid mutator transaction binding the contract method 0xc8afeea5.
+// Receive is a paid mutator transaction binding the contract receive function.
 //
-// Solidity: function updateRewardsRatio(uint256 operationRewardsPercent) returns()
-func (_Settlement *SettlementTransactor) UpdateRewardsRatio(opts *bind.TransactOpts, operationRewardsPercent *big.Int) (*types.Transaction, error) {
-	return _Settlement.contract.Transact(opts, "updateRewardsRatio", operationRewardsPercent)
+// Solidity: receive() payable returns()
+func (_Settlement *SettlementTransactor) Receive(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Settlement.contract.RawTransact(opts, nil) // calldata is disallowed for receive function
 }
 
-// UpdateRewardsRatio is a paid mutator transaction binding the contract method 0xc8afeea5.
+// Receive is a paid mutator transaction binding the contract receive function.
 //
-// Solidity: function updateRewardsRatio(uint256 operationRewardsPercent) returns()
-func (_Settlement *SettlementSession) UpdateRewardsRatio(operationRewardsPercent *big.Int) (*types.Transaction, error) {
-	return _Settlement.Contract.UpdateRewardsRatio(&_Settlement.TransactOpts, operationRewardsPercent)
+// Solidity: receive() payable returns()
+func (_Settlement *SettlementSession) Receive() (*types.Transaction, error) {
+	return _Settlement.Contract.Receive(&_Settlement.TransactOpts)
 }
 
-// UpdateRewardsRatio is a paid mutator transaction binding the contract method 0xc8afeea5.
+// Receive is a paid mutator transaction binding the contract receive function.
 //
-// Solidity: function updateRewardsRatio(uint256 operationRewardsPercent) returns()
-func (_Settlement *SettlementTransactorSession) UpdateRewardsRatio(operationRewardsPercent *big.Int) (*types.Transaction, error) {
-	return _Settlement.Contract.UpdateRewardsRatio(&_Settlement.TransactOpts, operationRewardsPercent)
+// Solidity: receive() payable returns()
+func (_Settlement *SettlementTransactorSession) Receive() (*types.Transaction, error) {
+	return _Settlement.Contract.Receive(&_Settlement.TransactOpts)
 }
 
 // SettlementInitializedIterator is returned from FilterInitialized and is used to iterate over the raw logs and unpacked data for Initialized events raised by the Settlement contract.

@@ -126,7 +126,7 @@ func (e *SimpleEnforcer) updateNodeStats(ctx context.Context, stats []*schema.St
 	return e.updateStatsInPool(ctx, stats, nodesInfo, nodes, reset)
 }
 
-func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]stakingv2.DataTypesNode, error) {
+func (e *SimpleEnforcer) getNodesInfoFromBlockchain(nodeAddresses []common.Address) ([]stakingv2.Node, error) {
 	return e.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 }
 
@@ -150,7 +150,7 @@ func sortNodes(nodeAddresses []common.Address, nodes []*schema.Node) []*schema.N
 }
 
 // updateStatsInPool concurrently updates the stats of the Nodes.
-func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []stakingv2.DataTypesNode, nodes []*schema.Node, reset bool) error {
+func (e *SimpleEnforcer) updateStatsInPool(ctx context.Context, stats []*schema.Stat, nodesInfo []stakingv2.Node, nodes []*schema.Node, reset bool) error {
 	statsPool := pool.New().WithContext(ctx).WithMaxGoroutines(lo.Ternary(len(stats) < 20*runtime.NumCPU() && len(stats) > 0, len(stats), 20*runtime.NumCPU()))
 
 	for i := range stats {

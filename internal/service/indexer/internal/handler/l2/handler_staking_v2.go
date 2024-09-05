@@ -51,7 +51,7 @@ func (h *handler) indexStakingV2StakedLog(ctx context.Context, header *types.Hea
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := h.contractStakingV2.ParseStaked(*log)
+	event, err := h.contractStakingEvents.ParseStaked(*log)
 	if err != nil {
 		return fmt.Errorf("parse Staked event: %w", err)
 	}
@@ -178,7 +178,7 @@ func (h *handler) indexStakingV2ChipsMergedLog(ctx context.Context, header *type
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := h.contractStakingV2.ParseChipsMerged(*log)
+	event, err := h.contractStakingEvents.ParseChipsMerged(*log)
 	if err != nil {
 		return fmt.Errorf("parse ChipsMerged event: %w", err)
 	}
@@ -281,7 +281,7 @@ func (h *handler) indexStakingV2WithdrawalClaimedLog(ctx context.Context, header
 		attribute.Int("log.index", int(log.Index)),
 	)
 
-	event, err := h.contractStakingV2.ParseWithdrawalClaimed(*log)
+	event, err := h.contractStakingEvents.ParseWithdrawalClaimed(*log)
 	if err != nil {
 		return fmt.Errorf("parse WithdrawalClaimed event: %w", err)
 	}

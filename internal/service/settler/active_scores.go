@@ -74,7 +74,7 @@ func (s *Server) fetchNodePoolSizes(nodeAddresses []common.Address, nodes []*sch
 		return fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.DataTypesNode) (common.Address, stakingv2.DataTypesNode) {
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
 		return node.Account, node
 	})
 
