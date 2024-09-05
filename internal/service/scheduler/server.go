@@ -29,7 +29,7 @@ func NewServer(databaseClient database.Client, redis *redis.Client, ethereumMult
 	case detector.Name:
 		return detector.New(databaseClient, redis)
 	case enforcer.Name:
-		return enforcer.New(databaseClient, redis, ethereumClient, httpClient)
+		return enforcer.New(databaseClient, redis, ethereumClient, httpClient, config, txManager)
 	case snapshot.Name:
 		return snapshot.New(databaseClient, redis, ethereumClient)
 	case taxer.Name:

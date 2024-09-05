@@ -12,4 +12,5 @@ var Module = fx.Options(
 	fx.Provide(provider.ProvideGeoIP2),
 	fx.Provide(provider.ProvideNameResolver),
 	fx.Provide(provider.ProvideHTTPClient),
+	fx.Provide(provider.ProvideTxManager),
 )

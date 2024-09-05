@@ -7,9 +7,11 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
@@ -44,7 +46,7 @@ func (s *server) Run(ctx context.Context) error {
 	return errorPool.Wait()
 }
 
-func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client, httpClient httputil.Client) (service.Server, error) {
+func New(databaseClient database.Client, redis *redis.Client, ethereumClient *ethclient.Client, httpClient httputil.Client, config *config.File, txManager *txmgr.SimpleTxManager) (service.Server, error) {
 	chainID, err := ethereumClient.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("get chain id: %w", err)
@@ -60,7 +62,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, httpClient, false)
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, httpClient, txManager, config.Settler, chainID, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("new simple enforcer: %w", err)

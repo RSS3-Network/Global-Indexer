@@ -3,12 +3,15 @@ package enforcer
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/txmgr"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
@@ -21,6 +24,7 @@ type Enforcer interface {
 	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
 	MaintainReliabilityScore(ctx context.Context) error
 	MaintainEpochData(ctx context.Context, epoch int64) error
+	MaintainNodeStatus(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus) error
 	ChallengeStates(ctx context.Context) error
 	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
 }
@@ -32,6 +36,9 @@ type SimpleEnforcer struct {
 	stakingContract         *stakingv2.Staking
 	fullNodeScoreMaintainer *ScoreMaintainer
 	rssNodeScoreMaintainer  *ScoreMaintainer
+	txManager               txmgr.TxManager
+	settlerConfig           *config.Settler
+	chainID                 *big.Int
 }
 
 // VerifyResponses verifies the responses from the Nodes.
@@ -130,6 +137,10 @@ func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) err
 	return e.updateNodeCache(ctx, epoch)
 }
 
+func (e *SimpleEnforcer) MaintainNodeStatus(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus) error {
+	return e.updateNodeStatusToVSL(ctx, nodeAddresses, nodeStatusList)
+}
+
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
 	return nil
 }
@@ -158,12 +169,15 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	return nodesCache, err
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, initCacheData bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler, chainID *big.Int, initCacheData bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:  databaseClient,
 		cacheClient:     cacheClient,
 		stakingContract: stakingContract,
 		httpClient:      httpClient,
+		txManager:       txManager,
+		settlerConfig:   settlerConfig,
+		chainID:         chainID,
 	}
 
 	if initCacheData {
