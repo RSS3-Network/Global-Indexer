@@ -36,13 +36,11 @@ type Server struct {
 	chainID            *big.Int
 	mutex              *redsync.Mutex
 	currentEpoch       uint64
-	settlerConfig      *config.Settler
 	ethereumClient     *ethclient.Client
 	databaseClient     database.Client
 	stakingContract    *stakingv2.Staking
 	settlementContract *l2.Settlement
-	rewards            *config.Rewards
-	activeScores       *config.ActiveScores
+	config             *config.File
 }
 
 func (s *Server) Name() string {
@@ -75,7 +73,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) listenEpochEvent(ctx context.Context) error {
-	epochInterval := time.Duration(s.settlerConfig.EpochIntervalInHours) * time.Hour
+	epochInterval := time.Duration(s.config.Settler.EpochIntervalInHours) * time.Hour
 
 	timer := time.NewTimer(0)
 	<-timer.C
@@ -273,14 +271,12 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 	server := &Server{
 		chainID:            chainID,
 		mutex:              rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
-		settlerConfig:      config.Settler,
 		ethereumClient:     ethereumClient,
 		databaseClient:     databaseClient,
 		txManager:          txManager,
 		stakingContract:    stakingContract,
-		rewards:            config.Rewards,
-		activeScores:       config.ActiveScores,
 		settlementContract: settlementContract,
+		config:             config,
 	}
 
 	return server, nil

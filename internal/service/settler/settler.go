@@ -147,7 +147,7 @@ func (s *Server) retryEpochProof(ctx context.Context, epochID uint64) error {
 func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Float, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
-	batchSize := s.settlerConfig.BatchSize
+	batchSize := s.config.Settler.BatchSize
 
 	// Find qualified Nodes from the database
 	query := schema.FindNodesQuery{
@@ -157,7 +157,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Set the Node version to Normal after the grace period
-	if epoch >= uint64(s.settlerConfig.ProductionStartEpoch+s.settlerConfig.GracePeriodEpochs) {
+	if epoch >= uint64(s.config.Settler.ProductionStartEpoch+s.config.Settler.GracePeriodEpochs) {
 		query.Version = lo.ToPtr(schema.NodeVersionProduction)
 	}
 
@@ -192,12 +192,12 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.activeScores.EpochLimit)
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.config.ActiveScores.EpochLimit)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
 	}
 
-	scores, err := calculateActiveScores(nodes, recentStakers, s.activeScores)
+	scores, err := calculateActiveScores(nodes, recentStakers, s.config.ActiveScores)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("calculate active scores: %w", err)
 	}
@@ -209,7 +209,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.rewards)
+	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.config.Rewards)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -274,7 +274,7 @@ func (s *Server) sendTransaction(ctx context.Context, input []byte) (*types.Rece
 	txCandidate := txmgr.TxCandidate{
 		TxData:   input,
 		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
-		GasLimit: s.settlerConfig.GasLimit,
+		GasLimit: s.config.Settler.GasLimit,
 		Value:    big.NewInt(0),
 	}
 
