@@ -10,4 +10,5 @@ var Module = fx.Options(
 	fx.Provide(provider.ProvideRedisClient),
 	fx.Provide(provider.ProvideEthereumMultiChainClient),
 	fx.Provide(provider.ProvideHTTPClient),
+	fx.Provide(provider.ProvideTxManager),
 )

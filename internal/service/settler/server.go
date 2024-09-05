@@ -13,7 +13,6 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
-	gicrypto "github.com/rss3-network/global-indexer/common/crypto"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
@@ -245,7 +244,7 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return indexedBlock.BlockNumber, latestFinalizedBlock.NumberU64(), nil
 }
 
-func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File) (service.Server, error) {
+func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File, txManager *txmgr.SimpleTxManager) (service.Server, error) {
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
@@ -269,29 +268,6 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 	settlementContract, err := l2.NewSettlement(contractAddresses.AddressSettlementProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new settlement contract: %w", err)
-	}
-
-	signerFactory, from, err := gicrypto.NewSignerFactory(config.Settler.PrivateKey, config.Settler.SignerEndpoint, config.Settler.WalletAddress)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create signer")
-	}
-
-	defaultTxConfig := txmgr.Config{
-		ResubmissionTimeout:       20 * time.Second,
-		FeeLimitMultiplier:        5,
-		TxSendTimeout:             5 * time.Minute,
-		TxNotInMempoolTimeout:     1 * time.Hour,
-		NetworkTimeout:            5 * time.Minute,
-		ReceiptQueryInterval:      500 * time.Millisecond,
-		NumConfirmations:          5,
-		SafeAbortNonceTooLowCount: 3,
-	}
-
-	txManager, err := txmgr.NewSimpleTxManager(defaultTxConfig, chainID, nil, ethereumClient, from, signerFactory(chainID))
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tx manager")
 	}
 
 	server := &Server{
