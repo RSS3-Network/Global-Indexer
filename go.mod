@@ -14,6 +14,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/go-redsync/redsync/v4 v4.11.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9

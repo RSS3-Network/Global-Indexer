@@ -68,7 +68,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	cacheClient := cache.New(redisClient)
 
-	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, httpClient, txManager, settlerConfig, new(big.Int).SetUint64(chainID))
+	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingContract, networkParamsContract, httpClient, txManager, settlerConfig, new(big.Int).SetUint64(chainID))
 	if err != nil {
 		return nil, fmt.Errorf("new dsl: %w", err)
 	}

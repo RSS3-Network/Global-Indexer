@@ -2,9 +2,14 @@ package enforcer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"math"
 	"math/big"
+	"net/http"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/rss3-network/global-indexer/common/txmgr"
@@ -14,13 +19,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus) error {
-	if len(nodeAddresses) == 0 {
-		return fmt.Errorf("no node address provided")
-	}
+func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, stats []*schema.Stat) error {
+	nodeAddresses := make([]common.Address, len(stats))
+	nodeStatusList := make([]schema.NodeStatus, len(stats))
 
-	if len(nodeStatusList) != len(nodeAddresses) {
-		return fmt.Errorf("node status list length does not match node address list length")
+	for i := range stats {
+		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, stats[i].Status
 	}
 
 	if err := e.invokeSettlementContract(ctx, nodeAddresses, nodeStatusList); err != nil {
@@ -73,4 +77,45 @@ func prepareInputData(nodeAddresses []common.Address, nodeStatusList []schema.No
 	}
 
 	return input, nil
+}
+
+func (e *SimpleEnforcer) getNodeMinVersion() (string, error) {
+	params, err := e.networkParamsContract.GetParams(&bind.CallOpts{}, math.MaxUint64)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get params for lastest epoch %w", err)
+	}
+
+	var networkParam struct {
+		MinNodeVersion string `json:"minimal_node_version"`
+	}
+
+	if err = json.Unmarshal([]byte(params), &networkParam); err != nil {
+		return "", fmt.Errorf("failed to unmarshal network params %w", err)
+	}
+
+	return networkParam.MinNodeVersion, nil
+}
+
+// getNodeInfo retrieves node info.
+func (e *SimpleEnforcer) getNodeInfo(ctx context.Context, endpoint, accessToken string) (*InfoResponse, error) {
+	fullURL := endpoint + "/info"
+
+	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &InfoResponse{}
+
+	if err = json.Unmarshal(data, response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

@@ -57,12 +57,17 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID.Uint64())
 	}
 
+	networkParamsContract, err := l2.NewNetworkParams(contractAddresses.AddressNetworkParamsProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new network contract: %w", err)
+	}
+
 	stakingContract, err := stakingv2.NewStaking(contractAddresses.AddressStakingProxy, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
 	}
 
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, httpClient, txManager, config.Settler, chainID, false)
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(context.Background(), databaseClient, cache.New(redis), stakingContract, networkParamsContract, httpClient, txManager, config.Settler, chainID, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("new simple enforcer: %w", err)

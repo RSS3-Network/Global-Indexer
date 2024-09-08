@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/hashicorp/go-version"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -35,7 +36,11 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return err
 	}
 	// Update node statistics and worker data.
-	return e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch)
+	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
+		return err
+	}
+	// Update node status to VSL.
+	return e.updateNodeStatusToVSL(ctx, stats)
 }
 
 // generateMaps generates maps related to worker data.
@@ -57,16 +62,48 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 		mu sync.Mutex
 	)
 
+	minVersionStr, err := e.getNodeMinVersion()
+	if err != nil {
+		zap.L().Error("get node min version", zap.Error(err))
+
+		return nil, nil, nil, nil, nil
+	}
+
+	minVersion, _ := version.NewVersion(minVersionStr)
+
 	for _, stat := range stats {
 		wg.Add(1)
 
 		go func(stat *schema.Stat) {
 			defer wg.Done()
+
+			stat.Status = schema.NodeStatusOnline
+
+			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
+			if err != nil {
+				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
+
+				stat.Status = schema.NodeStatusOffline
+
+				return
+			}
+
+			nodeVersion, _ := version.NewVersion(info.Data.Version.Tag)
+
+			if nodeVersion.LessThan(minVersion) {
+				// node is outdated
+				stat.Status = schema.NodeStatusOutdated
+
+				return
+			}
+
 			// Retrieve the status of the node's worker,
 			// including details like name, network, tags, and platform information.
 			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint, stat.AccessToken)
 			if err != nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
+
+				stat.Status = schema.NodeStatusOffline
 
 				// Disqualified the node from the current request distribution round
 				// if retrieving the epoch status fails.
@@ -82,6 +119,8 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
+					stat.Status = schema.NodeStatusInitializing
+
 					continue
 				}
 
@@ -390,7 +429,7 @@ func determineFullNode(workers []*DecentralizedWorkerInfo) bool {
 }
 
 // getNodeWorkerStatus retrieves the worker status for the node.
-func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkerResponse, error) {
+func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkersStatusResponse, error) {
 	fullURL := endpoint + "/workers_status"
 
 	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
@@ -403,7 +442,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, acce
 		return nil, err
 	}
 
-	response := &WorkerResponse{}
+	response := &WorkersStatusResponse{}
 
 	if err = json.Unmarshal(data, response); err != nil {
 		return nil, err
@@ -540,8 +579,17 @@ type ComponentInfo struct {
 	Federated     []*FederatedInfo           `json:"federated"`
 }
 
-type WorkerResponse struct {
+type WorkersStatusResponse struct {
 	Data *ComponentInfo `json:"data"`
+}
+
+type InfoResponse struct {
+	Data struct {
+		Version struct {
+			Tag    string `json:"tag"`
+			Commit string `json:"commit"`
+		} `json:"version"`
+	} `json:"data"`
 }
 
 // UpdateNodeCache updates the cache for all Nodes.
