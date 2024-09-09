@@ -25,7 +25,7 @@ type Enforcer interface {
 	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
 	MaintainReliabilityScore(ctx context.Context) error
 	MaintainEpochData(ctx context.Context, epoch int64) error
-	MaintainNodeStatus(ctx context.Context, stats []*schema.Stat) error
+	MaintainNodeStatus(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
 }
@@ -139,8 +139,8 @@ func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) err
 	return e.updateNodeCache(ctx, epoch)
 }
 
-func (e *SimpleEnforcer) MaintainNodeStatus(ctx context.Context, stats []*schema.Stat) error {
-	return e.updateNodeStatusToVSL(ctx, stats)
+func (e *SimpleEnforcer) MaintainNodeStatus(ctx context.Context) error {
+	return e.maintainNodeStatus(ctx)
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
