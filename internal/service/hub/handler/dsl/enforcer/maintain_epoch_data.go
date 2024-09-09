@@ -77,6 +77,11 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
+			// Skip processing the node if it has exited.
+			if stat.Status == schema.NodeStatusExited {
+				return
+			}
+
 			stat.Status = schema.NodeStatusOnline
 
 			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
