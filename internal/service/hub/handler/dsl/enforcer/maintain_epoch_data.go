@@ -40,7 +40,14 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return err
 	}
 	// Update node status to VSL.
-	return e.updateNodeStatusToVSL(ctx, stats)
+	nodeAddresses := make([]common.Address, len(stats))
+	nodeStatusList := make([]schema.NodeStatus, len(stats))
+
+	for i := range stats {
+		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, stats[i].Status
+	}
+
+	return e.updateNodeStatusToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
 }
 
 // generateMaps generates maps related to worker data.

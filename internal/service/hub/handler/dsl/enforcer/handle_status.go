@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/hashicorp/go-version"
+	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
@@ -46,7 +47,12 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 	minVersion, _ := version.NewVersion(minVersionStr)
 
-	var updatedStats []*schema.Stat
+	var (
+		updatedStats          []*schema.Stat
+		demotionNodeAddresses []common.Address
+		reasons               []string
+		reporters             []common.Address
+	)
 
 	for i := range stats {
 		switch nodeInfo[i].Status {
@@ -80,32 +86,63 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 				stats[i].Status = schema.NodeStatusOffline
 				// TODO: add offline to invalid response
 				updatedStats = append(updatedStats, stats[i])
+				demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
+				reasons = append(reasons, "offline")
+				reporters = append(reporters, ethereum.AddressGenesis)
 			}
 		}
 	}
 
-	return e.updateNodeStatusToVSL(ctx, updatedStats)
-}
+	nodeAddresses := make([]common.Address, len(updatedStats))
+	nodeStatusList := make([]schema.NodeStatus, len(updatedStats))
 
-func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, stats []*schema.Stat) error {
-	nodeAddresses := make([]common.Address, len(stats))
-	nodeStatusList := make([]schema.NodeStatus, len(stats))
-
-	for i := range stats {
-		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, stats[i].Status
+	for i := range updatedStats {
+		nodeAddresses[i], nodeStatusList[i] = updatedStats[i].Address, updatedStats[i].Status
 	}
 
-	if err := e.invokeSettlementContract(ctx, nodeAddresses, nodeStatusList); err != nil {
+	return e.updateNodeStatusToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
+}
+
+func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
+	data, err := prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
+
+	if err != nil {
+		return err
+	}
+
+	if err = e.invokeSettlementMultiContract(ctx, data); err != nil {
 		return fmt.Errorf("invoke settlement contract: %w", err)
 	}
 
 	return nil
 }
 
-func (e *SimpleEnforcer) invokeSettlementContract(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus) error {
-	input, err := prepareInputData(nodeAddresses, nodeStatusList)
+func prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) ([][]byte, error) {
+	data := make([][]byte, 0)
+
+	inputSetNodeStatus, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSetNodeStatus, nodeAddresses, nodeStatusList)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("encode setNodeStatus input: %w", err)
+	}
+
+	data = append(data, inputSetNodeStatus)
+
+	if len(demotionNodeAddresses) > 0 {
+		inputSubmitDemotions, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSubmitDemotions, demotionNodeAddresses, reasons, reporters)
+		if err != nil {
+			return nil, fmt.Errorf("encode submitDemotions input: %w", err)
+		}
+
+		data = append(data, inputSubmitDemotions)
+	}
+
+	return data, nil
+}
+
+func (e *SimpleEnforcer) invokeSettlementMultiContract(ctx context.Context, data [][]byte) error {
+	input, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodMulticall, data)
+	if err != nil {
+		return fmt.Errorf("encode input: %w", err)
 	}
 
 	if err = e.sendTransaction(ctx, input); err != nil {
@@ -136,15 +173,6 @@ func (e *SimpleEnforcer) sendTransaction(ctx context.Context, input []byte) erro
 	}
 
 	return nil
-}
-
-func prepareInputData(nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus) ([]byte, error) {
-	input, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodDistributeRewards, nodeAddresses, nodeStatusList)
-	if err != nil {
-		return nil, fmt.Errorf("encode input: %w", err)
-	}
-
-	return input, nil
 }
 
 func (e *SimpleEnforcer) getNodeMinVersion() (string, error) {

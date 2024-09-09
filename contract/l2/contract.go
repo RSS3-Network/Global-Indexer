@@ -78,6 +78,9 @@ var (
 
 var (
 	MethodDistributeRewards                = "distributeRewards"
+	MethodSetNodeStatus                    = "setNodeStatus"
+	MethodSubmitDemotions                  = "submitDemotions"
+	MethodMulticall                        = "multicall"
 	MethodSetTaxRateBasisPoints4PublicPool = "setTaxRateBasisPoints4PublicPool"
 )
 
