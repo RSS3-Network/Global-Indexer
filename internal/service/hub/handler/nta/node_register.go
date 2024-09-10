@@ -162,12 +162,9 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
-	if err != nil {
-		return fmt.Errorf("update node status: %w", err)
-	}
-
+	node.Status = schema.NodeStatusOnline
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
+
 	if err != nil {
 		zap.L().Error("get Node local error", zap.Error(err))
 	}
@@ -260,7 +257,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	node.Status = schema.NodeStatusOnline
 
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)
