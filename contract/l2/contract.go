@@ -73,7 +73,8 @@ var (
 	EventHashStakingV2ChipsMerged       = crypto.Keccak256Hash([]byte("ChipsMerged(address,address,uint256,uint256[])"))
 	EventHashStakingV2WithdrawalClaimed = crypto.Keccak256Hash([]byte("WithdrawalClaimed(uint256,address,uint256)"))
 
-	EventHashChipsTransfer = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	EventHashChipsTransfer     = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	EventHashNodeStatusChanged = crypto.Keccak256Hash([]byte("NodeStatusChanged(address,uint8,uint8)"))
 )
 
 var (

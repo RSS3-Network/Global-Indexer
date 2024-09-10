@@ -15,6 +15,7 @@ import (
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/database"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/shopspring/decimal"
 	"github.com/sourcegraph/conc/pool"
@@ -35,6 +36,8 @@ func (h *handler) indexStakingV2Log(ctx context.Context, header *types.Header, t
 		return h.indexStakingV2ChipsMergedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case l2.EventHashStakingV2WithdrawalClaimed:
 		return h.indexStakingV2WithdrawalClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
+	case l2.EventHashNodeStatusChanged:
+		return h.indexNodeStatusChangedLog(ctx, header, transaction, log)
 	default:
 		return h.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction)
 	}
@@ -301,6 +304,56 @@ func (h *handler) indexStakingV2WithdrawalClaimedLog(ctx context.Context, header
 
 	if err := databaseTransaction.SaveStakeEvent(ctx, &stakeEvent); err != nil {
 		return fmt.Errorf("save stake event: %w", err)
+	}
+
+	return nil
+}
+
+func (h *handler) indexNodeStatusChangedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, log *types.Log) error {
+	ctx, span := otel.Tracer("").Start(ctx, "indexNodeStatusChangedLog")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.Int64("block.number", header.Number.Int64()),
+		attribute.Stringer("block.hash", header.Hash()),
+		attribute.Stringer("transaction.hash", transaction.Hash()),
+		attribute.Int("log.index", int(log.Index)),
+	)
+
+	event, err := h.contractStakingEvents.ParseNodeStatusChanged(*log)
+	if err != nil {
+		return fmt.Errorf("parse NodeStatusChanged event: %w", err)
+	}
+
+	nodeAddress := event.NodeAddr
+	nodeCurrentStatus := event.CurStatus
+	nodeNewStatus := event.NewStatus
+
+	removeNodeFromCache := func() error {
+		if err := h.cacheClient.ZRem(ctx, model.FullNodeCacheKey, nodeAddress.String()); err != nil {
+			return err
+		}
+
+		return h.cacheClient.ZRem(ctx, model.RssNodeCacheKey, nodeAddress.String())
+	}
+
+	switch nodeNewStatus {
+	case uint8(schema.NodeStatusSlashing):
+		if nodeCurrentStatus == uint8(schema.NodeStatusOnline) || nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
+			zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Slashing"))
+
+			if err = removeNodeFromCache(); err != nil {
+				return err
+			}
+		}
+	case uint8(schema.NodeStatusExited):
+		if nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
+			zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Exited"))
+
+			if err = removeNodeFromCache(); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

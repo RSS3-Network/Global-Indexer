@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/big"
 	"net/http"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -31,7 +30,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		return err
 	}
 
-	nodeInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
+	nodeVSLInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
 		return stat.Address
 	}))
 	if err != nil {
@@ -55,7 +54,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	)
 
 	for i := range stats {
-		switch nodeInfo[i].Status {
+		switch nodeVSLInfo[i].Status {
 		case uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated):
 			workersInfo, _ := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
 
@@ -82,7 +81,15 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 				}
 			}
 		case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
-			if err = e.getNodeHealth(ctx, stats[i].Endpoint, stats[i].Address); err != nil {
+			nodeDBInfo, err := e.databaseClient.FindNode(ctx, stats[i].Address)
+
+			if err != nil {
+				zap.L().Error("find node", zap.Error(err))
+
+				continue
+			}
+
+			if nodeDBInfo.Status == schema.NodeStatusOffline {
 				stats[i].Status = schema.NodeStatusOffline
 				// TODO: add offline to invalid response
 				updatedStats = append(updatedStats, stats[i])
@@ -100,10 +107,10 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		nodeAddresses[i], nodeStatusList[i] = updatedStats[i].Address, updatedStats[i].Status
 	}
 
-	return e.updateNodeStatusToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
+	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
 }
 
-func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
+func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
 	data, err := prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
 
 	if err != nil {
@@ -120,12 +127,14 @@ func (e *SimpleEnforcer) updateNodeStatusToVSL(ctx context.Context, nodeAddresse
 func prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) ([][]byte, error) {
 	data := make([][]byte, 0)
 
-	inputSetNodeStatus, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSetNodeStatus, nodeAddresses, nodeStatusList)
-	if err != nil {
-		return nil, fmt.Errorf("encode setNodeStatus input: %w", err)
-	}
+	if len(nodeAddresses) > 0 {
+		inputSetNodeStatus, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSetNodeStatus, nodeAddresses, nodeStatusList)
+		if err != nil {
+			return nil, fmt.Errorf("encode setNodeStatus input: %w", err)
+		}
 
-	data = append(data, inputSetNodeStatus)
+		data = append(data, inputSetNodeStatus)
+	}
 
 	if len(demotionNodeAddresses) > 0 {
 		inputSubmitDemotions, err := txmgr.EncodeInput(l2.SettlementMetaData.ABI, l2.MethodSubmitDemotions, demotionNodeAddresses, reasons, reporters)
@@ -214,29 +223,4 @@ func (e *SimpleEnforcer) getNodeInfo(ctx context.Context, endpoint, accessToken 
 	}
 
 	return response, nil
-}
-
-// getNodeHealth retrieves node health.
-func (e *SimpleEnforcer) getNodeHealth(ctx context.Context, endpoint string, address common.Address) error {
-	response, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
-	if err != nil {
-		return fmt.Errorf("fetch node endpoint %s: %w", endpoint, err)
-	}
-
-	defer lo.Try(response.Close)
-
-	// Use a limited reader to avoid reading too much data.
-	content, err := io.ReadAll(io.LimitReader(response, 4096))
-	if err != nil {
-		return fmt.Errorf("parse node response: %w", err)
-	}
-
-	// Check if the node's address is in the response.
-	// This is a simple check to ensure the node is responding correctly.
-	// The content sample is: "This is an RSS3 Node operated by 0x0000000000000000000000000000000000000000.".
-	if !strings.Contains(string(content), address.String()) {
-		return fmt.Errorf("invalid node response")
-	}
-
-	return nil
 }
