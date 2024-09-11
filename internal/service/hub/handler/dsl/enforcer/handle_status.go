@@ -39,9 +39,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 	minVersionStr, err := e.getNodeMinVersion()
 	if err != nil {
-		zap.L().Error("get node min version", zap.Error(err))
-
-		return err
+		return fmt.Errorf("get node min version: %w", err)
 	}
 
 	minVersion, _ := version.NewVersion(minVersionStr)
@@ -55,36 +53,91 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 	for i := range stats {
 		switch nodeVSLInfo[i].Status {
-		case uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated):
-			workersInfo, _ := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
+		case uint8(schema.NodeStatusRegistered):
+			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
+			if err != nil || nodeInfo == nil {
+				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
 
-			if workersInfo != nil {
-				for _, workerInfo := range workersInfo.Data.Decentralized {
-					if workerInfo.Status != worker.StatusReady {
-						stats[i].Status = schema.NodeStatusInitializing
+				continue
+			}
 
-						updatedStats = append(updatedStats, stats[i])
+			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
+			if currentVersion.LessThan(minVersion) {
+				stats[i].Status = schema.NodeStatusOutdated
 
-						break
-					}
+				updatedStats = append(updatedStats, stats[i])
+
+				continue
+			}
+
+			workersInfo, err := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
+			if err != nil || workersInfo == nil {
+				zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
+
+				continue
+			}
+
+			for _, workerInfo := range workersInfo.Data.Decentralized {
+				if workerInfo.Status != worker.StatusUnhealthy {
+					stats[i].Status = schema.NodeStatusInitializing
+
+					updatedStats = append(updatedStats, stats[i])
+
+					break
+				}
+			}
+		case uint8(schema.NodeStatusOutdated):
+			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
+			if err != nil || nodeInfo == nil {
+				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
+
+				continue
+			}
+
+			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
+			if currentVersion.LessThan(minVersion) {
+				continue
+			}
+
+			stats[i].Status = schema.NodeStatusRegistered
+
+			workersInfo, err := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
+			if err != nil || workersInfo == nil {
+				zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
+
+				updatedStats = append(updatedStats, stats[i])
+
+				continue
+			}
+
+			for _, workerInfo := range workersInfo.Data.Decentralized {
+				if workerInfo.Status != worker.StatusUnhealthy {
+					stats[i].Status = schema.NodeStatusInitializing
+
+					updatedStats = append(updatedStats, stats[i])
+
+					break
 				}
 			}
 		case uint8(schema.NodeStatusInitializing):
-			nodeIfo, _ := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if nodeIfo != nil {
-				currentVersion, _ := version.NewVersion(nodeIfo.Data.Version.Tag)
+			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
+			if err != nil || nodeInfo == nil {
+				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
 
-				if currentVersion.LessThan(minVersion) {
-					stats[i].Status = schema.NodeStatusOutdated
+				continue
+			}
 
-					updatedStats = append(updatedStats, stats[i])
-				}
+			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
+			if currentVersion.LessThan(minVersion) {
+				stats[i].Status = schema.NodeStatusOutdated
+
+				updatedStats = append(updatedStats, stats[i])
 			}
 		case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
 			nodeDBInfo, err := e.databaseClient.FindNode(ctx, stats[i].Address)
 
 			if err != nil {
-				zap.L().Error("find node", zap.Error(err))
+				zap.L().Error("find node", zap.Error(err), zap.Any("address", stats[i].Address.String()))
 
 				continue
 			}
