@@ -27,8 +27,13 @@ import (
 
 // maintainNodeWorkerWorker maintains the worker information for network nodes at each new epoch.
 func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) error {
+	minVersionStr, err := e.getNodeMinVersion()
+	if err != nil {
+		return fmt.Errorf("get node min version: %w", err)
+	}
+
 	// Initialize maps related to worker data.
-	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats)
+	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats, minVersionStr)
 	// Transform the map and assigns the result to the global variable.
 	mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap)
 	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
@@ -51,7 +56,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 }
 
 // generateMaps generates maps related to worker data.
-func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat) (map[common.Address]*ComponentInfo, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}) {
+func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat, minVersionStr string) (map[common.Address]*ComponentInfo, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}, map[string]map[string]struct{}) {
 	var (
 		// nodeToDataMap stores the API response from /workers_status for each node.
 		nodeToDataMap = make(map[common.Address]*ComponentInfo, len(stats))
@@ -68,13 +73,6 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 		wg sync.WaitGroup
 		mu sync.Mutex
 	)
-
-	minVersionStr, err := e.getNodeMinVersion()
-	if err != nil {
-		zap.L().Error("get node min version", zap.Error(err))
-
-		return nil, nil, nil, nil, nil
-	}
 
 	minVersion, _ := version.NewVersion(minVersionStr)
 

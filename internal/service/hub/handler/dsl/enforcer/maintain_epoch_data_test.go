@@ -87,6 +87,8 @@ var (
 		{WorkerInfo: WorkerInfo{Network: network.Arweave, Status: worker.StatusReady, Tags: []tag.Tag{tag.Social}}, Worker: decentralized.Momoka, Platform: decentralized.PlatformLens},
 		{WorkerInfo: WorkerInfo{Network: network.Polygon, Status: worker.StatusIndexing, Tags: []tag.Tag{tag.Social}}, Worker: decentralized.Lens, Platform: decentralized.PlatformLens},
 	}
+
+	nodeInfoNode = `{"data":{"operator":"0x5fdfd813ad20a90ba0972dd300ac9071c296b851","version":{"tag":"v1.0.0","commit":"8b36c72"}}}`
 )
 
 type MockHTTPClient struct {
@@ -119,7 +121,13 @@ func TestGenerateMaps(t *testing.T) {
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode2))), nil)
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode3))), nil)
 
-	enforcer := &SimpleEnforcer{httpClient: mockClient}
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfoNode))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfoNode))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfoNode))), nil)
+
+	enforcer := &SimpleEnforcer{
+		httpClient: mockClient,
+	}
 	stats := []*schema.Stat{
 		{
 			Address:  common.Address{1},
@@ -135,7 +143,7 @@ func TestGenerateMaps(t *testing.T) {
 		},
 	}
 
-	nodeToWorkersMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := enforcer.generateMaps(context.Background(), stats)
+	nodeToWorkersMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := enforcer.generateMaps(context.Background(), stats, "v1.0.0")
 
 	expectedNodeToWorkersMap := map[common.Address]*ComponentInfo{
 		common.Address{1}: {
