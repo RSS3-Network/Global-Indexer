@@ -84,15 +84,16 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
-			// Skip processing the node if it has exited.
-			if stat.Status == schema.NodeStatusExited {
+			// Skip processing the node if its status is marked as exited or exiting.
+			// Registered, Initializing, Outdated, and Online, Offline nodes are still processed.
+			if stat.Status == schema.NodeStatusExited || stat.Status == schema.NodeStatusExiting {
 				return
 			}
 
 			stat.Status = schema.NodeStatusOnline
 
 			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
-			if err != nil {
+			if err != nil || info == nil {
 				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
 
 				stat.Status = schema.NodeStatusOffline
@@ -103,7 +104,6 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			nodeVersion, _ := version.NewVersion(info.Data.Version.Tag)
 
 			if nodeVersion.LessThan(minVersion) {
-				// node is outdated
 				stat.Status = schema.NodeStatusOutdated
 
 				return
@@ -112,7 +112,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			// Retrieve the status of the node's worker,
 			// including details like name, network, tags, and platform information.
 			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint, stat.AccessToken)
-			if err != nil {
+			if err != nil || workerStatus == nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
 				stat.Status = schema.NodeStatusOffline
@@ -131,7 +131,9 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat)
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
-					stat.Status = schema.NodeStatusInitializing
+					if workerInfo.Status == worker.StatusIndexing {
+						stat.Status = schema.NodeStatusInitializing
+					}
 
 					continue
 				}

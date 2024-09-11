@@ -37,7 +37,7 @@ func (h *handler) indexStakingV2Log(ctx context.Context, header *types.Header, t
 	case l2.EventHashStakingV2WithdrawalClaimed:
 		return h.indexStakingV2WithdrawalClaimedLog(ctx, header, transaction, receipt, log, databaseTransaction)
 	case l2.EventHashNodeStatusChanged:
-		return h.indexNodeStatusChangedLog(ctx, header, transaction, log)
+		return h.indexNodeStatusChangedLog(ctx, header, transaction, log, databaseTransaction)
 	default:
 		return h.indexStakingV1Log(ctx, header, transaction, receipt, log, databaseTransaction)
 	}
@@ -309,7 +309,7 @@ func (h *handler) indexStakingV2WithdrawalClaimedLog(ctx context.Context, header
 	return nil
 }
 
-func (h *handler) indexNodeStatusChangedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, log *types.Log) error {
+func (h *handler) indexNodeStatusChangedLog(ctx context.Context, header *types.Header, transaction *types.Transaction, log *types.Log, databaseTransaction database.Client) error {
 	ctx, span := otel.Tracer("").Start(ctx, "indexNodeStatusChangedLog")
 	defer span.End()
 
@@ -329,32 +329,62 @@ func (h *handler) indexNodeStatusChangedLog(ctx context.Context, header *types.H
 	nodeCurrentStatus := event.CurStatus
 	nodeNewStatus := event.NewStatus
 
-	removeNodeFromCache := func() error {
-		if err := h.cacheClient.ZRem(ctx, model.FullNodeCacheKey, nodeAddress.String()); err != nil {
+	switch nodeNewStatus {
+	case uint8(schema.NodeStatusSlashing):
+		return h.handleNodeSlashing(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
+	case uint8(schema.NodeStatusExited):
+		return h.handleNodeExited(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
+	// TODO: node status reverted to online from slashing
+	// case uint8(schema.NodeStatusOnline):
+	//	 return h.handleNodeOnline(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
+	default:
+		return nil
+	}
+}
+
+func (h *handler) handleNodeSlashing(ctx context.Context, nodeAddress common.Address, nodeCurrentStatus uint8, databaseTransaction database.Client) error {
+	if nodeCurrentStatus == uint8(schema.NodeStatusOnline) || nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
+		zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Slashing"))
+
+		if err := h.removeNodeFromCache(ctx, nodeAddress); err != nil {
 			return err
 		}
 
-		return h.cacheClient.ZRem(ctx, model.RssNodeCacheKey, nodeAddress.String())
-	}
-
-	switch nodeNewStatus {
-	case uint8(schema.NodeStatusSlashing):
-		if nodeCurrentStatus == uint8(schema.NodeStatusOnline) || nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
-			zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Slashing"))
-
-			if err = removeNodeFromCache(); err != nil {
-				return err
-			}
-		}
-	case uint8(schema.NodeStatusExited):
-		if nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
-			zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Exited"))
-
-			if err = removeNodeFromCache(); err != nil {
-				return err
-			}
-		}
+		return h.markNodeAsSlashed(ctx, nodeAddress, databaseTransaction)
 	}
 
 	return nil
+}
+
+func (h *handler) handleNodeExited(ctx context.Context, nodeAddress common.Address, nodeCurrentStatus uint8, databaseTransaction database.Client) error {
+	if nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
+		zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Exited"))
+
+		if err := h.removeNodeFromCache(ctx, nodeAddress); err != nil {
+			return err
+		}
+
+		return h.markNodeAsSlashed(ctx, nodeAddress, databaseTransaction)
+	}
+
+	return nil
+}
+
+func (h *handler) removeNodeFromCache(ctx context.Context, nodeAddress common.Address) error {
+	if err := h.cacheClient.ZRem(ctx, model.FullNodeCacheKey, nodeAddress.String()); err != nil {
+		return err
+	}
+
+	return h.cacheClient.ZRem(ctx, model.RssNodeCacheKey, nodeAddress.String())
+}
+
+func (h *handler) markNodeAsSlashed(ctx context.Context, nodeAddress common.Address, databaseTransaction database.Client) error {
+	nodeStat, err := databaseTransaction.FindNodeStat(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("find node stat: %w", err)
+	}
+
+	nodeStat.EpochInvalidRequest = int64(model.DemotionCountBeforeSlashing)
+
+	return databaseTransaction.SaveNodeStat(ctx, nodeStat)
 }
