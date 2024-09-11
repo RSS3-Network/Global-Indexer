@@ -66,26 +66,33 @@ func calculateActiveScores(nodes []*schema.Node, recentStakers map[common.Addres
 	return finalScores, nil
 }
 
-// fetchNodePoolSizes retrieves Node information from a staking contract
-// and updates the staking and operation pool sizes for each Node.
-func (s *Server) fetchNodePoolSizes(nodeAddresses []common.Address, nodes []*schema.Node) error {
-	nodeInfo, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
+// filter retrieves Node information from a staking contract.
+func (s *Server) filter(nodeAddresses []common.Address, nodes []*schema.Node) ([]*schema.Node, []common.Address, error) {
+	nodeInfoList, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 	if err != nil {
-		return fmt.Errorf("get Nodes from chain: %w", err)
+		return nil, nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
+	nodeInfoMap := lo.SliceToMap(nodeInfoList, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
 		return node.Account, node
 	})
 
-	for _, node := range nodes {
-		if nodeInfo, ok := nodeInfoMap[node.Address]; ok {
-			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
-			node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
+	var (
+		newNodes         []*schema.Node
+		newNodeAddresses []common.Address
+	)
+
+	for i := range nodes {
+		if nodeInfo, ok := nodeInfoMap[nodes[i].Address]; ok && (nodeInfo.Status == uint8(schema.NodeStatusRegistered) || nodeInfo.Status == uint8(schema.NodeStatusInitializing) || nodeInfo.Status == uint8(schema.NodeStatusOutdated) || nodeInfo.Status == uint8(schema.NodeStatusOnline)) {
+			nodes[i].StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
+			nodes[i].OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
+
+			newNodes = append(newNodes, nodes[i])
+			newNodeAddresses = append(newNodeAddresses, nodes[i].Address)
 		}
 	}
 
-	return nil
+	return newNodes, newNodeAddresses, nil
 }
 
 // excludeUnqualifiedNodes excludes Nodes if they:
