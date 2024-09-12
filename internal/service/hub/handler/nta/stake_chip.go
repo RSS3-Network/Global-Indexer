@@ -57,7 +57,7 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 		chipIDs[i] = chip.ID
 	}
 
-	chipsInfo, err := n.stakingContract.StakingV2GetChipsInfoByMulticall(c.Request().Context(), nil, chipIDs)
+	chipsInfo, err := n.stakingContract.StakingV2GetChipsInfo(c.Request().Context(), nil, chipIDs)
 	if err != nil {
 		zap.L().Error("get chips info by multicall", zap.Error(err))
 

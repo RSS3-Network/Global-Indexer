@@ -73,7 +73,7 @@ func TestStakingV2GetChipsInfoByMulticall(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			chipsInfo, err := client.StakingV2GetChipsInfoByMulticall(ctx, testcase.arguments.blockNumber, testcase.arguments.ChipIDs)
+			chipsInfo, err := client.StakingV2GetChipsInfo(ctx, testcase.arguments.blockNumber, testcase.arguments.ChipIDs)
 			require.NoError(t, err)
 
 			require.Equal(t, testcase.want, chipsInfo)

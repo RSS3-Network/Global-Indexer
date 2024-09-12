@@ -25,7 +25,7 @@ type ChipInfo struct {
 	Shares   *big.Int
 }
 
-func (client *StakingV2MulticallClient) StakingV2GetChipsInfoByMulticall(ctx context.Context, blockNumber *big.Int, chipIDs []*big.Int) ([]ChipInfo, error) {
+func (client *StakingV2MulticallClient) StakingV2GetChipsInfo(ctx context.Context, blockNumber *big.Int, chipIDs []*big.Int) ([]ChipInfo, error) {
 	abi, err := v2.StakingMetaData.GetAbi()
 	if err != nil {
 		return nil, fmt.Errorf("get staking contract abi: %w", err)
