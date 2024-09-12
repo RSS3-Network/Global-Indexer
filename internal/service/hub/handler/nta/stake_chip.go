@@ -1,11 +1,11 @@
 package nta
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -19,7 +19,6 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
-	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -52,28 +51,21 @@ func (n *NTA) GetStakeChips(c echo.Context) error {
 		return errorx.InternalError(c)
 	}
 
-	// Parallel getting current chip values
-	errorPool := pool.New().WithContext(c.Request().Context()).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
+	chipIDs := make([]*big.Int, len(stakeChips))
 
-	for _, chip := range stakeChips {
-		chip := chip
-
-		errorPool.Go(func(ctx context.Context) error {
-			chipInfo, err := n.stakingContract.GetChipInfo(&bind.CallOpts{Context: ctx}, chip.ID)
-			if err != nil {
-				zap.L().Error("get chip info from rpc", zap.Error(err), zap.String("chipID", chip.ID.String()))
-
-				return fmt.Errorf("get chip info: %w", err)
-			}
-
-			chip.LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
-
-			return nil
-		})
+	for i, chip := range stakeChips {
+		chipIDs[i] = chip.ID
 	}
 
-	if err = errorPool.Wait(); err != nil {
+	chipsInfo, err := n.stakingContract.StakingV2GetChipsInfo(c.Request().Context(), nil, chipIDs)
+	if err != nil {
+		zap.L().Error("get chips info by multicall", zap.Error(err))
+
 		return errorx.InternalError(c)
+	}
+
+	for i, chipInfo := range chipsInfo {
+		stakeChips[i].LatestValue = decimal.NewFromBigInt(chipInfo.Tokens, 0)
 	}
 
 	var response nta.Response
