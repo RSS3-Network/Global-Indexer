@@ -46,10 +46,10 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	}
 	// Update node status to VSL.
 	nodeAddresses := make([]common.Address, len(stats))
-	nodeStatusList := make([]schema.NodeStatus, len(stats))
+	nodeStatusList := make([]uint8, len(stats))
 
 	for i := range stats {
-		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, stats[i].Status
+		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, uint8(stats[i].Status)
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)

@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/hashicorp/go-version"
-	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
@@ -146,24 +145,25 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 				stats[i].Status = schema.NodeStatusOffline
 				// TODO: add offline to invalid response
 				updatedStats = append(updatedStats, stats[i])
-				demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
-				reasons = append(reasons, "offline")
-				reporters = append(reporters, ethereum.AddressGenesis)
+				// TODO: slashing mechanism temporarily disabled.
+				//demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
+				//reasons = append(reasons, "offline")
+				//reporters = append(reporters, ethereum.AddressGenesis)
 			}
 		}
 	}
 
 	nodeAddresses := make([]common.Address, len(updatedStats))
-	nodeStatusList := make([]schema.NodeStatus, len(updatedStats))
+	nodeStatusList := make([]uint8, len(updatedStats))
 
 	for i := range updatedStats {
-		nodeAddresses[i], nodeStatusList[i] = updatedStats[i].Address, updatedStats[i].Status
+		nodeAddresses[i], nodeStatusList[i] = updatedStats[i].Address, uint8(updatedStats[i].Status)
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
 }
 
-func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
+func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []uint8, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
 	data, err := prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
 
 	if err != nil {
@@ -177,7 +177,7 @@ func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Cont
 	return nil
 }
 
-func prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses []common.Address, nodeStatusList []schema.NodeStatus, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) ([][]byte, error) {
+func prepareSetNodeStatusAndSubmitDemotionsData(nodeAddresses []common.Address, nodeStatusList []uint8, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) ([][]byte, error) {
 	data := make([][]byte, 0)
 
 	if len(nodeAddresses) > 0 {
