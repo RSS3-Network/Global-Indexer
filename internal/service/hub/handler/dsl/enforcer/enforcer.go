@@ -10,7 +10,6 @@ import (
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -25,7 +24,6 @@ type Enforcer interface {
 	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
 	MaintainReliabilityScore(ctx context.Context) error
 	MaintainEpochData(ctx context.Context, epoch int64) error
-	MaintainNodeStatus(ctx context.Context) error
 	ChallengeStates(ctx context.Context) error
 	RetrieveQualifiedNodes(ctx context.Context, key string) ([]*model.NodeEndpointCache, error)
 }
@@ -34,7 +32,7 @@ type SimpleEnforcer struct {
 	cacheClient             cache.Client
 	databaseClient          database.Client
 	httpClient              httputil.Client
-	stakingContract         *stakingv2.Staking
+	stakingContract         *l2.StakingV2MulticallClient
 	networkParamsContract   *l2.NetworkParams
 	fullNodeScoreMaintainer *ScoreMaintainer
 	rssNodeScoreMaintainer  *ScoreMaintainer
@@ -171,7 +169,7 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	return nodesCache, err
 }
 
-func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *stakingv2.Staking, networkParamsContract *l2.NetworkParams, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler, chainID *big.Int, initCacheData bool) (*SimpleEnforcer, error) {
+func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cacheClient cache.Client, stakingContract *l2.StakingV2MulticallClient, networkParamsContract *l2.NetworkParams, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler, chainID *big.Int, initCacheData bool) (*SimpleEnforcer, error) {
 	enforcer := &SimpleEnforcer{
 		databaseClient:        databaseClient,
 		cacheClient:           cacheClient,

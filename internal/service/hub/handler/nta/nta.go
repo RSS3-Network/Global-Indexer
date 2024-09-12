@@ -9,14 +9,13 @@ import (
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
-	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 )
 
 type NTA struct {
 	databaseClient        database.Client
-	stakingContract       *stakingv2.Staking
+	stakingContract       *l2.StakingV2MulticallClient
 	networkParamsContract *l2.NetworkParams
 	geoLite2              *geolite2.Client
 	cacheClient           cache.Client
@@ -32,7 +31,7 @@ func (n *NTA) baseURL(c echo.Context) url.URL {
 	}
 }
 
-func NewNTA(_ context.Context, databaseClient database.Client, stakingContract *stakingv2.Staking, networkParamsContract *l2.NetworkParams, geoLite2 *geolite2.Client, cacheClient cache.Client, httpClient httputil.Client) *NTA {
+func NewNTA(_ context.Context, databaseClient database.Client, stakingContract *l2.StakingV2MulticallClient, networkParamsContract *l2.NetworkParams, geoLite2 *geolite2.Client, cacheClient cache.Client, httpClient httputil.Client) *NTA {
 	return &NTA{
 		databaseClient:        databaseClient,
 		stakingContract:       stakingContract,

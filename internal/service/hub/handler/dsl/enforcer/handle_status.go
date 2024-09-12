@@ -144,11 +144,12 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 			if nodeDBInfo.Status == schema.NodeStatusOffline {
 				stats[i].Status = schema.NodeStatusOffline
 				// TODO: add offline to invalid response
-				updatedStats = append(updatedStats, stats[i])
 				// TODO: slashing mechanism temporarily disabled.
-				//demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
-				//reasons = append(reasons, "offline")
-				//reporters = append(reporters, ethereum.AddressGenesis)
+				// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
+				// reasons = append(reasons, "offline")
+				// reporters = append(reporters, ethereum.AddressGenesis)
+
+				updatedStats = append(updatedStats, stats[i])
 			}
 		}
 	}
