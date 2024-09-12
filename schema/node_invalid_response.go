@@ -29,4 +29,6 @@ const (
 	NodeInvalidResponseTypeInconsistent NodeInvalidResponseType = iota // inconsistent
 	// NodeInvalidResponseTypeError when the Node returns an error
 	NodeInvalidResponseTypeError // error
+	// NodeInvalidResponseTypeOffline when the Node is offline
+	NodeInvalidResponseTypeOffline // offline
 )

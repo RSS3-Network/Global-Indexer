@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/hashicorp/go-version"
+	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/schema"
@@ -143,13 +144,14 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 			if nodeDBInfo.Status == schema.NodeStatusOffline {
 				stats[i].Status = schema.NodeStatusOffline
-				// TODO: add offline to invalid response
 				// TODO: slashing mechanism temporarily disabled.
 				// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
 				// reasons = append(reasons, "offline")
 				// reporters = append(reporters, ethereum.AddressGenesis)
 
 				updatedStats = append(updatedStats, stats[i])
+
+				e.saveOfflineStatusToInvalidResponse(ctx, uint64(stats[i].Epoch), stats[i].Address)
 			}
 		}
 	}
@@ -162,6 +164,22 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
+}
+
+func (e *SimpleEnforcer) saveOfflineStatusToInvalidResponse(ctx context.Context, epochID uint64, nodeAddress common.Address) {
+	nodeInvalidResponse := &schema.NodeInvalidResponse{
+		EpochID:          epochID,
+		Type:             schema.NodeInvalidResponseTypeOffline,
+		VerifierNodes:    []common.Address{ethereum.AddressGenesis},
+		Request:          "",
+		VerifierResponse: json.RawMessage{},
+		Node:             nodeAddress,
+		Response:         json.RawMessage{},
+	}
+
+	if err := e.databaseClient.SaveNodeInvalidResponses(ctx, []*schema.NodeInvalidResponse{nodeInvalidResponse}); err != nil {
+		zap.L().Error("save node invalid response", zap.Error(err))
+	}
 }
 
 func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Context, nodeAddresses []common.Address, nodeStatusList []uint8, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
