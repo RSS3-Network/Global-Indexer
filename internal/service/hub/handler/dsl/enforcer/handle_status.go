@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"math/big"
-	"net/http"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -34,7 +32,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		return stat.Address
 	}))
 	if err != nil {
-		return fmt.Errorf("get Nodes from chain: %w", err)
+		return fmt.Errorf("get nodes from chain: %w", err)
 	}
 
 	minVersionStr, err := e.getNodeMinVersion()
@@ -53,89 +51,22 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 	for i := range stats {
 		switch nodeVSLInfo[i].Status {
-		case uint8(schema.NodeStatusRegistered):
-			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if err != nil || nodeInfo == nil {
-				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
+		case uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated), uint8(schema.NodeStatusInitializing):
+			stats[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+			newStatus, errPath := e.determineStatus(ctx, stats[i], minVersion)
 
-				continue
-			}
-
-			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
-			if currentVersion.LessThan(minVersion) {
-				stats[i].Status = schema.NodeStatusOutdated
-
+			if stats[i].Status != newStatus {
+				stats[i].Status = newStatus
 				updatedStats = append(updatedStats, stats[i])
 
-				continue
-			}
+				if newStatus == schema.NodeStatusOffline {
+					responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, errPath))
 
-			workersInfo, err := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if err != nil || workersInfo == nil {
-				zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
-
-				continue
-			}
-
-			for _, workerInfo := range workersInfo.Data.Decentralized {
-				if workerInfo.Status != worker.StatusUnhealthy {
-					stats[i].Status = schema.NodeStatusInitializing
-
-					updatedStats = append(updatedStats, stats[i])
-
-					break
+					e.saveOfflineStatusToInvalidResponse(ctx, uint64(stats[i].Epoch), stats[i].Address, fmt.Sprintf("%s/%s", stats[i].Endpoint, errPath), responseValue)
 				}
-			}
-		case uint8(schema.NodeStatusOutdated):
-			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if err != nil || nodeInfo == nil {
-				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
-
-				continue
-			}
-
-			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
-			if currentVersion.LessThan(minVersion) {
-				continue
-			}
-
-			stats[i].Status = schema.NodeStatusRegistered
-
-			workersInfo, err := e.getNodeWorkerStatus(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if err != nil || workersInfo == nil {
-				zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
-
-				updatedStats = append(updatedStats, stats[i])
-
-				continue
-			}
-
-			for _, workerInfo := range workersInfo.Data.Decentralized {
-				if workerInfo.Status != worker.StatusUnhealthy {
-					stats[i].Status = schema.NodeStatusInitializing
-
-					updatedStats = append(updatedStats, stats[i])
-
-					break
-				}
-			}
-		case uint8(schema.NodeStatusInitializing):
-			nodeInfo, err := e.getNodeInfo(ctx, stats[i].Endpoint, stats[i].AccessToken)
-			if err != nil || nodeInfo == nil {
-				zap.L().Error("get node info", zap.Error(err), zap.Any("address", stats[i].Address.String()), zap.Any("endpoint", stats[i].Endpoint), zap.Any("access_token", stats[i].AccessToken))
-
-				continue
-			}
-
-			currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
-			if currentVersion.LessThan(minVersion) {
-				stats[i].Status = schema.NodeStatusOutdated
-
-				updatedStats = append(updatedStats, stats[i])
 			}
 		case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
 			nodeDBInfo, err := e.databaseClient.FindNode(ctx, stats[i].Address)
-
 			if err != nil {
 				zap.L().Error("find node", zap.Error(err), zap.Any("address", stats[i].Address.String()))
 
@@ -148,33 +79,64 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 				// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
 				// reasons = append(reasons, "offline")
 				// reporters = append(reporters, ethereum.AddressGenesis)
-
+				responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, "heartbeat"))
+				e.saveOfflineStatusToInvalidResponse(ctx, uint64(stats[i].Epoch), stats[i].Address, "", responseValue)
 				updatedStats = append(updatedStats, stats[i])
-
-				e.saveOfflineStatusToInvalidResponse(ctx, uint64(stats[i].Epoch), stats[i].Address)
 			}
 		}
 	}
 
-	nodeAddresses := make([]common.Address, len(updatedStats))
-	nodeStatusList := make([]uint8, len(updatedStats))
+	return e.updateNodeStatuses(ctx, updatedStats, demotionNodeAddresses, reasons, reporters)
+}
 
-	for i := range updatedStats {
-		nodeAddresses[i], nodeStatusList[i] = updatedStats[i].Address, uint8(updatedStats[i].Status)
+func (e *SimpleEnforcer) determineStatus(ctx context.Context, stat *schema.Stat, minVersion *version.Version) (schema.NodeStatus, string) {
+	nodeInfo, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
+	if err != nil || nodeInfo == nil {
+		zap.L().Error("get node info", zap.Error(err), zap.Any("address", stat.Address.String()), zap.Any("endpoint", stat.Endpoint), zap.Any("access_token", stat.AccessToken))
+
+		return schema.NodeStatusOffline, "info"
+	}
+
+	currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
+	if currentVersion.LessThan(minVersion) {
+		return schema.NodeStatusOutdated, ""
+	}
+
+	workersInfo, err := e.getNodeWorkerStatus(ctx, stat.Endpoint, stat.AccessToken)
+	if err != nil || workersInfo == nil {
+		zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", stat.Address.String()), zap.Any("endpoint", stat.Endpoint), zap.Any("access_token", stat.AccessToken))
+
+		return schema.NodeStatusOffline, "workers_status"
+	}
+
+	for _, workerInfo := range workersInfo.Data.Decentralized {
+		if workerInfo.Status != worker.StatusUnhealthy {
+			return schema.NodeStatusInitializing, ""
+		}
+	}
+
+	return schema.NodeStatusRegistered, ""
+}
+
+func (e *SimpleEnforcer) updateNodeStatuses(ctx context.Context, updatedStats []*schema.Stat, demotionNodeAddresses []common.Address, reasons []string, reporters []common.Address) error {
+	nodeAddresses, nodeStatusList := make([]common.Address, 0, len(updatedStats)), make([]uint8, 0, len(updatedStats))
+	for _, stat := range updatedStats {
+		nodeAddresses = append(nodeAddresses, stat.Address)
+		nodeStatusList = append(nodeStatusList, uint8(stat.Status))
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
 }
 
-func (e *SimpleEnforcer) saveOfflineStatusToInvalidResponse(ctx context.Context, epochID uint64, nodeAddress common.Address) {
+func (e *SimpleEnforcer) saveOfflineStatusToInvalidResponse(ctx context.Context, epochID uint64, nodeAddress common.Address, request string, response json.RawMessage) {
 	nodeInvalidResponse := &schema.NodeInvalidResponse{
 		EpochID:          epochID,
 		Type:             schema.NodeInvalidResponseTypeOffline,
 		VerifierNodes:    []common.Address{ethereum.AddressGenesis},
-		Request:          "",
+		Request:          request,
 		VerifierResponse: json.RawMessage{},
 		Node:             nodeAddress,
-		Response:         json.RawMessage{},
+		Response:         response,
 	}
 
 	if err := e.databaseClient.SaveNodeInvalidResponses(ctx, []*schema.NodeInvalidResponse{nodeInvalidResponse}); err != nil {
@@ -272,27 +234,4 @@ func (e *SimpleEnforcer) getNodeMinVersion() (string, error) {
 	}
 
 	return networkParam.MinNodeVersion, nil
-}
-
-// getNodeInfo retrieves node info.
-func (e *SimpleEnforcer) getNodeInfo(ctx context.Context, endpoint, accessToken string) (*InfoResponse, error) {
-	fullURL := endpoint + "/info"
-
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := io.ReadAll(body)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &InfoResponse{}
-
-	if err = json.Unmarshal(data, response); err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }
