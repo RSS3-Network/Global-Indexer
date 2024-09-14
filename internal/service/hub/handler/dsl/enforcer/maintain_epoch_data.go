@@ -99,8 +99,8 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
-			// Skip processing the node if its status is marked as exited , exiting, offline, slashing or slashed.
-			if !(stat.Status == schema.NodeStatusOnline || stat.Status == schema.NodeStatusInitializing || stat.Status == schema.NodeStatusOutdated || stat.Status == schema.NodeStatusRegistered) {
+			// Skip processing the node if its status is marked as exited, exiting, offline, slashing or slashed.
+			if !isValidNodeStatus(stat.Status) {
 				return
 			}
 
@@ -109,15 +109,12 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
 			if err != nil || info == nil {
 				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
-
 				stat.Status = schema.NodeStatusOffline
 
 				return
 			}
 
-			nodeVersion, _ := version.NewVersion(info.Data.Version.Tag)
-
-			if nodeVersion.LessThan(minVersion) {
+			if nodeVersion, _ := version.NewVersion(info.Data.Version.Tag); nodeVersion.LessThan(minVersion) {
 				stat.Status = schema.NodeStatusOutdated
 
 				return
@@ -138,10 +135,10 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 			mu.Lock()
 			workerStatus.Data.Decentralized = filterDuplicateWorkers(workerStatus.Data.Decentralized)
-
 			nodeToDataMap[stat.Address] = workerStatus.Data
 			mu.Unlock()
 
+			// all workers are unhealthy
 			isRegistered := true
 
 			for _, workerInfo := range workerStatus.Data.Decentralized {
@@ -149,7 +146,6 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 				if workerInfo.Status != worker.StatusReady {
 					if workerInfo.Status == worker.StatusIndexing {
 						isRegistered = false
-
 						stat.Status = schema.NodeStatusInitializing
 					}
 
@@ -157,7 +153,6 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 				}
 
 				isRegistered = false
-
 				networkName := workerInfo.Network.String()
 				platformName := workerInfo.Platform.String()
 				workerName := workerInfo.Worker.String()
@@ -214,6 +209,15 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 	wg.Wait()
 
 	return nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap
+}
+
+func isValidNodeStatus(status schema.NodeStatus) bool {
+	switch status {
+	case schema.NodeStatusOnline, schema.NodeStatusInitializing, schema.NodeStatusOutdated, schema.NodeStatusRegistered:
+		return true
+	default:
+		return false
+	}
 }
 
 // filterDuplicateWorkers filters out duplicate workers.

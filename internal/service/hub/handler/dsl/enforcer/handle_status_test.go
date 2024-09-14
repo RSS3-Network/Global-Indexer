@@ -16,8 +16,10 @@ import (
 
 var (
 	nodeInfo                  = `{"data":{"operator":"0x5fdfd813ad20a90ba0972dd300ac9071c296b851","version":{"tag":"v1.0.0","commit":"8b36c72"}}}`
+	nodeOutdated              = `{"data":{"operator":"0x5fdfd813ad20a90ba0972dd300ac9071c296b851","version":{"tag":"v0.9.0","commit":"8b36c72"}}}`
 	workerStatusNodeIndexing  = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Indexing","remote_state":1718215438006,"indexed_state":1718215435040}],"rss":null,"federated":null}}`
 	workerStatusNodeUnhealthy = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Unhealthy","remote_state":0,"indexed_state":0}],"rss":null,"federated":null}}`
+	workerStatusNodeOnline    = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Ready","remote_state":0,"indexed_state":0}],"rss":null,"federated":null}}`
 )
 
 func Test_NodeInfoUnavailableReturnsOffline(t *testing.T) {
