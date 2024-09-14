@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hashicorp/go-version"
 	"github.com/redis/go-redis/v9"
@@ -29,6 +30,22 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return fmt.Errorf("get node min version: %w", err)
 	}
 
+	// Retrieve the node status from the VSL.
+	nodeVSLInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
+		return stat.Address
+	}))
+
+	if err != nil {
+		return fmt.Errorf("get nodes from chain: %w", err)
+	}
+
+	originalStatusList := make([]schema.NodeStatus, len(stats))
+
+	for i := range stats {
+		stats[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+		originalStatusList[i] = stats[i].Status
+	}
+
 	// Initialize maps related to worker data.
 	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats, minVersionStr)
 	// Transform the map and assigns the result to the global variable.
@@ -42,11 +59,14 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return err
 	}
 	// Update node status to VSL.
-	nodeAddresses := make([]common.Address, len(stats))
-	nodeStatusList := make([]uint8, len(stats))
+	nodeAddresses := make([]common.Address, 0, len(stats))
+	nodeStatusList := make([]uint8, 0, len(stats))
 
 	for i := range stats {
-		nodeAddresses[i], nodeStatusList[i] = stats[i].Address, uint8(stats[i].Status)
+		if stats[i].Status != originalStatusList[i] {
+			nodeAddresses = append(nodeAddresses, stats[i].Address)
+			nodeStatusList = append(nodeStatusList, uint8(stats[i].Status))
+		}
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
@@ -79,9 +99,8 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
-			// Skip processing the node if its status is marked as exited or exiting.
-			// Registered, Initializing, Outdated, and Online, Offline nodes are still processed.
-			if stat.Status == schema.NodeStatusExited || stat.Status == schema.NodeStatusExiting {
+			// Skip processing the node if its status is marked as exited , exiting, offline, slashing or slashed.
+			if !(stat.Status == schema.NodeStatusOnline || stat.Status == schema.NodeStatusInitializing || stat.Status == schema.NodeStatusOutdated || stat.Status == schema.NodeStatusRegistered) {
 				return
 			}
 
@@ -123,15 +142,21 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			nodeToDataMap[stat.Address] = workerStatus.Data
 			mu.Unlock()
 
+			isRegistered := true
+
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
 					if workerInfo.Status == worker.StatusIndexing {
+						isRegistered = false
+
 						stat.Status = schema.NodeStatusInitializing
 					}
 
 					continue
 				}
+
+				isRegistered = false
 
 				networkName := workerInfo.Network.String()
 				platformName := workerInfo.Platform.String()
@@ -178,6 +203,10 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 				fullNodeWorkerToNetworksMap[workerName][networkName] = struct{}{}
 				mu.Unlock()
+			}
+
+			if isRegistered {
+				stat.Status = schema.NodeStatusRegistered
 			}
 		}(stat)
 	}
