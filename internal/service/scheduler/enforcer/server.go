@@ -62,6 +62,11 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		return nil, fmt.Errorf("new network contract: %w", err)
 	}
 
+	contractStakingEvents, err := l2.NewEvents(contractAddresses.AddressStakingProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new staking events contract: %w", err)
+	}
+
 	stakingContract, err := l2.NewStakingV2MulticallClient(chainID.Uint64(), ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking contract: %w", err)
@@ -87,7 +92,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 		enforcers: []service.Server{
 			nodestatus.New(redis, simpleEnforcer),
 			reliabilityscore.New(redis, simpleEnforcer),
-			epochfresher.New(redis, ethereumClient, checkpoint.BlockNumber, simpleEnforcer, stakingContract, settlementContract, contractAddresses.AddressStakingProxy),
+			epochfresher.New(redis, ethereumClient, checkpoint.BlockNumber, simpleEnforcer, contractStakingEvents, settlementContract, contractAddresses.AddressStakingProxy),
 		},
 	}, nil
 }
