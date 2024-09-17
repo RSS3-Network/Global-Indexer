@@ -136,7 +136,11 @@ func TestDetermineStatus(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctx := context.Background()
 			mockClient := setupMockClient(tt.workerStatus, tt.nodeInfo)
 			enforcer := &SimpleEnforcer{httpClient: mockClient}
@@ -166,6 +170,7 @@ func setupMockClient(workerStatus, nodeInfo string) *MockHTTPClient {
 		mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/workers_status").
 			Return(io.NopCloser(bytes.NewReader([]byte(workerStatus))), nil)
 	}
+
 	if nodeInfo == "" {
 		mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/info").
 			Return(io.NopCloser(bytes.NewReader([]byte(""))), errors.New("info"))
@@ -173,5 +178,6 @@ func setupMockClient(workerStatus, nodeInfo string) *MockHTTPClient {
 		mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/info").
 			Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
 	}
+
 	return mockClient
 }
