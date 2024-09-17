@@ -52,7 +52,6 @@ type Node struct {
 	TotalShares                *big.Int
 	SlashedOperationPoolTokens *big.Int
 	SlashedStakingPoolTokens   *big.Int
-	ExitTime                   *big.Int
 	Status                     uint8
 }
 
@@ -73,7 +72,7 @@ type WithdrawalRequest struct {
 
 // StakingMetaData contains all meta data concerning the Staking contract.
 var StakingMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"treasury\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"stakeUnbondingPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"depositUnbondingPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"paymentProcessor\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"DEPOSIT_UNBONDING_PERIOD\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ORACLE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"PAUSE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"PAYMENT_PROCESSOR\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"STAKE_UNBONDING_PERIOD\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TREASURY\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chipsContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimUnstake\",\"inputs\":[{\"name\":\"requestIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"claimWithdrawal\",\"inputs\":[{\"name\":\"requestIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"commitSlashing\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"createNode\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"deposit\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"distributeRewards\",\"inputs\":[{\"name\":\"epochInfo\",\"type\":\"uint256[3]\",\"internalType\":\"uint256[3]\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"operationRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"stakingRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"requestCounts\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"publicPoolRewards\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"exit\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getChipInfo\",\"inputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"tokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"shares\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDemotions\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"demotions\",\"type\":\"tuple[]\",\"internalType\":\"structDemotion[]\",\"components\":[{\"name\":\"demotionId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"reporter\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNode\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNode\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"exitTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNodeAvatar\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNodeCount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNodes\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[{\"name\":\"nodes\",\"type\":\"tuple[]\",\"internalType\":\"structNode[]\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"exitTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPendingUnstake\",\"inputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structUnstakeRequest\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"unstakeAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPendingWithdrawal\",\"inputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structWithdrawalRequest\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"timestamp\",\"type\":\"uint40\",\"internalType\":\"uint40\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPoolInfo\",\"inputs\":[],\"outputs\":[{\"name\":\"totalOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalSlashingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPublicPool\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNode\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"exitTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMember\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMemberCount\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"chips\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"pauseAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"oracleAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isAlphaPhase_\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isAlphaPhase\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isSettlementPhase\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"mergeChips\",\"inputs\":[{\"name\":\"chipIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[{\"name\":\"newTokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"multicall\",\"inputs\":[{\"name\":\"data\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"outputs\":[{\"name\":\"results\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"online\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"pause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paused\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"register\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestUnstake\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chipIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestWithdrawal\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeDemotions\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"demotionIdsToRevoke\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setNodeStatus\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"status\",\"type\":\"uint8[]\",\"internalType\":\"enumNodeStatus[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setSettlementPhase\",\"inputs\":[{\"name\":\"enabled\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4Node\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4PublicPool\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stake\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"stakeToPublicPool\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"submitDemotions\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"reasons\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"reporters\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"unpause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateNode\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"version\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"withdraw2Treasury\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Paused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PublicGoodRewardDistributed\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"startTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"endTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"publicPoolRewards\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"publicPoolTax\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RewardDistributed\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"startTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"endTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"indexed\":false,\"internalType\":\"address[]\"},{\"name\":\"operationRewards\",\"type\":\"uint256[]\",\"indexed\":false,\"internalType\":\"uint256[]\"},{\"name\":\"stakingRewards\",\"type\":\"uint256[]\",\"indexed\":false,\"internalType\":\"uint256[]\"},{\"name\":\"taxCollected\",\"type\":\"uint256[]\",\"indexed\":false,\"internalType\":\"uint256[]\"},{\"name\":\"requestCounts\",\"type\":\"uint256[]\",\"indexed\":false,\"internalType\":\"uint256[]\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Unpaused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AddressEmptyCode\",\"inputs\":[{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"EnforcedPause\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExcessWithdrawalAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExpectedPause\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"FailedInnerCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidArrayLength\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NodeNotExists\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NodeNotPublicGood\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SettlementPhase\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"StakeToPublicGoodNode\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"WithdrawalAmountExceedsOperationPoolTokens\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"treasury\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"stakeUnbondingPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"depositUnbondingPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"paymentProcessor\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"DEPOSIT_UNBONDING_PERIOD\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"OPERATOR_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ORACLE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"PAUSE_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"PAYMENT_PROCESSOR\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"STAKE_UNBONDING_PERIOD\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"TREASURY\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chipsContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"claimUnstake\",\"inputs\":[{\"name\":\"requestIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"claimWithdrawal\",\"inputs\":[{\"name\":\"requestIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"commitSlashing\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"createNode\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"deposit\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"distributeRewards\",\"inputs\":[{\"name\":\"epochInfo\",\"type\":\"uint256[3]\",\"internalType\":\"uint256[3]\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"operationRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"stakingRewards\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"requestCounts\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"publicPoolRewards\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"exit\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getChipInfo\",\"inputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"tokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"shares\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDemotions\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"demotions\",\"type\":\"tuple[]\",\"internalType\":\"structDemotion[]\",\"components\":[{\"name\":\"demotionId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"reporter\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNode\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNode\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getNodeAvatar\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNodeCount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getNodes\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[{\"name\":\"nodes\",\"type\":\"tuple[]\",\"internalType\":\"structNode[]\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getPendingUnstake\",\"inputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structUnstakeRequest\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"unstakeAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPendingWithdrawal\",\"inputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structWithdrawalRequest\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"timestamp\",\"type\":\"uint40\",\"internalType\":\"uint40\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPoolInfo\",\"inputs\":[],\"outputs\":[{\"name\":\"totalOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalSlashingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getPublicPool\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNode\",\"components\":[{\"name\":\"nodeId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"publicGood\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"alpha\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"operationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"stakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalShares\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedOperationPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"slashedStakingPoolTokens\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"status\",\"type\":\"uint8\",\"internalType\":\"enumNodeStatus\"}]}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMember\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleMemberCount\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"chips\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"pauseAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"oracleAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"operatorAccount\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isAlphaPhase_\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"migrate\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isAlphaPhase\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isSettlementPhase\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"mergeChips\",\"inputs\":[{\"name\":\"chipIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[{\"name\":\"newTokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"multicall\",\"inputs\":[{\"name\":\"data\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"outputs\":[{\"name\":\"results\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"online\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"pause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"paused\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"register\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestUnstake\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chipIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestWithdrawal\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"requestId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeDemotions\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"demotionIdsToRevoke\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setNodeStatus\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"status\",\"type\":\"uint8[]\",\"internalType\":\"enumNodeStatus[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setNodeStatusByOperator\",\"inputs\":[{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"status\",\"type\":\"uint8[]\",\"internalType\":\"enumNodeStatus[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setSettlementPhase\",\"inputs\":[{\"name\":\"enabled\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4Node\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaxRateBasisPoints4PublicPool\",\"inputs\":[{\"name\":\"taxRateBasisPoints\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stake\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"stakeToPublicPool\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"tokenId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"submitDemotions\",\"inputs\":[{\"name\":\"epoch\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"nodeAddrs\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"reasons\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"reporters\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"unpause\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateNode\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"description\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"version\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"withdraw2Treasury\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Paused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Unpaused\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AddressEmptyCode\",\"inputs\":[{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"EnforcedPause\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExpectedPause\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"FailedInnerCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NodeNotExists\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NodeNotPublicGood\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SettlementPhase\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"StakeToPublicGoodNode\",\"inputs\":[{\"name\":\"nodeAddr\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // StakingABI is the input ABI used to generate the binding from.
@@ -282,6 +281,37 @@ func (_Staking *StakingSession) DEPOSITUNBONDINGPERIOD() (*big.Int, error) {
 // Solidity: function DEPOSIT_UNBONDING_PERIOD() view returns(uint256)
 func (_Staking *StakingCallerSession) DEPOSITUNBONDINGPERIOD() (*big.Int, error) {
 	return _Staking.Contract.DEPOSITUNBONDINGPERIOD(&_Staking.CallOpts)
+}
+
+// OPERATORROLE is a free data retrieval call binding the contract method 0xf5b541a6.
+//
+// Solidity: function OPERATOR_ROLE() view returns(bytes32)
+func (_Staking *StakingCaller) OPERATORROLE(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _Staking.contract.Call(opts, &out, "OPERATOR_ROLE")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// OPERATORROLE is a free data retrieval call binding the contract method 0xf5b541a6.
+//
+// Solidity: function OPERATOR_ROLE() view returns(bytes32)
+func (_Staking *StakingSession) OPERATORROLE() ([32]byte, error) {
+	return _Staking.Contract.OPERATORROLE(&_Staking.CallOpts)
+}
+
+// OPERATORROLE is a free data retrieval call binding the contract method 0xf5b541a6.
+//
+// Solidity: function OPERATOR_ROLE() view returns(bytes32)
+func (_Staking *StakingCallerSession) OPERATORROLE() ([32]byte, error) {
+	return _Staking.Contract.OPERATORROLE(&_Staking.CallOpts)
 }
 
 // ORACLEROLE is a free data retrieval call binding the contract method 0x07e2cea5.
@@ -553,7 +583,7 @@ func (_Staking *StakingCallerSession) GetDemotions(nodeAddr common.Address, epoc
 
 // GetNode is a free data retrieval call binding the contract method 0x9d209048.
 //
-// Solidity: function getNode(address nodeAddr) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getNode(address nodeAddr) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingCaller) GetNode(opts *bind.CallOpts, nodeAddr common.Address) (Node, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "getNode", nodeAddr)
@@ -570,14 +600,14 @@ func (_Staking *StakingCaller) GetNode(opts *bind.CallOpts, nodeAddr common.Addr
 
 // GetNode is a free data retrieval call binding the contract method 0x9d209048.
 //
-// Solidity: function getNode(address nodeAddr) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getNode(address nodeAddr) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingSession) GetNode(nodeAddr common.Address) (Node, error) {
 	return _Staking.Contract.GetNode(&_Staking.CallOpts, nodeAddr)
 }
 
 // GetNode is a free data retrieval call binding the contract method 0x9d209048.
 //
-// Solidity: function getNode(address nodeAddr) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getNode(address nodeAddr) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingCallerSession) GetNode(nodeAddr common.Address) (Node, error) {
 	return _Staking.Contract.GetNode(&_Staking.CallOpts, nodeAddr)
 }
@@ -646,7 +676,7 @@ func (_Staking *StakingCallerSession) GetNodeCount() (*big.Int, error) {
 
 // GetNodes is a free data retrieval call binding the contract method 0x38c96b14.
 //
-// Solidity: function getNodes(address[] nodeAddrs) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
+// Solidity: function getNodes(address[] nodeAddrs) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
 func (_Staking *StakingCaller) GetNodes(opts *bind.CallOpts, nodeAddrs []common.Address) ([]Node, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "getNodes", nodeAddrs)
@@ -663,14 +693,14 @@ func (_Staking *StakingCaller) GetNodes(opts *bind.CallOpts, nodeAddrs []common.
 
 // GetNodes is a free data retrieval call binding the contract method 0x38c96b14.
 //
-// Solidity: function getNodes(address[] nodeAddrs) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
+// Solidity: function getNodes(address[] nodeAddrs) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
 func (_Staking *StakingSession) GetNodes(nodeAddrs []common.Address) ([]Node, error) {
 	return _Staking.Contract.GetNodes(&_Staking.CallOpts, nodeAddrs)
 }
 
 // GetNodes is a free data retrieval call binding the contract method 0x38c96b14.
 //
-// Solidity: function getNodes(address[] nodeAddrs) view returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
+// Solidity: function getNodes(address[] nodeAddrs) pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8)[] nodes)
 func (_Staking *StakingCallerSession) GetNodes(nodeAddrs []common.Address) ([]Node, error) {
 	return _Staking.Contract.GetNodes(&_Staking.CallOpts, nodeAddrs)
 }
@@ -789,7 +819,7 @@ func (_Staking *StakingCallerSession) GetPoolInfo() (struct {
 
 // GetPublicPool is a free data retrieval call binding the contract method 0xc84c42a3.
 //
-// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingCaller) GetPublicPool(opts *bind.CallOpts) (Node, error) {
 	var out []interface{}
 	err := _Staking.contract.Call(opts, &out, "getPublicPool")
@@ -806,14 +836,14 @@ func (_Staking *StakingCaller) GetPublicPool(opts *bind.CallOpts) (Node, error) 
 
 // GetPublicPool is a free data retrieval call binding the contract method 0xc84c42a3.
 //
-// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingSession) GetPublicPool() (Node, error) {
 	return _Staking.Contract.GetPublicPool(&_Staking.CallOpts)
 }
 
 // GetPublicPool is a free data retrieval call binding the contract method 0xc84c42a3.
 //
-// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint256,uint8))
+// Solidity: function getPublicPool() pure returns((uint256,address,uint64,bool,bool,string,string,uint256,uint256,uint256,uint256,uint256,uint8))
 func (_Staking *StakingCallerSession) GetPublicPool() (Node, error) {
 	return _Staking.Contract.GetPublicPool(&_Staking.CallOpts)
 }
@@ -1265,25 +1295,25 @@ func (_Staking *StakingTransactorSession) GrantRole(role [32]byte, account commo
 	return _Staking.Contract.GrantRole(&_Staking.TransactOpts, role, account)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfecf9734.
+// Initialize is a paid mutator transaction binding the contract method 0x71b27f6b.
 //
-// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, bool isAlphaPhase_) returns()
-func (_Staking *StakingTransactor) Initialize(opts *bind.TransactOpts, chips common.Address, pauseAccount common.Address, oracleAccount common.Address, isAlphaPhase_ bool) (*types.Transaction, error) {
-	return _Staking.contract.Transact(opts, "initialize", chips, pauseAccount, oracleAccount, isAlphaPhase_)
+// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, address operatorAccount, bool isAlphaPhase_, bool migrate) returns()
+func (_Staking *StakingTransactor) Initialize(opts *bind.TransactOpts, chips common.Address, pauseAccount common.Address, oracleAccount common.Address, operatorAccount common.Address, isAlphaPhase_ bool, migrate bool) (*types.Transaction, error) {
+	return _Staking.contract.Transact(opts, "initialize", chips, pauseAccount, oracleAccount, operatorAccount, isAlphaPhase_, migrate)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfecf9734.
+// Initialize is a paid mutator transaction binding the contract method 0x71b27f6b.
 //
-// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, bool isAlphaPhase_) returns()
-func (_Staking *StakingSession) Initialize(chips common.Address, pauseAccount common.Address, oracleAccount common.Address, isAlphaPhase_ bool) (*types.Transaction, error) {
-	return _Staking.Contract.Initialize(&_Staking.TransactOpts, chips, pauseAccount, oracleAccount, isAlphaPhase_)
+// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, address operatorAccount, bool isAlphaPhase_, bool migrate) returns()
+func (_Staking *StakingSession) Initialize(chips common.Address, pauseAccount common.Address, oracleAccount common.Address, operatorAccount common.Address, isAlphaPhase_ bool, migrate bool) (*types.Transaction, error) {
+	return _Staking.Contract.Initialize(&_Staking.TransactOpts, chips, pauseAccount, oracleAccount, operatorAccount, isAlphaPhase_, migrate)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xfecf9734.
+// Initialize is a paid mutator transaction binding the contract method 0x71b27f6b.
 //
-// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, bool isAlphaPhase_) returns()
-func (_Staking *StakingTransactorSession) Initialize(chips common.Address, pauseAccount common.Address, oracleAccount common.Address, isAlphaPhase_ bool) (*types.Transaction, error) {
-	return _Staking.Contract.Initialize(&_Staking.TransactOpts, chips, pauseAccount, oracleAccount, isAlphaPhase_)
+// Solidity: function initialize(address chips, address pauseAccount, address oracleAccount, address operatorAccount, bool isAlphaPhase_, bool migrate) returns()
+func (_Staking *StakingTransactorSession) Initialize(chips common.Address, pauseAccount common.Address, oracleAccount common.Address, operatorAccount common.Address, isAlphaPhase_ bool, migrate bool) (*types.Transaction, error) {
+	return _Staking.Contract.Initialize(&_Staking.TransactOpts, chips, pauseAccount, oracleAccount, operatorAccount, isAlphaPhase_, migrate)
 }
 
 // MergeChips is a paid mutator transaction binding the contract method 0xca91c816.
@@ -1515,6 +1545,27 @@ func (_Staking *StakingSession) SetNodeStatus(nodeAddrs []common.Address, status
 // Solidity: function setNodeStatus(address[] nodeAddrs, uint8[] status) returns()
 func (_Staking *StakingTransactorSession) SetNodeStatus(nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
 	return _Staking.Contract.SetNodeStatus(&_Staking.TransactOpts, nodeAddrs, status)
+}
+
+// SetNodeStatusByOperator is a paid mutator transaction binding the contract method 0x9399a898.
+//
+// Solidity: function setNodeStatusByOperator(address[] nodeAddrs, uint8[] status) returns()
+func (_Staking *StakingTransactor) SetNodeStatusByOperator(opts *bind.TransactOpts, nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Staking.contract.Transact(opts, "setNodeStatusByOperator", nodeAddrs, status)
+}
+
+// SetNodeStatusByOperator is a paid mutator transaction binding the contract method 0x9399a898.
+//
+// Solidity: function setNodeStatusByOperator(address[] nodeAddrs, uint8[] status) returns()
+func (_Staking *StakingSession) SetNodeStatusByOperator(nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Staking.Contract.SetNodeStatusByOperator(&_Staking.TransactOpts, nodeAddrs, status)
+}
+
+// SetNodeStatusByOperator is a paid mutator transaction binding the contract method 0x9399a898.
+//
+// Solidity: function setNodeStatusByOperator(address[] nodeAddrs, uint8[] status) returns()
+func (_Staking *StakingTransactorSession) SetNodeStatusByOperator(nodeAddrs []common.Address, status []uint8) (*types.Transaction, error) {
+	return _Staking.Contract.SetNodeStatusByOperator(&_Staking.TransactOpts, nodeAddrs, status)
 }
 
 // SetSettlementPhase is a paid mutator transaction binding the contract method 0x4e7a1286.
@@ -1968,305 +2019,6 @@ func (_Staking *StakingFilterer) WatchPaused(opts *bind.WatchOpts, sink chan<- *
 func (_Staking *StakingFilterer) ParsePaused(log types.Log) (*StakingPaused, error) {
 	event := new(StakingPaused)
 	if err := _Staking.contract.UnpackLog(event, "Paused", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// StakingPublicGoodRewardDistributedIterator is returned from FilterPublicGoodRewardDistributed and is used to iterate over the raw logs and unpacked data for PublicGoodRewardDistributed events raised by the Staking contract.
-type StakingPublicGoodRewardDistributedIterator struct {
-	Event *StakingPublicGoodRewardDistributed // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *StakingPublicGoodRewardDistributedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(StakingPublicGoodRewardDistributed)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(StakingPublicGoodRewardDistributed)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *StakingPublicGoodRewardDistributedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *StakingPublicGoodRewardDistributedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// StakingPublicGoodRewardDistributed represents a PublicGoodRewardDistributed event raised by the Staking contract.
-type StakingPublicGoodRewardDistributed struct {
-	Epoch             *big.Int
-	StartTimestamp    *big.Int
-	EndTimestamp      *big.Int
-	PublicPoolRewards *big.Int
-	PublicPoolTax     *big.Int
-	Raw               types.Log // Blockchain specific contextual infos
-}
-
-// FilterPublicGoodRewardDistributed is a free log retrieval operation binding the contract event 0xab7d25a2f6206ef56c88807f2474ddcd97e1a6323cb25149cde3a607fed6f2d7.
-//
-// Solidity: event PublicGoodRewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, uint256 publicPoolRewards, uint256 publicPoolTax)
-func (_Staking *StakingFilterer) FilterPublicGoodRewardDistributed(opts *bind.FilterOpts, epoch []*big.Int) (*StakingPublicGoodRewardDistributedIterator, error) {
-
-	var epochRule []interface{}
-	for _, epochItem := range epoch {
-		epochRule = append(epochRule, epochItem)
-	}
-
-	logs, sub, err := _Staking.contract.FilterLogs(opts, "PublicGoodRewardDistributed", epochRule)
-	if err != nil {
-		return nil, err
-	}
-	return &StakingPublicGoodRewardDistributedIterator{contract: _Staking.contract, event: "PublicGoodRewardDistributed", logs: logs, sub: sub}, nil
-}
-
-// WatchPublicGoodRewardDistributed is a free log subscription operation binding the contract event 0xab7d25a2f6206ef56c88807f2474ddcd97e1a6323cb25149cde3a607fed6f2d7.
-//
-// Solidity: event PublicGoodRewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, uint256 publicPoolRewards, uint256 publicPoolTax)
-func (_Staking *StakingFilterer) WatchPublicGoodRewardDistributed(opts *bind.WatchOpts, sink chan<- *StakingPublicGoodRewardDistributed, epoch []*big.Int) (event.Subscription, error) {
-
-	var epochRule []interface{}
-	for _, epochItem := range epoch {
-		epochRule = append(epochRule, epochItem)
-	}
-
-	logs, sub, err := _Staking.contract.WatchLogs(opts, "PublicGoodRewardDistributed", epochRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(StakingPublicGoodRewardDistributed)
-				if err := _Staking.contract.UnpackLog(event, "PublicGoodRewardDistributed", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParsePublicGoodRewardDistributed is a log parse operation binding the contract event 0xab7d25a2f6206ef56c88807f2474ddcd97e1a6323cb25149cde3a607fed6f2d7.
-//
-// Solidity: event PublicGoodRewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, uint256 publicPoolRewards, uint256 publicPoolTax)
-func (_Staking *StakingFilterer) ParsePublicGoodRewardDistributed(log types.Log) (*StakingPublicGoodRewardDistributed, error) {
-	event := new(StakingPublicGoodRewardDistributed)
-	if err := _Staking.contract.UnpackLog(event, "PublicGoodRewardDistributed", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// StakingRewardDistributedIterator is returned from FilterRewardDistributed and is used to iterate over the raw logs and unpacked data for RewardDistributed events raised by the Staking contract.
-type StakingRewardDistributedIterator struct {
-	Event *StakingRewardDistributed // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *StakingRewardDistributedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(StakingRewardDistributed)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(StakingRewardDistributed)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *StakingRewardDistributedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *StakingRewardDistributedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// StakingRewardDistributed represents a RewardDistributed event raised by the Staking contract.
-type StakingRewardDistributed struct {
-	Epoch            *big.Int
-	StartTimestamp   *big.Int
-	EndTimestamp     *big.Int
-	NodeAddrs        []common.Address
-	OperationRewards []*big.Int
-	StakingRewards   []*big.Int
-	TaxCollected     []*big.Int
-	RequestCounts    []*big.Int
-	Raw              types.Log // Blockchain specific contextual infos
-}
-
-// FilterRewardDistributed is a free log retrieval operation binding the contract event 0x8ea79f19e90b084c2009d3490a097547d8bbb315a883b9efec0996502c1dd7ae.
-//
-// Solidity: event RewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, address[] nodeAddrs, uint256[] operationRewards, uint256[] stakingRewards, uint256[] taxCollected, uint256[] requestCounts)
-func (_Staking *StakingFilterer) FilterRewardDistributed(opts *bind.FilterOpts, epoch []*big.Int) (*StakingRewardDistributedIterator, error) {
-
-	var epochRule []interface{}
-	for _, epochItem := range epoch {
-		epochRule = append(epochRule, epochItem)
-	}
-
-	logs, sub, err := _Staking.contract.FilterLogs(opts, "RewardDistributed", epochRule)
-	if err != nil {
-		return nil, err
-	}
-	return &StakingRewardDistributedIterator{contract: _Staking.contract, event: "RewardDistributed", logs: logs, sub: sub}, nil
-}
-
-// WatchRewardDistributed is a free log subscription operation binding the contract event 0x8ea79f19e90b084c2009d3490a097547d8bbb315a883b9efec0996502c1dd7ae.
-//
-// Solidity: event RewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, address[] nodeAddrs, uint256[] operationRewards, uint256[] stakingRewards, uint256[] taxCollected, uint256[] requestCounts)
-func (_Staking *StakingFilterer) WatchRewardDistributed(opts *bind.WatchOpts, sink chan<- *StakingRewardDistributed, epoch []*big.Int) (event.Subscription, error) {
-
-	var epochRule []interface{}
-	for _, epochItem := range epoch {
-		epochRule = append(epochRule, epochItem)
-	}
-
-	logs, sub, err := _Staking.contract.WatchLogs(opts, "RewardDistributed", epochRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(StakingRewardDistributed)
-				if err := _Staking.contract.UnpackLog(event, "RewardDistributed", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseRewardDistributed is a log parse operation binding the contract event 0x8ea79f19e90b084c2009d3490a097547d8bbb315a883b9efec0996502c1dd7ae.
-//
-// Solidity: event RewardDistributed(uint256 indexed epoch, uint256 startTimestamp, uint256 endTimestamp, address[] nodeAddrs, uint256[] operationRewards, uint256[] stakingRewards, uint256[] taxCollected, uint256[] requestCounts)
-func (_Staking *StakingFilterer) ParseRewardDistributed(log types.Log) (*StakingRewardDistributed, error) {
-	event := new(StakingRewardDistributed)
-	if err := _Staking.contract.UnpackLog(event, "RewardDistributed", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

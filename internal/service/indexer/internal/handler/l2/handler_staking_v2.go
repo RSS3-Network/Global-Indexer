@@ -364,6 +364,8 @@ func (h *handler) handleNodeExited(ctx context.Context, nodeAddress common.Addre
 			return err
 		}
 
+		// If the node is in the exited status, we need to mark it as slashed.
+		// It represents that the node has been exited from the network.
 		return h.markNodeAsSlashed(ctx, nodeAddress, databaseTransaction)
 	}
 
