@@ -332,8 +332,6 @@ func (h *handler) indexNodeStatusChangedLog(ctx context.Context, header *types.H
 	switch nodeNewStatus {
 	case uint8(schema.NodeStatusSlashing):
 		return h.handleNodeSlashing(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
-	case uint8(schema.NodeStatusExited):
-		return h.handleNodeExited(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
 	// TODO: node status reverted to online from slashing
 	// case uint8(schema.NodeStatusOnline):
 	//	 return h.handleNodeOnline(ctx, nodeAddress, nodeCurrentStatus, databaseTransaction)
@@ -350,22 +348,6 @@ func (h *handler) handleNodeSlashing(ctx context.Context, nodeAddress common.Add
 			return err
 		}
 
-		return h.markNodeAsSlashed(ctx, nodeAddress, databaseTransaction)
-	}
-
-	return nil
-}
-
-func (h *handler) handleNodeExited(ctx context.Context, nodeAddress common.Address, nodeCurrentStatus uint8, databaseTransaction database.Client) error {
-	if nodeCurrentStatus == uint8(schema.NodeStatusExiting) {
-		zap.L().Info("node status changed", zap.Stringer("node", nodeAddress), zap.String("new status", "Exited"))
-
-		if err := h.removeNodeFromCache(ctx, nodeAddress); err != nil {
-			return err
-		}
-
-		// If the node is in the exited status, we need to mark it as slashed.
-		// It represents that the node has been exited from the network.
 		return h.markNodeAsSlashed(ctx, nodeAddress, databaseTransaction)
 	}
 
