@@ -104,6 +104,12 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 				return
 			}
 
+			// Update the node status to exited if it is marked as exiting.
+			if stat.Status == schema.NodeStatusExiting {
+				stat.Status = schema.NodeStatusExited
+				return
+			}
+
 			stat.Status = schema.NodeStatusOnline
 
 			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
@@ -213,7 +219,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 func isValidNodeStatus(status schema.NodeStatus) bool {
 	switch status {
-	case schema.NodeStatusOnline, schema.NodeStatusInitializing, schema.NodeStatusOutdated, schema.NodeStatusRegistered:
+	case schema.NodeStatusOnline, schema.NodeStatusInitializing, schema.NodeStatusOutdated, schema.NodeStatusRegistered, schema.NodeStatusExiting:
 		return true
 	default:
 		return false

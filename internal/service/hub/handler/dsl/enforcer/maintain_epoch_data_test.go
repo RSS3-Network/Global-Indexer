@@ -488,6 +488,11 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 			Endpoint: "http://localhost:8085",
 			Status:   schema.NodeStatusRegistered,
 		},
+		{
+			Address:  common.Address{6},
+			Endpoint: "http://localhost:8080",
+			Status:   schema.NodeStatusExiting,
+		},
 	}
 
 	_, _, _, _, _ = enforcer.generateMaps(context.Background(), stats, "v1.0.0")
@@ -498,4 +503,5 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 	assert.Equal(t, schema.NodeStatusOutdated, stats[3].Status)
 	assert.Equal(t, schema.NodeStatusOffline, stats[4].Status)
 	assert.Equal(t, schema.NodeStatusOffline, stats[5].Status)
+	assert.Equal(t, schema.NodeStatusExited, stats[6].Status)
 }
