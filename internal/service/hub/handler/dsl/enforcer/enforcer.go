@@ -116,7 +116,7 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 }
 
 // MaintainEpochData maintains the data for the new epoch.
-// The data includes the range of data that all nodes can support in a new epoch.
+// The data includes the range of data that all nodes can support and status of nodes in a new epoch.
 func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) error {
 	stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
 		Limit: lo.ToPtr(defaultLimit),

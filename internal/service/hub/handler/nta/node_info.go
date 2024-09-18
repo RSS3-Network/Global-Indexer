@@ -280,6 +280,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 			node.TotalShares = nodeInfo.TotalShares.String()
 			node.SlashedTokens = big.NewInt(0).Add(nodeInfo.SlashedStakingPoolTokens, nodeInfo.SlashedOperationPoolTokens).String()
 			node.Alpha = nodeInfo.Alpha
+			// get node status from chain
 			node.Status = schema.NodeStatus(nodeInfo.Status)
 		}
 

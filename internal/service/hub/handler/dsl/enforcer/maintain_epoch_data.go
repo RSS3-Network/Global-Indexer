@@ -133,30 +133,35 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
-			// Skip processing the node if its status is marked as exited, exiting, offline, slashing or slashed.
+			// Skip processing the node if its status is marked as exited, offline, slashing or slashed.
 			if !isValidNodeStatus(stat.Status) {
 				return
 			}
 
-			// Update the node status to exited if it is marked as exiting.
+			// If the node status is exiting, set it to exited.
 			if stat.Status == schema.NodeStatusExiting {
 				stat.Status = schema.NodeStatusExited
 				return
 			}
 
+			// Set the node status to online.
 			stat.Status = schema.NodeStatusOnline
 
 			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
 			if err != nil || info == nil {
 				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
+				// Set the node status to offline.
 				stat.Status = schema.NodeStatusOffline
 
 				return
 			}
 
 			if nodeVersion, _ := version.NewVersion(info.Data.Version.Tag); nodeVersion.LessThan(minVersion) {
+				// Set the node status to outdated.
 				stat.Status = schema.NodeStatusOutdated
 
+				// Disqualified the node from the current request distribution round
+				// if retrieving the node info fails.
 				return
 			}
 
@@ -178,7 +183,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			nodeToDataMap[stat.Address] = workerStatus.Data
 			mu.Unlock()
 
-			// all workers are unhealthy
+			// if all workers are unhealthy, the node is registered
 			isRegistered := true
 
 			for _, workerInfo := range workerStatus.Data.Decentralized {
@@ -251,6 +256,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 	return nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap
 }
 
+// isValidNodeStatus checks if the node status is valid.
 func isValidNodeStatus(status schema.NodeStatus) bool {
 	switch status {
 	case schema.NodeStatusOnline, schema.NodeStatusInitializing, schema.NodeStatusOutdated, schema.NodeStatusRegistered, schema.NodeStatusExiting:
