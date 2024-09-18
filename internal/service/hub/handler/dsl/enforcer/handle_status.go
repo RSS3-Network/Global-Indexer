@@ -27,6 +27,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	}
 
 	// Fixme: use pagination to get all nodes
+	// or use node stats to get all nodes
 	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{})
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
@@ -55,7 +56,7 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 	for i := range nodes {
 		// initial alpha version nodes are outdated
-		// deprecated if there is no alpha version node
+		// Fixme: deprecated if there is no alpha version node
 		if nodeVSLInfo[i].Status == uint8(schema.NodeStatusNone) && nodes[i].Version == schema.NodeVersionAlpha.String() {
 			nodes[i].Status = schema.NodeStatusOutdated
 			updatedNodes = append(updatedNodes, nodes[i])
@@ -136,6 +137,12 @@ func (e *SimpleEnforcer) updateNodeStatuses(ctx context.Context, updatedNodes []
 	for _, node := range updatedNodes {
 		nodeAddresses = append(nodeAddresses, node.Address)
 		nodeStatusList = append(nodeStatusList, uint8(node.Status))
+	}
+
+	if len(nodeAddresses) == 0 && len(demotionNodeAddresses) == 0 {
+		zap.L().Info("no node status to update")
+
+		return nil
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, demotionNodeAddresses, reasons, reporters)
