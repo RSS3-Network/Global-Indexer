@@ -144,16 +144,15 @@ func TestDetermineStatus(t *testing.T) {
 			ctx := context.Background()
 			mockClient := setupMockClient(tt.workerStatus, tt.nodeInfo)
 			enforcer := &SimpleEnforcer{httpClient: mockClient}
-			stat := &schema.Stat{
+			node := &schema.Node{
 				Address:     common.Address{},
 				Endpoint:    "http://localhost:8080",
 				AccessToken: "token",
-				Epoch:       1,
 				Status:      tt.initialStatus,
 			}
 
 			minVersion, _ := version.NewVersion(tt.minVersion)
-			status, errPath := enforcer.determineStatus(ctx, stat, minVersion)
+			status, errPath := enforcer.determineStatus(ctx, node, minVersion)
 
 			assert.Equal(t, tt.expectedStatus, status)
 			assert.Equal(t, tt.expectedErrPath, errPath)

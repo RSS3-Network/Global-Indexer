@@ -58,7 +58,16 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
 		return err
 	}
-	// Update node status to VSL.
+	// filter the node status and submit the demotion to the VSL.
+	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
+	if err != nil {
+		return err
+	}
+
+	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
+}
+
+func (e *SimpleEnforcer) filterNodeStatus(ctx context.Context, stats []*schema.Stat, originalStatusList []schema.NodeStatus) ([]common.Address, []uint8, error) {
 	nodeAddresses := make([]common.Address, 0, len(stats))
 	nodeStatusList := make([]uint8, 0, len(stats))
 
@@ -69,7 +78,32 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		}
 	}
 
-	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
+	// filter the exited node status and submit the demotion to the VSL.
+	// Fixme: deprecated if there is no alpha version node
+	alphaNodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
+		Version: lo.ToPtr(schema.NodeVersionAlpha),
+	})
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("find alpha nodes: %w", err)
+	}
+
+	alphaNodesVSLInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, lo.Map(alphaNodes, func(node *schema.Node, _ int) common.Address {
+		return node.Address
+	}))
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("get alpha nodes from chain: %w", err)
+	}
+
+	for i := range alphaNodesVSLInfo {
+		if alphaNodesVSLInfo[i].Status == uint8(schema.NodeStatusExiting) {
+			nodeAddresses = append(nodeAddresses, alphaNodes[i].Address)
+			nodeStatusList = append(nodeStatusList, uint8(schema.NodeStatusExited))
+		}
+	}
+
+	return nodeAddresses, nodeStatusList, nil
 }
 
 // generateMaps generates maps related to worker data.
