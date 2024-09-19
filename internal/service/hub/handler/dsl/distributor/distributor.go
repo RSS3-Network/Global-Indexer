@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/url"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
+	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -153,8 +156,8 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 }
 
 // NewDistributor creates a new distributor.
-func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.StakingV2MulticallClient) (*Distributor, error) {
-	simpleEnforcer, err := enforcer.NewSimpleEnforcer(ctx, database, cache, stakingContract, httpClient, true)
+func NewDistributor(ctx context.Context, database database.Client, cache cache.Client, httpClient httputil.Client, stakingContract *l2.StakingV2MulticallClient, networkParamsContract *l2.NetworkParams, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler, chainID *big.Int) (*Distributor, error) {
+	simpleEnforcer, err := enforcer.NewSimpleEnforcer(ctx, database, cache, stakingContract, networkParamsContract, httpClient, txManager, settlerConfig, chainID, true)
 
 	if err != nil {
 		return nil, err

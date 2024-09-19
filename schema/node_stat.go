@@ -23,6 +23,8 @@ type Stat struct {
 	FederatedNetwork     int            `json:"federated_network"`
 	Indexer              int            `json:"indexer"`
 	ResetAt              time.Time      `json:"reset_at"`
+
+	Status NodeStatus `json:"-"`
 }
 
 type StatQuery struct {

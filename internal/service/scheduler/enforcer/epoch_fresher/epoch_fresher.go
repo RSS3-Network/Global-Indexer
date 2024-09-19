@@ -31,7 +31,7 @@ type server struct {
 	cronJob                   *cronjob.CronJob
 	blockNumber               uint64
 	simpleEnforcer            *enforcer.SimpleEnforcer
-	stakingContract           *l2.StakingV2MulticallClient
+	contractStakingEvents     *l2.Events
 	settlementContract        *l2.Settlement
 	ethereumClient            *ethclient.Client
 	settlementContractAddress common.Address
@@ -156,7 +156,7 @@ func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
 	}
 
 	// Parse the RewardDistributed event to get the epoch.
-	event, err := s.stakingContract.ParseRewardDistributed(logs[0])
+	event, err := s.contractStakingEvents.ParseRewardDistributed(logs[0])
 	if err != nil {
 		return fmt.Errorf("parse RewardDistributed event: %w", err)
 	}
@@ -172,12 +172,12 @@ func (s *server) processLogs(ctx context.Context, logs []types.Log) error {
 	return nil
 }
 
-func New(redis *redis.Client, ethereumClient *ethclient.Client, blockNumber uint64, simpleEnforcer *enforcer.SimpleEnforcer, stakingContract *l2.StakingV2MulticallClient, settlementContract *l2.Settlement, settlementContractAddress common.Address) service.Server {
+func New(redis *redis.Client, ethereumClient *ethclient.Client, blockNumber uint64, simpleEnforcer *enforcer.SimpleEnforcer, contractStakingEvents *l2.Events, settlementContract *l2.Settlement, settlementContractAddress common.Address) service.Server {
 	return &server{
 		cronJob:                   cronjob.New(redis, Name, 1*time.Minute),
 		blockNumber:               blockNumber,
 		settlementContract:        settlementContract,
-		stakingContract:           stakingContract,
+		contractStakingEvents:     contractStakingEvents,
 		simpleEnforcer:            simpleEnforcer,
 		ethereumClient:            ethereumClient,
 		settlementContractAddress: settlementContractAddress,

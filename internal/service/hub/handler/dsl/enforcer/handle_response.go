@@ -110,6 +110,8 @@ func (e *SimpleEnforcer) batchUpdateScoreMaintainer(ctx context.Context, respons
 		})
 	}
 
+	// TODO: submit demotion to VSL
+
 	if err := statsPool.Wait(); err != nil {
 		zap.L().Error("failed to update score maintainer", zap.Error(err))
 	}

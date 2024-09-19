@@ -33,6 +33,7 @@ type handler struct {
 	contractStakingV1              *stakingv1.Staking
 	contractStakingV2              *stakingv2.Staking
 	contractChips                  *l2.Chips
+	contractStakingEvents          *l2.Events
 	confirmPreviousBlocksOnce      sync.Once
 }
 
@@ -216,6 +217,7 @@ func NewHandler(chainID uint64, ethereumClient *ethclient.Client, cacheClient ca
 		contractStakingV1:              contractStakingV1,
 		contractStakingV2:              contractStakingV2,
 		contractChips:                  lo.Must(l2.NewChips(contractAddresses.AddressChipsProxy, ethereumClient)),
+		contractStakingEvents:          lo.Must(l2.NewEvents(contractAddresses.AddressStakingProxy, ethereumClient)),
 	}
 
 	return &instance, nil

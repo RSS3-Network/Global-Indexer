@@ -12,8 +12,10 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/docs"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/nameresolver"
 	"github.com/rss3-network/global-indexer/internal/service"
@@ -42,8 +44,8 @@ func (s *Server) Run(_ context.Context) error {
 	return s.httpServer.Start(address)
 }
 
-func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver, httpClient httputil.Client) (service.Server, error) {
-	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService, httpClient)
+func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, config *config.File) (service.Server, error) {
+	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService, httpClient, txManager, config.Settler)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}

@@ -183,9 +183,10 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 	node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 	node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 	node.TotalShares = nodeInfo.TotalShares.String()
-	node.SlashedTokens = nodeInfo.SlashedTokens.String()
+	node.SlashedTokens = big.NewInt(0).Add(nodeInfo.SlashedStakingPoolTokens, nodeInfo.SlashedOperationPoolTokens).String()
 	node.Alpha = nodeInfo.Alpha
 	node.ReliabilityScore = reliabilityScore
+	node.Status = schema.NodeStatus(nodeInfo.Status)
 
 	return node, nil
 }
@@ -245,7 +246,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.DataTypesNode) (common.Address, stakingv2.DataTypesNode) {
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
 		return node.Account, node
 	})
 
@@ -261,7 +262,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return stat.Address, stat.Score
 	})
 
-	var publicGoodPool *stakingv2.DataTypesNode
+	var publicGoodPool *stakingv2.Node
 
 	for _, node := range nodes {
 		if score, exists := nodeStatsMap[node.Address]; exists {
@@ -277,8 +278,10 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 			node.OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 			node.StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			node.TotalShares = nodeInfo.TotalShares.String()
-			node.SlashedTokens = nodeInfo.SlashedTokens.String()
+			node.SlashedTokens = big.NewInt(0).Add(nodeInfo.SlashedStakingPoolTokens, nodeInfo.SlashedOperationPoolTokens).String()
 			node.Alpha = nodeInfo.Alpha
+			// get node status from chain
+			node.Status = schema.NodeStatus(nodeInfo.Status)
 		}
 
 		if node.IsPublicGood {

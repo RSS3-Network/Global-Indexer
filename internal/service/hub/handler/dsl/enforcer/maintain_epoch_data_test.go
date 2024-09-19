@@ -3,6 +3,7 @@ package enforcer
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -98,7 +99,7 @@ func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 
-func TestGetNodeWorkerStatus(t *testing.T) {
+func Test_GetNodeWorkerStatus(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(MockHTTPClient)
@@ -111,7 +112,7 @@ func TestGetNodeWorkerStatus(t *testing.T) {
 	assert.Equal(t, workerInfoNode1, response.Data.Decentralized)
 }
 
-func TestGenerateMaps(t *testing.T) {
+func Test_GenerateMaps(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(MockHTTPClient)
@@ -119,23 +120,32 @@ func TestGenerateMaps(t *testing.T) {
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode2))), nil)
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode3))), nil)
 
-	enforcer := &SimpleEnforcer{httpClient: mockClient}
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+
+	enforcer := &SimpleEnforcer{
+		httpClient: mockClient,
+	}
 	stats := []*schema.Stat{
 		{
 			Address:  common.Address{1},
 			Endpoint: "http://localhost:8080",
+			Status:   schema.NodeStatusOnline,
 		},
 		{
 			Address:  common.Address{2},
 			Endpoint: "http://localhost:8081",
+			Status:   schema.NodeStatusOnline,
 		},
 		{
 			Address:  common.Address{3},
 			Endpoint: "http://localhost:8082",
+			Status:   schema.NodeStatusOnline,
 		},
 	}
 
-	nodeToWorkersMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := enforcer.generateMaps(context.Background(), stats)
+	nodeToWorkersMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := enforcer.generateMaps(context.Background(), stats, "v1.0.0")
 
 	expectedNodeToWorkersMap := map[common.Address]*ComponentInfo{
 		common.Address{1}: {
@@ -423,4 +433,75 @@ func TestGenerateMaps(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedTagToWorkersMap, tagToWorkersMap)
+}
+
+func Test_GenerateMapsNodeStatus(t *testing.T) {
+	t.Parallel()
+
+	mockClient := new(MockHTTPClient)
+
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeOnline))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeUnhealthy))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeIndexing))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8083/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeIndexing))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8084/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(``))), errors.New("workers_status"))
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8085/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeIndexing))), nil)
+
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8081/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8083/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeOutdated))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8084/info").Return(io.NopCloser(bytes.NewReader([]byte(nodeInfo))), nil)
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8085/info").Return(io.NopCloser(bytes.NewReader([]byte(``))), errors.New("info"))
+
+	enforcer := &SimpleEnforcer{
+		httpClient: mockClient,
+	}
+	stats := []*schema.Stat{
+		{
+			Address:  common.Address{0},
+			Endpoint: "http://localhost:8080",
+			Status:   schema.NodeStatusOnline,
+		},
+		{
+			Address:  common.Address{1},
+			Endpoint: "http://localhost:8081",
+			Status:   schema.NodeStatusOnline,
+		},
+		{
+			Address:  common.Address{2},
+			Endpoint: "http://localhost:8082",
+			Status:   schema.NodeStatusOnline,
+		},
+		{
+			Address:  common.Address{3},
+			Endpoint: "http://localhost:8083",
+			Status:   schema.NodeStatusOnline,
+		},
+		{
+			Address:  common.Address{4},
+			Endpoint: "http://localhost:8084",
+			Status:   schema.NodeStatusRegistered,
+		},
+		{
+			Address:  common.Address{5},
+			Endpoint: "http://localhost:8085",
+			Status:   schema.NodeStatusRegistered,
+		},
+		{
+			Address:  common.Address{6},
+			Endpoint: "http://localhost:8080",
+			Status:   schema.NodeStatusExiting,
+		},
+	}
+
+	_, _, _, _, _ = enforcer.generateMaps(context.Background(), stats, "v1.0.0")
+
+	assert.Equal(t, schema.NodeStatusOnline, stats[0].Status)
+	assert.Equal(t, schema.NodeStatusRegistered, stats[1].Status)
+	assert.Equal(t, schema.NodeStatusInitializing, stats[2].Status)
+	assert.Equal(t, schema.NodeStatusOutdated, stats[3].Status)
+	assert.Equal(t, schema.NodeStatusOffline, stats[4].Status)
+	assert.Equal(t, schema.NodeStatusOffline, stats[5].Status)
+	assert.Equal(t, schema.NodeStatusExited, stats[6].Status)
 }

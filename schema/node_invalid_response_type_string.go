@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeInvalidResponseTypeName = "inconsistenterror"
+const _NodeInvalidResponseTypeName = "inconsistenterroroffline"
 
-var _NodeInvalidResponseTypeIndex = [...]uint8{0, 12, 17}
+var _NodeInvalidResponseTypeIndex = [...]uint8{0, 12, 17, 24}
 
-const _NodeInvalidResponseTypeLowerName = "inconsistenterror"
+const _NodeInvalidResponseTypeLowerName = "inconsistenterroroffline"
 
 func (i NodeInvalidResponseType) String() string {
 	if i < 0 || i >= NodeInvalidResponseType(len(_NodeInvalidResponseTypeIndex)-1) {
@@ -32,20 +32,24 @@ func _NodeInvalidResponseTypeNoOp() {
 	var x [1]struct{}
 	_ = x[NodeInvalidResponseTypeInconsistent-(0)]
 	_ = x[NodeInvalidResponseTypeError-(1)]
+	_ = x[NodeInvalidResponseTypeOffline-(2)]
 }
 
-var _NodeInvalidResponseTypeValues = []NodeInvalidResponseType{NodeInvalidResponseTypeInconsistent, NodeInvalidResponseTypeError}
+var _NodeInvalidResponseTypeValues = []NodeInvalidResponseType{NodeInvalidResponseTypeInconsistent, NodeInvalidResponseTypeError, NodeInvalidResponseTypeOffline}
 
 var _NodeInvalidResponseTypeNameToValueMap = map[string]NodeInvalidResponseType{
 	_NodeInvalidResponseTypeName[0:12]:       NodeInvalidResponseTypeInconsistent,
 	_NodeInvalidResponseTypeLowerName[0:12]:  NodeInvalidResponseTypeInconsistent,
 	_NodeInvalidResponseTypeName[12:17]:      NodeInvalidResponseTypeError,
 	_NodeInvalidResponseTypeLowerName[12:17]: NodeInvalidResponseTypeError,
+	_NodeInvalidResponseTypeName[17:24]:      NodeInvalidResponseTypeOffline,
+	_NodeInvalidResponseTypeLowerName[17:24]: NodeInvalidResponseTypeOffline,
 }
 
 var _NodeInvalidResponseTypeNames = []string{
 	_NodeInvalidResponseTypeName[0:12],
 	_NodeInvalidResponseTypeName[12:17],
+	_NodeInvalidResponseTypeName[17:24],
 }
 
 // NodeInvalidResponseTypeString retrieves an enum value from the enum constants string name.

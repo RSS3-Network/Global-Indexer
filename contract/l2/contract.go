@@ -13,6 +13,7 @@ import (
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Chips.abi --pkg l2 --type Chips --out contract_chips.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Settlement.abi --pkg l2 --type Settlement --out contract_settlement.go
 //go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/NetworkParams.abi --pkg l2 --type NetworkParams --out contract_network_params.go
+//go:generate go run --mod=mod github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5 --abi ./abi/Events.abi --pkg l2 --type Events --out contract_events.go
 
 const (
 	ChainIDMainnet = 12553
@@ -72,11 +73,15 @@ var (
 	EventHashStakingV2ChipsMerged       = crypto.Keccak256Hash([]byte("ChipsMerged(address,address,uint256,uint256[])"))
 	EventHashStakingV2WithdrawalClaimed = crypto.Keccak256Hash([]byte("WithdrawalClaimed(uint256,address,uint256)"))
 
-	EventHashChipsTransfer = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	EventHashChipsTransfer     = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	EventHashNodeStatusChanged = crypto.Keccak256Hash([]byte("NodeStatusChanged(address,uint8,uint8)"))
 )
 
 var (
 	MethodDistributeRewards                = "distributeRewards"
+	MethodSetNodeStatus                    = "setNodeStatus"
+	MethodSubmitDemotions                  = "submitDemotions"
+	MethodMulticall                        = "multicall"
 	MethodSetTaxRateBasisPoints4PublicPool = "setTaxRateBasisPoints4PublicPool"
 )
 

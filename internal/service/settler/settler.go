@@ -147,7 +147,8 @@ func (s *Server) retryEpochProof(ctx context.Context, epochID uint64) error {
 func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Float, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
-	batchSize := s.settlerConfig.BatchSize
+	// TODO: This method needs to be refactored when the number of nodes exceeds the batch size value.
+	batchSize := s.config.Settler.BatchSize
 
 	// Find qualified Nodes from the database
 	query := schema.FindNodesQuery{
@@ -157,7 +158,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Set the Node version to Normal after the grace period
-	if epoch >= uint64(s.settlerConfig.ProductionStartEpoch+s.settlerConfig.GracePeriodEpochs) {
+	if epoch >= uint64(s.config.Settler.ProductionStartEpoch+s.config.Settler.GracePeriodEpochs) {
 		query.Version = lo.ToPtr(schema.NodeVersionProduction)
 	}
 
@@ -186,41 +187,41 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	// Update the Node staking data from the VSL.
-	if err := s.fetchNodePoolSizes(nodeAddresses, nodes); err != nil {
+	filterNodes, filterNodeAddresses, err := s.filter(nodeAddresses, nodes)
+	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.activeScores.EpochLimit)
+	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.config.ActiveScores.EpochLimit)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
 	}
 
-	scores, err := calculateActiveScores(nodes, recentStakers, s.activeScores)
+	scores, err := calculateActiveScores(filterNodes, recentStakers, s.config.ActiveScores)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("calculate active scores: %w", err)
 	}
 
 	// Calculate the number of requests for the Nodes
-	requestCount, _, err := s.prepareRequestCounts(ctx, nodeAddresses)
+	requestCount, _, err := s.prepareRequestCounts(ctx, filterNodeAddresses)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(nodes, requestCount, s.rewards)
+	operationRewards, err := calculateOperationRewards(filterNodes, requestCount, s.config.Rewards)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	return &schema.SettlementData{
 		Epoch:            big.NewInt(int64(epoch)),
-		NodeAddress:      nodeAddresses,
+		NodeAddress:      filterNodeAddresses,
 		OperationRewards: operationRewards,
 		RequestCount:     requestCount,
 		IsFinal:          isFinal,
-	}, nodes, scores, nil
+	}, filterNodes, scores, nil
 }
 
 func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, nodes []*schema.Node) error {
@@ -274,7 +275,7 @@ func (s *Server) sendTransaction(ctx context.Context, input []byte) (*types.Rece
 	txCandidate := txmgr.TxCandidate{
 		TxData:   input,
 		To:       lo.ToPtr(l2.ContractMap[s.chainID.Uint64()].AddressSettlementProxy),
-		GasLimit: s.settlerConfig.GasLimit,
+		GasLimit: s.config.Settler.GasLimit,
 		Value:    big.NewInt(0),
 	}
 

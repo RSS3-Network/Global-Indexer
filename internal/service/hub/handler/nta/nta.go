@@ -5,14 +5,12 @@ import (
 	"math/big"
 	"net/url"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"go.uber.org/zap"
 )
 
 type NTA struct {
@@ -34,13 +32,6 @@ func (n *NTA) baseURL(c echo.Context) url.URL {
 }
 
 func NewNTA(_ context.Context, databaseClient database.Client, stakingContract *l2.StakingV2MulticallClient, networkParamsContract *l2.NetworkParams, geoLite2 *geolite2.Client, cacheClient cache.Client, httpClient httputil.Client) *NTA {
-	minDeposit, err := stakingContract.MINDEPOSIT(&bind.CallOpts{})
-	if err != nil {
-		zap.L().Error("get min deposit", zap.Error(err))
-	}
-
-	MinDeposit = minDeposit
-
 	return &NTA{
 		databaseClient:        databaseClient,
 		stakingContract:       stakingContract,

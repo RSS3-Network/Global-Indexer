@@ -118,7 +118,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.DataTypesNode) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.Node) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -162,12 +162,9 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 		}
 	}
 
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
-	if err != nil {
-		return fmt.Errorf("update node status: %w", err)
-	}
-
+	node.Status = schema.NodeStatusOnline
 	node.Location, err = n.geoLite2.LookupNodeLocation(ctx, requestIP)
+
 	if err != nil {
 		zap.L().Error("get Node local error", zap.Error(err))
 	}
@@ -187,7 +184,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) error {
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.Node) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update node stat: %w", err)
@@ -196,7 +193,7 @@ func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo s
 	return n.databaseClient.SaveNodeStat(ctx, stat)
 }
 
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.DataTypesNode) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.Node) (*schema.Stat, error) {
 	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)
@@ -260,7 +257,7 @@ func (n *NTA) heartbeat(ctx context.Context, request *nta.NodeHeartbeatRequest, 
 	}
 
 	node.LastHeartbeatTimestamp = time.Now().Unix()
-	err = nta.UpdateNodeStatus(node, schema.NodeStatusOnline)
+	node.Status = schema.NodeStatusOnline
 
 	if err != nil {
 		return fmt.Errorf("update node status: %w", err)

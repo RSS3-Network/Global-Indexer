@@ -3,15 +3,18 @@ package hub
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
+	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
+	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/config/flag"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/nameresolver"
@@ -39,7 +42,7 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client) (*Hub, error) {
+func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler) (*Hub, error) {
 	chainID := viper.GetUint64(flag.KeyChainIDL2)
 
 	ethereumClient, err := ethereumMultiChainClient.Get(chainID)
@@ -64,13 +67,13 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	cacheClient := cache.New(redisClient)
 
-	dsl, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, httpClient)
+	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, networkParamsContract, httpClient, txManager, settlerConfig, new(big.Int).SetUint64(chainID))
 	if err != nil {
 		return nil, fmt.Errorf("new dsl: %w", err)
 	}
 
 	return &Hub{
-		dsl: dsl,
+		dsl: dslService,
 		nta: nta.NewNTA(ctx, databaseClient, stakingV2MulticallClient, networkParamsContract, geoLite2, cacheClient, httpClient),
 	}, nil
 }
