@@ -1746,9 +1746,15 @@
                     "status": {
                         "type": "string",
                         "enum": [
+                            "none",
                             "registered",
+                            "initializing",
+                            "outdated",
                             "online",
                             "offline",
+                            "slashing",
+                            "slashed",
+                            "exiting",
                             "exited"
                         ]
                     },
