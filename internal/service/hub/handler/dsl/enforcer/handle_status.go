@@ -207,6 +207,8 @@ func (e *SimpleEnforcer) updateNodeStatusAndSubmitDemotionToVSL(ctx context.Cont
 		return fmt.Errorf("invoke settlement contract: %w", err)
 	}
 
+	zap.L().Info("node statuses updated and demotions submitted")
+
 	return nil
 }
 
