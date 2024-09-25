@@ -71,6 +71,11 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 			switch nodeVSLInfo[i].Status {
 			// Handle cases for None, Registered, Outdated, and Initializing statuses
 			case uint8(schema.NodeStatusNone), uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated), uint8(schema.NodeStatusInitializing):
+				// It indicates that the node has not started.
+				// Keep the status as registered.
+				if nodes[i].Status == schema.NodeStatusRegistered {
+					continue
+				}
 				// Update node status based on VSL info
 				nodes[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
 				// Determine new status and potential error path
