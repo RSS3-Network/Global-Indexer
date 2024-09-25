@@ -138,7 +138,13 @@ func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) err
 }
 
 func (e *SimpleEnforcer) MaintainNodeStatus(ctx context.Context) error {
-	return e.maintainNodeStatus(ctx)
+	if err := e.maintainNodeStatus(ctx); err != nil {
+		return err
+	}
+
+	zap.L().Info("maintain node status completed")
+
+	return nil
 }
 
 func (e *SimpleEnforcer) ChallengeStates(_ context.Context) error {
