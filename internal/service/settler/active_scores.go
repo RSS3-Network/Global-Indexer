@@ -83,7 +83,12 @@ func (s *Server) filter(nodeAddresses []common.Address, nodes []*schema.Node) ([
 	)
 
 	for i := range nodes {
-		if nodeInfo, ok := nodeInfoMap[nodes[i].Address]; ok && (nodeInfo.Status == uint8(schema.NodeStatusRegistered) || nodeInfo.Status == uint8(schema.NodeStatusInitializing) || nodeInfo.Status == uint8(schema.NodeStatusOutdated) || nodeInfo.Status == uint8(schema.NodeStatusOnline)) {
+		if nodeInfo, ok := nodeInfoMap[nodes[i].Address]; ok &&
+			(nodeInfo.Status == uint8(schema.NodeStatusRegistered) ||
+				nodeInfo.Status == uint8(schema.NodeStatusInitializing) ||
+				nodeInfo.Status == uint8(schema.NodeStatusOutdated) ||
+				nodeInfo.Status == uint8(schema.NodeStatusOnline) ||
+				nodeInfo.Status == uint8(schema.NodeStatusExiting)) {
 			nodes[i].StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			nodes[i].OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 
