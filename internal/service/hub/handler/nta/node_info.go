@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"net/http"
@@ -164,6 +165,11 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		reliabilityScore = decimal.NewFromFloat(nodeStat.Score)
 	}
 
+	if reliabilityScore.IsZero() {
+		// set baseline score
+		node.ReliabilityScore = setReliabilityBaselineScore(nodeInfo.StakingPoolTokens)
+	}
+
 	if nodeInfo.PublicGood {
 		publicPool, err := n.stakingContract.GetPublicPool(&bind.CallOpts{})
 		if err != nil {
@@ -264,9 +270,14 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 
 	var publicGoodPool *stakingv2.Node
 
-	for _, node := range nodes {
+	for i, node := range nodes {
 		if score, exists := nodeStatsMap[node.Address]; exists {
 			node.ReliabilityScore = decimal.NewFromFloat(score)
+		}
+
+		if node.ReliabilityScore.IsZero() {
+			// set baseline score
+			node.ReliabilityScore = setReliabilityBaselineScore(nodeInfo[i].StakingPoolTokens)
 		}
 
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
@@ -301,6 +312,11 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 	}
 
 	return nodes, nil
+}
+
+func setReliabilityBaselineScore(stakingTokens *big.Int) decimal.Decimal {
+	staking, _ := stakingTokens.Div(stakingTokens, big.NewInt(1e18)).Float64()
+	return decimal.NewFromFloat(math.Min(math.Log(staking/100000+1)/math.Log(2), 0.2))
 }
 
 func (n *NTA) getNodeAvatar(ctx context.Context, address common.Address) ([]byte, error) {
