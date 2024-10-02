@@ -150,6 +150,11 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			stake.GET("/transactions/:transaction_hash", instance.hub.nta.GetStakeTransaction)
 		}
 
+		token := nta.Group("/token")
+		{
+			token.GET("/supply", instance.hub.nta.GetTokenSupply)
+		}
+
 		dsl := nta.Group("/dsl")
 		{
 			dsl.GET("/total_requests", instance.hub.nta.GetDslTotalRequests)

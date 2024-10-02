@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
@@ -20,6 +21,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/nameresolver"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/nta"
+	"github.com/samber/lo"
 	"github.com/spf13/viper"
 )
 
@@ -72,8 +74,10 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 		return nil, fmt.Errorf("new dsl: %w", err)
 	}
 
+	contractGovernanceToken := lo.Must(bindings.NewGovernanceToken(l2.AddressGovernanceTokenProxy, ethereumClient))
+
 	return &Hub{
 		dsl: dslService,
-		nta: nta.NewNTA(ctx, databaseClient, stakingV2MulticallClient, networkParamsContract, geoLite2, cacheClient, httpClient),
+		nta: nta.NewNTA(ctx, databaseClient, stakingV2MulticallClient, networkParamsContract, contractGovernanceToken, geoLite2, cacheClient, httpClient),
 	}, nil
 }
