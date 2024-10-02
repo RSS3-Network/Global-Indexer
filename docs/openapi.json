@@ -70,6 +70,7 @@
             "get": {
                 "summary": "Get Activity by ID",
                 "description": "This endpoint retrieves the details of a specified decentralized transaction activity by its ID. You can also specify additional query parameters to limit the number of actions retrieved and to paginate through actions.",
+                "operationId": "getActivityById",
                 "tags": [
                     "Decentralized",
                     "DSL"
@@ -102,6 +103,7 @@
             "get": {
                 "summary": "Get Account Activities",
                 "description": "This endpoint retrieves the activities associated with a specified account in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "operationId": "getAccountActivities",
                 "tags": [
                     "Decentralized",
                     "DSL"
@@ -161,6 +163,7 @@
             "post": {
                 "summary": "Batch Get Accounts Activities",
                 "description": "Retrieve a batch of activities associated with multiple specified accounts in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "operationId": "batchGetAccountsActivities",
                 "tags": [
                     "Decentralized",
                     "DSL"
@@ -185,6 +188,7 @@
             "get": {
                 "summary": "Get Network Activities",
                 "description": "Retrieve a list of activities from the specified decentralized network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getNetworkActivities",
                 "tags": [
                     "Decentralized",
                     "DSL"
@@ -241,6 +245,7 @@
             "get": {
                 "summary": "Get Platform Activities",
                 "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getPlatformActivities",
                 "tags": [
                     "Decentralized",
                     "DSL"
@@ -296,6 +301,7 @@
         "/rss/{path}": {
             "get": {
                 "summary": "Get RSS Activity by Path",
+                "operationId": "getRSSActivityByPath",
                 "tags": [
                     "RSS",
                     "DSL"
@@ -322,6 +328,7 @@
             "get": {
                 "summary": "Get bridging transactions",
                 "description": "Retrieve a list of bridging transactions based on various query parameters such as cursor, sender, receiver, address, transaction type, and limit. This endpoint allows users to filter transactions to get precise data related to deposits and withdrawals. The response includes detailed transaction information, including sender and receiver addresses, token details, and associated events such as deposit initialization and finalization. Use this endpoint for monitoring, auditing, or analyzing bridging transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "operationId": "getBridgingTransactions",
                 "tags": [
                     "Bridge",
                     "NTA"
@@ -363,6 +370,7 @@
             "get": {
                 "summary": "Get bridging transaction by hash",
                 "description": "Retrieve detailed information of a bridging transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single transaction, including sender, receiver, token details, and related events.",
+                "operationId": "getBridgingTransactionByHash",
                 "tags": [
                     "Bridge",
                     "NTA"
@@ -389,6 +397,7 @@
             "get": {
                 "summary": "Get staking transactions",
                 "description": "Retrieve a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "operationId": "getStakingTransactions",
                 "tags": [
                     "Stake",
                     "NTA"
@@ -430,6 +439,7 @@
             "get": {
                 "summary": "Get staking transaction by hash",
                 "description": "Retrieve detailed information of a staking transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, node address, value staked, associated chips, and related events.",
+                "operationId": "getStakingTransactionByHash",
                 "tags": [
                     "Stake",
                     "NTA"
@@ -456,6 +466,7 @@
             "get": {
                 "summary": "Get a list of stakers and Nodes",
                 "description": "Retrieve a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
+                "operationId": "getStakersAndNodes",
                 "tags": [
                     "Stake",
                     "NTA"
@@ -491,6 +502,7 @@
             "get": {
                 "summary": "Get staking profit of a staker",
                 "description": "Retrieve the staking profit information for a specified staker. This endpoint returns detailed profit data, including the owner's address, total chip amount, total chip value, and profit and loss (PNL) data over different time periods (one day, one week, one month).",
+                "operationId": "getStakerProfit",
                 "tags": [
                     "Stake",
                     "NTA"
@@ -517,6 +529,7 @@
             "get": {
                 "summary": "Get the number of nodes, chips, and tokens staked of a staker",
                 "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
+                "operationId": "getStakerStats",
                 "tags": [
                     "Stake",
                     "NTA"
@@ -543,6 +556,7 @@
             "get": {
                 "summary": "Get all chips",
                 "description": "Retrieve a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
+                "operationId": "getAllChips",
                 "tags": [
                     "Chips",
                     "NTA"
@@ -581,6 +595,7 @@
             "get": {
                 "summary": "Get Chips by chip id",
                 "description": "Retrieve detailed information about a specific chip by its unique chip ID. This endpoint returns comprehensive data about the chip, including its node address, owner address, and metadata such as name, description, and image.",
+                "operationId": "getChipById",
                 "tags": [
                     "Chips",
                     "NTA"
@@ -610,6 +625,7 @@
             "get": {
                 "summary": "Get Chips image by id",
                 "description": "Retrieve the image of a specific chip by its unique chip ID. This endpoint returns the SVG image associated with the chip.",
+                "operationId": "getChipImageById",
                 "tags": [
                     "Chips",
                     "NTA"
@@ -639,6 +655,7 @@
             "get": {
                 "summary": "Get snapshots of Node count",
                 "description": "Retrieve snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
+                "operationId": "getNodeCountSnapshots",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -660,6 +677,7 @@
             "get": {
                 "summary": "Get snapshots of staker count",
                 "description": "Retrieve snapshots of the total staker count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of stakers on that date.",
+                "operationId": "getStakerCountSnapshots",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -681,6 +699,7 @@
             "get": {
                 "summary": "Get snapshots of the staker profit",
                 "description": "Retrieve snapshots of the staker profit over time. This endpoint allows filtering by staker address, date range, and pagination parameters.",
+                "operationId": "getStakerProfitSnapshots",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -719,6 +738,7 @@
             "get": {
                 "summary": "Get snapshots of operation profit",
                 "description": "Retrieve snapshots of the operation profit over time for a specific node. This endpoint allows filtering by node address, date range, and pagination parameters.",
+                "operationId": "getNodeOperationProfitSnapshots",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -757,6 +777,7 @@
             "get": {
                 "summary": "Get the APY of epoch snapshots",
                 "description": "Retrieve the Annual Percentage Yield (APY) for epoch snapshots. This endpoint returns an array of objects, each containing the epoch details and the corresponding APY.",
+                "operationId": "getEpochAPYSnapshots",
                 "tags": [
                     "Snapshots",
                     "NTA"
@@ -778,6 +799,7 @@
             "get": {
                 "summary": "Get all Nodes",
                 "description": "Retrieve a list of all nodes. This endpoint allows filtering by cursor, limit, and node address. The default limit is 10 and the maximum limit is 50.",
+                "operationId": "getAllNodes",
                 "tags": [
                     "Node",
                     "NTA"
@@ -813,6 +835,7 @@
             "get": {
                 "summary": "Get Node by address",
                 "description": "Retrieve detailed information about a specific node by its address.",
+                "operationId": "getNodeByAddress",
                 "tags": [
                     "Node",
                     "NTA"
@@ -842,6 +865,7 @@
             "get": {
                 "summary": "Get Node avatar by address",
                 "description": "Retrieve the avatar of a specific node by its address. This endpoint returns the SVG image associated with the node.",
+                "operationId": "getNodeAvatarByAddress",
                 "tags": [
                     "Node",
                     "NTA"
@@ -871,6 +895,7 @@
             "get": {
                 "summary": "Get Node transaction events by address",
                 "description": "Retrieve the transaction events for a specific node by its address. This endpoint allows filtering by cursor and limit for pagination.",
+                "operationId": "getNodeEventsByAddress",
                 "tags": [
                     "Node",
                     "NTA"
@@ -903,6 +928,7 @@
             "get": {
                 "summary": "Get Node operation profit by address",
                 "description": "Retrieve the operation profit details for a specific node by its address. This endpoint provides detailed profit and loss (PNL) information over different time periods.",
+                "operationId": "getNodeOperationProfitByAddress",
                 "tags": [
                     "Node",
                     "NTA"
@@ -932,6 +958,7 @@
             "get": {
                 "summary": "Get all epochs",
                 "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
+                "operationId": "getAllEpochs",
                 "tags": [
                     "Epoch",
                     "NTA"
@@ -961,6 +988,7 @@
             "get": {
                 "summary": "Get epoch by id",
                 "description": "Retrieve detailed information about a specific epoch by its ID.",
+                "operationId": "getEpochById",
                 "tags": [
                     "Epoch",
                     "NTA"
@@ -990,6 +1018,7 @@
             "get": {
                 "summary": "Get epoch transaction by hash",
                 "description": "Retrieve details of an epoch transaction by its hash.",
+                "operationId": "getEpochTransactionByHash",
                 "tags": [
                     "Epoch",
                     "NTA"
@@ -1016,6 +1045,7 @@
             "get": {
                 "summary": "Get Node rewards by epoch",
                 "description": "Retrieve the rewards of a specific node by epoch. This endpoint allows filtering by cursor and limit for pagination.",
+                "operationId": "getNodeRewardsByEpoch",
                 "tags": [
                     "Epoch",
                     "NTA"
@@ -1051,6 +1081,7 @@
             "get": {
                 "summary": "Get the average of epochs APY",
                 "description": "Retrieve the average Annual Percentage Yield (APY) for all epochs.",
+                "operationId": "getEpochsAverageAPY",
                 "tags": [
                     "Epoch",
                     "NTA"
@@ -1069,6 +1100,7 @@
             "get": {
                 "summary": "Get all compatible networks",
                 "description": "Retrieve a list of all compatible networks.",
+                "operationId": "getAllCompatibleNetworks",
                 "tags": [
                     "Networks",
                     "NTA"
@@ -1087,6 +1119,7 @@
             "get": {
                 "summary": "Get Node Assets",
                 "description": "Retrieve node assets details.",
+                "operationId": "getNodeAssets",
                 "tags": [
                     "Networks",
                     "NTA"
@@ -1105,6 +1138,7 @@
             "get": {
                 "summary": "Get available workers by network",
                 "description": "Retrieve a list of available workers for a specific network.",
+                "operationId": "getAvailableWorkersByNetwork",
                 "tags": [
                     "Networks",
                     "NTA"
@@ -1134,6 +1168,7 @@
             "get": {
                 "summary": "Get config by network and worker",
                 "description": "Retrieve the configuration details for a specific worker in a specific network.",
+                "operationId": "getWorkerConfigByNetworkAndWorker",
                 "tags": [
                     "Networks",
                     "NTA"
@@ -1166,6 +1201,7 @@
             "get": {
                 "summary": "Get DSL total requests",
                 "description": "Retrieve the total number of requests made to the NTA API.",
+                "operationId": "getDSLTotalRequests",
                 "tags": [
                     "NTA"
                 ],
@@ -1191,8 +1227,9 @@
                     },
                     "metadata": {
                         "description": "Additional metadata related to the action.",
-                        "type": "object"
-                    ,"anyOf":[{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"}]},
+                        "type": "object",
+                        "anyOf": [{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"}]
+                    },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
                     },
@@ -1216,7 +1253,13 @@
                     }
                 },
                 "type": "object",
-                "required": ["from", "metadata", "related_urls", "to", "type"],
+                "required": [
+                    "from",
+                    "metadata",
+                    "related_urls",
+                    "to",
+                    "type"
+                ],
                 "example": {
                     "tag": "transaction",
                     "type": "transfer",
@@ -1250,7 +1293,9 @@
                     }
                 },
                 "type": "object",
-                "required": ["data"]
+                "required": [
+                    "data"
+                ]
             },
             "Activity": {
                 "properties": {
@@ -1324,7 +1369,17 @@
                     }
                 },
                 "type": "object",
-                "required": ["id", "owner", "from", "to", "index", "success",  "timestamp", "total_actions", "actions"]
+                "required": [
+                    "id",
+                    "owner",
+                    "from",
+                    "to",
+                    "index",
+                    "success",
+                    "timestamp",
+                    "total_actions",
+                    "actions"
+                ]
             },
             "ActivityResponse": {
                 "properties": {
@@ -1408,7 +1463,9 @@
                     "amount": "315699955320960",
                     "decimal": 18
                 },
-                "required": ["amount"]
+                "required": [
+                    "amount"
+                ]
             },
             "MetaCursor": {
                 "description": "Metadata for paginated responses.",
@@ -1419,7 +1476,9 @@
                     }
                 },
                 "type": "object",
-                "required": ["cursor"]
+                "required": [
+                    "cursor"
+                ]
             },
             "MetaTotalPages": {
                 "description": "Metadata indicating the total number of pages.",
@@ -1431,7 +1490,9 @@
                     }
                 },
                 "type": "object",
-                "required": ["totalPages"]
+                "required": [
+                    "totalPages"
+                ]
             },
             "BridgeTransaction": {
                 "type": "object",
@@ -1463,14 +1524,20 @@
                                         "example": "0x4200000000000000000000000000000000000042"
                                     }
                                 },
-                                "required": ["l1", "l2"]
+                                "required": [
+                                    "l1",
+                                    "l2"
+                                ]
                             },
                             "value": {
                                 "type": "string",
                                 "example": "10000000000000000000000"
                             }
                         },
-                        "required": ["address", "value"]
+                        "required": [
+                            "address",
+                            "value"
+                        ]
                     },
                     "event": {
                         "properties": {
@@ -1504,7 +1571,11 @@
                         }
                     }
                 },
-                "required": ["id", "sender", "receiver"]
+                "required": [
+                    "id",
+                    "sender",
+                    "receiver"
+                ]
             },
             "StakeTransaction": {
                 "type": "object",
@@ -1531,7 +1602,10 @@
                         "items": {
                             "type": "integer"
                         },
-                        "example": [1690, 1691]
+                        "example": [
+                            1690,
+                            1691
+                        ]
                     },
                     "event": {
                         "properties": {
@@ -1589,12 +1663,20 @@
                         }
                     }
                 },
-                "required": ["id", "staker", "node", "value"]
+                "required": [
+                    "id",
+                    "staker",
+                    "node",
+                    "value"
+                ]
             },
             "TransactionEvent": {
                 "type": "object",
                 "nullable": true,
-                "required": ["block", "transaction"],
+                "required": [
+                    "block",
+                    "transaction"
+                ],
                 "properties": {
                     "block": {
                         "properties": {
@@ -1608,11 +1690,18 @@
                                 "type": "integer"
                             }
                         },
-                        "required": ["hash", "number", "timestamp"]
+                        "required": [
+                            "hash",
+                            "number",
+                            "timestamp"
+                        ]
                     },
                     "transaction": {
                         "type": "object",
-                        "required": ["hash", "index"],
+                        "required": [
+                            "hash",
+                            "index"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -1652,7 +1741,11 @@
             },
             "StakeStaking": {
                 "type": "object",
-                "required": ["staker", "node", "chips"],
+                "required": [
+                    "staker",
+                    "node",
+                    "chips"
+                ],
                 "properties": {
                     "staker": {
                         "type": "string",
@@ -1664,7 +1757,10 @@
                     },
                     "chips": {
                         "type": "object",
-                        "required": ["total", "showcase"],
+                        "required": [
+                            "total",
+                            "showcase"
+                        ],
                         "properties": {
                             "total": {
                                 "type": "integer"
@@ -1681,7 +1777,14 @@
             },
             "Chip": {
                 "type": "object",
-                "required": ["id", "node", "owner", "metadata", "value", "latest_value"],
+                "required": [
+                    "id",
+                    "node",
+                    "owner",
+                    "metadata",
+                    "value",
+                    "latest_value"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -1697,7 +1800,11 @@
                     },
                     "metadata": {
                         "type": "object",
-                        "required": ["name", "description", "image"],
+                        "required": [
+                            "name",
+                            "description",
+                            "image"
+                        ],
                         "properties": {
                             "name": {
                                 "type": "string",
@@ -1727,7 +1834,22 @@
             },
             "Node": {
                 "type": "object",
-                "required": ["id", "address", "name", "description", "is_public_good", "operation_pool_tokens", "staking_pool_tokens", "total_shares", "slashed_tokens", "status", "last_heartbeat", "avatar", "min_tokens_to_stake", "created_at"],
+                "required": [
+                    "id",
+                    "address",
+                    "name",
+                    "description",
+                    "is_public_good",
+                    "operation_pool_tokens",
+                    "staking_pool_tokens",
+                    "total_shares",
+                    "slashed_tokens",
+                    "status",
+                    "last_heartbeat",
+                    "avatar",
+                    "min_tokens_to_stake",
+                    "created_at"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -1875,7 +1997,17 @@
             },
             "NodeEvent": {
                 "type": "object",
-                "required": ["address_from", "address_to", "node_id", "type", "log_index", "chain_id", "block", "transaction", "metadata"],
+                "required": [
+                    "address_from",
+                    "address_to",
+                    "node_id",
+                    "type",
+                    "log_index",
+                    "chain_id",
+                    "block",
+                    "transaction",
+                    "metadata"
+                ],
                 "properties": {
                     "address_from": {
                         "type": "string"
@@ -1901,7 +2033,11 @@
                     },
                     "block": {
                         "type": "object",
-                        "required": ["hash", "number", "timestamp"],
+                        "required": [
+                            "hash",
+                            "number",
+                            "timestamp"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -1916,7 +2052,10 @@
                     },
                     "transaction": {
                         "type": "object",
-                        "required": ["hash", "index"],
+                        "required": [
+                            "hash",
+                            "index"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -1931,7 +2070,14 @@
                         "properties": {
                             "node_created": {
                                 "type": "object",
-                                "required": ["node_id", "address", "name", "description", "tax_rate_basis_points", "is_public_good"],
+                                "required": [
+                                    "node_id",
+                                    "address",
+                                    "name",
+                                    "description",
+                                    "tax_rate_basis_points",
+                                    "is_public_good"
+                                ],
                                 "properties": {
                                     "node_id": {
                                         "type": "integer"
@@ -1955,7 +2101,11 @@
                             },
                             "node_updated": {
                                 "type": "object",
-                                "required": [ "address", "name", "description"],
+                                "required": [
+                                    "address",
+                                    "name",
+                                    "description"
+                                ],
                                 "properties": {
                                     "address": {
                                         "type": "string"
@@ -1992,7 +2142,13 @@
             },
             "StakerProfitSnapshot": {
                 "type": "object",
-                "required": ["address", "date", "epoch_id", "total_chip_amount","total_profit_value"],
+                "required": [
+                    "address",
+                    "date",
+                    "epoch_id",
+                    "total_chip_amount",
+                    "total_profit_value"
+                ],
                 "properties": {
                     "address": {
                         "type": "string",
@@ -2018,7 +2174,12 @@
             },
             "ChipPNL": {
                 "type": "object",
-                "required": ["date", "total_chip_amount", "total_chip_value", "profit_and_loss"],
+                "required": [
+                    "date",
+                    "total_chip_amount",
+                    "total_chip_value",
+                    "profit_and_loss"
+                ],
                 "properties": {
                     "date": {
                         "type": "string",
@@ -2040,7 +2201,12 @@
             },
             "OperationProfit": {
                 "type": "object",
-                "required": ["address", "date", "epoch_id", "operation_pool"],
+                "required": [
+                    "address",
+                    "date",
+                    "epoch_id",
+                    "operation_pool"
+                ],
                 "properties": {
                     "address": {
                         "type": "string"
@@ -2059,7 +2225,11 @@
             },
             "OperationProfitPNL": {
                 "type": "object",
-                "required": ["date", "operation_pool", "profit_and_loss"],
+                "required": [
+                    "date",
+                    "operation_pool",
+                    "profit_and_loss"
+                ],
                 "properties": {
                     "date": {
                         "type": "string",
@@ -2077,7 +2247,16 @@
             },
             "BriefEpoch": {
                 "type": "object",
-                "required": ["id", "start_timestamp", "end_timestamp", "total_operation_rewards", "total_staking_rewards", "total_request_counts", "total_reward_items", "distributions"],
+                "required": [
+                    "id",
+                    "start_timestamp",
+                    "end_timestamp",
+                    "total_operation_rewards",
+                    "total_staking_rewards",
+                    "total_request_counts",
+                    "total_reward_items",
+                    "distributions"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -2151,7 +2330,16 @@
             },
             "Epoch": {
                 "type": "object",
-                "required": ["id", "start_timestamp", "end_timestamp", "total_operation_rewards", "total_staking_rewards", "total_request_counts", "total_reward_items", "distributions"],
+                "required": [
+                    "id",
+                    "start_timestamp",
+                    "end_timestamp",
+                    "total_operation_rewards",
+                    "total_staking_rewards",
+                    "total_request_counts",
+                    "total_reward_items",
+                    "distributions"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -2191,7 +2379,17 @@
             },
             "BriefEpochDistribution": {
                 "type": "object",
-                "required": ["id", "start_timestamp", "end_timestamp", "transaction","block","total_operation_rewards","total_staking_rewards","total_request_counts","total_reward_items"],
+                "required": [
+                    "id",
+                    "start_timestamp",
+                    "end_timestamp",
+                    "transaction",
+                    "block",
+                    "total_operation_rewards",
+                    "total_staking_rewards",
+                    "total_request_counts",
+                    "total_reward_items"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -2204,7 +2402,10 @@
                     },
                     "transaction": {
                         "type": "object",
-                        "required": ["hash", "index"],
+                        "required": [
+                            "hash",
+                            "index"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -2216,7 +2417,11 @@
                     },
                     "block": {
                         "type": "object",
-                        "required": ["hash", "number", "timestamp"],
+                        "required": [
+                            "hash",
+                            "number",
+                            "timestamp"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -2245,7 +2450,18 @@
             },
             "EpochDistribution": {
                 "type": "object",
-                "required": ["id", "start_timestamp", "end_timestamp", "transaction","block","total_operation_rewards","total_staking_rewards","total_request_counts","total_reward_items","reward_items"],
+                "required": [
+                    "id",
+                    "start_timestamp",
+                    "end_timestamp",
+                    "transaction",
+                    "block",
+                    "total_operation_rewards",
+                    "total_staking_rewards",
+                    "total_request_counts",
+                    "total_reward_items",
+                    "reward_items"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer"
@@ -2258,7 +2474,10 @@
                     },
                     "transaction": {
                         "type": "object",
-                        "required": ["hash", "index"],
+                        "required": [
+                            "hash",
+                            "index"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -2270,7 +2489,11 @@
                     },
                     "block": {
                         "type": "object",
-                        "required": ["hash", "number", "timestamp"],
+                        "required": [
+                            "hash",
+                            "number",
+                            "timestamp"
+                        ],
                         "properties": {
                             "hash": {
                                 "type": "string"
@@ -2297,10 +2520,19 @@
                     },
                     "reward_items": {
                         "type": "array",
-                       "items": {
+                        "items": {
                             "type": "object",
-                           "required": ["epoch_id", "index", "transaction_hash", "node_address", "operation_rewards", "staking_rewards", "tax_collected", "request_count"],
-                           "properties": {
+                            "required": [
+                                "epoch_id",
+                                "index",
+                                "transaction_hash",
+                                "node_address",
+                                "operation_rewards",
+                                "staking_rewards",
+                                "tax_collected",
+                                "request_count"
+                            ],
+                            "properties": {
                                 "epoch_id": {
                                     "type": "integer"
                                 },
@@ -2362,7 +2594,12 @@
             },
             "WorkerDetail": {
                 "type": "object",
-                "required": ["is_required", "type", "value", "description"],
+                "required": [
+                    "is_required",
+                    "type",
+                    "value",
+                    "description"
+                ],
                 "properties": {
                     "is_required": {
                         "type": "boolean"
@@ -2511,7 +2748,11 @@
             },
             "EpochAPYSnapshot": {
                 "type": "object",
-                "required": ["date", "epoch_id", "apy"],
+                "required": [
+                    "date",
+                    "epoch_id",
+                    "apy"
+                ],
                 "properties": {
                     "date": {
                         "type": "string",
@@ -2534,7 +2775,10 @@
             },
             "ResponseError": {
                 "type": "object",
-                "required": ["error_code", "error"],
+                "required": [
+                    "error_code",
+                    "error"
+                ],
                 "properties": {
                     "error_code": {
                         "type": "string",
@@ -2550,7 +2794,10 @@
             },
             "CountSnapshot": {
                 "type": "object",
-                "required": ["date", "count"],
+                "required": [
+                    "date",
+                    "count"
+                ],
                 "properties": {
                     "date": {
                         "type": "string",
@@ -2561,8 +2808,35 @@
                         "example": 1
                     }
                 }
-            }
-        ,"ExchangeLiquidity":{"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},"ExchangeStaking":{"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},"ExchangeSwap":{"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},"SocialMint":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialProxy":{"properties":{"action":{"enum":["appoint","remove"],"type":"string"},"profile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"proxy_address":{"type":"string"}},"required":["proxy_address"],"type":"object"},"SocialPost":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialRevise":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialShare":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialDelete":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialComment":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialReward":{"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},"SocialProfile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"MetaverseTrade":{"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"MetaverseBurn":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"MetaverseMint":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"MetaverseTransfer":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"RssFeed":{"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},"TransactionApproval":{"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},"TransactionBridge":{"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},"TransactionTransfer":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"TransactionBurn":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"TransactionMint":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"CollectibleApproval":{"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},"CollectibleTrade":{"properties":{"action":{"enum":["buy","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},"CollectibleTransfer":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"CollectibleBurn":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"CollectibleMint":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},
+            },
+            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
+            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
+            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
+            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialProxy": {"properties":{"action":{"enum":["appoint","remove"],"type":"string"},"profile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"proxy_address":{"type":"string"}},"required":["proxy_address"],"type":"object"},
+            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialProfile": {"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "RssFeed": {"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},
+            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
+            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
+        },
         "parameters": {
             "activity_id_path": {
                 "description": "Retrieve details for the specified activity ID",
@@ -3235,7 +3509,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3263,7 +3540,11 @@
                                 "data": {
                                     "type": "object",
                                     "description": "Staking profit information for the specified staker.",
-                                    "required": ["owner", "total_chip_amount", "total_chip_value"],
+                                    "required": [
+                                        "owner",
+                                        "total_chip_amount",
+                                        "total_chip_value"
+                                    ],
                                     "properties": {
                                         "owner": {
                                             "type": "string",
@@ -3344,7 +3625,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3389,7 +3673,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3409,7 +3695,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3429,7 +3717,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3453,7 +3744,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3477,7 +3771,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3530,7 +3826,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3554,12 +3853,17 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "object",
                                     "description": "Operation profit details for the node.",
-                                    "required": ["node_address", "operation_pool"],
+                                    "required": [
+                                        "node_address",
+                                        "operation_pool"
+                                    ],
                                     "properties": {
                                         "node_address": {
                                             "type": "string",
@@ -3593,7 +3897,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3634,7 +3940,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3654,7 +3962,10 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data", "cursor"],
+                            "required": [
+                                "data",
+                                "cursor"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3678,7 +3989,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "string",
@@ -3696,7 +4009,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3716,7 +4031,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "array",
@@ -3737,7 +4054,9 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                            "required": ["data"],
+                            "required": [
+                                "data"
+                            ],
                             "properties": {
                                 "data": {
                                     "type": "object",
@@ -3745,14 +4064,14 @@
                                         "networks": {
                                             "type": "array",
                                             "description": "Array of network info details.",
-                                            "items":{
+                                            "items": {
                                                 "$ref": "#/components/schemas/NetworkAssetDetail"
                                             }
                                         },
                                         "workers": {
                                             "type": "array",
                                             "description": "Array of worker info details.",
-                                            "items":{
+                                            "items": {
                                                 "$ref": "#/components/schemas/WorkerAssetDetail"
                                             }
                                         }
@@ -3993,7 +4312,7 @@
                             "type": "object",
                             "properties": {
                                 "data": {
-                                   "$ref": "#/components/schemas/NetworkWorker"
+                                    "$ref": "#/components/schemas/NetworkWorker"
                                 }
                             }
                         }
