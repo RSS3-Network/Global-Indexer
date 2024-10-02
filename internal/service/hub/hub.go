@@ -12,6 +12,7 @@ import (
 	"github.com/rss3-network/global-indexer/common/geolite2"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/common/txmgr"
+	"github.com/rss3-network/global-indexer/contract/l1"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/client/ethereum"
@@ -44,7 +45,7 @@ func (v *Validator) Validate(i interface{}) error {
 	return v.validate.Struct(i)
 }
 
-func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, settlerConfig *config.Settler) (*Hub, error) {
+func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, config *config.File) (*Hub, error) {
 	chainID := viper.GetUint64(flag.KeyChainIDL2)
 
 	ethereumClient, err := ethereumMultiChainClient.Get(chainID)
@@ -69,15 +70,31 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	cacheClient := cache.New(redisClient)
 
-	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, networkParamsContract, httpClient, txManager, settlerConfig, new(big.Int).SetUint64(chainID))
+	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, networkParamsContract, httpClient, txManager, config.Settler, new(big.Int).SetUint64(chainID))
 	if err != nil {
 		return nil, fmt.Errorf("new dsl: %w", err)
 	}
 
 	contractGovernanceToken := lo.Must(bindings.NewGovernanceToken(l2.AddressGovernanceTokenProxy, ethereumClient))
 
+	chainL1ID := viper.GetUint64(flag.KeyChainIDL1)
+
+	ethereumL1Client, err := ethereumMultiChainClient.Get(chainL1ID)
+	if err != nil {
+		return nil, fmt.Errorf("get ethereum l1 client: %w", err)
+	}
+
+	erc20TokenMap := map[string]*bindings.GovernanceToken{
+		"rss3": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressGovernanceTokenProxy, ethereumL1Client)),
+		"usdc": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDCToken, ethereumL1Client)),
+		"usdt": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDTToken, ethereumL1Client)),
+		"weth": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressWETHToken, ethereumL1Client)),
+	}
+
+	addressL1StandardBridgeProxy := l1.ContractMap[chainL1ID].AddressL1StandardBridgeProxy
+
 	return &Hub{
 		dsl: dslService,
-		nta: nta.NewNTA(ctx, databaseClient, stakingV2MulticallClient, networkParamsContract, contractGovernanceToken, geoLite2, cacheClient, httpClient),
+		nta: nta.NewNTA(ctx, config, databaseClient, stakingV2MulticallClient, networkParamsContract, contractGovernanceToken, addressL1StandardBridgeProxy, geoLite2, cacheClient, httpClient, erc20TokenMap),
 	}, nil
 }
