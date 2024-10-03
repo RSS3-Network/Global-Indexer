@@ -14,6 +14,7 @@ type RegisterNodeRequest struct {
 	Config      json.RawMessage `json:"config,omitempty"`
 	Type        string          `json:"type" validate:"required,oneof=alpha beta production" default:"alpha"`
 	AccessToken string          `json:"access_token" validate:"required_if=Type production"`
+	Version     string          `json:"version" default:"v0.1.0"`
 }
 
 type NodeHeartbeatRequest struct {

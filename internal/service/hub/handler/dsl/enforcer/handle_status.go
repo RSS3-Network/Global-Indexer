@@ -59,61 +59,51 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	)
 
 	for i := range nodes {
-		// initial alpha version nodes are outdated.
-		// Fixme: deprecated if there is no alpha version node
-		if nodeVSLInfo[i].Status == uint8(schema.NodeStatusNone) && nodes[i].Version == schema.NodeVersionAlpha.String() {
-			nodes[i].Status = schema.NodeStatusOutdated
-			updatedNodes = append(updatedNodes, nodes[i])
-		}
+		switch nodeVSLInfo[i].Status {
+		// Handle cases for None, Registered, Outdated, and Initializing statuses
+		case uint8(schema.NodeStatusNone), uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated), uint8(schema.NodeStatusInitializing):
+			// It indicates that the node has not started.
+			// Keep the status as registered.
+			if nodes[i].Status == schema.NodeStatusRegistered {
+				continue
+			}
+			// Update node status based on VSL info
+			nodes[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+			// Determine new status and potential error path
+			newStatus, errPath := e.determineStatus(ctx, nodes[i], minVersion)
 
-		// Check if the node version is not alpha
-		if nodes[i].Version != schema.NodeVersionAlpha.String() {
-			switch nodeVSLInfo[i].Status {
-			// Handle cases for None, Registered, Outdated, and Initializing statuses
-			case uint8(schema.NodeStatusNone), uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated), uint8(schema.NodeStatusInitializing):
-				// It indicates that the node has not started.
-				// Keep the status as registered.
-				if nodes[i].Status == schema.NodeStatusRegistered {
-					continue
+			// If status has changed, update and handle accordingly
+			if nodes[i].Status != newStatus {
+				nodes[i].Status = newStatus
+				updatedNodes = append(updatedNodes, nodes[i])
+
+				// If new status is offline, save error information
+				if newStatus == schema.NodeStatusOffline {
+					responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, errPath))
+
+					e.saveOfflineStatusToInvalidResponse(ctx, uint64(currentEpoch), nodes[i].Address, fmt.Sprintf("%s/%s", nodes[i].Endpoint, errPath), responseValue)
 				}
-				// Update node status based on VSL info
-				nodes[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
-				// Determine new status and potential error path
-				newStatus, errPath := e.determineStatus(ctx, nodes[i], minVersion)
+			}
+		// Handle cases for Online and Exiting statuses
+		case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
+			// Retrieve node information from database
+			nodeDBInfo, err := e.databaseClient.FindNode(ctx, nodes[i].Address)
+			if err != nil {
+				zap.L().Error("find node", zap.Error(err), zap.Any("address", nodes[i].Address.String()))
 
-				// If status has changed, update and handle accordingly
-				if nodes[i].Status != newStatus {
-					nodes[i].Status = newStatus
-					updatedNodes = append(updatedNodes, nodes[i])
+				continue
+			}
 
-					// If new status is offline, save error information
-					if newStatus == schema.NodeStatusOffline {
-						responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, errPath))
-
-						e.saveOfflineStatusToInvalidResponse(ctx, uint64(currentEpoch), nodes[i].Address, fmt.Sprintf("%s/%s", nodes[i].Endpoint, errPath), responseValue)
-					}
-				}
-			// Handle cases for Online and Exiting statuses
-			case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
-				// Retrieve node information from database
-				nodeDBInfo, err := e.databaseClient.FindNode(ctx, nodes[i].Address)
-				if err != nil {
-					zap.L().Error("find node", zap.Error(err), zap.Any("address", nodes[i].Address.String()))
-
-					continue
-				}
-
-				// If node status from heartbeat is offline, update node status
-				if nodeDBInfo.Status == schema.NodeStatusOffline {
-					nodes[i].Status = schema.NodeStatusOffline
-					// TODO: slashing mechanism temporarily disabled.
-					// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
-					// reasons = append(reasons, "offline")
-					// reporters = append(reporters, ethereum.AddressGenesis)
-					responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, "heartbeat"))
-					e.saveOfflineStatusToInvalidResponse(ctx, uint64(currentEpoch), nodes[i].Address, "", responseValue)
-					updatedNodes = append(updatedNodes, nodes[i])
-				}
+			// If node status from heartbeat is offline, update node status
+			if nodeDBInfo.Status == schema.NodeStatusOffline {
+				nodes[i].Status = schema.NodeStatusOffline
+				// TODO: slashing mechanism temporarily disabled.
+				// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
+				// reasons = append(reasons, "offline")
+				// reporters = append(reporters, ethereum.AddressGenesis)
+				responseValue, _ := json.Marshal(fmt.Sprintf(`{"error_message": "%s"}`, "heartbeat"))
+				e.saveOfflineStatusToInvalidResponse(ctx, uint64(currentEpoch), nodes[i].Address, "", responseValue)
+				updatedNodes = append(updatedNodes, nodes[i])
 			}
 		}
 	}
@@ -123,16 +113,15 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 // determineStatus checks the node's status and version to determine its current state
 func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node, minVersion *version.Version) (schema.NodeStatus, string) {
-	// Get node info
-	nodeInfo, err := e.getNodeInfo(ctx, node.Endpoint, node.AccessToken)
-	if err != nil || nodeInfo == nil {
-		zap.L().Error("get node info", zap.Error(err), zap.Any("address", node.Address.String()), zap.Any("endpoint", node.Endpoint), zap.Any("access_token", node.AccessToken))
+	nodeInfo, err := e.databaseClient.FindNode(ctx, node.Address)
+	if err != nil {
+		zap.L().Error("find node", zap.Error(err), zap.Any("address", node.Address.String()))
 
 		return schema.NodeStatusOffline, "info"
 	}
 
 	// Check if node version meets minimum requirements
-	currentVersion, _ := version.NewVersion(nodeInfo.Data.Version.Tag)
+	currentVersion, _ := version.NewVersion(nodeInfo.Version)
 	if currentVersion.LessThan(minVersion) {
 		// Return outdated status if version is below minimum
 		return schema.NodeStatusOutdated, ""

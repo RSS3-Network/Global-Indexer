@@ -27,6 +27,7 @@ type Node struct {
 	APY                    decimal.Decimal   `gorm:"column:apy"`
 	Score                  decimal.Decimal   `gorm:"column:score"`
 	Version                string            `gorm:"column:version"`
+	Type                   string            `gorm:"column:type"`
 	AccessToken            string            `gorm:"column:access_token"`
 	CreatedAt              time.Time         `gorm:"column:created_at"`
 	UpdatedAt              time.Time         `gorm:"column:updated_at"`
@@ -49,6 +50,7 @@ func (n *Node) Import(node *schema.Node) (err error) {
 	n.APY = node.APY
 	n.Score = node.ActiveScore
 	n.Version = node.Version
+	n.Type = node.Type
 	n.AccessToken = node.AccessToken
 
 	n.Location, err = json.Marshal(node.Location)
@@ -91,6 +93,7 @@ func (n *Node) Export() (*schema.Node, error) {
 		APY:                    n.APY,
 		ActiveScore:            n.Score,
 		Version:                n.Version,
+		Type:                   n.Type,
 		AccessToken:            n.AccessToken,
 		CreatedAt:              n.CreatedAt.Unix(),
 	}, nil

@@ -81,7 +81,7 @@ func (e *SimpleEnforcer) filterNodeStatus(ctx context.Context, stats []*schema.S
 	// filter the exited node status and submit the demotion to the VSL.
 	// Fixme: deprecated if there is no alpha version node
 	alphaNodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		Version: lo.ToPtr(schema.NodeVersionAlpha),
+		Type: lo.ToPtr(schema.NodeTypeAlpha),
 	})
 
 	if err != nil {
@@ -147,16 +147,14 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			// Set the node status to online.
 			stat.Status = schema.NodeStatusOnline
 
-			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
-			if err != nil || info == nil {
-				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
-				// Set the node status to offline.
-				stat.Status = schema.NodeStatusOffline
+			info, err := e.databaseClient.FindNode(ctx, stat.Address)
+			if err != nil {
+				zap.L().Error("find node", zap.Error(err), zap.Any("address", stat.Address.String()))
 
 				return
 			}
 
-			if nodeVersion, _ := version.NewVersion(info.Data.Version.Tag); nodeVersion.LessThan(minVersion) {
+			if nodeVersion, _ := version.NewVersion(info.Version); nodeVersion.LessThan(minVersion) {
 				// Set the node status to outdated.
 				stat.Status = schema.NodeStatusOutdated
 
