@@ -22,11 +22,13 @@
     "tags": [
         {
             "name": "DSL",
-            "description": "The DSL API is an interface to interact with RSS3 Nodes and, therefore, the entire decentralized DSL."
+            "description": "The DSL API is an interface to interact with RSS3 Nodes and, therefore, the entire decentralized DSL.",
+            "x-displayName": "DSL"
         },
         {
             "name": "NTA",
             "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113"
+            "x-displayName": "NTA"
         },
         {
             "name": "Decentralized",
@@ -34,7 +36,8 @@
         },
         {
             "name": "RSS",
-            "description": "A subset of DSL, these APIs facilitate querying information conforming to the RSS Specification."
+            "description": "A subset of DSL, these APIs facilitate querying information conforming to the RSS Specification.",
+            "x-displayName": "RSS"
         },
         {
             "name": "Node",
