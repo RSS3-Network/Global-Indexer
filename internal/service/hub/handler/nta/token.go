@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/labstack/echo/v4"
+	"github.com/rss3-network/global-indexer/contract/l1"
+	"github.com/rss3-network/global-indexer/contract/l2"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/shopspring/decimal"
@@ -49,21 +52,6 @@ type GetTvlResponse struct {
 	Tvl decimal.Decimal `json:"tvl"`
 }
 
-type TokenPrice struct {
-	Rss3 struct {
-		Usd float64 `json:"usd"`
-	} `json:"rss3"`
-	Weth struct {
-		Usd float64 `json:"usd"`
-	} `json:"weth"`
-	Usdt struct {
-		Usd float64 `json:"usd"`
-	} `json:"usdt"`
-	Usdc struct {
-		Usd float64 `json:"usd"`
-	} `json:"usdc"`
-}
-
 func (n *NTA) GetTvl(c echo.Context) error {
 	ctx := c.Request().Context()
 	tokenPriceMap, err := n.getTokenPrices(ctx)
@@ -80,17 +68,27 @@ func (n *NTA) GetTvl(c echo.Context) error {
 
 	p := pool.New().WithContext(ctx).WithCancelOnError().WithMaxGoroutines(10)
 
-	for name, token := range n.erc20TokenMap {
-		name, token := name, token
+	for address, bind := range n.erc20TokenMap {
+		address, bind := address, bind
 
 		p.Go(func(_ context.Context) error {
-			balance, err := token.BalanceOf(nil, n.addressL1StandardBridgeProxy)
+			var (
+				balance *big.Int
+				err     error
+			)
+
+			if address == l2.ContractMap[n.chainL2ID].AddressPowerToken {
+				balance, err = bind.TotalSupply(nil)
+			} else {
+				balance, err = bind.BalanceOf(nil, l1.ContractMap[n.chainL1ID].AddressL1StandardBridgeProxy)
+			}
+
 			if err != nil {
-				zap.L().Error("get token balance", zap.String("token", name), zap.Error(err))
+				zap.L().Error("get token balance", zap.String("token", address.String()), zap.Error(err))
 				return err
 			}
 
-			tokenValue := calculateTokenValue(name, balance, tokenPriceMap)
+			tokenValue := n.calculateTokenValue(address, balance, tokenPriceMap)
 
 			mu.Lock()
 			tvl = tvl.Add(tokenValue)
@@ -110,40 +108,76 @@ func (n *NTA) GetTvl(c echo.Context) error {
 	})
 }
 
+type TokenPrice struct {
+	Data struct {
+		ID         string `json:"id"`
+		Type       string `json:"type"`
+		Attributes struct {
+			TokenPrices map[string]string `json:"token_prices"`
+		} `json:"attributes"`
+	} `json:"data"`
+}
+
+const (
+	tokenPriceKey = "token:price:map"
+
+	// Get list of supported networks from https://api.geckoterminal.com/api/v2/networks
+	ethereumNetwork = "eth"
+	rss3Network     = "rss3-vsl-mainnet"
+)
+
 func (n *NTA) getTokenPrices(ctx context.Context) (map[string]string, error) {
-	var tokenPriceMap map[string]string
-	if err := n.cacheClient.Get(ctx, "token:price:map", &tokenPriceMap); err == nil {
+	tokenPriceMap := make(map[string]string, 3)
+	if err := n.cacheClient.Get(ctx, tokenPriceKey, &tokenPriceMap); err == nil && len(tokenPriceMap) == 3 {
 		return tokenPriceMap, nil
 	}
 
-	body, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, n.configFile.TokenPriceAPI.Endpoint, n.configFile.TokenPriceAPI.AuthToken, nil)
-	if err != nil {
-		return nil, fmt.Errorf("get token price from coingecko: %w", err)
+	networks := []string{ethereumNetwork, rss3Network}
+	endpoint := n.configFile.TokenPriceAPI.Endpoint
+
+	for _, network := range networks {
+		var addressList []string
+		if network == ethereumNetwork {
+			addressList = []string{
+				l1.ContractMap[n.chainL1ID].AddressWETHToken.String(),
+				l1.ContractMap[n.chainL1ID].AddressGovernanceTokenProxy.String(),
+			}
+		} else {
+			addressList = []string{
+				l2.ContractMap[n.chainL2ID].AddressPowerToken.String(),
+			}
+		}
+
+		url := fmt.Sprintf("%s/simple/networks/%s/token_price/%s", endpoint, network, strings.Join(addressList, ","))
+
+		body, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, url, n.configFile.TokenPriceAPI.AuthToken, nil)
+		if err != nil {
+			return nil, fmt.Errorf("get token price: %w", err)
+		}
+
+		var tokenPrice TokenPrice
+		if err = json.NewDecoder(body).Decode(&tokenPrice); err != nil {
+			return nil, fmt.Errorf("parse token price from response body: %w", err)
+		}
+
+		for address, price := range tokenPrice.Data.Attributes.TokenPrices {
+			tokenPriceMap[common.HexToAddress(address).String()] = price
+		}
 	}
 
-	var tokenPrice TokenPrice
-	if err = json.NewDecoder(body).Decode(&tokenPrice); err != nil {
-		return nil, fmt.Errorf("parse token price from response body: %w", err)
-	}
-
-	tokenPriceMap = map[string]string{
-		"rss3": strconv.FormatFloat(tokenPrice.Rss3.Usd, 'f', -1, 64),
-		"weth": strconv.FormatFloat(tokenPrice.Weth.Usd, 'f', -1, 64),
-	}
-
-	if err = n.cacheClient.Set(ctx, "token:price:map", tokenPriceMap, 30*60*time.Second); err != nil {
+	if err := n.cacheClient.Set(ctx, tokenPriceKey, tokenPriceMap, 30*60*time.Second); err != nil {
 		zap.L().Warn("set token price map to cache", zap.Error(err))
 	}
 
 	return tokenPriceMap, nil
 }
 
-func calculateTokenValue(name string, balance *big.Int, priceMap map[string]string) decimal.Decimal {
-	switch name {
-	case "rss3", "weth":
-		price, _ := decimal.NewFromString(priceMap[name])
+func (n *NTA) calculateTokenValue(address common.Address, balance *big.Int, priceMap map[string]string) decimal.Decimal {
+	switch address {
+	case l1.ContractMap[n.chainL1ID].AddressGovernanceTokenProxy, l1.ContractMap[n.chainL1ID].AddressWETHToken, l2.ContractMap[n.chainL2ID].AddressPowerToken:
+		price, _ := decimal.NewFromString(priceMap[address.String()])
 		return decimal.NewFromBigInt(balance, -18).Mul(price)
-	case "usdt", "usdc":
+	case l1.ContractMap[n.chainL1ID].AddressUSDTToken, l1.ContractMap[n.chainL1ID].AddressUSDCToken:
 		return decimal.NewFromBigInt(balance, -6)
 	default:
 		return decimal.Zero

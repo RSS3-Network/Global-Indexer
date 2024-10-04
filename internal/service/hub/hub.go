@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
@@ -46,21 +47,21 @@ func (v *Validator) Validate(i interface{}) error {
 }
 
 func NewHub(ctx context.Context, databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, geoLite2 *geolite2.Client, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, config *config.File) (*Hub, error) {
-	chainID := viper.GetUint64(flag.KeyChainIDL2)
+	chainL2ID := viper.GetUint64(flag.KeyChainIDL2)
 
-	ethereumClient, err := ethereumMultiChainClient.Get(chainID)
+	ethereumClient, err := ethereumMultiChainClient.Get(chainL2ID)
 	if err != nil {
 		return nil, fmt.Errorf("get ethereum client: %w", err)
 	}
 
-	stakingV2MulticallClient, err := l2.NewStakingV2MulticallClient(chainID, ethereumClient)
+	stakingV2MulticallClient, err := l2.NewStakingV2MulticallClient(chainL2ID, ethereumClient)
 	if err != nil {
 		return nil, fmt.Errorf("new staking v2 multicall client: %w", err)
 	}
 
-	contractAddresses := l2.ContractMap[chainID]
+	contractAddresses := l2.ContractMap[chainL2ID]
 	if contractAddresses == nil {
-		return nil, fmt.Errorf("contract address not found for chain id: %d", chainID)
+		return nil, fmt.Errorf("contract address not found for chain id: %d", chainL2ID)
 	}
 
 	networkParamsContract, err := l2.NewNetworkParams(contractAddresses.AddressNetworkParamsProxy, ethereumClient)
@@ -70,7 +71,7 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 
 	cacheClient := cache.New(redisClient)
 
-	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, networkParamsContract, httpClient, txManager, config.Settler, new(big.Int).SetUint64(chainID))
+	dslService, err := dsl.NewDSL(ctx, databaseClient, cacheClient, nameService, stakingV2MulticallClient, networkParamsContract, httpClient, txManager, config.Settler, new(big.Int).SetUint64(chainL2ID))
 	if err != nil {
 		return nil, fmt.Errorf("new dsl: %w", err)
 	}
@@ -84,17 +85,16 @@ func NewHub(ctx context.Context, databaseClient database.Client, redisClient *re
 		return nil, fmt.Errorf("get ethereum l1 client: %w", err)
 	}
 
-	erc20TokenMap := map[string]*bindings.GovernanceToken{
-		"rss3": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressGovernanceTokenProxy, ethereumL1Client)),
-		"usdc": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDCToken, ethereumL1Client)),
-		"usdt": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDTToken, ethereumL1Client)),
-		"weth": lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressWETHToken, ethereumL1Client)),
+	erc20TokenMap := map[common.Address]*bindings.GovernanceToken{
+		l1.ContractMap[chainL1ID].AddressGovernanceTokenProxy: lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressGovernanceTokenProxy, ethereumL1Client)),
+		l1.ContractMap[chainL1ID].AddressUSDCToken:            lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDCToken, ethereumL1Client)),
+		l1.ContractMap[chainL1ID].AddressUSDTToken:            lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressUSDTToken, ethereumL1Client)),
+		l1.ContractMap[chainL1ID].AddressWETHToken:            lo.Must(bindings.NewGovernanceToken(l1.ContractMap[chainL1ID].AddressWETHToken, ethereumL1Client)),
+		l2.ContractMap[chainL2ID].AddressPowerToken:           lo.Must(bindings.NewGovernanceToken(l2.ContractMap[chainL2ID].AddressPowerToken, ethereumClient)),
 	}
-
-	addressL1StandardBridgeProxy := l1.ContractMap[chainL1ID].AddressL1StandardBridgeProxy
 
 	return &Hub{
 		dsl: dslService,
-		nta: nta.NewNTA(ctx, config, databaseClient, stakingV2MulticallClient, networkParamsContract, contractGovernanceToken, addressL1StandardBridgeProxy, geoLite2, cacheClient, httpClient, erc20TokenMap),
+		nta: nta.NewNTA(ctx, config, databaseClient, stakingV2MulticallClient, networkParamsContract, contractGovernanceToken, geoLite2, cacheClient, httpClient, erc20TokenMap, chainL1ID, chainL2ID),
 	}, nil
 }
