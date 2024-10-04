@@ -7,12 +7,14 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/shopspring/decimal"
+	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
 )
 
@@ -63,23 +65,44 @@ type TokenPrice struct {
 }
 
 func (n *NTA) GetTvl(c echo.Context) error {
-	tokenPriceMap, err := n.getTokenPrices(c.Request().Context())
+	ctx := c.Request().Context()
+	tokenPriceMap, err := n.getTokenPrices(ctx)
+
 	if err != nil {
 		zap.L().Error("get token price", zap.Error(err))
 		return errorx.InternalError(c)
 	}
 
-	tvl := decimal.Zero
+	var (
+		tvl decimal.Decimal
+		mu  sync.Mutex
+	)
+
+	p := pool.New().WithContext(ctx).WithCancelOnError().WithMaxGoroutines(10)
 
 	for name, token := range n.erc20TokenMap {
-		balance, err := token.BalanceOf(nil, n.addressL1StandardBridgeProxy)
-		if err != nil {
-			zap.L().Error("get token balance", zap.String("token", name), zap.Error(err))
-			return errorx.InternalError(c)
-		}
+		name, token := name, token
 
-		tokenValue := calculateTokenValue(name, balance, tokenPriceMap)
-		tvl = tvl.Add(tokenValue)
+		p.Go(func(_ context.Context) error {
+			balance, err := token.BalanceOf(nil, n.addressL1StandardBridgeProxy)
+			if err != nil {
+				zap.L().Error("get token balance", zap.String("token", name), zap.Error(err))
+				return err
+			}
+
+			tokenValue := calculateTokenValue(name, balance, tokenPriceMap)
+
+			mu.Lock()
+			tvl = tvl.Add(tokenValue)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := p.Wait(); err != nil {
+		zap.L().Error("get tvl", zap.Error(err))
+		return errorx.InternalError(c)
 	}
 
 	return c.JSON(http.StatusOK, nta.Response{
