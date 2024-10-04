@@ -113,15 +113,8 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 // determineStatus checks the node's status and version to determine its current state
 func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node, minVersion *version.Version) (schema.NodeStatus, string) {
-	nodeInfo, err := e.databaseClient.FindNode(ctx, node.Address)
-	if err != nil {
-		zap.L().Error("find node", zap.Error(err), zap.Any("address", node.Address.String()))
-
-		return schema.NodeStatusOffline, "info"
-	}
-
 	// Check if node version meets minimum requirements
-	currentVersion, _ := version.NewVersion(nodeInfo.Version)
+	currentVersion, _ := version.NewVersion(node.Version)
 	if currentVersion.LessThan(minVersion) {
 		// Return outdated status if version is below minimum
 		return schema.NodeStatusOutdated, ""
