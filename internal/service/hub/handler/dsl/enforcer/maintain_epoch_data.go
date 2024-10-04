@@ -74,17 +74,20 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		originalStatusList[i] = stat.Status
 	}
 
+	// Initialize maps related to worker data.
 	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats, minVersionStr)
+	// Transform the map and assigns the result to the global variable.
 	mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap)
-
+	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
 	if err := e.setMapCache(ctx); err != nil {
 		return fmt.Errorf("set map cache: %w", err)
 	}
-
+	// Update node statistics and worker data.
 	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
 		return fmt.Errorf("update node workers: %w", err)
 	}
-
+	// filter the exited node status and submit the demotion to the VSL.
+	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
 	if err != nil {
 		return fmt.Errorf("filter node status: %w", err)

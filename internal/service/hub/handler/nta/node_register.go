@@ -145,7 +145,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
 	node.Version = request.Version
-
+	// Compatible with the v1.0.0 version of the node.
 	if node.Type != schema.NodeTypeAlpha.String() && node.Version == "v0.1.0" {
 		node.Version = "v1.0.0"
 	}
