@@ -38,11 +38,11 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		err           error
 	)
 
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, cCtx := errgroup.WithContext(ctx)
 
 	// get node info from database
 	eg.Go(func() error {
-		nodeInfo, err = e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{NodeAddresses: addresses})
+		nodeInfo, err = e.databaseClient.FindNodes(cCtx, schema.FindNodesQuery{NodeAddresses: addresses})
 		return err
 	})
 
@@ -58,7 +58,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return err
 	})
 
-	if err := eg.Wait(); err != nil {
+	if err = eg.Wait(); err != nil {
 		return fmt.Errorf("get node info: %w", err)
 	}
 
@@ -78,6 +78,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats, minVersionStr)
 	// Transform the map and assigns the result to the global variable.
 	mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap)
+
 	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
 	if err := e.setMapCache(ctx); err != nil {
 		return fmt.Errorf("set map cache: %w", err)
