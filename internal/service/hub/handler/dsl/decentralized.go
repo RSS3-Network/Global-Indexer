@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (d *DSL) GetActivity(c echo.Context) (err error) {
+func (d *DSL) GetDecentralizedActivity(c echo.Context) (err error) {
 	var request dsl.ActivityRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -39,9 +39,9 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	requestCounter.WithLabelValues("GetActivity").Inc()
+	requestCounter.WithLabelValues("GetDecentralizedActivity").Inc()
 
-	activity, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestActivity, request, c.QueryParams(), nil, nil)
+	activity, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestActivity, model.ComponentDecentralized, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		zap.L().Error("distribute activity request error", zap.Error(err))
 
@@ -51,7 +51,7 @@ func (d *DSL) GetActivity(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activity)
 }
 
-func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
+func (d *DSL) GetDecentralizedAccountActivities(c echo.Context) (err error) {
 	var request dsl.ActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -83,9 +83,9 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 		}
 	}
 
-	incrementRequestCounter("GetAccountActivities", request.Network, request.Tag, request.Platform)
+	incrementRequestCounter("GetDecentralizedAccountActivities", request.Network, request.Tag, request.Platform)
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestAccountActivities, request, c.QueryParams(), workers, networks)
+	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestAccountActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute activities data error", zap.Error(err))
 
@@ -95,7 +95,7 @@ func (d *DSL) GetAccountActivities(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activities)
 }
 
-func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
+func (d *DSL) BatchGetDecentralizedAccountsActivities(c echo.Context) (err error) {
 	var request dsl.AccountsActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -126,9 +126,9 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 
 	request.Accounts = lo.Uniq(request.Accounts)
 
-	incrementRequestCounter("BatchGetAccountsActivities", request.Network, request.Tag, request.Platform)
+	incrementRequestCounter("BatchGetDecentralizedAccountsActivities", request.Network, request.Tag, request.Platform)
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, request, nil, workers, networks)
+	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, model.ComponentDecentralized, request, nil, workers, networks)
 	if err != nil {
 		zap.L().Error("distribute batch activities data error", zap.Error(err))
 
@@ -138,7 +138,7 @@ func (d *DSL) BatchGetAccountsActivities(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activities)
 }
 
-func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
+func (d *DSL) GetDecentralizedNetworkActivities(c echo.Context) (err error) {
 	var request dsl.NetworkActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -162,9 +162,9 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetNetworkActivities", []string{request.Network}, request.Tag, request.Platform)
+	incrementRequestCounter("GetDecentralizedNetworkActivities", []string{request.Network}, request.Tag, request.Platform)
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestNetworkActivities, request, c.QueryParams(), workers, networks)
+	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestNetworkActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute network activities data error", zap.Error(err))
 
@@ -174,7 +174,7 @@ func (d *DSL) GetNetworkActivities(c echo.Context) (err error) {
 	return c.JSONBlob(http.StatusOK, activities)
 }
 
-func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
+func (d *DSL) GetDecentralizedPlatformActivities(c echo.Context) (err error) {
 	var request dsl.PlatformActivitiesRequest
 
 	if err = c.Bind(&request); err != nil {
@@ -198,9 +198,9 @@ func (d *DSL) GetPlatformActivities(c echo.Context) (err error) {
 		return errorx.ValidationFailedError(c, err)
 	}
 
-	incrementRequestCounter("GetPlatformActivities", request.Network, request.Tag, []string{request.Platform})
+	incrementRequestCounter("GetDecentralizedPlatformActivities", request.Network, request.Tag, []string{request.Platform})
 
-	activities, err := d.distributor.DistributeDecentralizedData(c.Request().Context(), model.DistributorRequestPlatformActivities, request, c.QueryParams(), workers, networks)
+	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestPlatformActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
 		zap.L().Error("distribute platform activities data error", zap.Error(err))
 

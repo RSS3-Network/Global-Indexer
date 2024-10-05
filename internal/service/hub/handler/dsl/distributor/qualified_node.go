@@ -2,6 +2,12 @@ package distributor
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/redis/go-redis/v9"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -72,4 +78,46 @@ func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddres
 	}
 
 	return nodes, nil
+}
+
+// getFederatedQualifiedNodes retrieves qualified Nodes associated with a federated handle.
+func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account string) ([]*model.NodeEndpointCache, error) {
+	cacheKey := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, account)
+	var addresses []string
+
+	if err := d.cacheClient.Get(ctx, cacheKey, &addresses); err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return nil, fmt.Errorf("get federated handles: %w", err)
+		}
+		addresses = []string{}
+	}
+
+	if len(addresses) == 0 {
+		return nil, nil
+	}
+
+	nodeAddresses := make([]common.Address, len(addresses))
+	for i := range addresses {
+		nodeAddresses[i] = common.HexToAddress(addresses[i])
+	}
+
+	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses:    nodeAddresses,
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+		PointsOrder:  lo.ToPtr("DESC"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("find node stats: %w", err)
+	}
+
+	nodeEndpointCaches := make([]*model.NodeEndpointCache, len(nodeStats))
+	for i, stat := range nodeStats {
+		nodeEndpointCaches[i] = &model.NodeEndpointCache{
+			Address:     stat.Address.String(),
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
+		}
+	}
+
+	return nodeEndpointCaches, nil
 }

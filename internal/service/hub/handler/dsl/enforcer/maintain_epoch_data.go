@@ -133,6 +133,10 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
+			if stat.Address == common.HexToAddress("0x99724C0A1EB8A8EF10190D3F76AD7076877CB37F") {
+				fmt.Println("debug")
+			}
+
 			// Skip processing the node if its status is marked as exited, offline, slashing or slashed.
 			if !isValidNodeStatus(stat.Status) {
 				return
@@ -414,16 +418,10 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			// Determine whether the node qualifies as a full node.
 			isFull := determineFullNode(workerInfo.Decentralized)
 			stats[i].IsFullNode = isFull
-
-			uniqueNetworks := make(map[network.Network]struct{})
-			for _, info := range workerInfo.Decentralized {
-				uniqueNetworks[info.Network] = struct{}{}
-			}
-
-			stats[i].DecentralizedNetwork = len(uniqueNetworks)
-			stats[i].Indexer = len(workerInfo.Decentralized)
+			stats[i].DecentralizedNetwork = calculateDecentralizedNetwork(workerInfo.Decentralized)
 			stats[i].IsRssNode = determineRssNode(workerInfo.RSS)
 			stats[i].FederatedNetwork = calculateFederatedNetwork(workerInfo.Federated)
+			stats[i].Indexer = len(workerInfo.Decentralized) + len(workerInfo.Federated)
 
 			// Reset the epoch, request count, and invalid request count if a new epoch is detected,
 			// different from the previous one.
@@ -457,6 +455,26 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 	})
 }
 
+// calculateFederatedNetwork calculates the federated network.
+func calculateFederatedNetwork(workerInfo []*FederatedInfo) int {
+	uniqueNetworks := make(map[network.Network]struct{})
+	for _, info := range workerInfo {
+		uniqueNetworks[info.Network] = struct{}{}
+	}
+
+	return len(uniqueNetworks)
+}
+
+// calculateDecentralizedNetwork calculates the decentralized network.
+func calculateDecentralizedNetwork(workerInfo []*DecentralizedWorkerInfo) int {
+	uniqueNetworks := make(map[network.Network]struct{})
+	for _, info := range workerInfo {
+		uniqueNetworks[info.Network] = struct{}{}
+	}
+
+	return len(uniqueNetworks)
+}
+
 // determineRssNode determines if the node is an RSS node.
 func determineRssNode(w *RSSWorkerInfo) bool {
 	if w != nil && w.Worker == rss.RSSHub && w.Status == worker.StatusReady {
@@ -464,11 +482,6 @@ func determineRssNode(w *RSSWorkerInfo) bool {
 	}
 
 	return false
-}
-
-// calculateFederatedNetwork calculates the federated network.
-func calculateFederatedNetwork(_ []*FederatedInfo) int {
-	return 0
 }
 
 // determineFullNode determines if the node is a full node based on
@@ -628,6 +641,7 @@ type RSSWorkerInfo struct {
 
 type FederatedInfo struct {
 	WorkerInfo
+	Worker decentralized.Worker `json:"worker"`
 }
 
 type ComponentInfo struct {

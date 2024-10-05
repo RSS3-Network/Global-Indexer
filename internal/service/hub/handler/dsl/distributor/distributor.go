@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
@@ -68,21 +69,41 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 	return endpointMap, nil
 }
 
-// DistributeDecentralizedData distributes decentralized requests to qualified Nodes.
-func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestType string, request interface{}, params url.Values, workers, networks []string) ([]byte, error) {
+// DistributeData distributes requests to qualified Nodes.
+func (d *Distributor) DistributeData(ctx context.Context, requestType, component string, request interface{}, params url.Values, workers, networks []string) ([]byte, error) {
 	var (
 		nodes          []*model.NodeEndpointCache
-		processResults = d.processActivitiesResponses
+		processResults = d.processDecentralizedActivitiesResponses
 
 		err error
 	)
 
 	switch requestType {
 	case model.DistributorRequestActivity:
-		nodes, err = d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
-		processResults = d.processActivityResponses
+		if component == model.ComponentDecentralized {
+			nodes, err = d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
+			processResults = d.processDecentralizedActivityResponses
+		}
+
+		if component == model.ComponentFederated {
+			id := request.(dsl.ActivityRequest).ID
+			account, err := extractFediverseAddress(id)
+			if err != nil {
+				return nil, fmt.Errorf("extract fediverse address: %w", err)
+			}
+			nodes, err = d.getFederatedQualifiedNodes(ctx, account)
+			processResults = d.processFederatedActivityResponses
+		}
 	case model.DistributorRequestAccountActivities:
-		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
+		if component == model.ComponentDecentralized {
+			nodes, err = d.getQualifiedNodes(ctx, workers, networks)
+		}
+
+		if component == model.ComponentFederated {
+			account := request.(dsl.ActivitiesRequest).Account
+			nodes, err = d.getFederatedQualifiedNodes(ctx, account)
+			processResults = d.processFederatedActivitiesResponses
+		}
 	case model.DistributorRequestBatchAccountActivities:
 		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
 	case model.DistributorRequestNetworkActivities:
@@ -94,17 +115,17 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get qualified nodes: %w", err)
 	}
 
-	nodeMap, err := d.generateDecentralizedPath(requestType, request, params, nodes)
+	nodeMap, err := d.generatePath(requestType, component, request, params, nodes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generate path: %w", err)
 	}
 
 	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, processResults)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("distribute request: %w", err)
 	}
 
 	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
@@ -116,8 +137,32 @@ func (d *Distributor) DistributeDecentralizedData(ctx context.Context, requestTy
 	return nodeResponse.Data, nil
 }
 
-// generateDecentralizedPath builds the path for decentralized requests.
-func (d *Distributor) generateDecentralizedPath(requestType string, request interface{}, params url.Values, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+// extractFediverseAddress extracts the fediverse address from an activity URL.
+func extractFediverseAddress(activityURL string) (string, error) {
+	// parse url
+	parsedURL, err := url.Parse(activityURL)
+	if err != nil {
+		return "", fmt.Errorf("parse url: %w", err)
+	}
+
+	// split path
+	pathParts := strings.Split(parsedURL.Path, "/")
+	if len(pathParts) < 3 {
+		return "", fmt.Errorf("invalid url path")
+	}
+
+	// extract username and domain
+	username := pathParts[2]
+	domain := parsedURL.Host
+
+	// construct fediverse address
+	fediverseAddress := fmt.Sprintf("@%s@%s", username, domain)
+
+	return fediverseAddress, nil
+}
+
+// generatePath builds the path for distributor requests.
+func (d *Distributor) generatePath(requestType, component string, request interface{}, params url.Values, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
 	var (
 		path   string
 		method = http.MethodGet
@@ -128,11 +173,11 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 
 	switch req := request.(type) {
 	case dsl.ActivityRequest:
-		path = fmt.Sprintf("/decentralized/tx/%s", req.ID)
+		path = fmt.Sprintf("/%s/tx/%s", component, req.ID)
 	case dsl.ActivitiesRequest:
-		path = fmt.Sprintf("/decentralized/%s", req.Account)
+		path = fmt.Sprintf("/%s/%s", component, req.Account)
 	case dsl.AccountsActivitiesRequest:
-		path = "/decentralized/accounts"
+		path = "/" + component + "/accounts"
 		method = http.MethodPost
 		body, err = json.Marshal(req)
 
@@ -140,9 +185,9 @@ func (d *Distributor) generateDecentralizedPath(requestType string, request inte
 			return nil, fmt.Errorf("marshal request data: %w", err)
 		}
 	case dsl.NetworkActivitiesRequest:
-		path = fmt.Sprintf("/decentralized/network/%s", req.Network)
+		path = fmt.Sprintf("/%s/network/%s", component, req.Network)
 	case dsl.PlatformActivitiesRequest:
-		path = fmt.Sprintf("/decentralized/platform/%s", req.Platform)
+		path = fmt.Sprintf("/%s/platform/%s", component, req.Platform)
 	default:
 		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}

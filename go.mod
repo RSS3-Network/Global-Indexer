@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
-	github.com/creasty/defaults v1.7.0
+	github.com/creasty/defaults v1.8.0
 	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/go-playground/validator/v10 v10.22.0
@@ -25,9 +25,9 @@ require (
 	github.com/prometheus/client_golang v1.20.2
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rss3-network/node v1.0.0
-	github.com/rss3-network/protocol-go v0.5.3
-	github.com/samber/lo v1.46.0
+	github.com/rss3-network/node v1.0.3
+	github.com/rss3-network/protocol-go v0.5.8
+	github.com/samber/lo v1.47.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.8.1
@@ -42,6 +42,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0
 	go.uber.org/fx v1.20.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/sync v0.8.0
 	golang.org/x/text v0.17.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.9
@@ -170,10 +171,9 @@ require (
 	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
-	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
+	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240822170219-fc7c04adadcd // indirect
