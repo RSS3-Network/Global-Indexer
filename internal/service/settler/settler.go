@@ -159,7 +159,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 
 	// Set the Node version to Normal after the grace period
 	if epoch >= uint64(s.config.Settler.ProductionStartEpoch+s.config.Settler.GracePeriodEpochs) {
-		query.Version = lo.ToPtr(schema.NodeVersionProduction)
+		query.Type = lo.ToPtr(schema.NodeTypeProduction)
 	}
 
 	nodes, err := s.databaseClient.FindNodes(ctx, query)
