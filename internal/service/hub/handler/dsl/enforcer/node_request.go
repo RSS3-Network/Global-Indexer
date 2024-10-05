@@ -11,29 +11,6 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
-// getNodeInfo retrieves node info.
-func (e *SimpleEnforcer) getNodeInfo(ctx context.Context, endpoint, accessToken string) (*InfoResponse, error) {
-	fullURL := endpoint + "/info"
-
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := io.ReadAll(body)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &InfoResponse{}
-
-	if err = json.Unmarshal(data, response); err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}
-
 // getNodeWorkerStatus retrieves the worker status for the node.
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkersStatusResponse, error) {
 	fullURL := endpoint + "/workers_status"

@@ -271,7 +271,18 @@ func (m *SimpleTxManager) signWithNextNonce(ctx context.Context, rawTx *types.Dy
 }
 
 func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, sendState *SendState, bumpFeesImmediately bool) (*types.Transaction, bool) {
+	var resetCurrentNonce bool
+
 	for {
+		if resetCurrentNonce {
+			newTx, err := m.resetCurrentNonce(ctx, tx)
+			if err != nil {
+				return tx, false
+			}
+
+			tx = newTx
+		}
+
 		if bumpFeesImmediately {
 			newTx, err := m.increaseGasPrice(ctx, tx)
 			if err != nil {
@@ -305,6 +316,11 @@ func (m *SimpleTxManager) publishTx(ctx context.Context, tx *types.Transaction, 
 		switch {
 		case errStringMatch(err, core.ErrNonceTooLow):
 			zap.L().Warn("nonce too low", zap.Error(err))
+
+			resetCurrentNonce = true
+			bumpFeesImmediately = false
+
+			continue
 		case errStringMatch(err, context.Canceled):
 			zap.L().Warn("transaction send cancelled", zap.Error(err))
 		case errStringMatch(err, txpool.ErrAlreadyKnown):
@@ -500,6 +516,47 @@ func (m *SimpleTxManager) increaseGasPrice(ctx context.Context, tx *types.Transa
 
 	if err != nil {
 		zap.L().Warn("failed to sign new transaction", zap.Error(err))
+		return tx, nil
+	}
+
+	return newTx, nil
+}
+
+func (m *SimpleTxManager) resetCurrentNonce(ctx context.Context, tx *types.Transaction) (*types.Transaction, error) {
+	m.nonceLock.Lock()
+	defer m.nonceLock.Unlock()
+
+	rawTx := &types.DynamicFeeTx{
+		ChainID:    tx.ChainId(),
+		GasTipCap:  tx.GasTipCap(),
+		GasFeeCap:  tx.GasFeeCap(),
+		Gas:        tx.Gas(),
+		To:         tx.To(),
+		Value:      tx.Value(),
+		Data:       tx.Data(),
+		AccessList: tx.AccessList(),
+	}
+
+	nonce, err := m.ethereumClient.NonceAt(ctx, m.from, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	*m.nonce = nonce
+	rawTx.Nonce = *m.nonce
+
+	zap.L().Info("reset nonce", zap.Uint64("nonce", *m.nonce))
+
+	ctx, cancel := context.WithTimeout(ctx, m.cfg.NetworkTimeout)
+	defer cancel()
+
+	newTx, err := m.signer(ctx, m.from, types.NewTx(rawTx))
+
+	if err != nil {
+		zap.L().Warn("failed to sign new transaction", zap.Error(err))
+
+		*m.nonce--
+
 		return tx, nil
 	}
 

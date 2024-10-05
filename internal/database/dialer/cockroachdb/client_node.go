@@ -50,8 +50,8 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		}
 	}
 
-	if query.Version != nil {
-		databaseStatement = databaseStatement.Where("version = ?", query.Version.String())
+	if query.Type != nil {
+		databaseStatement = databaseStatement.Where("type = ?", query.Type.String())
 	}
 
 	if query.Status != nil {

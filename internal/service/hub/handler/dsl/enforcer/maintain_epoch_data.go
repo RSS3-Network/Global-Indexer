@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hashicorp/go-version"
 	"github.com/redis/go-redis/v9"
+	v2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
@@ -21,47 +22,76 @@ import (
 	"github.com/rss3-network/protocol-go/schema/tag"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 // maintainNodeWorkerWorker maintains the worker information for network nodes at each new epoch.
 func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) error {
-	minVersionStr, err := e.getNodeMinVersion()
-	if err != nil {
-		return fmt.Errorf("get node min version: %w", err)
-	}
-
-	// Retrieve the node status from the VSL.
-	nodeVSLInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
+	addresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
 		return stat.Address
-	}))
+	})
 
-	if err != nil {
-		return fmt.Errorf("get nodes from chain: %w", err)
+	var (
+		nodeInfo      []*schema.Node
+		nodeVSLInfo   []v2.Node
+		minVersionStr string
+		err           error
+	)
+
+	eg, cCtx := errgroup.WithContext(ctx)
+
+	// get node info from database
+	eg.Go(func() error {
+		nodeInfo, err = e.databaseClient.FindNodes(cCtx, schema.FindNodesQuery{NodeAddresses: addresses})
+		return err
+	})
+
+	// get node info from chain
+	eg.Go(func() error {
+		nodeVSLInfo, err = e.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
+		return err
+	})
+
+	// get min version
+	eg.Go(func() error {
+		minVersionStr, err = e.getNodeMinVersion()
+		return err
+	})
+
+	if err = eg.Wait(); err != nil {
+		return fmt.Errorf("get node info: %w", err)
 	}
+
+	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node *schema.Node) (common.Address, *schema.Node) {
+		return node.Address, node
+	})
 
 	originalStatusList := make([]schema.NodeStatus, len(stats))
 
-	for i := range stats {
-		stats[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
-		originalStatusList[i] = stats[i].Status
+	for i, stat := range stats {
+		stat.Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+		stat.Version = nodeInfoMap[stat.Address].Version
+		originalStatusList[i] = stat.Status
 	}
 
 	// Initialize maps related to worker data.
 	nodeToDataMap, fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap := e.generateMaps(ctx, stats, minVersionStr)
 	// Transform the map and assigns the result to the global variable.
 	mapTransformAssign(fullNodeWorkerToNetworksMap, networkToWorkersMap, platformToWorkersMap, tagToWorkersMap)
+
 	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
 	if err := e.setMapCache(ctx); err != nil {
-		return err
+		return fmt.Errorf("set map cache: %w", err)
 	}
 	// Update node statistics and worker data.
 	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
-		return err
+		return fmt.Errorf("update node workers: %w", err)
 	}
-	// filter the node status and submit the demotion to the VSL.
+	// filter the exited node status and submit the demotion to the VSL.
+	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
 	if err != nil {
-		return err
+		return fmt.Errorf("filter node status: %w", err)
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
@@ -79,9 +109,9 @@ func (e *SimpleEnforcer) filterNodeStatus(ctx context.Context, stats []*schema.S
 	}
 
 	// filter the exited node status and submit the demotion to the VSL.
-	// Fixme: deprecated if there is no alpha version node
+	// Fixme: deprecated if there is no alpha type node
 	alphaNodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
-		Version: lo.ToPtr(schema.NodeVersionAlpha),
+		Type: lo.ToPtr(schema.NodeTypeAlpha),
 	})
 
 	if err != nil {
@@ -151,16 +181,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			// Set the node status to online.
 			stat.Status = schema.NodeStatusOnline
 
-			info, err := e.getNodeInfo(ctx, stat.Endpoint, stat.AccessToken)
-			if err != nil || info == nil {
-				zap.L().Error("get node info", zap.Error(err), zap.String("node", stat.Address.String()))
-				// Set the node status to offline.
-				stat.Status = schema.NodeStatusOffline
-
-				return
-			}
-
-			if nodeVersion, _ := version.NewVersion(info.Data.Version.Tag); nodeVersion.LessThan(minVersion) {
+			if nodeVersion, _ := version.NewVersion(stat.Version); nodeVersion.LessThan(minVersion) {
 				// Set the node status to outdated.
 				stat.Status = schema.NodeStatusOutdated
 

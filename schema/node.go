@@ -33,6 +33,7 @@ type Node struct {
 	ActiveScore            decimal.Decimal        `json:"active_score"`
 	ReliabilityScore       decimal.Decimal        `json:"reliability_score"`
 	Version                string                 `json:"version"`
+	Type                   string                 `json:"type"`
 	AccessToken            string                 `json:"-"`
 	CreatedAt              int64                  `json:"created_at"`
 }
@@ -93,22 +94,22 @@ const (
 
 )
 
-//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeVersion --linecomment --output node_version_string.go --json --yaml --sql
-type NodeVersion int
+//go:generate go run --mod=mod github.com/dmarkham/enumer@v1.5.9 --values --type=NodeType --linecomment --output node_type_string.go --json --yaml --sql
+type NodeType int
 
 const (
-	// NodeVersionAlpha
+	// NodeTypeAlpha
 	// Nodes in the alpha phase of the network will receive staking rewards, but they do not actually contribute to the information network.
-	NodeVersionAlpha NodeVersion = iota // alpha
+	NodeTypeAlpha NodeType = iota // alpha
 
-	// NodeVersionBeta
+	// NodeTypeBeta
 	// Nodes in the beta phase of the network do not require staking and will not receive rewards, but they do contribute to the information network and are referred to as public good nodes.
-	NodeVersionBeta // beta
+	NodeTypeBeta // beta
 
-	// NodeVersionProduction
+	// NodeTypeProduction
 	// Nodes in the production phase of the network are required to contribute to the information network. All nodes, except for public good nodes that do not require staking, will receive staking and operation rewards.
 	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to production node version.
-	NodeVersionProduction // production
+	NodeTypeProduction // production
 )
 
 type BatchUpdateNode struct {
@@ -119,7 +120,7 @@ type BatchUpdateNode struct {
 type FindNodesQuery struct {
 	NodeAddresses []common.Address
 	Status        *NodeStatus
-	Version       *NodeVersion
+	Type          *NodeType
 	Cursor        *string
 	Limit         *int
 	OrderByScore  bool

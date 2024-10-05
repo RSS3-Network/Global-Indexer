@@ -13,6 +13,7 @@ import (
 	"github.com/samber/lo"
 )
 
+// calculateActiveScores calculates active scores for all Nodes based on various factors.
 func calculateActiveScores(nodes []*schema.Node, recentStakers map[common.Address]*schema.StakeRecentCount, activeScores *config.ActiveScores) ([]*big.Float, error) {
 	var (
 		finalScores = make([]*big.Float, len(nodes))
@@ -77,18 +78,11 @@ func (s *Server) filter(nodeAddresses []common.Address, nodes []*schema.Node) ([
 		return node.Account, node
 	})
 
-	var (
-		newNodes         []*schema.Node
-		newNodeAddresses []common.Address
-	)
+	newNodes := make([]*schema.Node, 0, len(nodes))
+	newNodeAddresses := make([]common.Address, 0, len(nodes))
 
 	for i := range nodes {
-		if nodeInfo, ok := nodeInfoMap[nodes[i].Address]; ok &&
-			(nodeInfo.Status == uint8(schema.NodeStatusRegistered) ||
-				nodeInfo.Status == uint8(schema.NodeStatusInitializing) ||
-				nodeInfo.Status == uint8(schema.NodeStatusOutdated) ||
-				nodeInfo.Status == uint8(schema.NodeStatusOnline) ||
-				nodeInfo.Status == uint8(schema.NodeStatusExiting)) {
+		if nodeInfo, ok := nodeInfoMap[nodes[i].Address]; ok && isValidStatus(nodeInfo.Status) {
 			nodes[i].StakingPoolTokens = nodeInfo.StakingPoolTokens.String()
 			nodes[i].OperationPoolTokens = nodeInfo.OperationPoolTokens.String()
 
@@ -98,6 +92,13 @@ func (s *Server) filter(nodeAddresses []common.Address, nodes []*schema.Node) ([
 	}
 
 	return newNodes, newNodeAddresses, nil
+}
+
+// isValidStatus checks if the node status is valid.
+func isValidStatus(status uint8) bool {
+	return status == uint8(schema.NodeStatusInitializing) ||
+		status == uint8(schema.NodeStatusOnline) ||
+		status == uint8(schema.NodeStatusExiting)
 }
 
 // excludeUnqualifiedNodes excludes Nodes if they:

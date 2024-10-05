@@ -218,9 +218,12 @@ func updateNodeStat(stat *schema.Stat, staking *big.Int, status schema.NodeStatu
 // calculateReliabilityScore calculates the Reliability Score σ of a given Node.
 // σ is used to determine the probability of a Node receiving a request on DSL.
 func calculateReliabilityScore(stat *schema.Stat) {
+	// baseline score
+	baselineScore := math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
+
 	// staking pool tokens
 	// maximum score is 0.2
-	stat.Score = math.Min(math.Log(stat.Staking/stakingToScoreRate+1)/math.Log(stakingLogBase), stakingMaxScore)
+	stat.Score = baselineScore
 
 	// public good node
 	// If the Node is a public good node, then the score is 0
@@ -241,7 +244,7 @@ func calculateReliabilityScore(stat *schema.Stat) {
 	stat.Score += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToScoreRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxScore)
 
 	// network count
-	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork+stat.FederatedNetwork) + perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore) + perFederatedNetworkScore*float64(stat.FederatedNetwork)
+	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork) + perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore) + perFederatedNetworkScore*float64(stat.FederatedNetwork)
 
 	// indexer count
 	// maximum score is 0.2
@@ -249,9 +252,10 @@ func calculateReliabilityScore(stat *schema.Stat) {
 
 	// invalid request count in the current Epoch
 	if stat.EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
-		// If the number of invalid requests in the epoch is greater than the threshold, then the score is 0.
-		stat.Score = 0
+		// If the number of invalid requests in the epoch is greater than the threshold, then the score is baseline score.
+		stat.Score = baselineScore
 	} else {
-		stat.Score -= perSlashScore * float64(stat.EpochInvalidRequest)
+		// If the number of invalid requests in the epoch is less than the threshold, then the score is baseline score minus the number of invalid requests.
+		stat.Score = math.Max(baselineScore, stat.Score-perSlashScore*float64(stat.EpochInvalidRequest))
 	}
 }
