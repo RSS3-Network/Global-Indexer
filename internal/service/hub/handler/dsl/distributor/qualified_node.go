@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
-	"strings"
-
-	"github.com/redis/go-redis/v9"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
@@ -83,17 +80,25 @@ func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddres
 // getFederatedQualifiedNodes retrieves qualified Nodes associated with a federated handle.
 func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account string) ([]*model.NodeEndpointCache, error) {
 	cacheKey := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, account)
+
 	var addresses []string
 
 	if err := d.cacheClient.Get(ctx, cacheKey, &addresses); err != nil {
 		if !errors.Is(err, redis.Nil) {
 			return nil, fmt.Errorf("get federated handles: %w", err)
 		}
-		addresses = []string{}
-	}
 
-	if len(addresses) == 0 {
-		return nil, nil
+		var since uint64
+		if err = d.cacheClient.Get(ctx, fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, "since"), &since); err != nil {
+			if !errors.Is(err, redis.Nil) {
+				return nil, fmt.Errorf("get federated handles since: %w", err)
+			}
+		}
+
+		// If the cache is empty, no Nodes are qualified.
+		if since > 0 && len(addresses) == 0 {
+			return nil, nil
+		}
 	}
 
 	nodeAddresses := make([]common.Address, len(addresses))

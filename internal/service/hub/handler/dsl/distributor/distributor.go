@@ -69,53 +69,23 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 	return endpointMap, nil
 }
 
+type nodeRetriever func(ctx context.Context, workers, networks []string) ([]*model.NodeEndpointCache, error)
+type responseProcessor func([]*model.DataResponse)
+
 // DistributeData distributes requests to qualified Nodes.
 func (d *Distributor) DistributeData(ctx context.Context, requestType, component string, request interface{}, params url.Values, workers, networks []string) ([]byte, error) {
-	var (
-		nodes          []*model.NodeEndpointCache
-		processResults = d.processDecentralizedActivitiesResponses
-
-		err error
-	)
-
-	switch requestType {
-	case model.DistributorRequestActivity:
-		if component == model.ComponentDecentralized {
-			nodes, err = d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
-			processResults = d.processDecentralizedActivityResponses
-		}
-
-		if component == model.ComponentFederated {
-			id := request.(dsl.ActivityRequest).ID
-			account, err := extractFediverseAddress(id)
-			if err != nil {
-				return nil, fmt.Errorf("extract fediverse address: %w", err)
-			}
-			nodes, err = d.getFederatedQualifiedNodes(ctx, account)
-			processResults = d.processFederatedActivityResponses
-		}
-	case model.DistributorRequestAccountActivities:
-		if component == model.ComponentDecentralized {
-			nodes, err = d.getQualifiedNodes(ctx, workers, networks)
-		}
-
-		if component == model.ComponentFederated {
-			account := request.(dsl.ActivitiesRequest).Account
-			nodes, err = d.getFederatedQualifiedNodes(ctx, account)
-			processResults = d.processFederatedActivitiesResponses
-		}
-	case model.DistributorRequestBatchAccountActivities:
-		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
-	case model.DistributorRequestNetworkActivities:
-		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
-	case model.DistributorRequestPlatformActivities:
-		nodes, err = d.getQualifiedNodes(ctx, workers, networks)
-	default:
-		return nil, fmt.Errorf("invalid request type: %s", requestType)
+	retriever, processor, err := d.getStrategyForRequest(requestType, component, request)
+	if err != nil {
+		return nil, fmt.Errorf("get strategy for request: %w", err)
 	}
 
+	nodes, err := retriever(ctx, workers, networks)
 	if err != nil {
-		return nil, fmt.Errorf("get qualified nodes: %w", err)
+		return nil, fmt.Errorf("retrieving nodes: %w", err)
+	}
+
+	if len(nodes) == 0 {
+		return nil, fmt.Errorf("no nodes available")
 	}
 
 	nodeMap, err := d.generatePath(requestType, component, request, params, nodes)
@@ -123,7 +93,7 @@ func (d *Distributor) DistributeData(ctx context.Context, requestType, component
 		return nil, fmt.Errorf("generate path: %w", err)
 	}
 
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, processResults)
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, processor)
 	if err != nil {
 		return nil, fmt.Errorf("distribute request: %w", err)
 	}
@@ -135,6 +105,69 @@ func (d *Distributor) DistributeData(ctx context.Context, requestType, component
 	}
 
 	return nodeResponse.Data, nil
+}
+
+// getStrategyForRequest returns the node retriever and response processor for the request.
+func (d *Distributor) getStrategyForRequest(requestType, component string, request interface{}) (nodeRetriever, responseProcessor, error) {
+	switch requestType {
+	case model.DistributorRequestActivity:
+		return d.getActivityStrategy(component, request)
+	case model.DistributorRequestAccountActivities:
+		return d.getAccountActivitiesStrategy(component, request)
+	case model.DistributorRequestBatchAccountActivities, model.DistributorRequestNetworkActivities, model.DistributorRequestPlatformActivities:
+		return d.getQualifiedNodes, d.processDecentralizedActivitiesResponses, nil
+	default:
+		return nil, nil, fmt.Errorf("invalid request type: %s", requestType)
+	}
+}
+
+// getActivityStrategy returns the node retriever and response processor for activity requests.
+func (d *Distributor) getActivityStrategy(component string, request interface{}) (nodeRetriever, responseProcessor, error) {
+	switch component {
+	case model.ComponentDecentralized:
+		return func(ctx context.Context, _, _ []string) ([]*model.NodeEndpointCache, error) {
+			return d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.FullNodeCacheKey)
+		}, d.processDecentralizedActivityResponses, nil
+	case model.ComponentFederated:
+		return d.getFederatedNodeRetriever(request), d.processFederatedActivityResponses, nil
+	default:
+		return nil, nil, fmt.Errorf("invalid component: %s", component)
+	}
+}
+
+// getAccountActivitiesStrategy returns the node retriever and response processor for account activities requests.
+func (d *Distributor) getAccountActivitiesStrategy(component string, request interface{}) (nodeRetriever, responseProcessor, error) {
+	switch component {
+	case model.ComponentDecentralized:
+		return d.getQualifiedNodes, d.processDecentralizedActivitiesResponses, nil
+	case model.ComponentFederated:
+		return d.getFederatedNodeRetriever(request), d.processFederatedActivitiesResponses, nil
+	default:
+		return nil, nil, fmt.Errorf("invalid component: %s", component)
+	}
+}
+
+// getFederatedNodeRetriever returns a node retriever for federated requests.
+func (d *Distributor) getFederatedNodeRetriever(request interface{}) nodeRetriever {
+	return func(ctx context.Context, _, _ []string) ([]*model.NodeEndpointCache, error) {
+		var account string
+
+		switch r := request.(type) {
+		case dsl.ActivityRequest:
+			var err error
+			account, err = extractFediverseAddress(r.ID)
+
+			if err != nil {
+				return nil, fmt.Errorf("extract fediverse address: %w", err)
+			}
+		case dsl.ActivitiesRequest:
+			account = r.Account
+		default:
+			return nil, fmt.Errorf("invalid request type: %T", request)
+		}
+
+		return d.getFederatedQualifiedNodes(ctx, account)
+	}
 }
 
 // extractFediverseAddress extracts the fediverse address from an activity URL.
