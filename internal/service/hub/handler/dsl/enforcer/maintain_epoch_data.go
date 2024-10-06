@@ -163,10 +163,6 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 		go func(stat *schema.Stat) {
 			defer wg.Done()
 
-			if stat.Address == common.HexToAddress("0x99724C0A1EB8A8EF10190D3F76AD7076877CB37F") {
-				fmt.Println("debug")
-			}
-
 			// Skip processing the node if its status is marked as exited, offline, slashing or slashed.
 			if !isValidNodeStatus(stat.Status) {
 				return
