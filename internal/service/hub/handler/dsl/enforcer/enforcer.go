@@ -20,7 +20,7 @@ import (
 )
 
 type Enforcer interface {
-	VerifyResponses(ctx context.Context, responses []*model.DataResponse) error
+	VerifyResponses(ctx context.Context, responses []*model.DataResponse, verify bool) error
 	VerifyPartialResponses(ctx context.Context, epochID uint64, responses []*model.DataResponse)
 	MaintainReliabilityScore(ctx context.Context) error
 	MaintainEpochData(ctx context.Context, epoch int64) error
@@ -42,15 +42,21 @@ type SimpleEnforcer struct {
 }
 
 // VerifyResponses verifies the responses from the Nodes.
-func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model.DataResponse) error {
+func (e *SimpleEnforcer) VerifyResponses(ctx context.Context, responses []*model.DataResponse, verify bool) error {
 	if len(responses) == 0 {
 		return fmt.Errorf("no response returned from nodes")
 	}
 
 	// non-error and non-null results are always put in front of the list
 	sortResponseByValidity(responses)
-	// update requests based on data compare
-	updatePointsBasedOnIdentity(responses)
+
+	if verify {
+		// update requests based on data compare
+		updatePointsBasedOnIdentity(responses)
+	} else {
+		// update requests based on data
+		updatePointsBasedOnData(responses)
+	}
 	// update the cache request
 	e.updateCacheRequest(ctx, responses)
 	// update the score maintainer
