@@ -193,7 +193,7 @@ func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessTo
 		return nil, fmt.Errorf("parse endpoint: %w", err)
 	}
 
-	u.Path = path.Join(u.Path, "federated/handles/updated")
+	u.Path = path.Join(u.Path, "federated/handles")
 	q := u.Query()
 	q.Set("since", strconv.FormatUint(since, 10))
 	u.RawQuery = q.Encode()

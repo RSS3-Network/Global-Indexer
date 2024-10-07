@@ -1,6 +1,8 @@
 module github.com/rss3-network/global-indexer
 
-go 1.21.4
+go 1.22
+
+toolchain go1.22.8
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101305.0
@@ -12,8 +14,8 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.15
-	github.com/go-playground/validator/v10 v10.22.0
-	github.com/go-redsync/redsync/v4 v4.11.0
+	github.com/go-playground/validator/v10 v10.22.1
+	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo/v4 v4.12.0
@@ -21,9 +23,9 @@ require (
 	github.com/maxmind/geoipupdate/v6 v6.1.0
 	github.com/orlangure/gnomock v0.31.0
 	github.com/oschwald/geoip2-golang v1.9.0
-	github.com/pressly/goose/v3 v3.21.1
-	github.com/prometheus/client_golang v1.20.2
-	github.com/redis/go-redis/v9 v9.4.0
+	github.com/pressly/goose/v3 v3.22.0
+	github.com/prometheus/client_golang v1.20.3
+	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rss3-network/node v1.0.3
 	github.com/rss3-network/protocol-go v0.5.8
@@ -43,7 +45,7 @@ require (
 	go.uber.org/fx v1.20.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.8.0
-	golang.org/x/text v0.17.0
+	golang.org/x/text v0.18.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.11
@@ -104,7 +106,7 @@ require (
 	github.com/ipfs/go-cid v0.4.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
-	github.com/jackc/pgx/v5 v5.5.5 // indirect
+	github.com/jackc/pgx/v5 v5.6.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -131,7 +133,7 @@ require (
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/onsi/gomega v1.31.1 // indirect
+	github.com/onsi/gomega v1.34.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/oschwald/maxminddb-golang v1.11.0 // indirect
@@ -141,12 +143,13 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redis/rueidis/rueidiscompat v1.0.37 // indirect
+	github.com/redis/rueidis v1.0.47 // indirect
+	github.com/redis/rueidis/rueidiscompat v1.0.47 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/sethvargo/go-retry v0.2.4 // indirect
+	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
@@ -170,11 +173,11 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/dig v1.17.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sys v0.24.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240822170219-fc7c04adadcd // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240822170219-fc7c04adadcd // indirect

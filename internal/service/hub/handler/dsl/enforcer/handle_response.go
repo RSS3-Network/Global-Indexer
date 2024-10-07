@@ -347,7 +347,8 @@ func isValidResponse(data []byte) bool {
 		return false
 	}
 
-	return len(response.Data) > 0
+	// keep the response data length greater than 4
+	return len(response.Data) > 4
 }
 
 // isResponseIdentical returns true if two byte slices (responses) are identical.

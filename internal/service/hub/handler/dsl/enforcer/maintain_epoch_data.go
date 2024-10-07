@@ -94,6 +94,10 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return fmt.Errorf("filter node status: %w", err)
 	}
 
+	if len(nodeAddresses) == 0 {
+		return nil
+	}
+
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
 }
 
@@ -475,8 +479,11 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 // calculateFederatedNetwork calculates the federated network.
 func calculateFederatedNetwork(workerInfo []*FederatedInfo) int {
 	uniqueNetworks := make(map[network.Network]struct{})
+
 	for _, info := range workerInfo {
-		uniqueNetworks[info.Network] = struct{}{}
+		if info.Status == worker.StatusReady {
+			uniqueNetworks[info.Network] = struct{}{}
+		}
 	}
 
 	return len(uniqueNetworks)

@@ -107,9 +107,8 @@ func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account st
 	}
 
 	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		Addresses:    nodeAddresses,
-		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
-		PointsOrder:  lo.ToPtr("DESC"),
+		Addresses:   nodeAddresses,
+		PointsOrder: lo.ToPtr("DESC"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("find node stats: %w", err)
