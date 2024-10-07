@@ -155,13 +155,24 @@ func (d *Distributor) getFederatedNodeRetriever(request interface{}) nodeRetriev
 		switch r := request.(type) {
 		case dsl.ActivityRequest:
 			var err error
+			r.ID, err = url.QueryUnescape(r.ID)
+
+			if err != nil {
+				return nil, fmt.Errorf("unescape ID: %w", err)
+			}
+
 			account, err = extractFediverseAddress(r.ID)
 
 			if err != nil {
 				return nil, fmt.Errorf("extract fediverse address: %w", err)
 			}
 		case dsl.ActivitiesRequest:
-			account = r.Account
+			var err error
+			account, err = url.QueryUnescape(r.Account)
+
+			if err != nil {
+				return nil, fmt.Errorf("unescape account: %w", err)
+			}
 		default:
 			return nil, fmt.Errorf("invalid request type: %T", request)
 		}
