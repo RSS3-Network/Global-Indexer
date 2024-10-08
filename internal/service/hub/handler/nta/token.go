@@ -45,7 +45,7 @@ func (n *NTA) getTokensTotalSupply() (decimal.Decimal, error) {
 		return decimal.Zero, fmt.Errorf("failed to get total supply: %w", err)
 	}
 
-	return decimal.NewFromBigInt(totalSupply, -18), nil
+	return decimal.NewFromBigInt(totalSupply, 0), nil
 }
 
 type GetTvlResponse struct {

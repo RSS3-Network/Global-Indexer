@@ -1220,9 +1220,9 @@
         },
         "/nta/token/supply": {
             "get": {
-                "summary": "Get VSL token total supply",
-                "description": "Retrieve the total supply of VSL token.",
-                "operationId": "getVSLTokenTotalSupply",
+                "summary": "Get RSS3 token total supply",
+                "description": "Retrieve the total supply of RSS3 token. The supply is reported in RSS3.",
+                "operationId": "getRSS3TokenTotalSupply",
                 "tags": [
                     "NTA"
                 ],
@@ -1238,8 +1238,8 @@
         },
         "/nta/token/tvl": {
             "get": {
-                "summary": "Get TVL",
-                "description": "Retrieve the total value locked (TVL) of the VSL token.",
+                "summary": "Get USD TVL",
+                "description": "Retrieve the total value locked (TVL) of the VSL token. The TVL is reported in USD.",
                 "operationId": "getTokenTVL",
                 "tags": [
                     "NTA"
@@ -1267,7 +1267,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"}]
+                        "anyOf": [{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -4375,7 +4375,7 @@
                 }
             },
             "TokenSupplyResponse": {
-                "description": "A successful response containing the total supply of VSL token.",
+                "description": "A successful response containing the total supply of VSL token in RSS3.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4386,7 +4386,7 @@
                                     "properties": {
                                         "total_supply": {
                                             "type": "string",
-                                            "description": "The total supply of VSL token."
+                                            "description": "The total supply of VSL token in RSS3."
                                         }
                                     }
                                 }
@@ -4396,7 +4396,7 @@
                 }
             },
             "TokenTvlResponse": {
-                "description": "A successful response containing the TVL of VSL token.",
+                "description": "A successful response containing the TVL of VSL token in USD.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4405,9 +4405,9 @@
                                 "data": {
                                     "type": "object",
                                     "properties": {
-                                        "total_supply": {
+                                        "tvl": {
                                             "type": "string",
-                                            "description": "The TVL of VSL token."
+                                            "description": "The TVL of VSL token in USD."
                                         }
                                     }
                                 }
