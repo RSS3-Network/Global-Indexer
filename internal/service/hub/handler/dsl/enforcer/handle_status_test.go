@@ -35,11 +35,20 @@ func TestDetermineStatus(t *testing.T) {
 		{
 			name:            "WorkerStatusUnavailable",
 			workerStatus:    "",
-			initialStatus:   schema.NodeStatusInitializing,
+			initialStatus:   schema.NodeStatusOffline,
 			minVersion:      "1.0.0",
 			version:         "1.0.0",
 			expectedStatus:  schema.NodeStatusOffline,
 			expectedErrPath: "workers_status",
+		},
+		{
+			name:            "WorkerStatusUnavailable",
+			workerStatus:    "",
+			initialStatus:   schema.NodeStatusInitializing,
+			minVersion:      "1.0.0",
+			version:         "1.0.0",
+			expectedStatus:  schema.NodeStatusInitializing,
+			expectedErrPath: "",
 		},
 		{
 			name:            "RegisteredToOutdated",

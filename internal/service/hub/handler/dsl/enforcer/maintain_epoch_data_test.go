@@ -453,36 +453,49 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 			Address:  common.Address{0},
 			Endpoint: "http://localhost:8080",
 			Status:   schema.NodeStatusOnline,
+			HearBeat: schema.NodeStatusOnline,
 			Version:  "v1.0.0",
 		},
 		{
 			Address:  common.Address{1},
 			Endpoint: "http://localhost:8081",
 			Status:   schema.NodeStatusOnline,
+			HearBeat: schema.NodeStatusOnline,
 			Version:  "v1.0.0",
 		},
 		{
 			Address:  common.Address{2},
 			Endpoint: "http://localhost:8082",
 			Status:   schema.NodeStatusOnline,
+			HearBeat: schema.NodeStatusOnline,
 			Version:  "v1.0.0",
 		},
 		{
 			Address:  common.Address{3},
 			Endpoint: "http://localhost:8083",
 			Status:   schema.NodeStatusOnline,
+			HearBeat: schema.NodeStatusOnline,
 			Version:  "v0.1.0",
 		},
 		{
 			Address:  common.Address{4},
 			Endpoint: "http://localhost:8084",
 			Status:   schema.NodeStatusRegistered,
+			HearBeat: schema.NodeStatusOnline,
 			Version:  "v1.0.0",
 		},
 		{
 			Address:  common.Address{5},
 			Endpoint: "http://localhost:8080",
 			Status:   schema.NodeStatusExiting,
+			HearBeat: schema.NodeStatusOnline,
+			Version:  "v1.0.0",
+		},
+		{
+			Address:  common.Address{6},
+			Endpoint: "http://localhost:8084",
+			Status:   schema.NodeStatusRegistered,
+			HearBeat: schema.NodeStatusOffline,
 			Version:  "v1.0.0",
 		},
 	}
@@ -493,6 +506,7 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 	assert.Equal(t, schema.NodeStatusRegistered, stats[1].Status)
 	assert.Equal(t, schema.NodeStatusInitializing, stats[2].Status)
 	assert.Equal(t, schema.NodeStatusOutdated, stats[3].Status)
-	assert.Equal(t, schema.NodeStatusOffline, stats[4].Status)
+	assert.Equal(t, schema.NodeStatusInitializing, stats[4].Status)
 	assert.Equal(t, schema.NodeStatusExited, stats[5].Status)
+	assert.Equal(t, schema.NodeStatusOffline, stats[6].Status)
 }
