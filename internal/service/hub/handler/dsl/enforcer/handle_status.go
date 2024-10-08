@@ -75,13 +75,12 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 				continue
 			}
-			// Update node status based on VSL info
-			nodes[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+
 			// Determine new status and potential error path
 			newStatus, errPath := e.determineStatus(ctx, nodes[i], minVersion)
 
 			// If status has changed, update and handle accordingly
-			if nodes[i].Status != newStatus {
+			if schema.NodeStatus(nodeVSLInfo[i].Status) != newStatus {
 				nodes[i].Status = newStatus
 				updatedNodes = append(updatedNodes, nodes[i])
 
