@@ -71,6 +71,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	for i, stat := range stats {
 		stat.Status = schema.NodeStatus(nodeVSLInfo[i].Status)
 		stat.Version = nodeInfoMap[stat.Address].Version
+		stat.HearBeat = nodeInfoMap[stat.Address].Status
 		originalStatusList[i] = stat.Status
 	}
 
@@ -192,10 +193,12 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			if err != nil || workerStatus == nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 
-				stat.Status = schema.NodeStatusOffline
+				if stat.HearBeat == schema.NodeStatusOffline {
+					stat.Status = schema.NodeStatusOffline
+				} else {
+					stat.Status = schema.NodeStatusInitializing
+				}
 
-				// Disqualified the node from the current request distribution round
-				// if retrieving the epoch status fails.
 				return
 			}
 
