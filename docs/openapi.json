@@ -1217,6 +1217,42 @@
                     }
                 }
             }
+        },
+        "/nta/token/supply": {
+            "get": {
+                "summary": "Get VSL token total supply",
+                "description": "Retrieve the total supply of VSL token.",
+                "operationId": "getVSLTokenTotalSupply",
+                "tags": [
+                    "NTA"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/TokenSupplyResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/nta/token/tvl": {
+            "get": {
+                "summary": "Get TVL",
+                "description": "Retrieve the total value locked (TVL) of the VSL token.",
+                "operationId": "getTokenTVL",
+                "tags": [
+                    "NTA"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/TokenTvlResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -4332,6 +4368,48 @@
                                 "data": {
                                     "type": "integer",
                                     "description": "The total number of requests made to the API."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "TokenSupplyResponse": {
+                "description": "A successful response containing the total supply of VSL token.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total_supply": {
+                                            "type": "string",
+                                            "description": "The total supply of VSL token."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "TokenTvlResponse": {
+                "description": "A successful response containing the TVL of VSL token.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total_supply": {
+                                            "type": "string",
+                                            "description": "The TVL of VSL token."
+                                        }
+                                    }
                                 }
                             }
                         }
