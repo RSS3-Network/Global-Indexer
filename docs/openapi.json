@@ -1239,7 +1239,7 @@
         "/nta/token/tvl": {
             "get": {
                 "summary": "Get USD TVL",
-                "description": "Retrieve the total value locked (TVL) of the VSL token. The TVL is reported in USD.",
+                "description": "Retrieve the total value locked (TVL) of the VSL token, including RSS3, WETH, USDT, USDC, and POWER. The TVL is reported in USD.",
                 "operationId": "getTokenTVL",
                 "tags": [
                     "NTA"
@@ -1267,7 +1267,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"}]
+                        "anyOf": [{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -4396,7 +4396,7 @@
                 }
             },
             "TokenTvlResponse": {
-                "description": "A successful response containing the TVL of VSL token in USD.",
+                "description": "A successful response containing the TVL of VSL token in USD, including RSS3, WETH, USDT, USDC and POWER.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4407,7 +4407,7 @@
                                     "properties": {
                                         "tvl": {
                                             "type": "string",
-                                            "description": "The TVL of VSL token in USD."
+                                            "description": "The TVL of VSL token in USD, including RSS3, WETH, USDT, USDC and POWER."
                                         }
                                     }
                                 }
