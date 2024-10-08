@@ -315,7 +315,7 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 }
 
 func setReliabilityBaselineScore(stakingTokens *big.Int) decimal.Decimal {
-	staking, _ := stakingTokens.Div(stakingTokens, big.NewInt(1e18)).Float64()
+	staking, _ := big.NewInt(0).Div(stakingTokens, big.NewInt(1e18)).Float64()
 	return decimal.NewFromFloat(math.Min(math.Log(staking/100000+1)/math.Log(2), 0.2))
 }
 
