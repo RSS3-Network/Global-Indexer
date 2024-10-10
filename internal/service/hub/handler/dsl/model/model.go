@@ -18,6 +18,9 @@ const (
 	DistributorRequestBatchAccountActivities = "batch_activities"
 	DistributorRequestNetworkActivities      = "network_activities"
 	DistributorRequestPlatformActivities     = "platform_activities"
+
+	ComponentDecentralized = "decentralized"
+	ComponentFederated     = "federated"
 )
 
 var (
@@ -25,6 +28,8 @@ var (
 	RssNodeCacheKey = "nodes:rss"
 	// FullNodeCacheKey is the cache key for the full nodes.
 	FullNodeCacheKey = "nodes:full"
+	// FederatedHandlesPrefixCacheKey is the cache key prefix for the handles of federated nodes.
+	FederatedHandlesPrefixCacheKey = "federated:handles:"
 
 	// InvalidRequestCount is the prefix used for cache keys related to storing invalid request counts in the current epoch.
 	InvalidRequestCount = "node:request:count:invalid"

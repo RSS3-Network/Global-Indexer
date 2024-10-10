@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,10 +37,7 @@ func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []
 	urls := make(map[common.Address]model.RequestMeta, len(nodes))
 
 	for _, node := range nodes {
-		fullURL, err := url.JoinPath(node.Endpoint, path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to join path for node %s: %w", node.Address, err)
-		}
+		fullURL := buildFullURL(node.Endpoint, path)
 
 		if method != http.MethodPost {
 			decodedURL, err := url.QueryUnescape(fullURL)
@@ -59,6 +57,19 @@ func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []
 	}
 
 	return urls, nil
+}
+
+func buildFullURL(endpoint, urlPath string) string {
+	// ensure the endpoint ends with a "/"
+	if !strings.HasSuffix(endpoint, "/") {
+		endpoint += "/"
+	}
+
+	// ensure the urlPath does not start with a "/"
+	urlPath = strings.TrimPrefix(urlPath, "/")
+
+	// join the endpoint and urlPath
+	return endpoint + urlPath
 }
 
 func (r *SimpleRouter) DistributeRequest(ctx context.Context, nodeMap map[common.Address]model.RequestMeta, processResponses func([]*model.DataResponse)) (model.DataResponse, error) {

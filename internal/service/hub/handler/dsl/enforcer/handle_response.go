@@ -324,6 +324,33 @@ func updatePointsBasedOnIdentity(responses []*model.DataResponse) {
 	}
 }
 
+// updatePointsBasedOnData updates both based on the data.
+func updatePointsBasedOnData(responses []*model.DataResponse) {
+	for i := range responses {
+		if responses[i].Err != nil || len(responses[i].Data) == 0 {
+			continue
+		}
+
+		if isValidResponse(responses[i].Data) {
+			responses[i].ValidPoint = validPointUnit
+		}
+	}
+}
+
+// isValidResponse checks if the response data is valid.
+func isValidResponse(data []byte) bool {
+	var response struct {
+		Data json.RawMessage `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return false
+	}
+
+	// keep the response data length greater than 4
+	return len(response.Data) > 4
+}
+
 // isResponseIdentical returns true if two byte slices (responses) are identical.
 func isResponseIdentical(src, des []byte) bool {
 	srcActivity := &model.ActivityResponse{}

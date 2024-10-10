@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
@@ -13,7 +14,11 @@ import (
 
 // getNodeWorkerStatus retrieves the worker status for the node.
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkersStatusResponse, error) {
-	fullURL := endpoint + "/workers_status"
+	if !strings.HasSuffix(endpoint, "/") {
+		endpoint += "/"
+	}
+
+	fullURL := endpoint + "workers_status"
 
 	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
