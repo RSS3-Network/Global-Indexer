@@ -4368,7 +4368,7 @@
                                 "data": {
                                     "type": "object",
                                     "properties": {
-                                        "total_supply": {
+                                        "total_requests": {
                                             "type": "integer",
                                             "description": "The total number of requests made to the API."
                                         }
