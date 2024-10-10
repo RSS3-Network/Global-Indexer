@@ -27,7 +27,7 @@
         },
         {
             "name": "NTA",
-            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113",
+            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It enables users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113",
             "x-displayName": "NTA"
         },
         {
@@ -72,7 +72,7 @@
         "/decentralized/tx/{id}": {
             "get": {
                 "summary": "Get Activity by ID",
-                "description": "This endpoint retrieves the details of a specified decentralized transaction activity by its ID. You can also specify additional query parameters to limit the number of actions retrieved and to paginate through actions.",
+                "description": "This endpoint retrieves the details of a specified decentralized transaction activity by its ID. You can specify additional query parameters to limit the number of actions retrieved and paginate through them.",
                 "operationId": "getActivityById",
                 "tags": [
                     "Decentralized",
@@ -165,7 +165,7 @@
         "/decentralized/accounts": {
             "post": {
                 "summary": "Batch Get Accounts Activities",
-                "description": "Retrieve a batch of activities associated with multiple specified accounts in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "description": "Get activities associated with multiple accounts on all compatible networks. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
                 "operationId": "batchGetAccountsActivities",
                 "tags": [
                     "Decentralized",
@@ -190,7 +190,7 @@
         "/decentralized/network/{network}": {
             "get": {
                 "summary": "Get Network Activities",
-                "description": "Retrieve a list of activities from the specified decentralized network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "description": "Get a list of activities from the specified decentralized network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
                 "operationId": "getNetworkActivities",
                 "tags": [
                     "Decentralized",
@@ -247,7 +247,7 @@
         "/decentralized/platform/{platform}": {
             "get": {
                 "summary": "Get Platform Activities",
-                "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "description": "Get a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
                 "operationId": "getPlatformActivities",
                 "tags": [
                     "Decentralized",
@@ -330,7 +330,7 @@
         "/nta/bridgings/transactions": {
             "get": {
                 "summary": "Get bridging transactions",
-                "description": "Retrieve a list of bridging transactions based on various query parameters such as cursor, sender, receiver, address, transaction type, and limit. This endpoint allows users to filter transactions to get precise data related to deposits and withdrawals. The response includes detailed transaction information, including sender and receiver addresses, token details, and associated events such as deposit initialization and finalization. Use this endpoint for monitoring, auditing, or analyzing bridging transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "description": "Get a list of bridging transactions based on various query parameters such as cursor, sender, receiver, address, transaction type, and limit. This endpoint allows users to filter transactions to get precise data related to deposits and withdrawals. The response includes transaction details, such as sender and receiver addresses, token information, and related events like deposit initialization and finalization. Use this endpoint for monitoring, auditing, or analyzing bridging transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
                 "operationId": "getBridgingTransactions",
                 "tags": [
                     "Bridge",
@@ -372,7 +372,7 @@
         "/nta/bridgings/transactions/{transaction_hash}": {
             "get": {
                 "summary": "Get bridging transaction by hash",
-                "description": "Retrieve detailed information of a bridging transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single transaction, including sender, receiver, token details, and related events.",
+                "description": "Get detailed information of a bridging transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single transaction, including sender, receiver, token details, and related events.",
                 "operationId": "getBridgingTransactionByHash",
                 "tags": [
                     "Bridge",
@@ -399,7 +399,7 @@
         "/nta/stakings/transactions": {
             "get": {
                 "summary": "Get staking transactions",
-                "description": "Retrieve a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "description": "Get a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
                 "operationId": "getStakingTransactions",
                 "tags": [
                     "Stake",
@@ -441,7 +441,7 @@
         "/nta/stakings/transactions/{transaction_hash}": {
             "get": {
                 "summary": "Get staking transaction by hash",
-                "description": "Retrieve detailed information of a staking transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, node address, value staked, associated chips, and related events.",
+                "description": "Get detailed information of a staking transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, node address, value staked, associated chips, and related events.",
                 "operationId": "getStakingTransactionByHash",
                 "tags": [
                     "Stake",
@@ -468,7 +468,7 @@
         "/nta/stakings/stakings": {
             "get": {
                 "summary": "Get a list of stakers and Nodes",
-                "description": "Retrieve a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
+                "description": "Get a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
                 "operationId": "getStakersAndNodes",
                 "tags": [
                     "Stake",
@@ -504,7 +504,7 @@
         "/nta/stakings/{staker_address}/profit": {
             "get": {
                 "summary": "Get staking profit of a staker",
-                "description": "Retrieve the staking profit information for a specified staker. This endpoint returns detailed profit data, including the owner's address, total chip amount, total chip value, and profit and loss (PNL) data over different time periods (one day, one week, one month).",
+                "description": "Get the staking profit information for a specified staker. This endpoint returns detailed profit data, including the owner's address, total chip amount, total chip value, and profit and loss (PNL) data over different time periods (one day, one week, one month).",
                 "operationId": "getStakerProfit",
                 "tags": [
                     "Stake",
@@ -531,7 +531,7 @@
         "/nta/stakings/{staker_address}/stat": {
             "get": {
                 "summary": "Get the number of nodes, chips, and tokens staked of a staker",
-                "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
+                "description": "Get the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
                 "operationId": "getStakerStats",
                 "tags": [
                     "Stake",
@@ -558,7 +558,7 @@
         "/nta/chips": {
             "get": {
                 "summary": "Get all chips",
-                "description": "Retrieve a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
+                "description": "Get a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
                 "operationId": "getAllChips",
                 "tags": [
                     "Chips",
@@ -597,7 +597,7 @@
         "/nta/chips/{chip_id}": {
             "get": {
                 "summary": "Get Chips by chip id",
-                "description": "Retrieve detailed information about a specific chip by its unique chip ID. This endpoint returns comprehensive data about the chip, including its node address, owner address, and metadata such as name, description, and image.",
+                "description": "Get detailed information about a specific chip by its unique chip ID. This endpoint returns comprehensive data about the chip, including its node address, owner address, and metadata such as name, description, and image.",
                 "operationId": "getChipById",
                 "tags": [
                     "Chips",
@@ -627,7 +627,7 @@
         "/nta/chips/{chip_id}/image.svg": {
             "get": {
                 "summary": "Get Chips image by id",
-                "description": "Retrieve the image of a specific chip by its unique chip ID. This endpoint returns the SVG image associated with the chip.",
+                "description": "Get the image of a specific chip by its unique chip ID. This endpoint returns the SVG image associated with the chip.",
                 "operationId": "getChipImageById",
                 "tags": [
                     "Chips",
@@ -657,7 +657,7 @@
         "/nta/snapshots/nodes/count": {
             "get": {
                 "summary": "Get snapshots of Node count",
-                "description": "Retrieve snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
+                "description": "Get snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
                 "operationId": "getNodeCountSnapshots",
                 "tags": [
                     "Snapshots",
@@ -679,7 +679,7 @@
         "/nta/snapshots/stakers/count": {
             "get": {
                 "summary": "Get snapshots of staker count",
-                "description": "Retrieve snapshots of the total staker count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of stakers on that date.",
+                "description": "Get snapshots of the total staker count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of stakers on that date.",
                 "operationId": "getStakerCountSnapshots",
                 "tags": [
                     "Snapshots",
@@ -701,7 +701,7 @@
         "/nta/snapshots/stakers/profit": {
             "get": {
                 "summary": "Get snapshots of the staker profit",
-                "description": "Retrieve snapshots of the staker profit over time. This endpoint allows filtering by staker address, date range, and pagination parameters.",
+                "description": "Get snapshots of the staker profit over time. This endpoint allows filtering by staker address, date range, and pagination parameters.",
                 "operationId": "getStakerProfitSnapshots",
                 "tags": [
                     "Snapshots",
@@ -740,7 +740,7 @@
         "/nta/snapshots/nodes/operation/profit": {
             "get": {
                 "summary": "Get snapshots of operation profit",
-                "description": "Retrieve snapshots of the operation profit over time for a specific node. This endpoint allows filtering by node address, date range, and pagination parameters.",
+                "description": "Get snapshots of the operation profit over time for a specific node. This endpoint allows filtering by node address, date range, and pagination parameters.",
                 "operationId": "getNodeOperationProfitSnapshots",
                 "tags": [
                     "Snapshots",
@@ -779,7 +779,7 @@
         "/nta/snapshots/epochs/apy": {
             "get": {
                 "summary": "Get the APY of epoch snapshots",
-                "description": "Retrieve the Annual Percentage Yield (APY) for epoch snapshots. This endpoint returns an array of objects, each containing the epoch details and the corresponding APY.",
+                "description": "Get the Annual Percentage Yield (APY) for epoch snapshots. This endpoint returns an array of objects, each containing the epoch details and the corresponding APY.",
                 "operationId": "getEpochAPYSnapshots",
                 "tags": [
                     "Snapshots",
@@ -801,7 +801,7 @@
         "/nta/nodes": {
             "get": {
                 "summary": "Get all Nodes",
-                "description": "Retrieve a list of all nodes. This endpoint allows filtering by cursor, limit, and node address. The default limit is 10 and the maximum limit is 50.",
+                "description": "Get a list of all nodes. This endpoint allows filtering by cursor, limit, and node address. The default limit is 10 and the maximum limit is 50.",
                 "operationId": "getAllNodes",
                 "tags": [
                     "Node",
@@ -837,7 +837,7 @@
         "/nta/nodes/{address}": {
             "get": {
                 "summary": "Get Node by address",
-                "description": "Retrieve detailed information about a specific node by its address.",
+                "description": "Get detailed information about a specific node by its address.",
                 "operationId": "getNodeByAddress",
                 "tags": [
                     "Node",
@@ -867,7 +867,7 @@
         "/nta/nodes/{address}/avatar.svg": {
             "get": {
                 "summary": "Get Node avatar by address",
-                "description": "Retrieve the avatar of a specific node by its address. This endpoint returns the SVG image associated with the node.",
+                "description": "Get the avatar of a specific node by its address. This endpoint returns the SVG image associated with the node.",
                 "operationId": "getNodeAvatarByAddress",
                 "tags": [
                     "Node",
@@ -897,7 +897,7 @@
         "/nta/nodes/{address}/events": {
             "get": {
                 "summary": "Get Node transaction events by address",
-                "description": "Retrieve the transaction events for a specific node by its address. This endpoint allows filtering by cursor and limit for pagination.",
+                "description": "Get the transaction events for a specific node by its address. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getNodeEventsByAddress",
                 "tags": [
                     "Node",
@@ -930,7 +930,7 @@
         "/nta/nodes/{address}/operation/profit": {
             "get": {
                 "summary": "Get Node operation profit by address",
-                "description": "Retrieve the operation profit details for a specific node by its address. This endpoint provides detailed profit and loss (PNL) information over different time periods.",
+                "description": "Get the operation profit details for a specific node by its address. This endpoint provides detailed profit and loss (PNL) information over different time periods.",
                 "operationId": "getNodeOperationProfitByAddress",
                 "tags": [
                     "Node",
@@ -960,7 +960,7 @@
         "/nta/epochs": {
             "get": {
                 "summary": "Get all epochs",
-                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
+                "description": "Get a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
                 "operationId": "getAllEpochs",
                 "tags": [
                     "Epoch",
@@ -990,7 +990,7 @@
         "/nta/epochs/{epoch_id}": {
             "get": {
                 "summary": "Get epoch by id",
-                "description": "Retrieve detailed information about a specific epoch by its ID.",
+                "description": "Get detailed information of a specific epoch by its ID.",
                 "operationId": "getEpochById",
                 "tags": [
                     "Epoch",
@@ -1020,7 +1020,7 @@
         "/nta/epochs/distributions/{transaction_hash}": {
             "get": {
                 "summary": "Get epoch transaction by hash",
-                "description": "Retrieve details of an epoch transaction by its hash.",
+                "description": "Get details of an epoch transaction by its hash.",
                 "operationId": "getEpochTransactionByHash",
                 "tags": [
                     "Epoch",
@@ -1047,7 +1047,7 @@
         "/nta/epochs/{address}/rewards": {
             "get": {
                 "summary": "Get Node rewards by epoch",
-                "description": "Retrieve the rewards of a specific node by epoch. This endpoint allows filtering by cursor and limit for pagination.",
+                "description": "Get the rewards of a specific node by epoch. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getNodeRewardsByEpoch",
                 "tags": [
                     "Epoch",
@@ -1083,7 +1083,7 @@
         "/nta/epochs/apy": {
             "get": {
                 "summary": "Get the average of epochs APY",
-                "description": "Retrieve the average Annual Percentage Yield (APY) for all epochs.",
+                "description": "Get the average Annual Percentage Yield (APY) for all epochs.",
                 "operationId": "getEpochsAverageAPY",
                 "tags": [
                     "Epoch",
@@ -1102,7 +1102,7 @@
         "/nta/networks": {
             "get": {
                 "summary": "Get all compatible networks",
-                "description": "Retrieve a list of all compatible networks.",
+                "description": "Get a list of all compatible networks.",
                 "operationId": "getAllCompatibleNetworks",
                 "tags": [
                     "Networks",
@@ -1121,7 +1121,7 @@
         "/nta/networks/assets": {
             "get": {
                 "summary": "Get Node Assets",
-                "description": "Retrieve node assets details.",
+                "description": "Get node assets details.",
                 "operationId": "getNodeAssets",
                 "tags": [
                     "Networks",
@@ -1140,7 +1140,7 @@
         "/nta/networks/{network_name}/list_workers": {
             "get": {
                 "summary": "Get available workers by network",
-                "description": "Retrieve a list of available workers for a specific network.",
+                "description": "Get a list of available workers for a specific network.",
                 "operationId": "getAvailableWorkersByNetwork",
                 "tags": [
                     "Networks",
@@ -1170,7 +1170,7 @@
         "/nta/networks/{network_name}/workers/{worker_name}": {
             "get": {
                 "summary": "Get config by network and worker",
-                "description": "Retrieve the configuration details for a specific worker in a specific network.",
+                "description": "Get the configuration details of a specific worker on a specific network.",
                 "operationId": "getWorkerConfigByNetworkAndWorker",
                 "tags": [
                     "Networks",
@@ -1203,7 +1203,7 @@
         "/nta/dsl/total_requests": {
             "get": {
                 "summary": "Get DSL total requests",
-                "description": "Retrieve the total number of requests made to the NTA API.",
+                "description": "Get the total number of requests served by Global Indexers.",
                 "operationId": "getDSLTotalRequests",
                 "tags": [
                     "NTA"
@@ -1220,8 +1220,8 @@
         },
         "/nta/token/supply": {
             "get": {
-                "summary": "Get RSS3 token total supply",
-                "description": "Retrieve the total supply of RSS3 token. The supply is reported in RSS3.",
+                "summary": "Get RSS3 token total supply on VSL",
+                "description": "Get the total supply of RSS3 token on VSL.",
                 "operationId": "getRSS3TokenTotalSupply",
                 "tags": [
                     "NTA"
@@ -1238,8 +1238,8 @@
         },
         "/nta/token/tvl": {
             "get": {
-                "summary": "Get USD TVL",
-                "description": "Retrieve the total value locked (TVL) of the VSL token, including RSS3, WETH, USDT, USDC, and POWER. The TVL is reported in USD.",
+                "summary": "Get TVL in $",
+                "description": "Get the total value locked (TVL) in $, including RSS3, WETH, USDT, USDC, and POWER.",
                 "operationId": "getTokenTVL",
                 "tags": [
                     "NTA"
@@ -2878,7 +2878,7 @@
         },
         "parameters": {
             "activity_id_path": {
-                "description": "Retrieve details for the specified activity ID",
+                "description": "Get details for the specified activity ID",
                 "example": "0x840e42d573ebe1ff27a9e4914573b4e0518fcd685c7f9331d319abe854f780e3",
                 "in": "path",
                 "name": "id",
@@ -2888,7 +2888,7 @@
                 }
             },
             "activity_id_query": {
-                "description": "Retrieve details for the specified activity ID",
+                "description": "Get details for the specified activity ID",
                 "example": "0x000000000000000000000000113f4b4c3765e5f05fd197c5c35b8a8a9b34245b",
                 "in": "query",
                 "name": "id",
@@ -2925,7 +2925,7 @@
             "account_path": {
                 "name": "account",
                 "in": "path",
-                "description": "Retrieve activities from the specified account. This account is a unique identifier within the decentralized system.",
+                "description": "Get activities from the specified account. This account is a unique identifier within the decentralized system.",
                 "required": true,
                 "schema": {
                     "type": "string"
@@ -2933,7 +2933,7 @@
                 "example": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
             },
             "network_path": {
-                "description": "Retrieve activities from the specified network.",
+                "description": "Get activities from the specified network.",
                 "example": "ethereum",
                 "in": "path",
                 "name": "network",
@@ -2943,7 +2943,7 @@
                 }
             },
             "platform_path": {
-                "description": "Retrieve activities from the specified platform.",
+                "description": "Get activities from the specified platform.",
                 "example": "Uniswap",
                 "in": "path",
                 "name": "platform",
@@ -2977,7 +2977,7 @@
             "since_timestamp_query": {
                 "name": "since_timestamp",
                 "in": "query",
-                "description": "Retrieve activities starting from this timestamp. The timestamp is specified in Unix epoch time.",
+                "description": "Get activities starting from this timestamp. The timestamp is specified in Unix epoch time.",
                 "required": false,
                 "schema": {
                     "type": "integer"
@@ -2986,7 +2986,7 @@
             "until_timestamp_query": {
                 "name": "until_timestamp",
                 "in": "query",
-                "description": "Retrieve activities up to this timestamp. The timestamp is specified in Unix epoch time.",
+                "description": "Get activities up to this timestamp. The timestamp is specified in Unix epoch time.",
                 "required": false,
                 "schema": {
                     "type": "integer"
@@ -2995,7 +2995,7 @@
             "success_query": {
                 "name": "success",
                 "in": "query",
-                "description": "Retrieve activities based on success status. Specify true for successful activities or false for unsuccessful ones.",
+                "description": "Get activities based on success status. Specify true for successful activities or false for unsuccessful ones.",
                 "required": false,
                 "schema": {
                     "type": "boolean"
@@ -3004,7 +3004,7 @@
             "direction_query": {
                 "name": "direction",
                 "in": "query",
-                "description": "Retrieve activities based on direction. The direction specifies whether the activity is incoming or outgoing.",
+                "description": "Get activities based on direction. The direction specifies whether the activity is incoming or outgoing.",
                 "required": false,
                 "schema": {
                     "$ref": "#/components/schemas/Direction"
@@ -3013,7 +3013,7 @@
             "network_query": {
                 "name": "network",
                 "in": "query",
-                "description": "Retrieve activities from the specified network(s). You can specify one or more networks.",
+                "description": "Get activities from the specified network(s). You can specify one or more networks.",
                 "required": false,
                 "schema": {
                     "type": "array",
@@ -3044,7 +3044,7 @@
             "action_tag_query": {
                 "name": "tag",
                 "in": "query",
-                "description": "Retrieve activities from the specified tag(s). Tags can be used to categorize activities.",
+                "description": "Get activities from the specified tag(s). Tags can be used to categorize activities.",
                 "required": false,
                 "schema": {
                     "type": "array",
@@ -3056,7 +3056,7 @@
             "action_type_query": {
                 "name": "type",
                 "in": "query",
-                "description": "Retrieve activities from the specified type(s). Types can help filter activities based on their nature or category.",
+                "description": "Get activities from the specified type(s). Types can help filter activities based on their nature or category.",
                 "required": false,
                 "schema": {
                     "type": "array",
@@ -3066,7 +3066,7 @@
                 }
             },
             "tag_query": {
-                "description": "Retrieve activities for the specified tag(s).",
+                "description": "Get activities for the specified tag(s).",
                 "in": "query",
                 "name": "tag",
                 "required": false,
@@ -3078,7 +3078,7 @@
                 }
             },
             "type_query": {
-                "description": "Retrieve activities for the specified type(s).",
+                "description": "Get activities for the specified type(s).",
                 "in": "query",
                 "name": "type",
                 "required": false,
@@ -3092,7 +3092,7 @@
             "platform_query": {
                 "name": "platform",
                 "in": "query",
-                "description": "Retrieve activities from the specified platform(s). Platforms refer to the systems or environments where the activities occurred.",
+                "description": "Get activities from the specified platform(s). Platforms refer to the systems or environments where the activities occurred.",
                 "required": false,
                 "schema": {
                     "type": "array",
@@ -3102,7 +3102,7 @@
                 }
             },
             "rss_path": {
-                "description": "Retrieve details for the specified RSS path",
+                "description": "Get details for the specified RSS path",
                 "example": "abc",
                 "in": "path",
                 "name": "path",
@@ -3395,15 +3395,15 @@
                                 },
                                 "since_timestamp": {
                                     "type": "integer",
-                                    "description": "Retrieve activities starting from this timestamp"
+                                    "description": "Get activities starting from this timestamp"
                                 },
                                 "until_timestamp": {
                                     "type": "integer",
-                                    "description": "Retrieve activities up to this timestamp"
+                                    "description": "Get activities up to this timestamp"
                                 },
                                 "success": {
                                     "type": "boolean",
-                                    "description": "Retrieve activities based on success status"
+                                    "description": "Get activities based on success status"
                                 },
                                 "direction": {
                                     "$ref": "#/components/schemas/Direction"
@@ -3413,28 +3413,28 @@
                                     "items": {
                                         "$ref": "#/components/schemas/Network"
                                     },
-                                    "description": "Retrieve activities from the specified network(s)"
+                                    "description": "Get activities from the specified network(s)"
                                 },
                                 "tag": {
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Tag"
                                     },
-                                    "description": "Retrieve activities for the specified tag(s)"
+                                    "description": "Get activities for the specified tag(s)"
                                 },
                                 "type": {
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Type"
                                     },
-                                    "description": "Retrieve activities for the specified type(s)"
+                                    "description": "Get activities for the specified type(s)"
                                 },
                                 "platform": {
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Platform"
                                     },
-                                    "description": "Retrieve activities from the specified platform(s)"
+                                    "description": "Get activities from the specified platform(s)"
                                 }
                             }
                         }
