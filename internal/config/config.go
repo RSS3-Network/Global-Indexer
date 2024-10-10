@@ -21,17 +21,18 @@ const (
 )
 
 type File struct {
-	Environment  string        `yaml:"environment" validate:"required" default:"development"`
-	Database     *Database     `yaml:"database"`
-	Redis        *Redis        `yaml:"redis"`
-	RSS3Chain    *RSS3Chain    `yaml:"rss3_chain"`
-	Settler      *Settler      `yaml:"settler"`
-	Distributor  *Distributor  `yaml:"distributor"`
-	Rewards      *Rewards      `yaml:"rewards"`
-	ActiveScores *ActiveScores `yaml:"active_scores"`
-	GeoIP        *GeoIP        `yaml:"geo_ip"`
-	RPC          *RPC          `yaml:"rpc"`
-	Telemetry    *Telemetry    `json:"telemetry"`
+	Environment   string         `yaml:"environment" validate:"required" default:"development"`
+	Database      *Database      `yaml:"database"`
+	Redis         *Redis         `yaml:"redis"`
+	RSS3Chain     *RSS3Chain     `yaml:"rss3_chain"`
+	Settler       *Settler       `yaml:"settler"`
+	Distributor   *Distributor   `yaml:"distributor"`
+	Rewards       *Rewards       `yaml:"rewards"`
+	ActiveScores  *ActiveScores  `yaml:"active_scores"`
+	GeoIP         *GeoIP         `yaml:"geo_ip"`
+	RPC           *RPC           `yaml:"rpc"`
+	Telemetry     *Telemetry     `json:"telemetry"`
+	TokenPriceAPI *TokenPriceAPI `yaml:"token_price_api"`
 }
 
 type Database struct {
@@ -109,6 +110,11 @@ type RPCEndpoint struct {
 type Telemetry struct {
 	Endpoint string `yaml:"endpoint" validate:"required"`
 	Insecure bool   `yaml:"insecure"`
+}
+
+type TokenPriceAPI struct {
+	Endpoint  string `yaml:"endpoint" validate:"required"`
+	AuthToken string `yaml:"auth_token"`
 }
 
 func Setup(configFilePath string) (*File, error) {

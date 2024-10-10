@@ -58,3 +58,7 @@ distributor:
   verification_count: 3
   tolerance_seconds: 1200
 
+token_price_api:
+  endpoint:
+  auth_token:
+

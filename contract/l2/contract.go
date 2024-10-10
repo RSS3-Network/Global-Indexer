@@ -32,18 +32,21 @@ var ContractMap = map[uint64]*struct {
 	AddressChipsProxy         common.Address
 	AddressSettlementProxy    common.Address
 	AddressNetworkParamsProxy common.Address
+	AddressPowerToken         common.Address
 }{
 	ChainIDTestnet: {
 		AddressStakingProxy:       common.HexToAddress("0xb1b209Ee24272C7EE8076764DAa27563c5add9FF"), // https://scan.testnet.rss3.io/address/0xb1b209Ee24272C7EE8076764DAa27563c5add9FF
 		AddressChipsProxy:         common.HexToAddress("0x305A3cD2E972ceE48C362ABca02DfA699161edd6"), // https://scan.testnet.rss3.io/token/0x305A3cD2E972ceE48C362ABca02DfA699161edd6
 		AddressSettlementProxy:    common.HexToAddress("0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b"), // https://scan.testnet.rss3.io/address/0xA37a6Ef0c3635824be2b6c87A23F6Df5d0E2ba1b
 		AddressNetworkParamsProxy: common.HexToAddress("0x5d768cAef86d3DA8eC6009eE4B3d9b7Fe26A43CB"), // https://scan.testnet.rss3.io/address/0x5d768cAef86d3DA8eC6009eE4B3d9b7Fe26A43CB
+		AddressPowerToken:         common.HexToAddress("0x973A5aa22E07B46D95B5Fd3c9561A3955496a0e7"), // https://scan.testnet.rss3.io/address/0x973A5aa22E07B46D95B5Fd3c9561A3955496a0e7
 	},
 	ChainIDMainnet: {
 		AddressStakingProxy:       common.HexToAddress("0x28F14d917fddbA0c1f2923C406952478DfDA5578"), // https://scan.rss3.io/address/0x28F14d917fddbA0c1f2923C406952478DfDA5578
 		AddressChipsProxy:         common.HexToAddress("0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE"), // https://scan.rss3.io/token/0x849f8F55078dCc69dD857b58Cc04631EBA54E4DE
 		AddressSettlementProxy:    common.HexToAddress("0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B"), // https://scan.rss3.io/address/0x0cE3159BF19F3C55B648D04E8f0Ae1Ae118D2A0B
 		AddressNetworkParamsProxy: common.HexToAddress("0x15176Aabdc4836c38947a67313d209204051C502"), // https://scan.rss3.io/address/0x15176Aabdc4836c38947a67313d209204051C502
+		AddressPowerToken:         common.HexToAddress("0xE06Af68F0c9e819513a6CD083EF6848E76C28CD8"), // https://scan.rss3.io/address/0xE06Af68F0c9e819513a6CD083EF6848E76C28CD8
 	},
 }
 

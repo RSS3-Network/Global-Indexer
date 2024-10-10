@@ -24,8 +24,9 @@ type Stat struct {
 	Indexer              int            `json:"indexer"`
 	ResetAt              time.Time      `json:"reset_at"`
 
-	Status  NodeStatus `json:"-"`
-	Version string     `json:"-"`
+	Status   NodeStatus `json:"-"`
+	HearBeat NodeStatus `json:"-"`
+	Version  string     `json:"-"`
 }
 
 type StatQuery struct {

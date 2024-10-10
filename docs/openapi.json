@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.3",
     "info": {
-        "title": "Global Indexer API",
-        "description": "An RSS3 Global Indexer (GI), is responsible for facilitating coordination among RSS3 Nodes, engaging with the VSL and performing critical functions such as Network Rewards calculation and slashing enforcement. Global Indexer API provides RSS3 Node data query (DSL) and network transparency (NTA) functions.",
+        "title": "RSS3 Data Sublayer API",
+        "description": "On the RSS3 Network, Global Indexers (GIs) are responsible for facilitating coordination among RSS3 Nodes, engaging with the Value Sublayer (VSL) and performing critical functions such as Network Rewards calculation and slashing enforcement. Global Indexers also provide Data Sublayer (DSL) API to process data queries and offer the Network’s insight via the Network Transparency API (NTA).",
         "version": "1.0.0"
     },
     "servers": [
@@ -27,7 +27,7 @@
         },
         {
             "name": "NTA",
-            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It allows users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113",
+            "description": "The Network Transparency API (NTA) is a set of APIs that provide transparency and visibility into the network. It enables users to query and retrieve information about the network. Learn more: https://forum.rss3.io/t/rss3-network-transparency-api/113",
             "x-displayName": "NTA"
         },
         {
@@ -75,8 +75,8 @@
     "paths": {
         "/decentralized/tx/{id}": {
             "get": {
-                "summary": "Get Decentralized Activity by ID",
-                "description": "This endpoint retrieves the details of a specified decentralized transaction activity by its ID. You can also specify additional query parameters to limit the number of actions retrieved and to paginate through actions.",
+                "summary": "Retrieve Activity by ID",
+                "description": "This endpoint retrieves the details of a specified decentralized transaction activity by its ID. You can specify additional query parameters to limit the number of actions retrieved and paginate through them.",
                 "operationId": "getActivityById",
                 "tags": [
                     "Decentralized",
@@ -108,8 +108,8 @@
         },
         "/decentralized/{account}": {
             "get": {
-                "summary": "Get Decentralized Account Activities",
-                "description": "This endpoint retrieves the activities associated with a specified account in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "summary": "Retrieve Account Activities",
+                "description": "This endpoint retrieves the activities associated with a specified account in the decentralized system. Use query parameters to filter results by action limits, timestamps, status, direction, and more.",
                 "operationId": "getAccountActivities",
                 "tags": [
                     "Decentralized",
@@ -168,8 +168,8 @@
         },
         "/decentralized/accounts": {
             "post": {
-                "summary": "Batch Get Decentralized Account Activities",
-                "description": "Retrieve a batch of activities associated with multiple specified accounts in the decentralized system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "summary": "Batch Get Accounts Activities",
+                "description": "Retrieve activities associated with multiple accounts on all compatible networks. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
                 "operationId": "batchGetAccountsActivities",
                 "tags": [
                     "Decentralized",
@@ -193,7 +193,7 @@
         },
         "/decentralized/network/{network}": {
             "get": {
-                "summary": "Get Network Decentralized Activities",
+                "summary": "Retrieve Network Activities",
                 "description": "Retrieve a list of activities from the specified decentralized network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
                 "operationId": "getNetworkActivities",
                 "tags": [
@@ -250,7 +250,7 @@
         },
         "/decentralized/platform/{platform}": {
             "get": {
-                "summary": "Get Platform Decentralized Activities",
+                "summary": "Retrieve Platform Activities",
                 "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
                 "operationId": "getPlatformActivities",
                 "tags": [
@@ -307,7 +307,7 @@
         },
         "/rss/{path}": {
             "get": {
-                "summary": "Get RSS Activity by Path",
+                "summary": "Retrieve RSS Activity by Path",
                 "operationId": "getRSSActivityByPath",
                 "tags": [
                     "RSS",
@@ -426,8 +426,8 @@
         },
         "/nta/bridgings/transactions": {
             "get": {
-                "summary": "Get bridging transactions",
-                "description": "Retrieve a list of bridging transactions based on various query parameters such as cursor, sender, receiver, address, transaction type, and limit. This endpoint allows users to filter transactions to get precise data related to deposits and withdrawals. The response includes detailed transaction information, including sender and receiver addresses, token details, and associated events such as deposit initialization and finalization. Use this endpoint for monitoring, auditing, or analyzing bridging transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "summary": "Retrieve bridging transactions",
+                "description": "Retrieve a list of bridging transactions based on various query parameters such as cursor, sender, receiver, address, transaction type, and limit. This endpoint allows users to filter transactions to get precise data related to deposits and withdrawals. The response includes transaction details, such as sender and receiver addresses, token information, and related events like deposit initialization and finalization. Use this endpoint for monitoring, auditing, or analyzing bridging transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
                 "operationId": "getBridgingTransactions",
                 "tags": [
                     "Bridge",
@@ -468,8 +468,8 @@
         },
         "/nta/bridgings/transactions/{transaction_hash}": {
             "get": {
-                "summary": "Get bridging transaction by hash",
-                "description": "Retrieve detailed information of a bridging transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single transaction, including sender, receiver, token details, and related events.",
+                "summary": "Retrieve bridging transaction by hash",
+                "description": "Retrieve bridging transaction details by its transaction hash. This endpoint provides comprehensive data about a single transaction, including sender, receiver, token details, and related events.",
                 "operationId": "getBridgingTransactionByHash",
                 "tags": [
                     "Bridge",
@@ -495,8 +495,8 @@
         },
         "/nta/stakings/transactions": {
             "get": {
-                "summary": "Get staking transactions",
-                "description": "Retrieve a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
+                "summary": "Retrieve staking transactions",
+                "description": "Retrieve a list of staking transactions based on various query parameters such as cursor, staker, node, transaction type, pending status, and limit. This endpoint allows users to filter transactions to get precise data related to staking activities including deposits, withdrawals, stakes, and unstakes. The response includes detailed transaction information such as staker address, Node address, value staked, associated chips, and related events. Use this endpoint for monitoring, auditing, or analyzing staking transactions. The 'cursor' parameter can be used for pagination to fetch subsequent sets of results.",
                 "operationId": "getStakingTransactions",
                 "tags": [
                     "Stake",
@@ -537,8 +537,8 @@
         },
         "/nta/stakings/transactions/{transaction_hash}": {
             "get": {
-                "summary": "Get staking transaction by hash",
-                "description": "Retrieve detailed information of a staking transaction by specifying the transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, node address, value staked, associated chips, and related events.",
+                "summary": "Retrieve staking transaction by hash",
+                "description": "Retrieve staking transaction details by its transaction hash. This endpoint provides comprehensive data about a single staking transaction, including staker address, Node address, value staked, associated chips, and related events.",
                 "operationId": "getStakingTransactionByHash",
                 "tags": [
                     "Stake",
@@ -564,8 +564,8 @@
         },
         "/nta/stakings/stakings": {
             "get": {
-                "summary": "Get a list of stakers and Nodes",
-                "description": "Retrieve a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
+                "summary": "Retrieve a list of stakers and Nodes",
+                "description": "Retrieve a list of stakers and their associated Nodes. This endpoint allows users to filter the results by staker address, Node address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each staker, node, and associated chips.",
                 "operationId": "getStakersAndNodes",
                 "tags": [
                     "Stake",
@@ -600,7 +600,7 @@
         },
         "/nta/stakings/{staker_address}/profit": {
             "get": {
-                "summary": "Get staking profit of a staker",
+                "summary": "Retrieve staking profit of a staker",
                 "description": "Retrieve the staking profit information for a specified staker. This endpoint returns detailed profit data, including the owner's address, total chip amount, total chip value, and profit and loss (PNL) data over different time periods (one day, one week, one month).",
                 "operationId": "getStakerProfit",
                 "tags": [
@@ -627,7 +627,7 @@
         },
         "/nta/stakings/{staker_address}/stat": {
             "get": {
-                "summary": "Get the number of nodes, chips, and tokens staked of a staker",
+                "summary": "Retrieve the number of nodes, chips, and tokens staked of a staker",
                 "description": "Retrieve the number of nodes, chips, and tokens staked by a specific staker. This endpoint returns detailed information about the staker, including the number of nodes staked, number of chips owned, total tokens staked, and the total value of the staker's assets.",
                 "operationId": "getStakerStats",
                 "tags": [
@@ -654,8 +654,8 @@
         },
         "/nta/chips": {
             "get": {
-                "summary": "Get all chips",
-                "description": "Retrieve a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
+                "summary": "Retrieve all chips",
+                "description": "Retrieve a list of all chips. This endpoint allows users to filter the results by cursor, chip IDs, Node address, owner address, and to paginate through the results using cursor and limit parameters. The response includes detailed information about each chip and a cursor for pagination to fetch subsequent sets of results.",
                 "operationId": "getAllChips",
                 "tags": [
                     "Chips",
@@ -693,8 +693,8 @@
         },
         "/nta/chips/{chip_id}": {
             "get": {
-                "summary": "Get Chips by chip id",
-                "description": "Retrieve detailed information about a specific chip by its unique chip ID. This endpoint returns comprehensive data about the chip, including its node address, owner address, and metadata such as name, description, and image.",
+                "summary": "Retrieve Chips by chip id",
+                "description": "Retrieve chip details using its unique ID. This endpoint returns comprehensive data about the chip, including its Node address, owner address, and metadata such as name, description, and image.",
                 "operationId": "getChipById",
                 "tags": [
                     "Chips",
@@ -723,7 +723,7 @@
         },
         "/nta/chips/{chip_id}/image.svg": {
             "get": {
-                "summary": "Get Chips image by id",
+                "summary": "Retrieve Chips image by id",
                 "description": "Retrieve the image of a specific chip by its unique chip ID. This endpoint returns the SVG image associated with the chip.",
                 "operationId": "getChipImageById",
                 "tags": [
@@ -753,8 +753,8 @@
         },
         "/nta/snapshots/nodes/count": {
             "get": {
-                "summary": "Get snapshots of Node count",
-                "description": "Retrieve snapshots of the node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
+                "summary": "Retrieve snapshots of Node count",
+                "description": "Retrieve snapshots of the Node count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of nodes on that date.",
                 "operationId": "getNodeCountSnapshots",
                 "tags": [
                     "Snapshots",
@@ -775,7 +775,7 @@
         },
         "/nta/snapshots/stakers/count": {
             "get": {
-                "summary": "Get snapshots of staker count",
+                "summary": "Retrieve snapshots of staker count",
                 "description": "Retrieve snapshots of the total staker count over time. This endpoint returns an array of objects, each containing the date and the corresponding count of stakers on that date.",
                 "operationId": "getStakerCountSnapshots",
                 "tags": [
@@ -797,7 +797,7 @@
         },
         "/nta/snapshots/stakers/profit": {
             "get": {
-                "summary": "Get snapshots of the staker profit",
+                "summary": "Retrieve snapshots of the staker profit",
                 "description": "Retrieve snapshots of the staker profit over time. This endpoint allows filtering by staker address, date range, and pagination parameters.",
                 "operationId": "getStakerProfitSnapshots",
                 "tags": [
@@ -836,8 +836,8 @@
         },
         "/nta/snapshots/nodes/operation/profit": {
             "get": {
-                "summary": "Get snapshots of operation profit",
-                "description": "Retrieve snapshots of the operation profit over time for a specific node. This endpoint allows filtering by node address, date range, and pagination parameters.",
+                "summary": "Retrieve snapshots of operation profit",
+                "description": "Retrieve snapshots of the operation profit over time for a specific node. This endpoint allows filtering by Node address, date range, and pagination parameters.",
                 "operationId": "getNodeOperationProfitSnapshots",
                 "tags": [
                     "Snapshots",
@@ -875,8 +875,8 @@
         },
         "/nta/snapshots/epochs/apy": {
             "get": {
-                "summary": "Get the APY of epoch snapshots",
-                "description": "Retrieve the Annual Percentage Yield (APY) for epoch snapshots. This endpoint returns an array of objects, each containing the epoch details and the corresponding APY.",
+                "summary": "Retrieve snapshots of epoch APY.",
+                "description": "Retrieve the Annual Percentage Yield (APY) for epoch snapshots. This endpoint returns an array of objects, each containing an epoch ID and the corresponding APY.",
                 "operationId": "getEpochAPYSnapshots",
                 "tags": [
                     "Snapshots",
@@ -897,8 +897,8 @@
         },
         "/nta/nodes": {
             "get": {
-                "summary": "Get all Nodes",
-                "description": "Retrieve a list of all nodes. This endpoint allows filtering by cursor, limit, and node address. The default limit is 10 and the maximum limit is 50.",
+                "summary": "Retrieve all RSS3 Nodes",
+                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address. The default limit is 10 and the maximum limit is 50.",
                 "operationId": "getAllNodes",
                 "tags": [
                     "Node",
@@ -933,8 +933,8 @@
         },
         "/nta/nodes/{address}": {
             "get": {
-                "summary": "Get Node by address",
-                "description": "Retrieve detailed information about a specific node by its address.",
+                "summary": "Retrieve Node by address",
+                "description": "Retrieve Node details by its address.",
                 "operationId": "getNodeByAddress",
                 "tags": [
                     "Node",
@@ -963,8 +963,8 @@
         },
         "/nta/nodes/{address}/avatar.svg": {
             "get": {
-                "summary": "Get Node avatar by address",
-                "description": "Retrieve the avatar of a specific node by its address. This endpoint returns the SVG image associated with the node.",
+                "summary": "Retrieve Node avatar by address",
+                "description": "Retrieve the avatar of a specific Node by its address. This endpoint returns the SVG image associated with the node.",
                 "operationId": "getNodeAvatarByAddress",
                 "tags": [
                     "Node",
@@ -993,8 +993,8 @@
         },
         "/nta/nodes/{address}/events": {
             "get": {
-                "summary": "Get Node transaction events by address",
-                "description": "Retrieve the transaction events for a specific node by its address. This endpoint allows filtering by cursor and limit for pagination.",
+                "summary": "Retrieve Node transaction events by address",
+                "description": "Retrieve the transaction events for a specific Node by its address. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getNodeEventsByAddress",
                 "tags": [
                     "Node",
@@ -1026,8 +1026,8 @@
         },
         "/nta/nodes/{address}/operation/profit": {
             "get": {
-                "summary": "Get Node operation profit by address",
-                "description": "Retrieve the operation profit details for a specific node by its address. This endpoint provides detailed profit and loss (PNL) information over different time periods.",
+                "summary": "Retrieve Node operation profit by address",
+                "description": "Retrieve the operation profit details for a specific Node by its address. This endpoint provides detailed profit and loss (PNL) information over different time periods.",
                 "operationId": "getNodeOperationProfitByAddress",
                 "tags": [
                     "Node",
@@ -1056,7 +1056,7 @@
         },
         "/nta/epochs": {
             "get": {
-                "summary": "Get all epochs",
+                "summary": "Retrieve all epochs",
                 "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
                 "operationId": "getAllEpochs",
                 "tags": [
@@ -1086,8 +1086,8 @@
         },
         "/nta/epochs/{epoch_id}": {
             "get": {
-                "summary": "Get epoch by id",
-                "description": "Retrieve detailed information about a specific epoch by its ID.",
+                "summary": "Retrieve epoch by id",
+                "description": "Retrieve epoch details by its ID.",
                 "operationId": "getEpochById",
                 "tags": [
                     "Epoch",
@@ -1116,7 +1116,7 @@
         },
         "/nta/epochs/distributions/{transaction_hash}": {
             "get": {
-                "summary": "Get epoch transaction by hash",
+                "summary": "Retrieve epoch transaction by hash",
                 "description": "Retrieve details of an epoch transaction by its hash.",
                 "operationId": "getEpochTransactionByHash",
                 "tags": [
@@ -1143,8 +1143,8 @@
         },
         "/nta/epochs/{address}/rewards": {
             "get": {
-                "summary": "Get Node rewards by epoch",
-                "description": "Retrieve the rewards of a specific node by epoch. This endpoint allows filtering by cursor and limit for pagination.",
+                "summary": "Retrieve Node rewards by epoch",
+                "description": "Retrieve the rewards of a specific Node by epoch. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getNodeRewardsByEpoch",
                 "tags": [
                     "Epoch",
@@ -1179,7 +1179,7 @@
         },
         "/nta/epochs/apy": {
             "get": {
-                "summary": "Get the average of epochs APY",
+                "summary": "Retrieve the average of epochs APY",
                 "description": "Retrieve the average Annual Percentage Yield (APY) for all epochs.",
                 "operationId": "getEpochsAverageAPY",
                 "tags": [
@@ -1198,7 +1198,7 @@
         },
         "/nta/networks": {
             "get": {
-                "summary": "Get all compatible networks",
+                "summary": "Retrieve all compatible networks",
                 "description": "Retrieve a list of all compatible networks.",
                 "operationId": "getAllCompatibleNetworks",
                 "tags": [
@@ -1217,8 +1217,8 @@
         },
         "/nta/networks/assets": {
             "get": {
-                "summary": "Get Node Assets",
-                "description": "Retrieve node assets details.",
+                "summary": "Retrieve Node Assets",
+                "description": "Retrieve Node assets details.",
                 "operationId": "getNodeAssets",
                 "tags": [
                     "Networks",
@@ -1236,7 +1236,7 @@
         },
         "/nta/networks/{network_name}/list_workers": {
             "get": {
-                "summary": "Get available workers by network",
+                "summary": "Retrieve available workers by network",
                 "description": "Retrieve a list of available workers for a specific network.",
                 "operationId": "getAvailableWorkersByNetwork",
                 "tags": [
@@ -1266,8 +1266,8 @@
         },
         "/nta/networks/{network_name}/workers/{worker_name}": {
             "get": {
-                "summary": "Get config by network and worker",
-                "description": "Retrieve the configuration details for a specific worker in a specific network.",
+                "summary": "Retrieve config by network and worker",
+                "description": "Retrieve the configuration details of a specific worker on a specific network.",
                 "operationId": "getWorkerConfigByNetworkAndWorker",
                 "tags": [
                     "Networks",
@@ -1299,8 +1299,8 @@
         },
         "/nta/dsl/total_requests": {
             "get": {
-                "summary": "Get DSL total requests",
-                "description": "Retrieve the total number of requests made to the NTA API.",
+                "summary": "Retrieve DSL total requests",
+                "description": "Retrieve the total number of requests served by Global Indexers.",
                 "operationId": "getDSLTotalRequests",
                 "tags": [
                     "NTA"
@@ -1308,6 +1308,42 @@
                 "responses": {
                     "200": {
                         "$ref": "#/components/responses/TotalRequestsResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/nta/token/supply": {
+            "get": {
+                "summary": "Retrieve RSS3 token total supply on VSL",
+                "description": "Retrieve the total supply of RSS3 token on VSL.",
+                "operationId": "getRSS3TokenTotalSupply",
+                "tags": [
+                    "NTA"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/TokenSupplyResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/nta/token/tvl": {
+            "get": {
+                "summary": "Retrieve TVL in $",
+                "description": "Retrieve the total value locked (TVL) in $, including RSS3, WETH, USDT, USDC, and POWER.",
+                "operationId": "getTokenTVL",
+                "tags": [
+                    "NTA"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/TokenTvlResponse"
                     },
                     "500": {
                         "$ref": "#/components/responses/500"
@@ -1328,7 +1364,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"}]
+                        "anyOf": [{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -1717,19 +1753,19 @@
                 "description": "A tag used to categorize activities.",
                 "type": "string",
                 "example": "transaction",
-                "enum": ["collectible","exchange","governance","metaverse","rss","social","transaction","unknown"]
+                "enum": ["collectible","exchange","metaverse","rss","social","transaction","unknown"]
             },
             "Type": {
                 "description": "The type of activity.",
                 "type": "string",
                 "example": "transfer",
-                "enum": ["approval","auction","bridge","burn","comment","delete","feed","liquidity","loan","mint","post","profile","proposal","proxy","revise","reward","share","staking","swap","trade","transfer","unknown","vote"]
+                "enum": ["approval","bridge","burn","comment","delete","feed","liquidity","mint","post","profile","proxy","revise","reward","share","staking","swap","trade","transfer","unknown"]
             },
             "Network": {
                 "description": "The network on which activities occur.",
                 "type": "string",
                 "example": "ethereum",
-                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","vsl","x-layer"]
+                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","vsl","x-layer"]
             },
             "Platform": {
                 "description": "The platform on which activities occur.",
@@ -2237,7 +2273,7 @@
                     },
                     "alpha": {
                         "type": "boolean",
-                        "description": "Whether the node is an alpha node"
+                        "description": "Whether the Node is an alpha node"
                     },
                     "version": {
                         "type": "string",
@@ -2257,7 +2293,7 @@
                     "id": 18,
                     "address": "0x69982e017acc0fde3d1542205089a8d3eafcd1b7",
                     "name": "Natural Selection Labs",
-                    "description": "A node operated by NSL.",
+                    "description": "A Node operated by NSL.",
                     "tax_rate_basis_points": 800,
                     "is_public_good": false,
                     "operation_pool_tokens": "724429065703690345869831",
@@ -3103,33 +3139,33 @@
                     }
                 }
             },
-            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
-            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
-            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
-            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
+            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
+            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
+            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
             "SocialProxy": {"properties":{"action":{"enum":["appoint","remove"],"type":"string"},"profile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"proxy_address":{"type":"string"}},"required":["proxy_address"],"type":"object"},
-            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
             "SocialProfile": {"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
             "RssFeed": {"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},
-            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
-            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell","offer","set","create","finalize"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
+            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
+            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
         },
         "parameters": {
             "activity_id_path": {
@@ -3583,7 +3619,7 @@
                 "name": "address",
                 "in": "path",
                 "required": true,
-                "description": "The address of the node to retrieve.",
+                "description": "The address of the Node to retrieve.",
                 "schema": {
                     "type": "string"
                 },
@@ -3908,7 +3944,7 @@
                 }
             },
             "StakeStakingsResponse": {
-                "description": "A successful response containing a list of stakers and their associated nodes. Each entry in the data array represents a staker and includes detailed information about the staker, the node they are associated with, and any associated chips. The response also includes a cursor for pagination to fetch subsequent sets of results. This allows users to retrieve large datasets incrementally.",
+                "description": "A successful response containing a list of stakers and their associated nodes. Each entry in the data array represents a staker and includes detailed information about the staker, the Node they are associated with, and any associated chips. The response also includes a cursor for pagination to fetch subsequent sets of results. This allows users to retrieve large datasets incrementally.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4024,7 +4060,7 @@
                 }
             },
             "ChipsResponse": {
-                "description": "A successful response containing a list of chips based on the provided filters. Each chip includes detailed information such as its ID, node address, owner address, and metadata. The response also includes a cursor for pagination to fetch subsequent sets of results.",
+                "description": "A successful response containing a list of chips based on the provided filters. Each chip includes detailed information such as its ID, Node address, owner address, and metadata. The response also includes a cursor for pagination to fetch subsequent sets of results.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4052,7 +4088,7 @@
                 }
             },
             "ChipResponse": {
-                "description": "A successful response containing detailed information about the specified chip. The data includes the chip's ID, node address, owner address, and metadata such as name, description, and image.",
+                "description": "A successful response containing detailed information about the specified chip. The data includes the chip's ID, Node address, owner address, and metadata such as name, description, and image.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4072,7 +4108,7 @@
                 }
             },
             "NodeCountSnapshotsResponse": {
-                "description": "A successful response containing snapshots of node counts over time. Each entry in the data array includes the date and the count of nodes on that date.",
+                "description": "A successful response containing snapshots of Node counts over time. Each entry in the data array includes the date and the count of nodes on that date.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4083,7 +4119,7 @@
                             "properties": {
                                 "data": {
                                     "type": "array",
-                                    "description": "Array of node count snapshots.",
+                                    "description": "Array of Node count snapshots.",
                                     "items": {
                                         "$ref": "#/components/schemas/CountSnapshot"
                                     }
@@ -4237,7 +4273,7 @@
                             "properties": {
                                 "data": {
                                     "type": "array",
-                                    "description": "Array of node transaction events.",
+                                    "description": "Array of Node transaction events.",
                                     "items": {
                                         "$ref": "#/components/schemas/NodeEvent"
                                     }
@@ -4361,7 +4397,7 @@
                 }
             },
             "NodeRewardsByEpochResponse": {
-                "description": "A successful response containing the rewards of the specified node by epoch. Each entry in the data array includes detailed information about the epoch.",
+                "description": "A successful response containing the rewards of the specified Node by epoch. Each entry in the data array includes detailed information about the epoch.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4373,7 +4409,7 @@
                             "properties": {
                                 "data": {
                                     "type": "array",
-                                    "description": "Array of epochs with node rewards.",
+                                    "description": "Array of epochs with Node rewards.",
                                     "items": {
                                         "$ref": "#/components/schemas/Epoch"
                                     }
@@ -4733,6 +4769,48 @@
                                 "data": {
                                     "type": "integer",
                                     "description": "The total number of requests made to the API."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "TokenSupplyResponse": {
+                "description": "A successful response containing the total supply of VSL token in RSS3.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total_supply": {
+                                            "type": "string",
+                                            "description": "The total supply of VSL token in RSS3."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "TokenTvlResponse": {
+                "description": "A successful response containing the TVL of VSL token in USD, including RSS3, WETH, USDT, USDC and POWER.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tvl": {
+                                            "type": "string",
+                                            "description": "The TVL of VSL token in USD, including RSS3, WETH, USDT, USDC and POWER."
+                                        }
+                                    }
                                 }
                             }
                         }

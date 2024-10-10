@@ -45,7 +45,7 @@ func (s *Server) Run(_ context.Context) error {
 }
 
 func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLite2 *geolite2.Client, ethereumMultiChainClient *ethereum.MultiChainClient, nameService *nameresolver.NameResolver, httpClient httputil.Client, txManager *txmgr.SimpleTxManager, config *config.File) (service.Server, error) {
-	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService, httpClient, txManager, config.Settler)
+	hub, err := NewHub(context.Background(), databaseClient, redisClient, ethereumMultiChainClient, geoLite2, nameService, httpClient, txManager, config)
 	if err != nil {
 		return nil, fmt.Errorf("new hub: %w", err)
 	}
@@ -148,6 +148,12 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			stake.GET("/:staker_address/stat", instance.hub.nta.GetStakingStat)
 			stake.GET("/transactions", instance.hub.nta.GetStakeTransactions)
 			stake.GET("/transactions/:transaction_hash", instance.hub.nta.GetStakeTransaction)
+		}
+
+		token := nta.Group("/token")
+		{
+			token.GET("/supply", instance.hub.nta.GetTokenSupply)
+			token.GET("/tvl", instance.hub.nta.GetTvl)
 		}
 
 		dsl := nta.Group("/dsl")

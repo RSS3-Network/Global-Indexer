@@ -61,19 +61,26 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	for i := range nodes {
 		switch nodeVSLInfo[i].Status {
 		// Handle cases for None, Registered, Outdated, and Initializing statuses
-		case uint8(schema.NodeStatusNone), uint8(schema.NodeStatusRegistered), uint8(schema.NodeStatusOutdated), uint8(schema.NodeStatusInitializing):
+		case uint8(schema.NodeStatusNone),
+			uint8(schema.NodeStatusRegistered),
+			uint8(schema.NodeStatusOutdated),
+			uint8(schema.NodeStatusInitializing),
+			uint8(schema.NodeStatusOffline):
 			// It indicates that the node has not started.
 			// Keep the status as registered.
 			if nodes[i].Status == schema.NodeStatusRegistered {
+				if nodeVSLInfo[i].Status == uint8(schema.NodeStatusNone) {
+					updatedNodes = append(updatedNodes, nodes[i])
+				}
+
 				continue
 			}
-			// Update node status based on VSL info
-			nodes[i].Status = schema.NodeStatus(nodeVSLInfo[i].Status)
+
 			// Determine new status and potential error path
 			newStatus, errPath := e.determineStatus(ctx, nodes[i], minVersion)
 
 			// If status has changed, update and handle accordingly
-			if nodes[i].Status != newStatus {
+			if schema.NodeStatus(nodeVSLInfo[i].Status) != newStatus {
 				nodes[i].Status = newStatus
 				updatedNodes = append(updatedNodes, nodes[i])
 
@@ -85,18 +92,10 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 				}
 			}
 		// Handle cases for Online and Exiting statuses
-		case uint8(schema.NodeStatusOnline), uint8(schema.NodeStatusExiting):
-			// Retrieve node information from database
-			nodeDBInfo, err := e.databaseClient.FindNode(ctx, nodes[i].Address)
-			if err != nil {
-				zap.L().Error("find node", zap.Error(err), zap.Any("address", nodes[i].Address.String()))
-
-				continue
-			}
-
+		case uint8(schema.NodeStatusOnline),
+			uint8(schema.NodeStatusExiting):
 			// If node status from heartbeat is offline, update node status
-			if nodeDBInfo.Status == schema.NodeStatusOffline {
-				nodes[i].Status = schema.NodeStatusOffline
+			if nodes[i].Status == schema.NodeStatusOffline {
 				// TODO: slashing mechanism temporarily disabled.
 				// demotionNodeAddresses = append(demotionNodeAddresses, stats[i].Address)
 				// reasons = append(reasons, "offline")
@@ -125,7 +124,12 @@ func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node,
 	if err != nil || workersInfo == nil {
 		zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", node.Address.String()), zap.Any("endpoint", node.Endpoint), zap.Any("access_token", node.AccessToken))
 
-		return schema.NodeStatusOffline, "workers_status"
+		// Fixme: deprecated if the last node version is released
+		if node.Status == schema.NodeStatusOffline {
+			return schema.NodeStatusOffline, "workers_status"
+		}
+
+		return schema.NodeStatusInitializing, ""
 	}
 
 	for _, workerInfo := range workersInfo.Data.Decentralized {
