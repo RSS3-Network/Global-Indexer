@@ -17,6 +17,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/rss3-network/node/schema/worker"
 	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/node/schema/worker/federated"
 	"github.com/rss3-network/node/schema/worker/rss"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
@@ -85,8 +86,8 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return fmt.Errorf("set map cache: %w", err)
 	}
 	// Update node statistics and worker data.
-	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
-		return fmt.Errorf("update node workers: %w", err)
+	if err := e.updateNodeStatsAndWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
+		return fmt.Errorf("update node stats and workers: %w", err)
 	}
 	// filter the exited node status and submit the demotion to the VSL.
 	// Fixme: deprecated if there is no alpha type node
@@ -416,8 +417,8 @@ func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 	return nil
 }
 
-// updateNodeWorkers checks if the node is a full node and updates the corresponding worker information in the database.
-func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.Stat, nodeToDataMap map[common.Address]*ComponentInfo, epoch int64) error {
+// updateNodeStatsAndWorkers checks if the node is a full node and updates the corresponding worker information in the database.
+func (e *SimpleEnforcer) updateNodeStatsAndWorkers(ctx context.Context, stats []*schema.Stat, nodeToDataMap map[common.Address]*ComponentInfo, epoch int64) error {
 	var (
 		wg         sync.WaitGroup
 		mu         sync.Mutex
@@ -452,6 +453,7 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
 				stats[i].EpochInvalidRequest = 0
+				stats[i].EpochRequest = 0
 			}
 
 			// Update worker information in the database if the node is not a full node.
@@ -473,6 +475,11 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 
 		if err := client.SaveNodeWorkers(ctx, workerList); err != nil {
 			return fmt.Errorf("save node workers: %w", err)
+		}
+
+		// Update the node statistics in the database.
+		if err := client.SaveNodeStats(ctx, stats); err != nil {
+			return fmt.Errorf("update node stats: %w", err)
 		}
 
 		return nil
@@ -668,7 +675,7 @@ type RSSWorkerInfo struct {
 
 type FederatedInfo struct {
 	WorkerInfo
-	Worker decentralized.Worker `json:"worker"`
+	Worker federated.Worker `json:"worker"`
 }
 
 type ComponentInfo struct {
