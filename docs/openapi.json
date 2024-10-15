@@ -424,6 +424,145 @@
                 }
             }
         },
+        "/federated/accounts": {
+            "post": {
+                "summary": "Batch Get Federated Accounts Activities",
+                "description": "Retrieve activities associated with multiple accounts on all compatible networks. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "operationId": "batchGetFederatedAccountsActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/BatchGetFederatedAccountsActivities"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/network/{network}": {
+            "get": {
+                "summary": "Retrieve Federated Network Activities",
+                "description": "Retrieve a list of activities from the specified federated network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getFederatedNetworkActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_network_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_platform_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/platform/{platform}": {
+            "get": {
+                "summary": "Retrieve Platform Activities",
+                "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getPlatformActivities",
+                "tags": [
+                    "Decentralized",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_platform_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_network_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/nta/bridgings/transactions": {
             "get": {
                 "summary": "Retrieve bridging transactions",
@@ -1364,7 +1503,89 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"}]
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/SocialRevise"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialProfile"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialComment"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialReward"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialShare"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialDelete"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialProxy"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialPost"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseBurn"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseTransfer"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseTrade"
+                            },
+                            {
+                                "$ref": "#/components/schemas/RssFeed"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TransactionTransfer"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TransactionBurn"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TransactionMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TransactionApproval"
+                            },
+                            {
+                                "$ref": "#/components/schemas/TransactionBridge"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleApproval"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleTrade"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleTransfer"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleBurn"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ExchangeLiquidity"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ExchangeStaking"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ExchangeSwap"
+                            }
+                        ]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -3185,7 +3406,12 @@
                 "properties": {
                     "error_code": {
                         "type": "string",
-                        "enum": ["bad_request","validate_failed","bad_params","internal_error"]
+                        "enum": [
+                            "bad_request",
+                            "validate_failed",
+                            "bad_params",
+                            "internal_error"
+                        ]
                     },
                     "error": {
                         "type": "string"
@@ -3212,33 +3438,2021 @@
                     }
                 }
             },
-            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
-            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
-            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
-            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialProxy": {"properties":{"action":{"enum":["appoint","remove"],"type":"string"},"profile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"proxy_address":{"type":"string"}},"required":["proxy_address"],"type":"object"},
-            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialProfile": {"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "RssFeed": {"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},
-            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
-            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
+            "ExchangeLiquidity": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "add",
+                            "borrow",
+                            "collect",
+                            "remove",
+                            "repay",
+                            "supply",
+                            "withdraw"
+                        ],
+                        "type": "string"
+                    },
+                    "tokens": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "decimals": {
+                                    "type": "integer"
+                                },
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "parsed_image_url": {
+                                    "type": "string"
+                                },
+                                "standard": {
+                                    "enum": [
+                                        "Unknown",
+                                        "ERC-20",
+                                        "ERC-165",
+                                        "ERC-721",
+                                        "ERC-1155",
+                                        "ERC-1967"
+                                    ],
+                                    "type": "string"
+                                },
+                                "symbol": {
+                                    "type": "string"
+                                },
+                                "uri": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "action",
+                    "tokens"
+                ],
+                "type": "object"
+            },
+            "ExchangeStaking": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "stake",
+                            "unstake",
+                            "claim"
+                        ],
+                        "type": "string"
+                    },
+                    "period": {
+                        "properties": {
+                            "end": {
+                                "properties": {
+                                    "ext": {
+                                        "type": "integer"
+                                    },
+                                    "loc": {
+                                        "properties": {
+                                            "cacheEnd": {
+                                                "type": "integer"
+                                            },
+                                            "cacheStart": {
+                                                "type": "integer"
+                                            },
+                                            "cacheZone": {
+                                                "properties": {
+                                                    "isDST": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "offset": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "offset",
+                                                    "isDST"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "extend": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "tx": {
+                                                "items": {
+                                                    "properties": {
+                                                        "index": {
+                                                            "type": "integer"
+                                                        },
+                                                        "isstd": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isutc": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "when": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "when",
+                                                        "index",
+                                                        "isstd",
+                                                        "isutc"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "zone": {
+                                                "items": {
+                                                    "properties": {
+                                                        "isDST": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "offset": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "name",
+                                                        "offset",
+                                                        "isDST"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "zone",
+                                            "tx",
+                                            "extend",
+                                            "cacheStart",
+                                            "cacheEnd"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "wall": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "wall",
+                                    "ext"
+                                ],
+                                "type": "object"
+                            },
+                            "start": {
+                                "properties": {
+                                    "ext": {
+                                        "type": "integer"
+                                    },
+                                    "loc": {
+                                        "properties": {
+                                            "cacheEnd": {
+                                                "type": "integer"
+                                            },
+                                            "cacheStart": {
+                                                "type": "integer"
+                                            },
+                                            "cacheZone": {
+                                                "properties": {
+                                                    "isDST": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "offset": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "offset",
+                                                    "isDST"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "extend": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "tx": {
+                                                "items": {
+                                                    "properties": {
+                                                        "index": {
+                                                            "type": "integer"
+                                                        },
+                                                        "isstd": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "isutc": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "when": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "when",
+                                                        "index",
+                                                        "isstd",
+                                                        "isutc"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "zone": {
+                                                "items": {
+                                                    "properties": {
+                                                        "isDST": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "offset": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "name",
+                                                        "offset",
+                                                        "isDST"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "zone",
+                                            "tx",
+                                            "extend",
+                                            "cacheStart",
+                                            "cacheEnd"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "wall": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "wall",
+                                    "ext"
+                                ],
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "token": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "action"
+                ],
+                "type": "object"
+            },
+            "ExchangeSwap": {
+                "properties": {
+                    "from": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "to": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialMint": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialProxy": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "appoint",
+                            "remove"
+                        ],
+                        "type": "string"
+                    },
+                    "profile": {
+                        "properties": {
+                            "action": {
+                                "enum": [
+                                    "create",
+                                    "renew",
+                                    "unwrap",
+                                    "update",
+                                    "wrap"
+                                ],
+                                "type": "string"
+                            },
+                            "address": {
+                                "type": "string"
+                            },
+                            "bio": {
+                                "type": "string"
+                            },
+                            "expiry": {
+                                "type": "string"
+                            },
+                            "handle": {
+                                "type": "string"
+                            },
+                            "image_uri": {
+                                "type": "string"
+                            },
+                            "key": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "profile_id": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "proxy_address": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "proxy_address"
+                ],
+                "type": "object"
+            },
+            "SocialPost": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialRevise": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialShare": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialDelete": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialComment": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialReward": {
+                "properties": {
+                    "author_url": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "content_uri": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "media": {
+                        "items": {
+                            "properties": {
+                                "address": {
+                                    "type": "string"
+                                },
+                                "mime_type": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "address",
+                                "mime_type"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "publication_id": {
+                        "type": "string"
+                    },
+                    "reward": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "target": {
+                        "$ref": "#/components/schemas/SocialPost"
+                    },
+                    "target_url": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SocialProfile": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "create",
+                            "renew",
+                            "unwrap",
+                            "update",
+                            "wrap"
+                        ],
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "expiry": {
+                        "type": "string"
+                    },
+                    "handle": {
+                        "type": "string"
+                    },
+                    "image_uri": {
+                        "type": "string"
+                    },
+                    "key": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "profile_id": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "MetaverseTrade": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "buy",
+                            "list",
+                            "sell"
+                        ],
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "cost": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "MetaverseBurn": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "MetaverseMint": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "MetaverseTransfer": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "RssFeed": {
+                "properties": {
+                    "authors": {
+                        "items": {
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "pub_date": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "title",
+                    "description"
+                ],
+                "type": "object"
+            },
+            "TransactionApproval": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "approve",
+                            "revoke"
+                        ],
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "action"
+                ],
+                "type": "object"
+            },
+            "TransactionBridge": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "deposit",
+                            "withdraw"
+                        ],
+                        "type": "string"
+                    },
+                    "source_network": {
+                        "enum": [
+                            "unknown",
+                            "arbitrum",
+                            "arweave",
+                            "avax",
+                            "base",
+                            "binance-smart-chain",
+                            "bitcoin",
+                            "crossbell",
+                            "ethereum",
+                            "farcaster",
+                            "gnosis",
+                            "linea",
+                            "mastodon",
+                            "optimism",
+                            "polygon",
+                            "rss",
+                            "savm",
+                            "vsl",
+                            "x-layer"
+                        ],
+                        "type": "string"
+                    },
+                    "target_network": {
+                        "enum": [
+                            "unknown",
+                            "arbitrum",
+                            "arweave",
+                            "avax",
+                            "base",
+                            "binance-smart-chain",
+                            "bitcoin",
+                            "crossbell",
+                            "ethereum",
+                            "farcaster",
+                            "gnosis",
+                            "linea",
+                            "mastodon",
+                            "optimism",
+                            "polygon",
+                            "rss",
+                            "savm",
+                            "vsl",
+                            "x-layer"
+                        ],
+                        "type": "string"
+                    },
+                    "token": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "action",
+                    "source_network",
+                    "target_network"
+                ],
+                "type": "object"
+            },
+            "TransactionTransfer": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "TransactionBurn": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "TransactionMint": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "CollectibleApproval": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "approve",
+                            "revoke"
+                        ],
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "action"
+                ],
+                "type": "object"
+            },
+            "CollectibleTrade": {
+                "properties": {
+                    "action": {
+                        "enum": [
+                            "buy",
+                            "sell"
+                        ],
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "cost": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "decimals": {
+                                "type": "integer"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parsed_image_url": {
+                                "type": "string"
+                            },
+                            "standard": {
+                                "enum": [
+                                    "Unknown",
+                                    "ERC-20",
+                                    "ERC-165",
+                                    "ERC-721",
+                                    "ERC-1155",
+                                    "ERC-1967"
+                                ],
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            },
+                            "uri": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "action"
+                ],
+                "type": "object"
+            },
+            "CollectibleTransfer": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "CollectibleBurn": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "CollectibleMint": {
+                "properties": {
+                    "address": {
+                        "type": "string"
+                    },
+                    "decimals": {
+                        "type": "integer"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parsed_image_url": {
+                        "type": "string"
+                    },
+                    "standard": {
+                        "enum": [
+                            "Unknown",
+                            "ERC-20",
+                            "ERC-165",
+                            "ERC-721",
+                            "ERC-1155",
+                            "ERC-1967"
+                        ],
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "uri": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
         },
         "parameters": {
             "activity_id_path": {
@@ -3326,9 +5540,29 @@
                     "type": "string"
                 }
             },
+            "federated_network_path": {
+                "description": "Retrieve activities from the specified federated network.",
+                "example": "mastodon",
+                "in": "path",
+                "name": "network",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
             "platform_path": {
                 "description": "Retrieve activities from the specified platform.",
                 "example": "Uniswap",
+                "in": "path",
+                "name": "platform",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "federated_platform_path": {
+                "description": "Retrieve activities from the specified federated platform.",
+                "example": "Mastodon",
                 "in": "path",
                 "name": "platform",
                 "required": true,
@@ -3889,6 +6123,89 @@
                                         "$ref": "#/components/schemas/Platform"
                                     },
                                     "description": "Retrieve activities from the specified platform(s)"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "BatchGetFederatedAccountsActivities": {
+                "description": "Request body for batch retrieving activities for multiple federated accounts",
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "accounts": {
+                                    "type": "array",
+                                    "maxItems": 20,
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "List of federated accounts to retrieve activities",
+                                    "example": [
+                                        "@hauptstadtzoos@mastodon.berlin",
+                                        "@nummycreations@mstdn.business"
+                                    ]
+                                },
+                                "limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of activities to retrieve",
+                                    "example": 20,
+                                    "default": 100,
+                                    "minimum": 1,
+                                    "maximum": 100
+                                },
+                                "action_limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of actions within the activity to retrieve",
+                                    "example": 10,
+                                    "default": 10,
+                                    "minimum": 1,
+                                    "maximum": 20
+                                },
+                                "cursor": {
+                                    "type": "string",
+                                    "description": "Specify the cursor used for pagination"
+                                },
+                                "since_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities starting from this timestamp"
+                                },
+                                "until_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities up to this timestamp"
+                                },
+                                "success": {
+                                    "type": "boolean",
+                                    "description": "Retrieve activities based on success status"
+                                },
+                                "direction": {
+                                    "$ref": "#/components/schemas/Direction"
+                                },
+                                "network": {
+                                    "type": "string",
+                                    "description": "Retrieve activities from the specified network(s)"
+                                },
+                                "tag": {
+                                    "type": "string",
+                                    "description": "Retrieve activities for the specified tag(s)",
+                                    "example": "social"
+                                },
+                                "type": {
+                                    "type": "array",
+                                    "description": "Retrieve activities for the specified type(s)",
+                                    "example": [
+                                        "post",
+                                        "comment",
+                                        "share"
+                                    ]
+                                },
+                                "platform": {
+                                    "type": "string",
+                                    "description": "Retrieve activities from the specified platform(s)",
+                                    "example": "Mastodon"
                                 }
                             }
                         }
