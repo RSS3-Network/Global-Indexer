@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v1.20.4
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rss3-network/node v1.0.4-0.20241014021337-74f29be741ae
+	github.com/rss3-network/node v1.0.4-0.20241014215231-2c1be2d419b6
 	github.com/rss3-network/protocol-go v0.5.9
 	github.com/samber/lo v1.47.0
 	github.com/shopspring/decimal v1.4.0
