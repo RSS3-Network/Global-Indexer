@@ -125,3 +125,26 @@ func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account st
 
 	return nodeEndpointCaches, nil
 }
+
+// getFederatedDefaultNodes retrieves the default Nodes for federated handles.
+func (d *Distributor) getFederatedDefaultNodes(ctx context.Context) ([]*model.NodeEndpointCache, error) {
+	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		PointsOrder: lo.ToPtr("DESC"),
+		Limit:       lo.ToPtr(3),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("find node stats: %w", err)
+	}
+
+	nodeEndpointCaches := make([]*model.NodeEndpointCache, len(nodeStats))
+	for i, stat := range nodeStats {
+		nodeEndpointCaches[i] = &model.NodeEndpointCache{
+			Address:     stat.Address.String(),
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
+		}
+	}
+
+	return nodeEndpointCaches, nil
+}

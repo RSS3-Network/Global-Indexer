@@ -182,6 +182,9 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 		{
 			federated.GET("/tx/:id", instance.hub.dsl.GetFederatedActivity)
 			federated.GET("/:account", instance.hub.dsl.GetFederatedAccountActivities)
+			federated.GET("/network/:network", instance.hub.dsl.GetFederatedNetworkActivities)
+			federated.GET("/platform/:platform", instance.hub.dsl.GetFederatedPlatformActivities)
+			federated.POST("/accounts", instance.hub.dsl.BatchGetFederatedAccountsActivities)
 		}
 	}
 

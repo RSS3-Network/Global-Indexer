@@ -112,10 +112,11 @@ func (d *Distributor) getStrategyForRequest(requestType, component string, reque
 	switch requestType {
 	case model.DistributorRequestActivity:
 		return d.getActivityStrategy(component, request)
-	case model.DistributorRequestAccountActivities:
+	case model.DistributorRequestAccountActivities,
+		model.DistributorRequestBatchAccountActivities,
+		model.DistributorRequestNetworkActivities,
+		model.DistributorRequestPlatformActivities:
 		return d.getAccountActivitiesStrategy(component, request)
-	case model.DistributorRequestBatchAccountActivities, model.DistributorRequestNetworkActivities, model.DistributorRequestPlatformActivities:
-		return d.getQualifiedNodes, d.processDecentralizedActivitiesResponses, nil
 	default:
 		return nil, nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
@@ -174,7 +175,7 @@ func (d *Distributor) getFederatedNodeRetriever(request interface{}) nodeRetriev
 				return nil, fmt.Errorf("unescape account: %w", err)
 			}
 		default:
-			return nil, fmt.Errorf("invalid request type: %T", request)
+			return d.getFederatedDefaultNodes(ctx)
 		}
 
 		return d.getFederatedQualifiedNodes(ctx, account)
