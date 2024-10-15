@@ -98,7 +98,8 @@ func (s *Server) filter(nodeAddresses []common.Address, nodes []*schema.Node) ([
 func isValidStatus(status uint8) bool {
 	return status == uint8(schema.NodeStatusInitializing) ||
 		status == uint8(schema.NodeStatusOnline) ||
-		status == uint8(schema.NodeStatusExiting)
+		status == uint8(schema.NodeStatusExiting) ||
+		status == uint8(schema.NodeStatusSlashing)
 }
 
 // excludeUnqualifiedNodes excludes Nodes if they:
