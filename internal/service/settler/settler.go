@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -44,7 +45,7 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 	for {
 		msg := "construct Settlement data"
 		// Construct transactionData as required by the Settlement contract
-		transactionData, nodes, scores, err := s.constructSettlementData(ctx, epoch, cursor)
+		transactionData, err := s.constructSettlementData(ctx, epoch, cursor)
 		if err != nil {
 			zap.L().Error(msg, zap.Error(err))
 
@@ -82,14 +83,6 @@ func (s *Server) submitEpochProof(ctx context.Context, epoch uint64) error {
 		zap.L().Info("Settlement contracted invoked successfully", zap.String("tx", receipt.TxHash.String()), zap.Any("data", *transactionData))
 
 		firstInvoke = false
-
-		// Update the Node scores
-		if len(nodes) > 0 {
-			err = s.updateNodesScore(ctx, scores, nodes)
-			if err != nil {
-				zap.L().Error("failed to update node scores", zap.Error(err))
-			}
-		}
 
 		if len(transactionData.NodeAddress) > 0 {
 			cursor = lo.ToPtr(transactionData.NodeAddress[len(transactionData.NodeAddress)-1].String())
@@ -144,7 +137,7 @@ func (s *Server) retryEpochProof(ctx context.Context, epochID uint64) error {
 }
 
 // constructSettlementData constructs Settlement data as required by the Settlement contract
-func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, []*schema.Node, []*big.Float, error) {
+func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, cursor *string) (*schema.SettlementData, error) {
 	// batchSize is the number of Nodes to process in each batch.
 	// This is to prevent the contract call from running out of gas.
 	// TODO: This method needs to be refactored when the number of nodes exceeds the batch size value.
@@ -167,12 +160,12 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	if err != nil {
 		// No qualified Nodes found in the database
 		if errors.Is(err, database.ErrorRowNotFound) {
-			return nil, nil, nil, nil
+			return nil, nil
 		}
 
 		zap.L().Error("No qualified Nodes found", zap.Error(err), zap.Any("cursor", cursor))
 
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	// isFinal is true if it's the last batch of Nodes
@@ -187,32 +180,21 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodeAddresses = append(nodeAddresses, node.Address)
 	}
 
-	filterNodes, filterNodeAddresses, err := s.filter(nodeAddresses, nodes)
+	filterNodeAddresses, err := s.filter(nodeAddresses)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Get the number of stakers and sum of stake value in the last several epochs for all nodes.
-	recentStakers, err := s.databaseClient.FindStakerCountRecentEpochs(ctx, s.config.ActiveScores.EpochLimit)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("find recent stakers count: %w", err)
-	}
-
-	scores, err := calculateActiveScores(filterNodes, recentStakers, s.config.ActiveScores)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("calculate active scores: %w", err)
+		return nil, err
 	}
 
 	// Calculate the number of requests for the Nodes
 	requestCount, _, err := s.prepareRequestCounts(ctx, filterNodeAddresses)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(filterNodes, requestCount, s.config.Rewards)
+	operationRewards, err := calculateOperationRewards(filterNodeAddresses, requestCount, s.config.Rewards)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	return &schema.SettlementData{
@@ -221,37 +203,37 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		OperationRewards: operationRewards,
 		RequestCount:     requestCount,
 		IsFinal:          isFinal,
-	}, filterNodes, scores, nil
+	}, nil
 }
 
-func (s *Server) updateNodesScore(ctx context.Context, scores []*big.Float, nodes []*schema.Node) error {
-	scoreDecimals, err := parseScores(scores)
+// filter retrieves Node information from a staking contract.
+func (s *Server) filter(nodeAddresses []common.Address) ([]common.Address, error) {
+	nodeInfoList, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 	if err != nil {
-		return fmt.Errorf("failed to parse scores: %w", err)
+		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	for i, node := range nodes {
-		node.ActiveScore = scoreDecimals[i]
+	nodeInfoMap := lo.SliceToMap(nodeInfoList, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
+		return node.Account, node
+	})
+
+	newNodeAddresses := make([]common.Address, 0, len(nodeAddresses))
+
+	for i := range nodeAddresses {
+		if nodeInfo, ok := nodeInfoMap[nodeAddresses[i]]; ok && isValidStatus(nodeInfo.Status) {
+			newNodeAddresses = append(newNodeAddresses, nodeAddresses[i])
+		}
 	}
 
-	return s.databaseClient.UpdateNodesScore(ctx, nodes)
+	return newNodeAddresses, nil
 }
 
-func parseScores(scores []*big.Float) ([]decimal.Decimal, error) {
-	scoreDecimals := make([]decimal.Decimal, len(scores))
-
-	for i, score := range scores {
-		strValue := score.Text('f', -1)
-
-		decimalValue, err := decimal.NewFromString(strValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse score %d: %w", i, err)
-		}
-
-		scoreDecimals[i] = decimalValue
-	}
-
-	return scoreDecimals, nil
+// isValidStatus checks if the node status is valid.
+func isValidStatus(status uint8) bool {
+	return status == uint8(schema.NodeStatusInitializing) ||
+		status == uint8(schema.NodeStatusOnline) ||
+		status == uint8(schema.NodeStatusExiting) ||
+		status == uint8(schema.NodeStatusSlashing)
 }
 
 // invokeSettlementContract invokes the Settlement contract with prepared data
