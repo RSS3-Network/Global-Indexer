@@ -29,7 +29,7 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
 
-	// Get qualified full or rss node that has the highest points.
+	// Get qualified full or rss nodes.
 	nodeStats, err := fetchQualifiedNodeStats(ctx, query, databaseClient)
 	if err != nil {
 		return nil, err
