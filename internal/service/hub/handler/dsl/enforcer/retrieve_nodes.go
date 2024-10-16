@@ -33,7 +33,7 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 	for {
 		tempNodeStats, err := databaseClient.FindNodeStats(ctx, &query)
 		if err != nil || len(tempNodeStats) == 0 {
-			return nodeStats, err
+			break
 		}
 
 		qualifiedNodeStats, err := getQualifiedNodes(ctx, tempNodeStats, databaseClient)
@@ -47,6 +47,25 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		if len(tempNodeStats) < defaultLimit {
 			break
 		}
+	}
+
+	if len(nodeStats) == 0 {
+		tempNodeStats, err := databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+			Limit:        lo.ToPtr(defaultLimit),
+			ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
+			PointsOrder:  lo.ToPtr("DESC"),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		qualifiedNodeStats, err := getQualifiedNodes(ctx, tempNodeStats, databaseClient)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeStats = qualifiedNodeStats[:model.RequiredQualifiedNodeCount]
 	}
 
 	return nodeStats, nil
