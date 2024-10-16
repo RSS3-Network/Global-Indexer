@@ -54,9 +54,9 @@
             },
             {
                 "indexed": false,
-                "internalType": "string",
+                "internalType": "bytes",
                 "name": "params",
-                "type": "string"
+                "type": "bytes"
             }
         ],
         "name": "ParamsSet",
@@ -343,9 +343,9 @@
                 "type": "uint64"
             },
             {
-                "internalType": "string",
+                "internalType": "bytes",
                 "name": "params",
-                "type": "string"
+                "type": "bytes"
             }
         ],
         "name": "setParams",
