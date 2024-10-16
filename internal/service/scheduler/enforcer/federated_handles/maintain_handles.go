@@ -28,7 +28,7 @@ func (s *server) maintainFederatedHandles(ctx context.Context) error {
 		return err
 	}
 
-	now := time.Now().Unix()
+	now := time.Now().UnixMilli()
 	since, err := s.getLastUpdateTimestamp(ctx)
 
 	if err != nil {
@@ -89,14 +89,14 @@ func (s *server) collectFederatedHandles(ctx context.Context, nodeStats []*schem
 		stat := stat
 
 		g.Go(func() error {
-			resp, err := s.getNodeFederatedHandles(ctx, stat.Endpoint, stat.AccessToken, since)
+			handles, err := s.getNodeFederatedHandles(ctx, stat.Endpoint, stat.AccessToken, since)
 			if err != nil {
 				zap.L().Error("get node federated handles", zap.Error(err), zap.String("endpoint", stat.Endpoint), zap.String("accessToken", stat.AccessToken), zap.Uint64("since", since))
 				return nil
 			}
 
 			mu.Lock()
-			for _, handle := range resp.Handles {
+			for _, handle := range handles {
 				handleToNodes[handle] = append(handleToNodes[handle], stat.Address.String())
 			}
 			mu.Unlock()
@@ -180,12 +180,15 @@ func (s *server) getAllNodeStats(ctx context.Context, query *schema.StatQuery) (
 
 type NodeFederatedHandlesResponse struct {
 	Handles []string `json:"handles"`
+	Cursor  string   `json:"cursor"`
 }
 
 // getNodeFederatedHandles retrieves the federated handles from the node
-func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessToken string, since uint64) (*NodeFederatedHandlesResponse, error) {
+func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessToken string, since uint64) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
+
+	var handles []string
 
 	// Parse the endpoint URL
 	u, err := url.Parse(endpoint)
@@ -195,26 +198,45 @@ func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessTo
 
 	u.Path = path.Join(u.Path, "federated/handles")
 	q := u.Query()
-	q.Set("since", strconv.FormatUint(since, 10))
-	u.RawQuery = q.Encode()
-	fullURL := u.String()
 
-	// Send HTTP GET request
-	body, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	if since > 0 {
+		q.Set("since", strconv.FormatUint(since, 10))
+	}
+
+	for {
+		u.RawQuery = q.Encode()
+
+		// Send HTTP GET request
+		response, err := s.fetchAndDecodeResponse(ctx, u.String(), accessToken)
+		if err != nil {
+			return nil, err
+		}
+
+		handles = append(handles, response.Handles...)
+
+		if response.Cursor == "" {
+			break
+		}
+
+		q.Set("cursor", response.Cursor)
+	}
+
+	return handles, nil
+}
+
+// fetchAndDecodeResponse fetches and decodes the response from the given URL.
+func (s *server) fetchAndDecodeResponse(ctx context.Context, url, accessToken string) (*NodeFederatedHandlesResponse, error) {
+	body, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, url, accessToken, nil)
 	if err != nil {
 		return nil, fmt.Errorf("fetch with method: %w", err)
 	}
 
 	defer body.Close()
 
-	// Decode the response body
-	decoder := json.NewDecoder(io.LimitReader(body, 1<<20))
-	response := &NodeFederatedHandlesResponse{}
-
-	if err := decoder.Decode(response); err != nil {
-		zap.L().Error("decode response", zap.Error(err), zap.String("endpoint", endpoint), zap.String("accessToken", accessToken), zap.Uint64("since", since))
+	var response NodeFederatedHandlesResponse
+	if err := json.NewDecoder(io.LimitReader(body, 1<<20)).Decode(&response); err != nil {
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	return response, nil
+	return &response, nil
 }
