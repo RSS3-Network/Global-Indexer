@@ -1099,6 +1099,25 @@
                 }
             }
         },
+        "/nta/networks": {
+            "get": {
+                "summary": "Retrieve all compatible networks",
+                "description": "Retrieve a list of all compatible networks.",
+                "operationId": "getAllCompatibleNetworks",
+                "tags": [
+                    "Networks",
+                    "NTA"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/NetworksResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/nta/networks/assets": {
             "get": {
                 "summary": "Retrieve Node Assets",
@@ -1118,18 +1137,56 @@
                 }
             }
         },
-        "/nta/networks/config": {
+        "/nta/networks/{network_name}/list_workers": {
             "get": {
-                "summary": "Retrieve network config",
-                "description": "Retrieve the configuration details of RSS, Decentralized, and Federated networks.",
-                "operationId": "getNetworkConfig",
+                "summary": "Retrieve available workers by network",
+                "description": "Retrieve a list of available workers for a specific network.",
+                "operationId": "getAvailableWorkersByNetwork",
                 "tags": [
                     "Networks",
                     "NTA"
                 ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/network_name_path"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "$ref": "#/components/responses/NetworkConfigResponse"
+                        "$ref": "#/components/responses/NetworkWorkersResponse"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/nta/networks/{network_name}/workers/{worker_name}": {
+            "get": {
+                "summary": "Retrieve config by network and worker",
+                "description": "Retrieve the configuration details of a specific worker on a specific network.",
+                "operationId": "getWorkerConfigByNetworkAndWorker",
+                "tags": [
+                    "Networks",
+                    "NTA"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/network_name_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/worker_name_path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/NetworkWorkerConfigResponse"
                     },
                     "404": {
                         "description": "Not found"
@@ -1210,7 +1267,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"}]
+                        "anyOf": [{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -2574,6 +2631,29 @@
                     ]
                 }
             },
+            "WorkerDetail": {
+                "type": "object",
+                "required": [
+                    "is_required",
+                    "type",
+                    "value",
+                    "description"
+                ],
+                "properties": {
+                    "is_required": {
+                        "type": "boolean"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                }
+            },
             "NetworkAssetDetail": {
                 "type": "object",
                 "description": "The details of an asset for network.",
@@ -2614,202 +2694,94 @@
                     }
                 }
             },
-            "RSSConfig": {
+            "NetworkWorker": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/WorkerDetail"
                     },
-                    "worker_configs": {
+                    "network": {
+                        "$ref": "#/components/schemas/WorkerDetail"
+                    },
+                    "worker": {
+                        "$ref": "#/components/schemas/WorkerDetail"
+                    },
+                    "endpoint": {
+                        "$ref": "#/components/schemas/WorkerDetail"
+                    },
+                    "parameters": {
                         "type": "object",
                         "properties": {
-                            "id": {
-                                "$ref": "#/components/schemas/ConfigItem"
+                            "concurrent_block_requests": {
+                                "$ref": "#/components/schemas/WorkerDetail"
                             },
-                            "network": {
-                                "$ref": "#/components/schemas/ConfigItem"
+                            "block_batch_size": {
+                                "$ref": "#/components/schemas/WorkerDetail"
                             },
-                            "worker": {
-                                "$ref": "#/components/schemas/ConfigItem"
+                            "receipts_batch_size": {
+                                "$ref": "#/components/schemas/WorkerDetail"
                             },
-                            "endpoint": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            },
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "authentication": {
-                                        "type": "object",
-                                        "properties": {
-                                            "access_key": {
-                                                "$ref": "#/components/schemas/ConfigItem"
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            "minimum_resource": {
-                                "$ref": "#/components/schemas/MinimumResource"
+                            "block_receipts_batch_size": {
+                                "$ref": "#/components/schemas/WorkerDetail"
                             }
                         }
                     }
-                }
-            },
-            "FederatedConfig": {
-                "type": "object",
-                "properties": {
+                },
+                "example": {
                     "id": {
-                        "type": "string"
+                        "is_required": true,
+                        "type": "string",
+                        "value": null,
+                        "description": "Worker's id, must be unique, for example '[network]-[worker]'"
                     },
-                    "endpoint_configs": {
-                        "type": "object",
-                        "properties": {
-                            "url": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            },
-                            "http_headers": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            },
-                            "http2_disabled": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            }
+                    "network": {
+                        "is_required": true,
+                        "type": "string",
+                        "value": "ethereum",
+                        "description": "The network where the worker operates on"
+                    },
+                    "worker": {
+                        "is_required": true,
+                        "type": "string",
+                        "value": "core",
+                        "description": "Name of the worker"
+                    },
+                    "endpoint": {
+                        "is_required": true,
+                        "type": "url",
+                        "value": null,
+                        "description": "An external endpoint to fetch data from, for example, a blockchain RPC endpoint or a Farcaster api"
+                    },
+                    "parameters": {
+                        "concurrent_block_requests": {
+                            "is_required": false,
+                            "type": "uint",
+                            "value": 8,
+                            "description": "The number of concurrent RPC requests to the blockchain rpc. Default: 8"
+                        },
+                        "block_batch_size": {
+                            "is_required": false,
+                            "type": "uint",
+                            "value": 8,
+                            "description": "The number of blocks to fetch in a single RPC request. Default: 8"
+                        },
+                        "receipts_batch_size": {
+                            "is_required": false,
+                            "type": "uint",
+                            "value": 200,
+                            "description": "The number of receipts to fetch in a single RPC request. Default: 200"
+                        },
+                        "block_receipts_batch_size": {
+                            "is_required": false,
+                            "type": "uint",
+                            "value": 8,
+                            "description": "The number of blocks to fetch receipts in a single RPC request. Default: 8"
                         }
                     },
-                    "worker_configs": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "network": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "worker": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "endpoint": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "parameters": {
-                                    "type": "object",
-                                    "properties": {
-                                        "kafka_topic": {
-                                            "$ref": "#/components/schemas/ConfigItem"
-                                        }
-                                    }
-                                },
-                                "minimum_resource": {
-                                    "$ref": "#/components/schemas/MinimumResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "DecentralizedConfig": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "endpoint_configs": {
-                        "type": "object",
-                        "properties": {
-                            "url": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            },
-                            "http_headers": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            },
-                            "http2_disabled": {
-                                "$ref": "#/components/schemas/ConfigItem"
-                            }
-                        }
-                    },
-                    "worker_configs": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "network": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "worker": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "endpoint": {
-                                    "$ref": "#/components/schemas/ConfigItem"
-                                },
-                                "parameters": {
-                                    "type": "object",
-                                    "properties": {
-                                        "concurrent_block_requests": {
-                                            "$ref": "#/components/schemas/ConfigItem"
-                                        },
-                                        "block_batch_size": {
-                                            "$ref": "#/components/schemas/ConfigItem"
-                                        },
-                                        "receipts_batch_size": {
-                                            "$ref": "#/components/schemas/ConfigItem"
-                                        },
-                                        "block_receipts_batch_size": {
-                                            "$ref": "#/components/schemas/ConfigItem"
-                                        }
-                                    }
-                                },
-                                "minimum_resource": {
-                                    "$ref": "#/components/schemas/MinimumResource"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "ConfigItem": {
-                "type": "object",
-                "properties": {
-                    "is_required": {
-                        "type": "boolean"
-                    },
-                    "type": {
-                        "type": "string"
-                    },
-                    "value": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "title": {
-                        "type": "string"
-                    },
-                    "key": {
-                        "type": "string"
-                    }
-                }
-            },
-            "MinimumResource": {
-                "type": "object",
-                "properties": {
-                    "cpu_core": {
-                        "type": "number"
-                    },
-                    "memory_in_gb": {
-                        "type": "number"
-                    },
-                    "disk_space_in_gb": {
-                        "type": "number"
-                    },
-                    "title": {
-                        "type": "string"
-                    },
-                    "key": {
-                        "type": "string"
+                    "minimum_resource": {
+                        "cpu_core": 2,
+                        "memory_in_gb": 2,
+                        "disk_space_in_gb": 153
                     }
                 }
             },
@@ -4070,6 +4042,51 @@
                     }
                 }
             },
+            "NetworksResponse": {
+                "description": "A successful response containing a list of compatible networks.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": [
+                                "data"
+                            ],
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "description": "Array of compatible network names.",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Network"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "NetworkWorkersResponse": {
+                "description": "A successful response containing a list of available workers for the specified network.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": [
+                                "data"
+                            ],
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "description": "Array of worker names for the specified network.",
+                                    "items": {
+                                        "type": "string",
+                                        "example": "core"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "AssetsResponse": {
                 "description": "A successful response containing the details of an asset (network and worker).",
                 "content": {
@@ -4326,36 +4343,15 @@
                     }
                 }
             },
-            "NetworkConfigResponse": {
-                "description": "A successful response containing the configuration details of RSS, Decentralized, and Federated networks.",
+            "NetworkWorkerConfigResponse": {
+                "description": "A successful response containing the configuration details for the specified worker in the specified network.",
                 "content": {
                     "application/json": {
                         "schema": {
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "rss": {
-                                                    "$ref": "#/components/schemas/RSSConfig"
-                                                },
-                                                "decentralized": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/DecentralizedConfig"
-                                                    }
-                                                },
-                                                "federated": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "$ref": "#/components/schemas/FederatedConfig"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/NetworkWorker"
                                 }
                             }
                         }
