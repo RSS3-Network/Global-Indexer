@@ -31,7 +31,7 @@ var (
 
 // NetworkParamsMetaData contains all meta data concerning the NetworkParams contract.
 var NetworkParamsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"AccessControlBadConfirmation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"neededRole\",\"type\":\"bytes32\"}],\"name\":\"AccessControlUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidInitialization\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotInitializing\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"version\",\"type\":\"uint64\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"params\",\"type\":\"string\"}],\"name\":\"ParamsSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"}],\"name\":\"getParams\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"getRoleMember\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleMemberCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"adminAccount\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"callerConfirmation\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"params\",\"type\":\"string\"}],\"name\":\"setParams\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"AccessControlBadConfirmation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"neededRole\",\"type\":\"bytes32\"}],\"name\":\"AccessControlUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidInitialization\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotInitializing\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"version\",\"type\":\"uint64\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"params\",\"type\":\"bytes\"}],\"name\":\"ParamsSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"}],\"name\":\"getParams\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"getRoleMember\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleMemberCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"adminAccount\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"callerConfirmation\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"epoch\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"params\",\"type\":\"bytes\"}],\"name\":\"setParams\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // NetworkParamsABI is the input ABI used to generate the binding from.
@@ -512,24 +512,24 @@ func (_NetworkParams *NetworkParamsTransactorSession) RevokeRole(role [32]byte, 
 	return _NetworkParams.Contract.RevokeRole(&_NetworkParams.TransactOpts, role, account)
 }
 
-// SetParams is a paid mutator transaction binding the contract method 0x28bc7935.
+// SetParams is a paid mutator transaction binding the contract method 0xdec995bf.
 //
-// Solidity: function setParams(uint64 epoch, string params) returns()
-func (_NetworkParams *NetworkParamsTransactor) SetParams(opts *bind.TransactOpts, epoch uint64, params string) (*types.Transaction, error) {
+// Solidity: function setParams(uint64 epoch, bytes params) returns()
+func (_NetworkParams *NetworkParamsTransactor) SetParams(opts *bind.TransactOpts, epoch uint64, params []byte) (*types.Transaction, error) {
 	return _NetworkParams.contract.Transact(opts, "setParams", epoch, params)
 }
 
-// SetParams is a paid mutator transaction binding the contract method 0x28bc7935.
+// SetParams is a paid mutator transaction binding the contract method 0xdec995bf.
 //
-// Solidity: function setParams(uint64 epoch, string params) returns()
-func (_NetworkParams *NetworkParamsSession) SetParams(epoch uint64, params string) (*types.Transaction, error) {
+// Solidity: function setParams(uint64 epoch, bytes params) returns()
+func (_NetworkParams *NetworkParamsSession) SetParams(epoch uint64, params []byte) (*types.Transaction, error) {
 	return _NetworkParams.Contract.SetParams(&_NetworkParams.TransactOpts, epoch, params)
 }
 
-// SetParams is a paid mutator transaction binding the contract method 0x28bc7935.
+// SetParams is a paid mutator transaction binding the contract method 0xdec995bf.
 //
-// Solidity: function setParams(uint64 epoch, string params) returns()
-func (_NetworkParams *NetworkParamsTransactorSession) SetParams(epoch uint64, params string) (*types.Transaction, error) {
+// Solidity: function setParams(uint64 epoch, bytes params) returns()
+func (_NetworkParams *NetworkParamsTransactorSession) SetParams(epoch uint64, params []byte) (*types.Transaction, error) {
 	return _NetworkParams.Contract.SetParams(&_NetworkParams.TransactOpts, epoch, params)
 }
 
@@ -737,13 +737,13 @@ func (it *NetworkParamsParamsSetIterator) Close() error {
 // NetworkParamsParamsSet represents a ParamsSet event raised by the NetworkParams contract.
 type NetworkParamsParamsSet struct {
 	Epoch  uint64
-	Params string
+	Params []byte
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterParamsSet is a free log retrieval operation binding the contract event 0xcb46857e4fc83e0b5ff8a04732e1bba8fb60164f0f93baf3f27af5e24be8339a.
+// FilterParamsSet is a free log retrieval operation binding the contract event 0xead0164680b20feec7ed3c7d1ad4c91a8694f52e8bcee1772910ea2c41c356eb.
 //
-// Solidity: event ParamsSet(uint64 indexed epoch, string params)
+// Solidity: event ParamsSet(uint64 indexed epoch, bytes params)
 func (_NetworkParams *NetworkParamsFilterer) FilterParamsSet(opts *bind.FilterOpts, epoch []uint64) (*NetworkParamsParamsSetIterator, error) {
 
 	var epochRule []interface{}
@@ -758,9 +758,9 @@ func (_NetworkParams *NetworkParamsFilterer) FilterParamsSet(opts *bind.FilterOp
 	return &NetworkParamsParamsSetIterator{contract: _NetworkParams.contract, event: "ParamsSet", logs: logs, sub: sub}, nil
 }
 
-// WatchParamsSet is a free log subscription operation binding the contract event 0xcb46857e4fc83e0b5ff8a04732e1bba8fb60164f0f93baf3f27af5e24be8339a.
+// WatchParamsSet is a free log subscription operation binding the contract event 0xead0164680b20feec7ed3c7d1ad4c91a8694f52e8bcee1772910ea2c41c356eb.
 //
-// Solidity: event ParamsSet(uint64 indexed epoch, string params)
+// Solidity: event ParamsSet(uint64 indexed epoch, bytes params)
 func (_NetworkParams *NetworkParamsFilterer) WatchParamsSet(opts *bind.WatchOpts, sink chan<- *NetworkParamsParamsSet, epoch []uint64) (event.Subscription, error) {
 
 	var epochRule []interface{}
@@ -800,9 +800,9 @@ func (_NetworkParams *NetworkParamsFilterer) WatchParamsSet(opts *bind.WatchOpts
 	}), nil
 }
 
-// ParseParamsSet is a log parse operation binding the contract event 0xcb46857e4fc83e0b5ff8a04732e1bba8fb60164f0f93baf3f27af5e24be8339a.
+// ParseParamsSet is a log parse operation binding the contract event 0xead0164680b20feec7ed3c7d1ad4c91a8694f52e8bcee1772910ea2c41c356eb.
 //
-// Solidity: event ParamsSet(uint64 indexed epoch, string params)
+// Solidity: event ParamsSet(uint64 indexed epoch, bytes params)
 func (_NetworkParams *NetworkParamsFilterer) ParseParamsSet(log types.Log) (*NetworkParamsParamsSet, error) {
 	event := new(NetworkParamsParamsSet)
 	if err := _NetworkParams.contract.UnpackLog(event, "ParamsSet", log); err != nil {
