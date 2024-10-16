@@ -69,8 +69,9 @@ func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddres
 	nodes := make([]*model.NodeEndpointCache, len(nodesOrderedByPoints))
 	for i, stat := range nodesOrderedByPoints {
 		nodes[i] = &model.NodeEndpointCache{
-			Address:  stat.Address.String(),
-			Endpoint: stat.Endpoint,
+			Address:     stat.Address.String(),
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
 		}
 	}
 

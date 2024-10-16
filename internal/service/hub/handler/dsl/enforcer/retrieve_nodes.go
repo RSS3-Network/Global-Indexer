@@ -3,6 +3,7 @@ package enforcer
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -19,8 +20,6 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		PointsOrder:  lo.ToPtr("DESC"),
 	}
 
-	var nodeStats []*schema.Stat
-
 	switch key {
 	case model.RssNodeCacheKey:
 		query.IsRssNode = lo.ToPtr(true)
@@ -30,10 +29,47 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
 
+	// Get qualified full or rss nodes.
+	nodeStats, err := fetchQualifiedNodeStats(ctx, query, databaseClient)
+	if err != nil {
+		return nil, err
+	}
+
+	// If there is no qualified node, choose qualified nodes that have the highest indexer count.
+	if len(nodeStats) == 0 {
+		query.IsRssNode = nil
+		query.IsFullNode = nil
+		nodeStats, err = fetchQualifiedNodeStats(ctx, query, databaseClient)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// Sort the Node stats by indexer count.
+		sort.Slice(nodeStats, func(i, j int) bool {
+			return nodeStats[i].Indexer > nodeStats[j].Indexer
+		})
+
+		if len(nodeStats) > model.RequiredQualifiedNodeCount {
+			nodeStats = nodeStats[:model.RequiredQualifiedNodeCount]
+		}
+	}
+
+	return nodeStats, nil
+}
+
+// fetchQualifiedNodeStats fetches the qualified node stats from the database.
+func fetchQualifiedNodeStats(ctx context.Context, query schema.StatQuery, databaseClient database.Client) ([]*schema.Stat, error) {
+	var nodeStats []*schema.Stat
+
 	for {
 		tempNodeStats, err := databaseClient.FindNodeStats(ctx, &query)
-		if err != nil || len(tempNodeStats) == 0 {
-			return nodeStats, err
+		if err != nil {
+			return nil, err
+		}
+
+		if len(tempNodeStats) == 0 {
+			break
 		}
 
 		qualifiedNodeStats, err := getQualifiedNodes(ctx, tempNodeStats, databaseClient)
