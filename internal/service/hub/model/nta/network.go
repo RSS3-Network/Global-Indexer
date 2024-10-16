@@ -14,6 +14,7 @@ type WorkerRequest struct {
 type NetworkParamsData struct {
 	NetworkAssets map[string]Asset `json:"network_assets"`
 	WorkerAssets  map[string]Asset `json:"worker_assets"`
+	NetworkConfig map[string]any   `json:"network_configs"`
 }
 
 type Asset struct {
