@@ -65,6 +65,10 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 			return nil, err
 		}
 
+		if len(qualifiedNodeStats) < model.RequiredQualifiedNodeCount {
+			return nil, fmt.Errorf("not enough qualified nodes: required %d, but got %d", model.RequiredQualifiedNodeCount, len(qualifiedNodeStats))
+		}
+
 		nodeStats = qualifiedNodeStats[:model.RequiredQualifiedNodeCount]
 	}
 
