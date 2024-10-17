@@ -509,10 +509,10 @@
         "/federated/platform/{platform}": {
             "get": {
                 "summary": "Retrieve Federated Platform Activities (Beta)",
-                "description": "Retrieve a list of activities from the specified decentralized platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
-                "operationId": "getPlatformActivities",
+                "description": "Retrieve a list of activities from the specified federated platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getFederatedPlatformActivities",
                 "tags": [
-                    "Decentralized",
+                    "Federated",
                     "DSL"
                 ],
                 "parameters": [
@@ -6275,6 +6275,9 @@
                                 "type": {
                                     "type": "array",
                                     "description": "Retrieve activities for the specified type(s)",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Type"
+                                    },
                                     "example": [
                                         "post",
                                         "comment",
