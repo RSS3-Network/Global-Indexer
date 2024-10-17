@@ -511,7 +511,7 @@ func calculateDecentralizedNetwork(workerInfo []*DecentralizedWorkerInfo) int {
 
 // determineRssNode determines if the node is an RSS node.
 func determineRssNode(w *RSSWorkerInfo) bool {
-	if w != nil && w.Worker == rss.RSSHub && w.Status == worker.StatusReady {
+	if w != nil && w.Worker == rss.Core && w.Status == worker.StatusReady {
 		return true
 	}
 
