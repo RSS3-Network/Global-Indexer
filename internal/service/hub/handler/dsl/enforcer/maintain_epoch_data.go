@@ -89,6 +89,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	if err := e.updateNodeStatsAndWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
 		return fmt.Errorf("update node stats and workers: %w", err)
 	}
+
 	// filter the exited node status and submit the demotion to the VSL.
 	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
@@ -511,7 +512,7 @@ func calculateDecentralizedNetwork(workerInfo []*DecentralizedWorkerInfo) int {
 
 // determineRssNode determines if the node is an RSS node.
 func determineRssNode(w *RSSWorkerInfo) bool {
-	if w != nil && w.Worker == rss.Core && w.Status == worker.StatusReady {
+	if w != nil && w.Platform == rss.PlatformRSSHub && w.Status == worker.StatusReady {
 		return true
 	}
 
@@ -669,8 +670,10 @@ type DecentralizedWorkerInfo struct {
 }
 
 type RSSWorkerInfo struct {
-	WorkerInfo
-	Worker rss.Worker `json:"worker"`
+	//WorkerInfo
+	//Worker rss.Worker `json:"worker"`
+	Platform rss.Platform  `json:"platform"`
+	Status   worker.Status `json:"status"`
 }
 
 type FederatedInfo struct {
