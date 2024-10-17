@@ -2,8 +2,11 @@ package distributor
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
@@ -73,4 +76,76 @@ func (d *Distributor) generateQualifiedNodeCache(ctx context.Context, nodeAddres
 	}
 
 	return nodes, nil
+}
+
+// getFederatedQualifiedNodes retrieves qualified Nodes associated with a federated handle.
+func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account string) ([]*model.NodeEndpointCache, error) {
+	cacheKey := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, account)
+
+	var addresses []string
+
+	if err := d.cacheClient.Get(ctx, cacheKey, &addresses); err != nil {
+		if !errors.Is(err, redis.Nil) {
+			return nil, fmt.Errorf("get federated handles: %w", err)
+		}
+
+		var since uint64
+		if err = d.cacheClient.Get(ctx, fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, "since"), &since); err != nil {
+			if !errors.Is(err, redis.Nil) {
+				return nil, fmt.Errorf("get federated handles since: %w", err)
+			}
+		}
+
+		// If the cache is empty, no Nodes are qualified.
+		if since > 0 && len(addresses) == 0 {
+			return nil, nil
+		}
+	}
+
+	nodeAddresses := make([]common.Address, len(addresses))
+	for i := range addresses {
+		nodeAddresses[i] = common.HexToAddress(addresses[i])
+	}
+
+	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		Addresses:   nodeAddresses,
+		PointsOrder: lo.ToPtr("DESC"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("find node stats: %w", err)
+	}
+
+	nodeEndpointCaches := make([]*model.NodeEndpointCache, len(nodeStats))
+	for i, stat := range nodeStats {
+		nodeEndpointCaches[i] = &model.NodeEndpointCache{
+			Address:     stat.Address.String(),
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
+		}
+	}
+
+	return nodeEndpointCaches, nil
+}
+
+// getFederatedDefaultNodes retrieves the default Nodes for federated handles.
+func (d *Distributor) getFederatedDefaultNodes(ctx context.Context) ([]*model.NodeEndpointCache, error) {
+	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
+		PointsOrder: lo.ToPtr("DESC"),
+		Limit:       lo.ToPtr(3),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("find node stats: %w", err)
+	}
+
+	nodeEndpointCaches := make([]*model.NodeEndpointCache, len(nodeStats))
+	for i, stat := range nodeStats {
+		nodeEndpointCaches[i] = &model.NodeEndpointCache{
+			Address:     stat.Address.String(),
+			Endpoint:    stat.Endpoint,
+			AccessToken: stat.AccessToken,
+		}
+	}
+
+	return nodeEndpointCaches, nil
 }

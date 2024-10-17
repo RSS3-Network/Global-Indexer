@@ -161,13 +161,28 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 
 	dsl := instance.httpServer.Group("")
 	{
-		dsl.GET("/rss/*", instance.hub.dsl.GetRSSHub)
-		dsl.GET("/decentralized/tx/:id", instance.hub.dsl.GetActivity)
-		dsl.GET("/decentralized/:account", instance.hub.dsl.GetAccountActivities)
-		dsl.GET("/decentralized/network/:network", instance.hub.dsl.GetNetworkActivities)
-		dsl.GET("/decentralized/platform/:platform", instance.hub.dsl.GetPlatformActivities)
+		rss := dsl.Group("/rss")
+		{
+			rss.GET("/*", instance.hub.dsl.GetRSSHub)
+		}
 
-		dsl.POST("/decentralized/accounts", instance.hub.dsl.BatchGetAccountsActivities)
+		decentralized := dsl.Group("/decentralized")
+		{
+			decentralized.GET("/tx/:id", instance.hub.dsl.GetDecentralizedActivity)
+			decentralized.GET("/:account", instance.hub.dsl.GetDecentralizedAccountActivities)
+			decentralized.GET("/network/:network", instance.hub.dsl.GetDecentralizedNetworkActivities)
+			decentralized.GET("/platform/:platform", instance.hub.dsl.GetDecentralizedPlatformActivities)
+			decentralized.POST("/accounts", instance.hub.dsl.BatchGetDecentralizedAccountsActivities)
+		}
+
+		federated := dsl.Group("/federated")
+		{
+			federated.GET("/tx/:id", instance.hub.dsl.GetFederatedActivity)
+			federated.GET("/:account", instance.hub.dsl.GetFederatedAccountActivities)
+			federated.GET("/network/:network", instance.hub.dsl.GetFederatedNetworkActivities)
+			federated.GET("/platform/:platform", instance.hub.dsl.GetFederatedPlatformActivities)
+			federated.POST("/accounts", instance.hub.dsl.BatchGetFederatedAccountsActivities)
+		}
 	}
 
 	return &instance, nil
