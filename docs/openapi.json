@@ -1448,51 +1448,6 @@
                         "type": "object",
                         "anyOf": [
                             {
-                                "$ref": "#/components/schemas/SocialPost"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialShare"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialMint"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialProfile"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialProxy"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialComment"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialRevise"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialReward"
-                            },
-                            {
-                                "$ref": "#/components/schemas/SocialDelete"
-                            },
-                            {
-                                "$ref": "#/components/schemas/MetaverseTrade"
-                            },
-                            {
-                                "$ref": "#/components/schemas/MetaverseBurn"
-                            },
-                            {
-                                "$ref": "#/components/schemas/MetaverseMint"
-                            },
-                            {
-                                "$ref": "#/components/schemas/MetaverseTransfer"
-                            },
-                            {
-                                "$ref": "#/components/schemas/RssFeed"
-                            },
-                            {
-                                "$ref": "#/components/schemas/TransactionMint"
-                            },
-                            {
                                 "$ref": "#/components/schemas/TransactionApproval"
                             },
                             {
@@ -1505,10 +1460,7 @@
                                 "$ref": "#/components/schemas/TransactionBurn"
                             },
                             {
-                                "$ref": "#/components/schemas/CollectibleBurn"
-                            },
-                            {
-                                "$ref": "#/components/schemas/CollectibleMint"
+                                "$ref": "#/components/schemas/TransactionMint"
                             },
                             {
                                 "$ref": "#/components/schemas/CollectibleApproval"
@@ -1520,13 +1472,61 @@
                                 "$ref": "#/components/schemas/CollectibleTransfer"
                             },
                             {
-                                "$ref": "#/components/schemas/ExchangeLiquidity"
+                                "$ref": "#/components/schemas/CollectibleBurn"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CollectibleMint"
                             },
                             {
                                 "$ref": "#/components/schemas/ExchangeStaking"
                             },
                             {
                                 "$ref": "#/components/schemas/ExchangeSwap"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ExchangeLiquidity"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialRevise"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialReward"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialPost"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialComment"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialShare"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialDelete"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialProfile"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialProxy"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseTransfer"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseTrade"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseBurn"
+                            },
+                            {
+                                "$ref": "#/components/schemas/MetaverseMint"
+                            },
+                            {
+                                "$ref": "#/components/schemas/RssFeed"
                             }
                         ]
                     },
@@ -1637,18 +1637,36 @@
                     "tag": "social",
                     "type": "comment",
                     "platform": "Mastodon",
-                    "from": "@thime@bolha.us",
-                    "to": "@jedi@bolha.us",
+                    "from": "@woofers@universeodon.com",
+                    "to": "@georgetakei@universeodon.com",
                     "metadata": {
-                        "handle": "@thime@bolha.us",
-                        "body": "<p><span class=\"h-card\" translate=\"no\"><a href=\"https://bolha.us/@jedi\" class=\"u-url mention\">@<span>jedi</span></a></span> <span class=\"h-card\" translate=\"no\"><a href=\"https://kooapp.org/users/admin\" class=\"u-url mention\">@<span>admin</span></a></span> Com receio, fui lá e favoritei</p>",
-                        "profile_id": "https://bolha.us/users/thime",
-                        "publication_id": "https://bolha.us/users/thime/statuses/113221776800523794",
-                        "timestamp": 1727627209,
+                        "handle": "@woofers@universeodon.com",
+                        "body": "@ georgetakei ( https://universeodon.com/@georgetakei ) now hold on just a minute...\n\n# woof ( https://universeodon.com/tags/woof )",
+                        "publication_id": "113324128515491294",
+                        "tags": [
+                            "@georgetakei",
+                            "#woof"
+                        ],
+                        "author_url": "https://universeodon.com/users/woofers",
+                        "timestamp": 1729188972,
                         "target": {
-                            "publication_id": "https://bolha.us/users/jedi/statuses/113221045780040329"
-                        }
-                    }
+                            "handle": "@georgetakei@universeodon.com",
+                            "body": "Just a little treat.",
+                            "media": [
+                                {
+                                    "address": "https://media.universeodon.com/media_attachments/files/113/319/346/314/075/495/original/26e989bcf15840a6.png",
+                                    "mime_type": "image/png"
+                                }
+                            ],
+                            "publication_id": "113319346448373294",
+                            "author_url": "https://universeodon.com/users/georgetakei",
+                            "timestamp": 1729116004
+                        },
+                        "target_url": "https://universeodon.com/users/georgetakei/statuses/113319346448373294"
+                    },
+                    "related_urls": [
+                        "https://universeodon.com/users/woofers/statuses/113324128515491294"
+                    ]
                 }
             },
             "ActivitiesResponse": {
@@ -1778,12 +1796,12 @@
                     "id": {
                         "description": "The unique identifier for the federated activity.",
                         "type": "string",
-                        "example": "https://bolha.us/users/thime/statuses/113221776800523794/activity   "
+                        "example": "https://universeodon.com/users/woofers/statuses/113324128515491294/activity"
                     },
                     "owner": {
                         "description": "The owner of the federated activity.",
                         "type": "string",
-                        "example": "admin@kooapp.org"
+                        "example": "@georgetakei@universeodon.com"
                     },
                     "network": {
                         "description": "The network of the federated activity.",
@@ -1793,12 +1811,12 @@
                     "from": {
                         "description": "The account from which the federated activity originated.",
                         "type": "string",
-                        "example": "@thime@bolha.us"
+                        "example": "@woofers@universeodon.com"
                     },
                     "to": {
                         "description": "The account to which the activity is directed.",
                         "type": "string",
-                        "example": "@jedi@bolha.us"
+                        "example": "@georgetakei@universeodon.com"
                     },
                     "index": {
                         "description": "The index of the activity in the list.",
@@ -1823,7 +1841,7 @@
                     "type": {
                         "description": "The type of federated activity.",
                         "type": "string",
-                        "example": "post",
+                        "example": "comment",
                         "enum": [
                             "comment",
                             "post",
@@ -1836,7 +1854,7 @@
                     "timestamp": {
                         "description": "The timestamp of when the activity occurred.",
                         "type": "integer",
-                        "example": 1718689727
+                        "example": 1729188972
                     },
                     "total_actions": {
                         "description": "The total number of actions within the activity.",
@@ -5556,7 +5574,7 @@
             },
             "federated_activity_id_path": {
                 "description": "Retrieve details for the specified federated activity ID",
-                "example": "https://bolha.us/users/thime/statuses/113221776800523794/activity",
+                "example": "https://universeodon.com/users/woofers/statuses/113324128515491294/activity",
                 "in": "path",
                 "name": "id",
                 "required": true,
