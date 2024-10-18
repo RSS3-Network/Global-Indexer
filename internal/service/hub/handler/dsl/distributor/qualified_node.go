@@ -129,13 +129,29 @@ func (d *Distributor) getFederatedQualifiedNodes(ctx context.Context, account st
 
 // getFederatedDefaultNodes retrieves the default Nodes for federated handles.
 func (d *Distributor) getFederatedDefaultNodes(ctx context.Context) ([]*model.NodeEndpointCache, error) {
+	countKey := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, "count")
+	addressToScore, err := d.cacheClient.ZRevRangeWithScores(ctx, countKey, 0, -1)
+
+	if err != nil {
+		return nil, err
+	}
+
+	addresses := make([]common.Address, len(addressToScore))
+	for i := range addressToScore {
+		addresses[i] = common.HexToAddress(addressToScore[i].Member.(string))
+	}
+
 	nodeStats, err := d.databaseClient.FindNodeStats(ctx, &schema.StatQuery{
-		PointsOrder: lo.ToPtr("DESC"),
-		Limit:       lo.ToPtr(3),
+		Addresses:    addresses,
+		ValidRequest: lo.ToPtr(model.DemotionCountBeforeSlashing),
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("find node stats: %w", err)
+	}
+
+	if len(nodeStats) > model.RequiredQualifiedNodeCount {
+		nodeStats = nodeStats[:model.RequiredQualifiedNodeCount]
 	}
 
 	nodeEndpointCaches := make([]*model.NodeEndpointCache, len(nodeStats))
