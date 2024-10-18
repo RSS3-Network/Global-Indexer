@@ -61,7 +61,7 @@ func (s *server) getFilteredNodeStats(ctx context.Context) ([]*schema.Stat, erro
 	}
 
 	return lo.Filter(nodeStats, func(stat *schema.Stat, _ int) bool {
-		return stat.FederatedNetwork > 0
+		return stat.FederatedNetwork > 0 && stat.EpochInvalidRequest < int64(model.DemotionCountBeforeSlashing)
 	}), nil
 }
 
@@ -110,6 +110,8 @@ func (s *server) collectFederatedHandles(ctx context.Context, nodeStats []*schem
 
 // updateCache updates the cache with the new federated handles.
 func (s *server) updateCache(ctx context.Context, handleToNodes map[string][]string) error {
+	nodeHandleCount := make(map[string]int)
+
 	for handle, nodeAddresses := range handleToNodes {
 		key := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, handle)
 		existingAddresses, err := s.getExistingAddresses(ctx, key)
@@ -118,11 +120,32 @@ func (s *server) updateCache(ctx context.Context, handleToNodes map[string][]str
 			return err
 		}
 
-		newAddresses := s.mergeAddresses(existingAddresses, nodeAddresses)
+		mergedAddresses := s.mergeAddresses(existingAddresses, nodeAddresses)
 
-		if err = s.cacheClient.Set(ctx, key, newAddresses, 0); err != nil {
+		if err = s.cacheClient.Set(ctx, key, mergedAddresses, 0); err != nil {
 			return fmt.Errorf("set cache: %w", err)
 		}
+
+		newAddresses := lo.Filter(nodeAddresses, func(nodeAddress string, _ int) bool {
+			return !lo.Contains(existingAddresses, nodeAddress)
+		})
+
+		for _, nodeAddress := range newAddresses {
+			nodeHandleCount[nodeAddress]++
+		}
+	}
+
+	countKey := fmt.Sprintf("%s%s", model.FederatedHandlesPrefixCacheKey, "count")
+	pipeline := s.cacheClient.Pipeline(ctx)
+
+	for nodeAddress, count := range nodeHandleCount {
+		pipeline.ZIncrBy(ctx, countKey, float64(count), nodeAddress)
+	}
+
+	_, err := pipeline.Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("update sorted set: %w", err)
 	}
 
 	return nil

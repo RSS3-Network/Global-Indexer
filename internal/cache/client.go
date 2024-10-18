@@ -17,6 +17,7 @@ type Client interface {
 	ZRem(ctx context.Context, key string, members ...interface{}) error
 	ZRevRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error)
 	Exists(ctx context.Context, key string) (int64, error)
+	Pipeline(ctx context.Context) redis.Pipeliner
 }
 
 var _ Client = (*client)(nil)
@@ -65,6 +66,10 @@ func (c *client) ZRevRangeWithScores(ctx context.Context, key string, start, sto
 
 func (c *client) Exists(ctx context.Context, key string) (int64, error) {
 	return c.redisClient.Exists(ctx, key).Result()
+}
+
+func (c *client) Pipeline(_ context.Context) redis.Pipeliner {
+	return c.redisClient.Pipeline()
 }
 
 func New(redisClient *redis.Client) Client {
