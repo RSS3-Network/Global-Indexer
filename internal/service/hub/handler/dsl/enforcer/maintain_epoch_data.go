@@ -492,9 +492,7 @@ func calculateFederatedNetwork(workerInfo []*FederatedInfo) int {
 	uniqueNetworks := make(map[network.Network]struct{})
 
 	for _, info := range workerInfo {
-		if info.Status == worker.StatusReady {
-			uniqueNetworks[info.Network] = struct{}{}
-		}
+		uniqueNetworks[info.Network] = struct{}{}
 	}
 
 	return len(uniqueNetworks)
