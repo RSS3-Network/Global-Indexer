@@ -20,6 +20,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/router"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
+	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"go.uber.org/zap"
 )
 
@@ -85,7 +86,7 @@ func (d *Distributor) DistributeData(ctx context.Context, requestType, component
 	}
 
 	if len(nodes) == 0 {
-		return nil, fmt.Errorf("no nodes available")
+		return nil, errorx.ErrNoNodesAvailable
 	}
 
 	nodeMap, err := d.generatePath(requestType, component, request, params, nodes)
