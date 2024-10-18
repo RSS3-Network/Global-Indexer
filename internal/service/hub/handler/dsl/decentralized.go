@@ -43,6 +43,10 @@ func (d *DSL) GetDecentralizedActivity(c echo.Context) (err error) {
 
 	activity, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestActivity, model.ComponentDecentralized, request, c.QueryParams(), nil, nil)
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute activity request error", zap.Error(err))
 
 		return errorx.InternalError(c)
@@ -87,6 +91,10 @@ func (d *DSL) GetDecentralizedAccountActivities(c echo.Context) (err error) {
 
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestAccountActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
@@ -130,6 +138,10 @@ func (d *DSL) BatchGetDecentralizedAccountsActivities(c echo.Context) (err error
 
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, model.ComponentDecentralized, request, nil, workers, networks)
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute batch activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
@@ -166,6 +178,10 @@ func (d *DSL) GetDecentralizedNetworkActivities(c echo.Context) (err error) {
 
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestNetworkActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute network activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
@@ -202,6 +218,10 @@ func (d *DSL) GetDecentralizedPlatformActivities(c echo.Context) (err error) {
 
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestPlatformActivities, model.ComponentDecentralized, request, c.QueryParams(), workers, networks)
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute platform activities data error", zap.Error(err))
 
 		return errorx.InternalError(c)
