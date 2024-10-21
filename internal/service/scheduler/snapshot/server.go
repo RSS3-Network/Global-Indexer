@@ -14,6 +14,7 @@ import (
 	nodecount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/node_count"
 	operatorprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/operator_profit"
 	stakercount "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_count"
+	stakercumulativeearnings "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_cumulative_earnings"
 	stakerprofit "github.com/rss3-network/global-indexer/internal/service/scheduler/snapshot/staker_profit"
 	"github.com/sourcegraph/conc/pool"
 )
@@ -67,6 +68,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 			stakerprofit.New(databaseClient, redis, stakingContract),
 			operatorprofit.New(databaseClient, redis, stakingContract),
 			apy.New(databaseClient, redis, stakingContract),
+			stakercumulativeearnings.New(databaseClient, redis, stakingContract),
 		},
 	}, nil
 }
