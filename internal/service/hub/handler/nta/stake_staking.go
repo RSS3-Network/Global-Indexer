@@ -119,9 +119,9 @@ func (n *NTA) findStakerHistoryProfitSnapshots(ctx context.Context, owner common
 
 	// Calculate profit changes from staking transactions.
 	transactions, err := n.databaseClient.FindStakeTransactions(ctx, schema.StakeTransactionsQuery{
-		User:           lo.ToPtr(owner),
-		BlockTimestamp: lo.ToPtr(blockTimestamp),
-		Order:          "block_timestamp ASC",
+		User:                lo.ToPtr(owner),
+		AfterBlockTimestamp: lo.ToPtr(blockTimestamp),
+		Order:               "block_timestamp ASC",
 	})
 	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, fmt.Errorf("find stake transactions: %w", err)

@@ -64,6 +64,8 @@ type Client interface {
 	FindEpochAPYSnapshots(ctx context.Context, query schema.EpochAPYSnapshotQuery) ([]*schema.EpochAPYSnapshot, error)
 	SaveEpochAPYSnapshot(ctx context.Context, epochAPYSnapshots *schema.EpochAPYSnapshot) error
 	FindEpochAPYSnapshotsAverage(ctx context.Context) (decimal.Decimal, error)
+	FindStakerCumulativeEarningSnapshots(ctx context.Context, query schema.StakerCumulativeEarningSnapshotsQuery) ([]*schema.StakerCumulativeEarningSnapshot, error)
+	SaveStakerCumulativeEarningSnapshots(ctx context.Context, stakerCumulativeEarningSnapshots []*schema.StakerCumulativeEarningSnapshot) error
 
 	FindBridgeTransaction(ctx context.Context, query schema.BridgeTransactionQuery) (*schema.BridgeTransaction, error)
 	FindBridgeTransactions(ctx context.Context, query schema.BridgeTransactionsQuery) ([]*schema.BridgeTransaction, error)

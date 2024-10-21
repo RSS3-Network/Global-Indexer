@@ -96,8 +96,12 @@ func (c *client) FindStakeTransactions(ctx context.Context, query schema.StakeTr
 		databaseClient = databaseClient.Where(`"type" = ?`, query.Type)
 	}
 
-	if query.BlockTimestamp != nil {
-		databaseClient = databaseClient.Where(`"block_timestamp" >= ?`, query.BlockTimestamp)
+	if query.AfterBlockTimestamp != nil {
+		databaseClient = databaseClient.Where(`"block_timestamp" >= ?`, query.AfterBlockTimestamp)
+	}
+
+	if query.BlockNumber != nil {
+		databaseClient = databaseClient.Where(`"block_number" = ?`, *query.BlockNumber)
 	}
 
 	if query.Finalized != nil {
@@ -736,6 +740,107 @@ func (c *client) SaveStakerProfitSnapshots(ctx context.Context, snapshots []*sch
 
 	if err := value.Import(snapshots); err != nil {
 		return fmt.Errorf("import staker profit snapshots: %w", err)
+	}
+
+	onConflict := clause.OnConflict{
+		Columns: []clause.Column{
+			{
+				Name: "owner_address",
+			},
+			{
+				Name: "epoch_id",
+			},
+		},
+		UpdateAll: true,
+	}
+
+	return c.database.WithContext(ctx).Clauses(onConflict).Create(&value).Error
+}
+
+func (c *client) FindStakerCumulativeEarningSnapshots(ctx context.Context, query schema.StakerCumulativeEarningSnapshotsQuery) ([]*schema.StakerCumulativeEarningSnapshot, error) {
+	databaseClient := c.database.WithContext(ctx).Table((*table.StakerCumulativeEarningSnapshot).TableName(nil))
+
+	if query.Cursor != nil {
+		databaseClient = databaseClient.Where(`"id" < ?`, query.Cursor)
+	}
+
+	if query.OwnerAddress != nil {
+		databaseClient = databaseClient.Where(`"owner_address" = ?`, query.OwnerAddress)
+	}
+
+	if query.EpochID != nil {
+		databaseClient = databaseClient.Where(`"epoch_id" = ?`, query.EpochID)
+	}
+
+	if query.BeforeDate != nil {
+		databaseClient = databaseClient.Where(`"date" <= ?`, query.BeforeDate)
+	}
+
+	if query.AfterDate != nil {
+		databaseClient = databaseClient.Where(`"date" >= ?`, query.AfterDate)
+	}
+
+	if query.EpochIDs != nil {
+		databaseClient = databaseClient.Where(`"epoch_id" IN ?`, query.EpochIDs)
+	}
+
+	if query.Limit != nil {
+		databaseClient = databaseClient.Limit(*query.Limit)
+	}
+
+	var rows []*table.StakerCumulativeEarningSnapshot
+
+	if len(query.Dates) > 0 {
+		var (
+			queries []string
+			values  []interface{}
+		)
+
+		for _, date := range query.Dates {
+			queries = append(queries, `(SELECT * FROM "stake"."cumulative_earning_snapshots" WHERE "date" >= ? AND "owner_address" = ? ORDER BY "date" LIMIT 1)`)
+			values = append(values, date, query.OwnerAddress)
+		}
+
+		// Combine all queries with UNION ALL
+		fullQuery := strings.Join(queries, " UNION ALL ")
+
+		// Execute the combined query
+		if err := databaseClient.Raw(fullQuery, values...).Scan(&rows).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	} else {
+		if err := databaseClient.Order("epoch_id DESC, id DESC").Find(&rows).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, database.ErrorRowNotFound
+			}
+
+			return nil, fmt.Errorf("find rows: %w", err)
+		}
+	}
+
+	results := make([]*schema.StakerCumulativeEarningSnapshot, 0, len(rows))
+
+	for _, row := range rows {
+		result, err := row.Export()
+		if err != nil {
+			return nil, fmt.Errorf("export row: %w", err)
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+func (c *client) SaveStakerCumulativeEarningSnapshots(ctx context.Context, snapshots []*schema.StakerCumulativeEarningSnapshot) error {
+	var value table.StakerCumulativeEarningSnapshots
+
+	if err := value.Import(snapshots); err != nil {
+		return fmt.Errorf("import staker cumulative earning snapshots: %w", err)
 	}
 
 	onConflict := clause.OnConflict{
