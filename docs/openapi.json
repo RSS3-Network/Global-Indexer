@@ -1037,7 +1037,7 @@
         "/nta/nodes": {
             "get": {
                 "summary": "Retrieve all RSS3 Nodes",
-                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address. The default limit is 10 and the maximum limit is 50.",
+                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address. The default limit is 20 and the maximum limit is 50.",
                 "operationId": "getAllNodes",
                 "tags": [
                     "Node",
@@ -1196,7 +1196,7 @@
         "/nta/epochs": {
             "get": {
                 "summary": "Retrieve all epochs",
-                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
+                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 20 and the maximum limit is 50.",
                 "operationId": "getAllEpochs",
                 "tags": [
                     "Epoch",
