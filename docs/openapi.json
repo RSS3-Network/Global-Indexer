@@ -589,7 +589,7 @@
                         "$ref": "#/components/parameters/bridging_type_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -658,7 +658,7 @@
                         "$ref": "#/components/parameters/pending_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -718,7 +718,7 @@
                         "$ref": "#/components/parameters/node_address_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/cursor_query"
@@ -951,7 +951,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/before_date_query"
@@ -990,7 +990,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/before_date_query"
@@ -1037,7 +1037,7 @@
         "/nta/nodes": {
             "get": {
                 "summary": "Retrieve all RSS3 Nodes",
-                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address. The default limit is 20 and the maximum limit is 50.",
+                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address.",
                 "operationId": "getAllNodes",
                 "tags": [
                     "Node",
@@ -1048,7 +1048,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/node_query"
@@ -1147,7 +1147,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -1196,7 +1196,7 @@
         "/nta/epochs": {
             "get": {
                 "summary": "Retrieve all epochs",
-                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 20 and the maximum limit is 50.",
+                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getAllEpochs",
                 "tags": [
                     "Epoch",
@@ -1207,7 +1207,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -1297,7 +1297,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -5589,8 +5589,8 @@
                 "name": "action_limit",
                 "required": false,
                 "schema": {
-                    "default": 10,
-                    "maximum": 20,
+                    "default": 50,
+                    "maximum": 100,
                     "minimum": 1,
                     "type": "integer"
                 }
@@ -5939,14 +5939,14 @@
                     ]
                 }
             },
-            "limit_1_20": {
+            "limit_1_50": {
                 "name": "limit",
                 "in": "query",
                 "description": "Limit the number of results",
-                "example": 20,
+                "example": 50,
                 "schema": {
                     "type": "integer",
-                    "default": 20
+                    "default": 50
                 }
             },
             "limit_1_200": {

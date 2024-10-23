@@ -59,7 +59,7 @@ type NetworkActivitiesRequest struct {
 type PlatformActivitiesRequest struct {
 	Platform string `param:"platform" validate:"required"`
 
-	Limit          int      `query:"limit" validate:"min=1,max=100" default:"100"`
+	Limit          int      `query:"limit" validate:"min=1,max=100" default:"50"`
 	ActionLimit    int      `query:"action_limit" validate:"min=1,max=20" default:"10"`
 	Cursor         *string  `query:"cursor"`
 	SinceTimestamp *uint64  `query:"since_timestamp"`
