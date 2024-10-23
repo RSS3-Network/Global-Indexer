@@ -10,24 +10,24 @@ import (
 
 type GetEpochsRequest struct {
 	Cursor *string `query:"cursor"`
-	Limit  int     `query:"limit" validate:"min=1,max=50" default:"10"`
+	Limit  int     `query:"limit" validate:"min=1,max=100" default:"50"`
 }
 
 type GetEpochRequest struct {
 	EpochID   uint64  `param:"epoch_id" validate:"required"`
-	ItemLimit int     `query:"item_limit" validate:"min=1,max=50" default:"10"`
+	ItemLimit int     `query:"item_limit" validate:"min=1,max=100" default:"50"`
 	Cursor    *string `query:"cursor"`
 }
 
 type GetEpochDistributionRequest struct {
 	TransactionHash common.Hash `param:"transaction_hash" validate:"required"`
-	ItemLimit       int         `query:"item_limit" validate:"min=1,max=50" default:"10"`
+	ItemLimit       int         `query:"item_limit" validate:"min=1,max=100" default:"50"`
 	Cursor          *string     `query:"cursor"`
 }
 
 type GetEpochNodeRewardsRequest struct {
 	NodeAddress common.Address `param:"node_address" validate:"required"`
-	Limit       int            `query:"limit" validate:"min=1,max=50" default:"10"`
+	Limit       int            `query:"limit" validate:"min=1,max=100" default:"50"`
 	Cursor      *string        `query:"cursor"`
 }
 
