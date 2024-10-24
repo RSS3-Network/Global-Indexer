@@ -9,7 +9,7 @@ type ActivityRequest struct {
 
 // ActivitiesRequest represents the request for activities by an account.
 type ActivitiesRequest struct {
-	Account        string   `param:"account" validate:"required"`
+	Account        string   `param:"account" validate:"required,no_scheme"`
 	Limit          *int     `query:"limit" validate:"min=1,max=100" default:"100"`
 	ActionLimit    *int     `query:"action_limit" validate:"min=1,max=20" default:"10"`
 	Cursor         *string  `query:"cursor"`
@@ -25,7 +25,7 @@ type ActivitiesRequest struct {
 
 // AccountsActivitiesRequest represents the request for activities by multiple accounts.
 type AccountsActivitiesRequest struct {
-	Accounts       []string `json:"accounts" validate:"required,max=20"`
+	Accounts       []string `json:"accounts" validate:"required,max=20,no_scheme"`
 	Limit          int      `json:"limit" validate:"min=1,max=100" default:"100"`
 	ActionLimit    int      `json:"action_limit" validate:"min=1,max=20" default:"10"`
 	Cursor         *string  `json:"cursor"`
