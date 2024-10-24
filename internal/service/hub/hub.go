@@ -35,11 +35,7 @@ type Hub struct {
 var _ echo.Validator = (*Validator)(nil)
 
 var defaultValidator = &Validator{
-	validate: func() *validator.Validate {
-		v := validator.New()
-		v.RegisterValidation("no_scheme", validateNoScheme) //nolint:errcheck
-		return v
-	}(),
+	validate: validator.New(),
 }
 
 type Validator struct {
