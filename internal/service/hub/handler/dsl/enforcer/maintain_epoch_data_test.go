@@ -444,6 +444,7 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8082/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeIndexing))), nil)
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8083/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeIndexing))), nil)
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8084/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(``))), errors.New("workers_status"))
+	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8085/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNodeRssOnline))), nil)
 
 	enforcer := &SimpleEnforcer{
 		httpClient: mockClient,
@@ -498,6 +499,13 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 			HearBeat: schema.NodeStatusOffline,
 			Version:  "v1.0.0",
 		},
+		{
+			Address:  common.Address{7},
+			Endpoint: "http://localhost:8085",
+			Status:   schema.NodeStatusInitializing,
+			HearBeat: schema.NodeStatusOnline,
+			Version:  "v1.0.0",
+		},
 	}
 
 	_, _, _, _, _ = enforcer.generateMaps(context.Background(), stats, "v1.0.0")
@@ -509,4 +517,5 @@ func Test_GenerateMapsNodeStatus(t *testing.T) {
 	assert.Equal(t, schema.NodeStatusInitializing, stats[4].Status)
 	assert.Equal(t, schema.NodeStatusExited, stats[5].Status)
 	assert.Equal(t, schema.NodeStatusOffline, stats[6].Status)
+	assert.Equal(t, schema.NodeStatusOnline, stats[7].Status)
 }

@@ -107,6 +107,10 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		}
 	}
 
+	for i := range updatedNodes {
+		zap.L().Info("node status updated", zap.String("address", updatedNodes[i].Address.String()), zap.String("cur status", updatedNodes[i].Status.String()))
+	}
+
 	return e.updateNodeStatuses(ctx, updatedNodes, demotionNodeAddresses, reasons, reporters)
 }
 
