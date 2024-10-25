@@ -12,7 +12,7 @@ type GetBridgeTransactionsRequest struct {
 	Receiver *common.Address               `query:"receiver"`
 	Address  *common.Address               `query:"address"`
 	Type     *schema.BridgeTransactionType `query:"type"`
-	Limit    int                           `query:"limit" default:"20" min:"1" max:"20"`
+	Limit    int                           `query:"limit" default:"50" min:"1" max:"100"`
 }
 
 type GetBridgeTransactionRequest struct {

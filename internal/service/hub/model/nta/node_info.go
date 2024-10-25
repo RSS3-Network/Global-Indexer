@@ -14,7 +14,7 @@ type NodeRequest struct {
 
 type BatchNodeRequest struct {
 	Cursor        *string          `query:"cursor"`
-	Limit         int              `query:"limit" validate:"min=1,max=50" default:"10"`
+	Limit         int              `query:"limit" validate:"min=1,max=100" default:"50"`
 	NodeAddresses []common.Address `query:"node_addresses"`
 }
 

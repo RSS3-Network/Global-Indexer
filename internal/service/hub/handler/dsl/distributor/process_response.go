@@ -29,9 +29,9 @@ func (d *Distributor) processRSSHubResponses(_ []*model.DataResponse) {
 	//}
 }
 
-// processActivityResults processes responses for Activity requests.
-func (d *Distributor) processActivityResponses(responses []*model.DataResponse) {
-	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses); err != nil {
+// processDecentralizedActivityResponses processes responses for Decentralized Activity requests.
+func (d *Distributor) processDecentralizedActivityResponses(responses []*model.DataResponse) {
+	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses, true); err != nil {
 		zap.L().Error("fail to verify activity id responses ", zap.Any("responses", len(responses)))
 	} else {
 		_ = d.processNodeInvalidResponse(context.Background(), responses)
@@ -40,11 +40,11 @@ func (d *Distributor) processActivityResponses(responses []*model.DataResponse) 
 	}
 }
 
-// processActivitiesResponses processes responses for Activities requests.
-func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse) {
+// processDecentralizedActivitiesResponses processes responses for Decentralized Activities requests.
+func (d *Distributor) processDecentralizedActivitiesResponses(responses []*model.DataResponse) {
 	ctx := context.Background()
 
-	if err := d.simpleEnforcer.VerifyResponses(ctx, responses); err != nil {
+	if err := d.simpleEnforcer.VerifyResponses(ctx, responses, true); err != nil {
 		zap.L().Error("fail to verify activity responses", zap.Any("responses", len(responses)))
 
 		return
@@ -59,6 +59,28 @@ func (d *Distributor) processActivitiesResponses(responses []*model.DataResponse
 	zap.L().Info("complete activity responses verify", zap.Any("responses", len(responses)))
 
 	d.simpleEnforcer.VerifyPartialResponses(ctx, epochID, responses)
+}
+
+// processFederatedActivityResponses processes responses for Federated Activity requests.
+func (d *Distributor) processFederatedActivityResponses(responses []*model.DataResponse) {
+	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses, false); err != nil {
+		zap.L().Error("fail to verify federated activity responses", zap.Any("responses", len(responses)))
+
+		return
+	}
+
+	zap.L().Info("complete federated activity responses verify", zap.Any("responses", len(responses)))
+}
+
+// processFederatedActivitiesResponses processes responses for Federated Activities requests.
+func (d *Distributor) processFederatedActivitiesResponses(responses []*model.DataResponse) {
+	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses, false); err != nil {
+		zap.L().Error("fail to verify federated activities responses", zap.Any("responses", len(responses)))
+
+		return
+	}
+
+	zap.L().Info("complete federated activities responses verify", zap.Any("responses", len(responses)))
 }
 
 // processNodeInvalidResponse finds the valid response data and saves the invalid responses.
