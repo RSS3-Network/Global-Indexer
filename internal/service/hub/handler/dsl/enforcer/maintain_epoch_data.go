@@ -217,9 +217,8 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 			nodeToDataMap[stat.Address] = filterReadyWorkers(workerStatus.Data)
 			mu.Unlock()
 
-			// if all workers are unhealthy, the node is registered
+			// if all workers are unhealthy, set the node status to registered
 			isRegistered := true
-			//existUnhealthyWorker := false
 
 			// check if decentralized workers are ready
 			for _, workerInfo := range workerStatus.Data.Decentralized {
