@@ -90,6 +90,10 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return fmt.Errorf("update node stats and workers: %w", err)
 	}
 
+	for i := range stats {
+		zap.L().Info("node status", zap.String("address", stats[i].Address.String()), zap.String("pre status", originalStatusList[i].String()), zap.String("cur status", stats[i].Status.String()))
+	}
+
 	// filter the exited node status and submit the demotion to the VSL.
 	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
@@ -210,19 +214,27 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 			mu.Lock()
 			workerStatus.Data.Decentralized = filterDuplicateWorkers(workerStatus.Data.Decentralized)
-			nodeToDataMap[stat.Address] = workerStatus.Data
+			nodeToDataMap[stat.Address] = filterReadyWorkers(workerStatus.Data)
 			mu.Unlock()
 
-			// if all workers are unhealthy, the node is registered
+			// if all workers are unhealthy, set the node status to registered
 			isRegistered := true
 
+			// check if decentralized workers are ready
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
+					stat.Status = schema.NodeStatusInitializing
+
 					if workerInfo.Status == worker.StatusIndexing {
 						isRegistered = false
-						stat.Status = schema.NodeStatusInitializing
 					}
+
+					zap.L().Info("worker status is not ready",
+						zap.String("address", stat.Address.String()),
+						zap.String("network", workerInfo.Network.String()),
+						zap.String("worker", workerInfo.Worker.String()),
+						zap.String("status", workerInfo.Status.String()))
 
 					continue
 				}
@@ -275,8 +287,31 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 				mu.Unlock()
 			}
 
+			// check if the rsshub worker is ready
+			if rssInfo := workerStatus.Data.RSS; rssInfo != nil {
+				switch rssInfo.Status {
+				case worker.StatusReady:
+					// exist ready worker, not registered status
+					isRegistered = false
+				case worker.StatusUnhealthy:
+					// do not exist unhealthy worker, set initializing status
+					stat.Status = schema.NodeStatusInitializing
+				default:
+					zap.L().Warn("not supported rss worker status")
+				}
+
+				zap.L().Info("rss worker status",
+					zap.String("address", stat.Address.String()),
+					zap.String("worker", rssInfo.Platform.String()),
+					zap.String("status", rssInfo.Status.String()))
+			}
+
+			// TODO: check if federated workers are ready
+
 			if isRegistered {
 				stat.Status = schema.NodeStatusRegistered
+
+				zap.L().Info("change node status to registered", zap.String("address", stat.Address.String()))
 			}
 		}(stat)
 	}
@@ -323,6 +358,23 @@ func filterDuplicateWorkers(workers []*DecentralizedWorkerInfo) []*Decentralized
 	}
 
 	return filteredWorkers
+}
+
+// filterReadyWorkers filters out workers that are not ready.
+func filterReadyWorkers(componentInfo *ComponentInfo) *ComponentInfo {
+	readyWorkers := make([]*DecentralizedWorkerInfo, 0, len(componentInfo.Decentralized))
+
+	for _, workerInfo := range componentInfo.Decentralized {
+		if workerInfo.Status == worker.StatusReady {
+			readyWorkers = append(readyWorkers, workerInfo)
+		}
+	}
+
+	return &ComponentInfo{
+		Decentralized: readyWorkers,
+		RSS:           componentInfo.RSS,
+		Federated:     componentInfo.Federated,
+	}
 }
 
 // mapTransformAssign transforms the map and assigns the result to a global variable.
