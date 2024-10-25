@@ -42,6 +42,8 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		if err := c.database.WithContext(ctx).First(&nodeCursor, "address = ?", common.HexToAddress(lo.FromPtr(query.Cursor))).Error; err != nil {
 			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
+
+		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
 	}
 
 	if query.Type != nil {
@@ -59,6 +61,8 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 	if query.Limit != nil {
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
+
+	databaseStatement = databaseStatement.Order("created_at DESC")
 
 	var nodes table.Nodes
 
