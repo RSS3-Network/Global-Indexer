@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 
 	"github.com/creasty/defaults"
@@ -59,20 +58,6 @@ func (n *NTA) GetNodes(c echo.Context) error {
 	if len(nodes) > 0 && len(nodes) == request.Limit {
 		cursor = nodes[len(nodes)-1].Address.String()
 	}
-
-	// If the ActiveScore is the same, sort by staking pool size.
-	// TODO: Since Node's StakingPoolTokens needs to be obtained from vsl.
-	//  Now only the Nodes of the current page can be sorted.
-	sort.Slice(nodes, func(i, j int) bool {
-		if nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) == 0 {
-			iTokens, _ := new(big.Int).SetString(nodes[i].StakingPoolTokens, 10)
-			jTokens, _ := new(big.Int).SetString(nodes[j].StakingPoolTokens, 10)
-
-			return iTokens.Cmp(jTokens) > 0
-		}
-
-		return nodes[i].ActiveScore.Cmp(nodes[j].ActiveScore) > 0
-	})
 
 	return c.JSON(http.StatusOK, nta.Response{
 		Data:   nta.NewNodes(nodes, n.baseURL(c)),
@@ -144,7 +129,6 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 			Avatar: &l2.ChipsTokenMetadata{
 				Name: "Node Avatar",
 			},
-			ActiveScore:       decimal.Zero,
 			StakingPoolTokens: decimal.Zero.String(),
 		}
 	}
@@ -202,7 +186,6 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		NodeAddresses: request.NodeAddresses,
 		Cursor:        request.Cursor,
 		Limit:         lo.ToPtr(request.Limit),
-		OrderByScore:  true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get Nodes: %w", err)
