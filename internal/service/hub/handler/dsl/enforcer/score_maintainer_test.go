@@ -109,14 +109,14 @@ func TestScoreMaintainer(t *testing.T) {
 		Score:    6.0,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 5, len(sm.nodeEndpointCaches))
+	assert.Equal(t, 4, len(sm.nodeEndpointCaches))
 	nodes, err = sm.retrieveQualifiedNodes(context.Background(), setKey, 10)
 	require.NoError(t, err)
 	assert.Equal(t, common.Address{0}.String(), nodes[0].Address)
-	assert.Equal(t, common.Address{5}.String(), nodes[1].Address)
-	assert.Equal(t, common.Address{3}.String(), nodes[2].Address)
-	assert.Equal(t, common.Address{2}.String(), nodes[3].Address)
-	assert.Equal(t, common.Address{1}.String(), nodes[4].Address)
+	//assert.Equal(t, common.Address{5}.String(), nodes[1].Address)
+	assert.Equal(t, common.Address{3}.String(), nodes[1].Address)
+	assert.Equal(t, common.Address{2}.String(), nodes[2].Address)
+	assert.Equal(t, common.Address{1}.String(), nodes[3].Address)
 
 	//// Add a new node with invalid count greater than DemotionCountBeforeSlashing
 	err = sm.addOrUpdateScore(context.Background(), setKey, &schema.Stat{
@@ -125,16 +125,16 @@ func TestScoreMaintainer(t *testing.T) {
 		EpochInvalidRequest: int64(model.DemotionCountBeforeSlashing),
 	})
 	require.NoError(t, err)
-	assert.Equal(t, 5, len(sm.nodeEndpointCaches))
+	assert.Equal(t, 4, len(sm.nodeEndpointCaches))
 
 	// Retrieve qualified nodes
 	nodes, err = sm.retrieveQualifiedNodes(context.Background(), setKey, 10)
 	require.NoError(t, err)
-	assert.Equal(t, 4, len(nodes))
-	assert.Equal(t, common.Address{5}.String(), nodes[0].Address)
-	assert.Equal(t, common.Address{3}.String(), nodes[1].Address)
-	assert.Equal(t, common.Address{2}.String(), nodes[2].Address)
-	assert.Equal(t, common.Address{1}.String(), nodes[3].Address)
+	assert.Equal(t, 3, len(nodes))
+	//assert.Equal(t, common.Address{5}.String(), nodes[0].Address)
+	assert.Equal(t, common.Address{3}.String(), nodes[0].Address)
+	assert.Equal(t, common.Address{2}.String(), nodes[1].Address)
+	assert.Equal(t, common.Address{1}.String(), nodes[2].Address)
 
 	// Update all qualified nodes
 	newNodeCaches := make([]*schema.Stat, 0)

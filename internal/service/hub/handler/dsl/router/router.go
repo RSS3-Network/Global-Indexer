@@ -123,6 +123,8 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 				// Read the response body.
 				data, readErr := io.ReadAll(body)
 
+				zap.L().Info("fetch request", zap.String("node", address.String()), zap.String("endpoint", requestMeta.Endpoint), zap.String("method", requestMeta.Method))
+
 				if readErr != nil {
 					zap.L().Error("failed to read response body", zap.String("node", address.String()), zap.Error(readErr))
 
