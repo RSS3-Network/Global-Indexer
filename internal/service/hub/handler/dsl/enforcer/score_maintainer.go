@@ -22,7 +22,9 @@ import (
 // and a map in memory for fast access to each node endpoint's cached data.
 // This structure helps in quickly and efficiently updating and retrieving scores and statuses of nodes in distributed systems.
 type ScoreMaintainer struct {
-	cacheClient        cache.Client
+	cacheClient cache.Client
+	// This map is used to record the nodes currently in the sorted set.
+	// It can only be updated or reduced, not increased.
 	nodeEndpointCaches map[string]*EndpointCache
 	lock               sync.RWMutex
 }
@@ -35,28 +37,19 @@ type EndpointCache struct {
 // addOrUpdateScore updates or adds a nodeEndpointCache in the data structure.
 // If the invalidCount is greater than or equal to DemotionCountBeforeSlashing, the nodeEndpointCache is removed.
 func (sm *ScoreMaintainer) addOrUpdateScore(ctx context.Context, setKey string, nodeStat *schema.Stat) error {
-	if nodeStat.EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
-		sm.lock.RLock()
-		_, ok := sm.nodeEndpointCaches[nodeStat.Address.String()]
-		sm.lock.RUnlock()
+	sm.lock.RLock()
+	_, exists := sm.nodeEndpointCaches[nodeStat.Address.String()]
+	sm.lock.RUnlock()
 
-		if ok {
-			// Fixme: add redis lock
-			// Remove from sorted set.
-			if err := sm.cacheClient.ZRem(ctx, setKey, nodeStat.Address.String()); err != nil {
-				return err
-			}
-		}
-
+	if !exists {
 		return nil
 	}
 
-	sm.lock.Lock()
-	sm.nodeEndpointCaches[nodeStat.Address.String()] = &EndpointCache{
-		Endpoint:    nodeStat.Endpoint,
-		AccessToken: nodeStat.AccessToken,
+	if nodeStat.EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
+		// Fixme: add redis lock
+		// Remove from sorted set.
+		return sm.cacheClient.ZRem(ctx, setKey, nodeStat.Address.String())
 	}
-	sm.lock.Unlock()
 
 	return sm.cacheClient.ZAdd(ctx, setKey, redis.Z{
 		Member: nodeStat.Address.String(),
