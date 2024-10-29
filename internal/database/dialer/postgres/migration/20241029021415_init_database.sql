@@ -256,7 +256,7 @@ GROUP BY owner, node;
 -- public
 create sequence if not exists "average_tax_rate_submissions_id_seq" minvalue 0;
 
-create sequence if not exists "node_invalid_response_id_seq" minvalue 0;
+create sequence if not exists "node_info_id_seq" minvalue 0;
 
 create table if not exists "node_info"
 (
