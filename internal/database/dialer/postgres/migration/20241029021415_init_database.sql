@@ -153,7 +153,7 @@ create table if not exists "stake"."transactions"
 (
     id                text                     not null,
     type              text                     not null,
-    user              text                     not null,
+    "user"            text                     not null,
     node              text                     not null,
     value             numeric                  not null,
     chips             bigint[]                 not null,
@@ -170,9 +170,9 @@ create index if not exists "idx_transactions_order" on "stake"."transactions" (b
 
 create index if not exists "idx_transactions_node" on "stake"."transactions" (node);
 
-create index if not exists "idx_transactions_address" on "stake"."transactions" (user, node);
+create index if not exists "idx_transactions_address" on "stake"."transactions" ("user", node);
 
-create index if not exists "idx_transactions_user" on "stake"."transactions" (user);
+create index if not exists "idx_transactions_user" on "stake"."transactions" ("user");
 
 create table if not exists "stake"."events"
 (
