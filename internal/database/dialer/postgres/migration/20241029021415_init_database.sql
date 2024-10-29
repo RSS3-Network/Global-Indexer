@@ -390,7 +390,7 @@ create table if not exists "epoch_trigger"
     constraint pk_epoch_trigger primary key (transaction_hash)
 );
 
-create index if not exists "idx_epoch_id" on "epoch_trigger" (epoch_id);
+create index if not exists "idx_epoch_trigger_epoch_id" on "epoch_trigger" (epoch_id);
 
 create index if not exists "idx_created_at" on "epoch_trigger" (created_at);
 
@@ -415,7 +415,7 @@ create index if not exists "idx_request" on "node_invalid_response" (request asc
 
 create index if not exists "idx_type" on "node_invalid_response" (type asc, created_at desc);
 
-create index if not exists "idx_epoch_id" on "node_invalid_response" (epoch_id desc);
+create index if not exists "idx_node_invalid_response_epoch_id" on "node_invalid_response" (epoch_id desc);
 
 create table if not exists "node_reward_record"
 (
