@@ -67,9 +67,9 @@ create table if not exists "epoch"."apy_snapshots"
 create index if not exists "apy_snapshots_date_idx" on "epoch"."apy_snapshots" (date);
 
 -- node schema
-create schema if not exists node;
+create schema if not exists "node";
 
-create table if not exists "node".count_snapshots
+create table if not exists "node"."count_snapshots"
 (
     date  date             not null,
     count bigint default 0 not null,
@@ -103,6 +103,8 @@ create index if not exists "events_index_address" on "node"."events" (address_fr
 create index if not exists "events_index_address_type" on "node"."events" (address_from, type);
 
 create index if not exists "events_index_block_number" on "node"."events" (block_number desc, transaction_index desc, log_index desc);
+
+create index if not exists "idx_events_block_number" on "node"."events" (block_number);
 
 create sequence if not exists "node"."operator_profit_snapshots_id_seq" minvalue 0;
 
@@ -145,13 +147,13 @@ create index if not exists "apy_snapshots_date_idx" on "node"."apy_snapshots" (d
 create index if not exists "apy_snapshots_epoch_id_idx" on "node"."apy_snapshots" (epoch_id desc, id desc);
 
 -- stake schema
-create schema if not exists stake;
+create schema if not exists "stake";
 
 create table if not exists "stake"."transactions"
 (
     id                text                     not null,
     type              text                     not null,
-    "user"            text                     not null,
+    user              text                     not null,
     node              text                     not null,
     value             numeric                  not null,
     chips             bigint[]                 not null,
@@ -168,9 +170,9 @@ create index if not exists "idx_transactions_order" on "stake"."transactions" (b
 
 create index if not exists "idx_transactions_node" on "stake"."transactions" (node);
 
-create index if not exists "idx_transactions_address" on "stake"."transactions" ("user", node);
+create index if not exists "idx_transactions_address" on "stake"."transactions" (user, node);
 
-create index if not exists "idx_transactions_user" on "stake"."transactions" ("user");
+create index if not exists "idx_transactions_user" on "stake"."transactions" (user);
 
 create table if not exists "stake"."events"
 (
@@ -256,7 +258,7 @@ GROUP BY owner, node;
 -- public
 create sequence if not exists "average_tax_rate_submissions_id_seq" minvalue 0;
 
-create sequence if not exists "node_info_id_seq" minvalue 0;
+create sequence if not exists "node_invalid_response_id_seq" minvalue 0;
 
 create table if not exists "node_info"
 (
@@ -274,7 +276,6 @@ create table if not exists "node_info"
     avatar                   jsonb,
     hide_tax_rate            boolean                  default false,
     apy                      numeric                  default 0,
-    score                    numeric                  default 0,
     type                     text,
     access_token             text,
     version                  text,
@@ -284,8 +285,6 @@ create table if not exists "node_info"
 );
 
 create index if not exists "idx_is_public" on "node_info" (is_public_good asc, created_at desc);
-
-create index if not exists "idx_score" on "node_info" (score desc);
 
 create index if not exists "idx_last_heartbeat_timestamp" on "node_info" (last_heartbeat_timestamp);
 
@@ -337,6 +336,8 @@ create index if not exists "idx_indexes_epoch_invalid_request_count" on "node_st
 create index if not exists "idx_indexes_points" on "node_stat" (points desc);
 
 create index if not exists "idx_indexes_is_full_node" on "node_stat" (is_full_node, points desc);
+
+create index if not exists "idx_indexes_is_rss_node" on "node_stat" (is_rss_node, points desc);
 
 create table if not exists "average_tax_rate_submissions"
 (
@@ -392,8 +393,6 @@ create table if not exists "epoch_trigger"
 create index if not exists "idx_epoch_id" on "epoch_trigger" (epoch_id);
 
 create index if not exists "idx_created_at" on "epoch_trigger" (created_at);
-
-create sequence if not exists "node_invalid_response_id_seq" minvalue 0;
 
 create table if not exists "node_invalid_response"
 (
@@ -459,15 +458,15 @@ drop table if exists "bridge"."transactions";
 drop schema if exists "bridge";
 
 drop table if exists "epoch"."apy_snapshots";
-drop schema if exists epoch;
+drop schema if exists "epoch";
 
 drop table if exists "node"."events";
 drop sequence if exists "node"."operator_profit_snapshots_id_seq";
 drop table if exists "node"."operator_profit_snapshots";
 drop sequence if exists "node"."apy_snapshots_id_seq";
 drop table if exists "node"."apy_snapshots";
-drop table if exists "node".count_snapshots;
-drop schema if exists node;
+drop table if exists "node"."count_snapshots";
+drop schema if exists "node";
 
 drop table if exists "stake"."transactions";
 drop table if exists "stake"."events";
