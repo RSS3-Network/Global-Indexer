@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/adrianbrad/psqldocker"
 	"math/big"
 	"testing"
 
+	"github.com/adrianbrad/psqldocker"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
