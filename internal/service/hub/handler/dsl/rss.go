@@ -1,6 +1,7 @@
 package dsl
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -17,6 +18,10 @@ func (d *DSL) GetRSSHub(c echo.Context) error {
 	data, err := d.distributor.DistributeRSSHubData(c.Request().Context(), path, query)
 
 	if err != nil {
+		if errors.Is(err, errorx.ErrNoNodesAvailable) {
+			return errorx.BadRequestError(c, err)
+		}
+
 		zap.L().Error("distribute rss hub data error", zap.Error(err))
 
 		return errorx.InternalError(c)

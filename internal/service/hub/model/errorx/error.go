@@ -1,6 +1,7 @@
 package errorx
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -16,6 +17,8 @@ const (
 	ErrorCodeBadParams
 	ErrorCodeInternalError
 )
+
+var ErrNoNodesAvailable = errors.New("no nodes currently support this request in the network. Please wait for node data support or try again later")
 
 type ErrorResponse struct {
 	Error     string    `json:"error"`

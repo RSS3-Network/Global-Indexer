@@ -107,6 +107,10 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		}
 	}
 
+	for i := range updatedNodes {
+		zap.L().Info("node status updated", zap.String("address", updatedNodes[i].Address.String()), zap.String("cur status", updatedNodes[i].Status.String()))
+	}
+
 	return e.updateNodeStatuses(ctx, updatedNodes, demotionNodeAddresses, reasons, reporters)
 }
 
@@ -132,8 +136,25 @@ func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node,
 		return schema.NodeStatusInitializing, ""
 	}
 
+	// Check if any decentralized worker is unhealthy
 	for _, workerInfo := range workersInfo.Data.Decentralized {
 		if workerInfo.Status != worker.StatusUnhealthy {
+			// Return initializing status if any worker is not unhealthy
+			return schema.NodeStatusInitializing, ""
+		}
+	}
+
+	// Check if any federated worker is unhealthy
+	for _, workerInfo := range workersInfo.Data.Federated {
+		if workerInfo.Status != worker.StatusUnhealthy {
+			// Return initializing status if any worker is not unhealthy
+			return schema.NodeStatusInitializing, ""
+		}
+	}
+
+	// Check if any RSS worker is unhealthy
+	if workersInfo.Data.RSS != nil {
+		if workersInfo.Data.RSS.Status != worker.StatusUnhealthy {
 			// Return initializing status if any worker is not unhealthy
 			return schema.NodeStatusInitializing, ""
 		}

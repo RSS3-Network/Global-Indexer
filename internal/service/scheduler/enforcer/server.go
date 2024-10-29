@@ -14,9 +14,10 @@ import (
 	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/enforcer"
-	"github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/epoch_fresher"
-	"github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/node_status"
-	"github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/reliability_score"
+	epochfresher "github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/epoch_fresher"
+	federatedhandles "github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/federated_handles"
+	nodestatus "github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/node_status"
+	reliabilityscore "github.com/rss3-network/global-indexer/internal/service/scheduler/enforcer/reliability_score"
 	"github.com/sourcegraph/conc/pool"
 )
 
@@ -93,6 +94,7 @@ func New(databaseClient database.Client, redis *redis.Client, ethereumClient *et
 			nodestatus.New(redis, simpleEnforcer),
 			reliabilityscore.New(redis, simpleEnforcer),
 			epochfresher.New(redis, ethereumClient, checkpoint.BlockNumber, simpleEnforcer, contractStakingEvents, settlementContract, contractAddresses.AddressStakingProxy),
+			federatedhandles.New(redis, databaseClient, httpClient),
 		},
 	}, nil
 }

@@ -14,7 +14,7 @@ type GetStakeStakingsRequest struct {
 	Cursor        *string         `query:"cursor"`
 	StakerAddress *common.Address `query:"staker_address"`
 	NodeAddress   *common.Address `query:"node_address"`
-	Limit         int             `query:"limit" default:"10" min:"1" max:"20"`
+	Limit         int             `query:"limit" default:"50" min:"1" max:"100"`
 }
 
 type GetStakerProfitRequest struct {

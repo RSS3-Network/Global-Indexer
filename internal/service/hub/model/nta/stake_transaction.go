@@ -15,7 +15,7 @@ type GetStakeTransactionsRequest struct {
 	Node    *common.Address              `query:"node"`
 	Type    *schema.StakeTransactionType `query:"type"`
 	Pending *bool                        `query:"pending"`
-	Limit   int                          `query:"limit" default:"20" min:"1" max:"20"`
+	Limit   int                          `query:"limit" default:"50" min:"1" max:"100"`
 }
 
 type GetStakeTransactionRequest struct {

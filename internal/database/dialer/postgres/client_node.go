@@ -43,11 +43,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 			return nil, fmt.Errorf("get Node cursor: %w", err)
 		}
 
-		if query.OrderByScore {
-			databaseStatement = databaseStatement.Where("score < ? OR (score = ? AND created_at < ?)", nodeCursor.Score, nodeCursor.Score, nodeCursor.CreatedAt)
-		} else {
-			databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
-		}
+		databaseStatement = databaseStatement.Where("created_at < ?", nodeCursor.CreatedAt)
 	}
 
 	if query.Type != nil {
@@ -66,11 +62,7 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
 
-	if query.OrderByScore {
-		databaseStatement = databaseStatement.Order("score DESC, created_at DESC")
-	} else {
-		databaseStatement = databaseStatement.Order("created_at DESC")
-	}
+	databaseStatement = databaseStatement.Order("created_at DESC")
 
 	var nodes table.Nodes
 

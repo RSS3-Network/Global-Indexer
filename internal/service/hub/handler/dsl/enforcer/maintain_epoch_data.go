@@ -17,6 +17,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/rss3-network/node/schema/worker"
 	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/node/schema/worker/federated"
 	"github.com/rss3-network/node/schema/worker/rss"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
@@ -85,14 +86,23 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 		return fmt.Errorf("set map cache: %w", err)
 	}
 	// Update node statistics and worker data.
-	if err := e.updateNodeWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
-		return fmt.Errorf("update node workers: %w", err)
+	if err := e.updateNodeStatsAndWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
+		return fmt.Errorf("update node stats and workers: %w", err)
 	}
+
+	for i := range stats {
+		zap.L().Info("node status", zap.String("address", stats[i].Address.String()), zap.String("pre status", originalStatusList[i].String()), zap.String("cur status", stats[i].Status.String()))
+	}
+
 	// filter the exited node status and submit the demotion to the VSL.
 	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
 	if err != nil {
 		return fmt.Errorf("filter node status: %w", err)
+	}
+
+	if len(nodeAddresses) == 0 {
+		return nil
 	}
 
 	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
@@ -204,19 +214,27 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 			mu.Lock()
 			workerStatus.Data.Decentralized = filterDuplicateWorkers(workerStatus.Data.Decentralized)
-			nodeToDataMap[stat.Address] = workerStatus.Data
+			nodeToDataMap[stat.Address] = filterReadyWorkers(workerStatus.Data)
 			mu.Unlock()
 
-			// if all workers are unhealthy, the node is registered
+			// if all workers are unhealthy, set the node status to registered
 			isRegistered := true
 
+			// check if decentralized workers are ready
 			for _, workerInfo := range workerStatus.Data.Decentralized {
 				// Skip processing the worker if its status is not marked as ready.
 				if workerInfo.Status != worker.StatusReady {
+					stat.Status = schema.NodeStatusInitializing
+
 					if workerInfo.Status == worker.StatusIndexing {
 						isRegistered = false
-						stat.Status = schema.NodeStatusInitializing
 					}
+
+					zap.L().Info("worker status is not ready",
+						zap.String("address", stat.Address.String()),
+						zap.String("network", workerInfo.Network.String()),
+						zap.String("worker", workerInfo.Worker.String()),
+						zap.String("status", workerInfo.Status.String()))
 
 					continue
 				}
@@ -269,8 +287,31 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 				mu.Unlock()
 			}
 
+			// check if the rsshub worker is ready
+			if rssInfo := workerStatus.Data.RSS; rssInfo != nil {
+				switch rssInfo.Status {
+				case worker.StatusReady:
+					// exist ready worker, not registered status
+					isRegistered = false
+				case worker.StatusUnhealthy:
+					// do not exist unhealthy worker, set initializing status
+					stat.Status = schema.NodeStatusInitializing
+				default:
+					zap.L().Warn("not supported rss worker status")
+				}
+
+				zap.L().Info("rss worker status",
+					zap.String("address", stat.Address.String()),
+					zap.String("worker", rssInfo.Platform.String()),
+					zap.String("status", rssInfo.Status.String()))
+			}
+
+			// TODO: check if federated workers are ready
+
 			if isRegistered {
 				stat.Status = schema.NodeStatusRegistered
+
+				zap.L().Info("change node status to registered", zap.String("address", stat.Address.String()))
 			}
 		}(stat)
 	}
@@ -317,6 +358,23 @@ func filterDuplicateWorkers(workers []*DecentralizedWorkerInfo) []*Decentralized
 	}
 
 	return filteredWorkers
+}
+
+// filterReadyWorkers filters out workers that are not ready.
+func filterReadyWorkers(componentInfo *ComponentInfo) *ComponentInfo {
+	readyWorkers := make([]*DecentralizedWorkerInfo, 0, len(componentInfo.Decentralized))
+
+	for _, workerInfo := range componentInfo.Decentralized {
+		if workerInfo.Status == worker.StatusReady {
+			readyWorkers = append(readyWorkers, workerInfo)
+		}
+	}
+
+	return &ComponentInfo{
+		Decentralized: readyWorkers,
+		RSS:           componentInfo.RSS,
+		Federated:     componentInfo.Federated,
+	}
 }
 
 // mapTransformAssign transforms the map and assigns the result to a global variable.
@@ -412,8 +470,8 @@ func (e *SimpleEnforcer) setMapCache(ctx context.Context) error {
 	return nil
 }
 
-// updateNodeWorkers checks if the node is a full node and updates the corresponding worker information in the database.
-func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.Stat, nodeToDataMap map[common.Address]*ComponentInfo, epoch int64) error {
+// updateNodeStatsAndWorkers checks if the node is a full node and updates the corresponding worker information in the database.
+func (e *SimpleEnforcer) updateNodeStatsAndWorkers(ctx context.Context, stats []*schema.Stat, nodeToDataMap map[common.Address]*ComponentInfo, epoch int64) error {
 	var (
 		wg         sync.WaitGroup
 		mu         sync.Mutex
@@ -438,22 +496,17 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			// Determine whether the node qualifies as a full node.
 			isFull := determineFullNode(workerInfo.Decentralized)
 			stats[i].IsFullNode = isFull
-
-			uniqueNetworks := make(map[network.Network]struct{})
-			for _, info := range workerInfo.Decentralized {
-				uniqueNetworks[info.Network] = struct{}{}
-			}
-
-			stats[i].DecentralizedNetwork = len(uniqueNetworks)
-			stats[i].Indexer = len(workerInfo.Decentralized)
+			stats[i].DecentralizedNetwork = calculateDecentralizedNetwork(workerInfo.Decentralized)
 			stats[i].IsRssNode = determineRssNode(workerInfo.RSS)
 			stats[i].FederatedNetwork = calculateFederatedNetwork(workerInfo.Federated)
+			stats[i].Indexer = len(workerInfo.Decentralized) + len(workerInfo.Federated)
 
 			// Reset the epoch, request count, and invalid request count if a new epoch is detected,
 			// different from the previous one.
 			if epoch != stats[i].Epoch {
 				stats[i].Epoch = epoch
 				stats[i].EpochInvalidRequest = 0
+				stats[i].EpochRequest = 0
 			}
 
 			// Update worker information in the database if the node is not a full node.
@@ -477,22 +530,43 @@ func (e *SimpleEnforcer) updateNodeWorkers(ctx context.Context, stats []*schema.
 			return fmt.Errorf("save node workers: %w", err)
 		}
 
+		// Update the node statistics in the database.
+		if err := client.SaveNodeStats(ctx, stats); err != nil {
+			return fmt.Errorf("update node stats: %w", err)
+		}
+
 		return nil
 	})
 }
 
+// calculateFederatedNetwork calculates the federated network.
+func calculateFederatedNetwork(workerInfo []*FederatedInfo) int {
+	uniqueNetworks := make(map[network.Network]struct{})
+
+	for _, info := range workerInfo {
+		uniqueNetworks[info.Network] = struct{}{}
+	}
+
+	return len(uniqueNetworks)
+}
+
+// calculateDecentralizedNetwork calculates the decentralized network.
+func calculateDecentralizedNetwork(workerInfo []*DecentralizedWorkerInfo) int {
+	uniqueNetworks := make(map[network.Network]struct{})
+	for _, info := range workerInfo {
+		uniqueNetworks[info.Network] = struct{}{}
+	}
+
+	return len(uniqueNetworks)
+}
+
 // determineRssNode determines if the node is an RSS node.
 func determineRssNode(w *RSSWorkerInfo) bool {
-	if w != nil && w.Worker == rss.RSSHub && w.Status == worker.StatusReady {
+	if w != nil && w.Platform == rss.PlatformRSSHub && w.Status == worker.StatusReady {
 		return true
 	}
 
 	return false
-}
-
-// calculateFederatedNetwork calculates the federated network.
-func calculateFederatedNetwork(_ []*FederatedInfo) int {
-	return 0
 }
 
 // determineFullNode determines if the node is a full node based on
@@ -646,12 +720,15 @@ type DecentralizedWorkerInfo struct {
 }
 
 type RSSWorkerInfo struct {
-	WorkerInfo
-	Worker rss.Worker `json:"worker"`
+	//WorkerInfo
+	//Worker rss.Worker `json:"worker"`
+	Platform rss.Platform  `json:"platform"`
+	Status   worker.Status `json:"status"`
 }
 
 type FederatedInfo struct {
 	WorkerInfo
+	Worker federated.Worker `json:"worker"`
 }
 
 type ComponentInfo struct {

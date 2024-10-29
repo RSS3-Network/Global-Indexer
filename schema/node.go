@@ -30,7 +30,6 @@ type Node struct {
 	Location               []*NodeLocation        `json:"location"`
 	Avatar                 *l2.ChipsTokenMetadata `json:"avatar"`
 	APY                    decimal.Decimal        `json:"apy"`
-	ActiveScore            decimal.Decimal        `json:"active_score"`
 	ReliabilityScore       decimal.Decimal        `json:"reliability_score"`
 	Version                string                 `json:"version"`
 	Type                   string                 `json:"type"`
@@ -123,5 +122,4 @@ type FindNodesQuery struct {
 	Type          *NodeType
 	Cursor        *string
 	Limit         *int
-	OrderByScore  bool
 }

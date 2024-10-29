@@ -10,9 +10,9 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 )
 
-func calculateOperationRewards(nodes []*schema.Node, requestCount []*big.Int, rewards *config.Rewards) ([]*big.Int, error) {
+func calculateOperationRewards(nodeAddresses []common.Address, requestCount []*big.Int, rewards *config.Rewards) ([]*big.Int, error) {
 	// If there are no nodes, return nil
-	if len(nodes) == 0 {
+	if len(nodeAddresses) == 0 {
 		return nil, nil
 	}
 

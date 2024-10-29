@@ -35,6 +35,10 @@
             "description": "A subset of DSL, these APIs facilitate querying information on decentralized networks."
         },
         {
+            "name": "Federated",
+            "description": "A subset of DSL, these APIs facilitate querying information on federated networks."
+        },
+        {
             "name": "RSS",
             "description": "A subset of DSL, these APIs facilitate querying information conforming to the RSS Specification.",
             "x-displayName": "RSS"
@@ -327,6 +331,238 @@
                 }
             }
         },
+        "/federated/tx/{id}": {
+            "get": {
+                "summary": "Retrieve Federated Activity by ID (Beta)",
+                "description": "This endpoint retrieves the details of a specified federated activity by its ID. You can also specify additional query parameters to limit the number of actions retrieved and to paginate through actions.",
+                "operationId": "getFederatedActivityById",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_activity_id_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_page_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivityResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/{account}": {
+            "get": {
+                "summary": "Retrieve Federated Account Activities (Beta)",
+                "description": "This endpoint retrieves the activities associated with a specified account in the federated system. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "operationId": "getFederatedAccountActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_account_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_network_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_platform_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/accounts": {
+            "post": {
+                "summary": "Batch Get Federated Accounts Activities (Beta)",
+                "description": "Retrieve activities associated with multiple accounts on all compatible networks. You can use various query parameters to filter and paginate the results, including limits on the number of activities and actions, timestamps, success status, direction, and more.",
+                "operationId": "batchGetFederatedAccountsActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/BatchGetFederatedAccountsActivities"
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/network/{network}": {
+            "get": {
+                "summary": "Retrieve Federated Network Activities (Beta)",
+                "description": "Retrieve a list of activities from the specified federated network. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getFederatedNetworkActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_network_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_platform_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/federated/platform/{platform}": {
+            "get": {
+                "summary": "Retrieve Federated Platform Activities (Beta)",
+                "description": "Retrieve a list of activities from the specified federated platform. This endpoint allows you to filter activities by various parameters such as limit, timestamp, success status, and more.",
+                "operationId": "getFederatedPlatformActivities",
+                "tags": [
+                    "Federated",
+                    "DSL"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/federated_platform_path"
+                    },
+                    {
+                        "$ref": "#/components/parameters/limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/action_limit_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/cursor_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/since_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/until_timestamp_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/success_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/direction_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_tag_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_action_type_query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/federated_network_query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/FederatedActivitiesResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
         "/nta/bridgings/transactions": {
             "get": {
                 "summary": "Retrieve bridging transactions",
@@ -353,7 +589,7 @@
                         "$ref": "#/components/parameters/bridging_type_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -422,7 +658,7 @@
                         "$ref": "#/components/parameters/pending_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -482,7 +718,7 @@
                         "$ref": "#/components/parameters/node_address_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/cursor_query"
@@ -715,7 +951,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/before_date_query"
@@ -754,7 +990,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/before_date_query"
@@ -801,7 +1037,7 @@
         "/nta/nodes": {
             "get": {
                 "summary": "Retrieve all RSS3 Nodes",
-                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address. The default limit is 10 and the maximum limit is 50.",
+                "description": "Retrieve the list of all RSS3 Nodes. This endpoint allows filtering by cursor, limit, and Node address.",
                 "operationId": "getAllNodes",
                 "tags": [
                     "Node",
@@ -812,7 +1048,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     },
                     {
                         "$ref": "#/components/parameters/node_query"
@@ -911,7 +1147,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -960,7 +1196,7 @@
         "/nta/epochs": {
             "get": {
                 "summary": "Retrieve all epochs",
-                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination. The default limit is 10 and the maximum limit is 50.",
+                "description": "Retrieve a list of all epochs. This endpoint allows filtering by cursor and limit for pagination.",
                 "operationId": "getAllEpochs",
                 "tags": [
                     "Epoch",
@@ -971,7 +1207,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -1061,7 +1297,7 @@
                         "$ref": "#/components/parameters/cursor_query"
                     },
                     {
-                        "$ref": "#/components/parameters/limit_1_20"
+                        "$ref": "#/components/parameters/limit_1_50"
                     }
                 ],
                 "responses": {
@@ -1210,7 +1446,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"}]
+                        "anyOf": [{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/RssFeed"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -1260,6 +1496,97 @@
                     ]
                 }
             },
+            "FederatedAction": {
+                "description": "Represents an individual action within an federated activity.",
+                "properties": {
+                    "from": {
+                        "description": "The account from which the federated action originated.",
+                        "type": "string"
+                    },
+                    "metadata": {
+                        "description": "Additional metadata related to the federated action.",
+                        "type": "object",
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/SocialPost"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialComment"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SocialShare"
+                            }
+                        ]
+                    },
+                    "platform": {
+                        "description": "The platform of the federated activity.",
+                        "type": "string"
+                    },
+                    "related_urls": {
+                        "description": "A list of URLs related to the action.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "tag": {
+                        "description": "The tag of the federated activity.",
+                        "type": "string"
+                    },
+                    "to": {
+                        "description": "The account to which the federated action is directed.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "The type of federated action performed.",
+                        "type": "string"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "from",
+                    "metadata",
+                    "related_urls",
+                    "to",
+                    "tag",
+                    "type"
+                ],
+                "example": {
+                    "tag": "social",
+                    "type": "comment",
+                    "platform": "Mastodon",
+                    "from": "@woofers@universeodon.com",
+                    "to": "@georgetakei@universeodon.com",
+                    "metadata": {
+                        "handle": "@woofers@universeodon.com",
+                        "body": "@ georgetakei ( https://universeodon.com/@georgetakei ) now hold on just a minute...\n\n# woof ( https://universeodon.com/tags/woof )",
+                        "publication_id": "113324128515491294",
+                        "tags": [
+                            "@georgetakei",
+                            "#woof"
+                        ],
+                        "author_url": "https://universeodon.com/users/woofers",
+                        "timestamp": 1729188972,
+                        "target": {
+                            "handle": "@georgetakei@universeodon.com",
+                            "body": "Just a little treat.",
+                            "media": [
+                                {
+                                    "address": "https://media.universeodon.com/media_attachments/files/113/319/346/314/075/495/original/26e989bcf15840a6.png",
+                                    "mime_type": "image/png"
+                                }
+                            ],
+                            "publication_id": "113319346448373294",
+                            "author_url": "https://universeodon.com/users/georgetakei",
+                            "timestamp": 1729116004
+                        },
+                        "target_url": "https://universeodon.com/users/georgetakei/statuses/113319346448373294"
+                    },
+                    "related_urls": [
+                        "https://universeodon.com/users/woofers/statuses/113324128515491294"
+                    ]
+                }
+            },
             "ActivitiesResponse": {
                 "description": "The response structure for a list of activities.",
                 "properties": {
@@ -1267,6 +1594,25 @@
                         "description": "The list of activities.",
                         "items": {
                             "$ref": "#/components/schemas/Activity"
+                        },
+                        "type": "array"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/MetaCursor"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "data"
+                ]
+            },
+            "FederatedActivitiesResponse": {
+                "description": "The response structure for a list of federated activities.",
+                "properties": {
+                    "data": {
+                        "description": "The list of federated activities.",
+                        "items": {
+                            "$ref": "#/components/schemas/FederatedActivity"
                         },
                         "type": "array"
                     },
@@ -1363,10 +1709,112 @@
                     "actions"
                 ]
             },
+            "FederatedActivity": {
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier for the federated activity.",
+                        "type": "string",
+                        "example": "https://universeodon.com/users/woofers/statuses/113324128515491294/activity"
+                    },
+                    "owner": {
+                        "description": "The owner of the federated activity.",
+                        "type": "string",
+                        "example": "@georgetakei@universeodon.com"
+                    },
+                    "network": {
+                        "description": "The network of the federated activity.",
+                        "type": "string",
+                        "example": "mastodon"
+                    },
+                    "from": {
+                        "description": "The account from which the federated activity originated.",
+                        "type": "string",
+                        "example": "@woofers@universeodon.com"
+                    },
+                    "to": {
+                        "description": "The account to which the activity is directed.",
+                        "type": "string",
+                        "example": "@georgetakei@universeodon.com"
+                    },
+                    "index": {
+                        "description": "The index of the activity in the list.",
+                        "type": "integer",
+                        "example": 0
+                    },
+                    "platform": {
+                        "description": "The platform of the federated activity.",
+                        "type": "string",
+                        "example": "Mastodon"
+                    },
+                    "success": {
+                        "description": "Indicates whether the federated activity was successful.",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "tag": {
+                        "description": "The tag of the federated activity.",
+                        "type": "string",
+                        "example": "social"
+                    },
+                    "type": {
+                        "description": "The type of federated activity.",
+                        "type": "string",
+                        "example": "comment",
+                        "enum": [
+                            "comment",
+                            "post",
+                            "share"
+                        ]
+                    },
+                    "direction": {
+                        "$ref": "#/components/schemas/Direction"
+                    },
+                    "timestamp": {
+                        "description": "The timestamp of when the activity occurred.",
+                        "type": "integer",
+                        "example": 1729188972
+                    },
+                    "total_actions": {
+                        "description": "The total number of actions within the activity.",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "actions": {
+                        "description": "The list of actions within the federated activity.",
+                        "items": {
+                            "$ref": "#/components/schemas/FederatedAction"
+                        },
+                        "type": "array"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "owner",
+                    "from",
+                    "to",
+                    "index",
+                    "success",
+                    "timestamp",
+                    "total_actions",
+                    "actions"
+                ]
+            },
             "ActivityResponse": {
                 "properties": {
                     "data": {
                         "$ref": "#/components/schemas/Activity"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/MetaTotalPages"
+                    }
+                },
+                "type": "object"
+            },
+            "FederatedActivityResponse": {
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/FederatedActivity"
                     },
                     "meta": {
                         "$ref": "#/components/schemas/MetaTotalPages"
@@ -1405,24 +1853,24 @@
                 "description": "A tag used to categorize activities.",
                 "type": "string",
                 "example": "transaction",
-                "enum": ["collectible","exchange","metaverse","rss","social","transaction","unknown"]
+                "enum": ["collectible","exchange","governance","metaverse","rss","social","transaction","unknown"]
             },
             "Type": {
                 "description": "The type of activity.",
                 "type": "string",
                 "example": "transfer",
-                "enum": ["approval","bridge","burn","comment","delete","feed","liquidity","mint","post","profile","proxy","revise","reward","share","staking","swap","trade","transfer","unknown"]
+                "enum": ["approval","auction","bridge","burn","comment","delete","feed","liquidity","loan","mint","post","profile","proposal","proxy","revise","reward","share","staking","swap","trade","transfer","unknown","vote"]
             },
             "Network": {
                 "description": "The network on which activities occur.",
                 "type": "string",
                 "example": "ethereum",
-                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","vsl","x-layer"]
+                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","vsl","x-layer"]
             },
             "Platform": {
                 "description": "The platform on which activities occur.",
                 "type": "string",
-                "enum": ["1inch","AAVE","Aavegotchi","Crossbell","Curve","ENS","Farcaster","Highlight","IQWiki","KiwiStand","Lens","Lido","LooksRare","Matters","Mirror","OpenSea","Optimism","Paragraph","RSS3","SAVM","Stargate","Uniswap","Unknown","VSL"]
+                "enum": ["1inch","AAVE","Aavegotchi","Arbitrum","Base","BendDAO","Cow","Crossbell","Curve","ENS","Farcaster","Highlight","IQWiki","KiwiStand","Lens","LiNEAR","Lido","Linea","LooksRare","Matters","Mirror","NearSocial","Nouns","OpenSea","Optimism","Paragraph","Paraswap","Polymarket","RSS3","Rainbow","SAVM","Stargate","Uniswap","Unknown","VSL","Zerion"]
             },
             "Fee": {
                 "description": "Represents fee information for an activity.",
@@ -1929,12 +2377,16 @@
                     },
                     "version": {
                         "type": "string",
+                        "description": "The version of the node"
+                    },
+                    "type": {
+                        "type": "string",
                         "enum": [
                             "alpha",
                             "beta",
                             "production"
                         ],
-                        "description": "The version of the node"
+                        "description": "The type of the node"
                     },
                     "created_at": {
                         "type": "integer",
@@ -1971,9 +2423,9 @@
                     },
                     "min_tokens_to_stake": "599739424417467944968",
                     "apy": "0.3928765550642588002426864199264",
-                    "active_score": "0.2712648142772680586868915",
                     "reliability_score": "0",
-                    "version": "production",
+                    "version": "v1.0.0",
+                    "type": "production",
                     "created_at": 1710278898
                 }
             },
@@ -2876,33 +3328,33 @@
                     }
                 }
             },
-            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
-            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
-            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
-            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "ExchangeLiquidity": {"properties":{"action":{"enum":["add","borrow","collect","remove","repay","supply","withdraw"],"type":"string"},"tokens":{"items":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"type":"array"}},"required":["action","tokens"],"type":"object"},
+            "ExchangeStaking": {"properties":{"action":{"enum":["stake","unstake","claim"],"type":"string"},"period":{"properties":{"end":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"},"start":{"properties":{"ext":{"type":"integer"},"loc":{"properties":{"cacheEnd":{"type":"integer"},"cacheStart":{"type":"integer"},"cacheZone":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"extend":{"type":"string"},"name":{"type":"string"},"tx":{"items":{"properties":{"index":{"type":"integer"},"isstd":{"type":"boolean"},"isutc":{"type":"boolean"},"when":{"type":"integer"}},"required":["when","index","isstd","isutc"],"type":"object"},"type":"array"},"zone":{"items":{"properties":{"isDST":{"type":"boolean"},"name":{"type":"string"},"offset":{"type":"integer"}},"required":["name","offset","isDST"],"type":"object"},"type":"array"}},"required":["name","zone","tx","extend","cacheStart","cacheEnd"],"type":"object"},"wall":{"type":"integer"}},"required":["wall","ext"],"type":"object"}},"type":"object"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action"],"type":"object"},
+            "ExchangeSwap": {"properties":{"from":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"to":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"type":"object"},
+            "SocialMint": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
             "SocialProxy": {"properties":{"action":{"enum":["appoint","remove"],"type":"string"},"profile":{"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},"proxy_address":{"type":"string"}},"required":["proxy_address"],"type":"object"},
-            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
-            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialPost": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialRevise": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialShare": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialDelete": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialComment": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
+            "SocialReward": {"properties":{"author_url":{"type":"string"},"body":{"type":"string"},"content_uri":{"type":"string"},"handle":{"type":"string"},"media":{"items":{"properties":{"address":{"type":"string"},"mime_type":{"type":"string"}},"required":["address","mime_type"],"type":"object"},"type":"array"},"profile_id":{"type":"string"},"publication_id":{"type":"string"},"reward":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"summary":{"type":"string"},"tags":{"items":{"type":"string"},"type":"array"},"target":{"$ref":"#/components/schemas/SocialPost"},"target_url":{"type":"string"},"timestamp":{"type":"integer"},"title":{"type":"string"}},"type":"object"},
             "SocialProfile": {"properties":{"action":{"enum":["create","renew","unwrap","update","wrap"],"type":"string"},"address":{"type":"string"},"bio":{"type":"string"},"expiry":{"type":"string"},"handle":{"type":"string"},"image_uri":{"type":"string"},"key":{"type":"string"},"name":{"type":"string"},"profile_id":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTrade": {"properties":{"action":{"enum":["buy","list","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
             "RssFeed": {"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},
-            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","optimism","polygon","rss","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
-            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
-            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
+            "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
+            "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTrade": {"properties":{"action":{"enum":["buy","sell","offer","set","create","finalize"],"type":"string"},"address":{"type":"string"},"cost":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
+            "CollectibleTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
+            "CollectibleMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}
         },
         "parameters": {
             "activity_id_path": {
@@ -2925,6 +3377,16 @@
                     "type": "string"
                 }
             },
+            "federated_activity_id_path": {
+                "description": "Retrieve details for the specified federated activity ID",
+                "example": "https://universeodon.com/users/woofers/statuses/113324128515491294/activity",
+                "in": "path",
+                "name": "id",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
             "action_limit_query": {
                 "description": "Specify the number of actions within the activity to retrieve",
                 "example": "10",
@@ -2932,8 +3394,8 @@
                 "name": "action_limit",
                 "required": false,
                 "schema": {
-                    "default": 10,
-                    "maximum": 20,
+                    "default": 50,
+                    "maximum": 100,
                     "minimum": 1,
                     "type": "integer"
                 }
@@ -2960,6 +3422,16 @@
                 },
                 "example": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"
             },
+            "federated_account_path": {
+                "name": "account",
+                "in": "path",
+                "description": "Retrieve activities from the specified account. This account is a unique identifier within the federated system.",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                },
+                "example": "@jedi@bolha.us"
+            },
             "network_path": {
                 "description": "Retrieve activities from the specified network.",
                 "example": "ethereum",
@@ -2970,9 +3442,29 @@
                     "type": "string"
                 }
             },
+            "federated_network_path": {
+                "description": "Retrieve activities from the specified federated network.",
+                "example": "mastodon",
+                "in": "path",
+                "name": "network",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
             "platform_path": {
                 "description": "Retrieve activities from the specified platform.",
                 "example": "Uniswap",
+                "in": "path",
+                "name": "platform",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "federated_platform_path": {
+                "description": "Retrieve activities from the specified federated platform.",
+                "example": "Mastodon",
                 "in": "path",
                 "name": "platform",
                 "required": true,
@@ -3050,6 +3542,23 @@
                     }
                 }
             },
+            "federated_network_query": {
+                "name": "network",
+                "in": "query",
+                "description": "Retrieve activities from the specified federated network(s). You can specify one or more federated networks.",
+                "required": false,
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "description": "The network on which activities occur.",
+                        "type": "string",
+                        "example": "mastodon",
+                        "enum": [
+                            "mastodon"
+                        ]
+                    }
+                }
+            },
             "network_name_path": {
                 "name": "network_name",
                 "in": "path",
@@ -3081,6 +3590,23 @@
                     }
                 }
             },
+            "federated_action_tag_query": {
+                "name": "tag",
+                "in": "query",
+                "description": "Retrieve activities from the specified tag(s). Tags can be used to categorize activities.",
+                "required": false,
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "description": "The tag on which activities occur.",
+                        "type": "string",
+                        "example": "social",
+                        "enum": [
+                            "social"
+                        ]
+                    }
+                }
+            },
             "action_type_query": {
                 "name": "type",
                 "in": "query",
@@ -3090,6 +3616,25 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/components/schemas/Type"
+                    }
+                }
+            },
+            "federated_action_type_query": {
+                "name": "type",
+                "in": "query",
+                "description": "Retrieve activities from the specified type(s). Types can help filter activities based on their nature or category.",
+                "required": false,
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "description": "The type on which activities occur.",
+                        "type": "string",
+                        "example": "post",
+                        "enum": [
+                            "post",
+                            "comment",
+                            "share"
+                        ]
                     }
                 }
             },
@@ -3126,6 +3671,23 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/components/schemas/Platform"
+                    }
+                }
+            },
+            "federated_platform_query": {
+                "name": "platform",
+                "in": "query",
+                "description": "Retrieve activities from the specified platform(s). Platforms refer to the systems or environments where the activities occurred.",
+                "required": false,
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "description": "The platform on which activities occur.",
+                        "type": "string",
+                        "example": "Mastodon",
+                        "enum": [
+                            "Mastodon"
+                        ]
                     }
                 }
             },
@@ -3182,14 +3744,14 @@
                     ]
                 }
             },
-            "limit_1_20": {
+            "limit_1_50": {
                 "name": "limit",
                 "in": "query",
                 "description": "Limit the number of results",
-                "example": 20,
+                "example": 50,
                 "schema": {
                     "type": "integer",
-                    "default": 20
+                    "default": 50
                 }
             },
             "limit_1_200": {
@@ -3468,6 +4030,92 @@
                         }
                     }
                 }
+            },
+            "BatchGetFederatedAccountsActivities": {
+                "description": "Request body for batch retrieving activities for multiple federated accounts",
+                "required": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "accounts": {
+                                    "type": "array",
+                                    "maxItems": 20,
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "List of federated accounts to retrieve activities",
+                                    "example": [
+                                        "@hauptstadtzoos@mastodon.berlin",
+                                        "@nummycreations@mstdn.business"
+                                    ]
+                                },
+                                "limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of activities to retrieve",
+                                    "example": 20,
+                                    "default": 100,
+                                    "minimum": 1,
+                                    "maximum": 100
+                                },
+                                "action_limit": {
+                                    "type": "integer",
+                                    "description": "Specify the number of actions within the activity to retrieve",
+                                    "example": 10,
+                                    "default": 10,
+                                    "minimum": 1,
+                                    "maximum": 20
+                                },
+                                "cursor": {
+                                    "type": "string",
+                                    "description": "Specify the cursor used for pagination"
+                                },
+                                "since_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities starting from this timestamp"
+                                },
+                                "until_timestamp": {
+                                    "type": "integer",
+                                    "description": "Retrieve activities up to this timestamp"
+                                },
+                                "success": {
+                                    "type": "boolean",
+                                    "description": "Retrieve activities based on success status"
+                                },
+                                "direction": {
+                                    "$ref": "#/components/schemas/Direction"
+                                },
+                                "network": {
+                                    "type": "string",
+                                    "description": "Retrieve activities from the specified network(s)"
+                                },
+                                "tag": {
+                                    "type": "string",
+                                    "description": "Retrieve activities for the specified tag(s)",
+                                    "example": "social"
+                                },
+                                "type": {
+                                    "type": "array",
+                                    "description": "Retrieve activities for the specified type(s)",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Type"
+                                    },
+                                    "example": [
+                                        "post",
+                                        "comment",
+                                        "share"
+                                    ]
+                                },
+                                "platform": {
+                                    "type": "string",
+                                    "description": "Retrieve activities from the specified platform(s)",
+                                    "example": "Mastodon"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "responses": {
@@ -3487,6 +4135,26 @@
                     "application/json": {
                         "schema": {
                             "$ref": "#/components/schemas/ActivitiesResponse"
+                        }
+                    }
+                }
+            },
+            "FederatedActivityResponse": {
+                "description": "A successful response containing the details of the specified federated activity. The response includes the activity ID, timestamp, and a list of actions performed within the activity.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/FederatedActivityResponse"
+                        }
+                    }
+                }
+            },
+            "FederatedActivitiesResponse": {
+                "description": "A successful response with the activities from the specified account. The response includes details about each activity, such as its ID, timestamp, and associated actions.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/FederatedActivitiesResponse"
                         }
                     }
                 }

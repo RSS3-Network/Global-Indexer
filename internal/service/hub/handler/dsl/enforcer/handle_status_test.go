@@ -18,6 +18,7 @@ var (
 	workerStatusNodeIndexing  = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Indexing","remote_state":1718215438006,"indexed_state":1718215435040}],"rss":null,"federated":null}}`
 	workerStatusNodeUnhealthy = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Unhealthy","remote_state":0,"indexed_state":0}],"rss":null,"federated":null}}`
 	workerStatusNodeOnline    = `{"data":{"decentralized":[{"network":"farcaster","worker":"core","tags":null,"platform":"Unknown","status":"Ready","remote_state":0,"indexed_state":0}],"rss":null,"federated":null}}`
+	workerStatusNodeRssOnline = `{"data":{"decentralized":null,"rss":{"worker_id":"","worker":null,"network":"rss","tags":["rss"],"platform":"Unknown","status":"Ready","remote_state":0,"indexed_state":0,"index_count":0},"federated":null}}`
 )
 
 func TestDetermineStatus(t *testing.T) {
