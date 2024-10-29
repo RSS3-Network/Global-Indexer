@@ -1,9 +1,9 @@
 environment: development
 
 database:
-  driver: cockroachdb
+  driver: postgres
   partition: true
-  uri: postgres://root@localhost:26257/defaultdb
+  uri: postgres://postgres:password@localhost:5432/postgres
 
 redis:
   uri: redis://localhost:6379/0

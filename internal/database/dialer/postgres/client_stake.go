@@ -1,4 +1,4 @@
-package cockroachdb
+package postgres
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	"github.com/rss3-network/global-indexer/internal/database"
-	"github.com/rss3-network/global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/rss3-network/global-indexer/internal/database/dialer/postgres/table"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
