@@ -106,7 +106,7 @@ func Test_GetNodeWorkerStatus(t *testing.T) {
 	mockClient.On("FetchWithMethod", mock.Anything, "http://localhost:8080/operators/workers_status").Return(io.NopCloser(bytes.NewReader([]byte(workerStatusNode1))), nil)
 
 	enforcer := &SimpleEnforcer{httpClient: mockClient}
-	response, err := enforcer.getNodeWorkerStatus(context.Background(), "1.1.2", "http://localhost:8080", "")
+	response, err := enforcer.getNodeWorkerStatus(context.Background(), "1.2.0", "http://localhost:8080", "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, workerInfoNode1, response.Data.Decentralized)
