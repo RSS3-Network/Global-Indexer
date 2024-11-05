@@ -18,7 +18,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, versionStr, en
 	curVersion, _ := version.NewVersion(versionStr)
 
 	var prefix string
-	if minVersion, _ := version.NewVersion("1.2.0"); curVersion.GreaterThanOrEqual(minVersion) {
+	if minVersion, _ := version.NewVersion("1.1.2"); curVersion.GreaterThanOrEqual(minVersion) {
 		prefix = "operators/"
 	}
 
