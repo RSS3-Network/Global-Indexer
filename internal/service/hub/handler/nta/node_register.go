@@ -48,7 +48,9 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 	// Parse request IP.
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("parse request ip: %w", err))
+		zap.L().Error("parse request ip", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	// Validate signature.
@@ -108,7 +110,9 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	// Parse request IP.
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("parse request ip: %w", err))
+		zap.L().Error("parse request ip", zap.Error(err))
+
+		return errorx.InternalError(c)
 	}
 
 	// Validate signature.
