@@ -29,36 +29,59 @@ import (
 func (n *NTA) RegisterNode(c echo.Context) error {
 	var request nta.RegisterNodeRequest
 
-	// Validate request.
-	if err := n.validateRegisterNodeRequest(c, &request); err != nil {
-		return err
+	ctx := c.Request().Context()
+
+	if err := c.Bind(&request); err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := defaults.Set(&request); err != nil {
+		zap.L().Error("set default values for request", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	if err := c.Validate(&request); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
 	}
 
 	// Parse request IP.
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("failed to parse request ip: %w", err))
+		return errorx.BadParamsError(c, fmt.Errorf("parse request ip: %w", err))
 	}
 
 	// Validate signature.
-	if err = n.validateSignature(c, request.Address, request.Signature); err != nil {
-		return err
+	if err = n.validateSignature(ctx, request.Address, request.Signature); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validate signature: %w", err))
 	}
 
 	// Validate Node info.
-	nodeInfo, err := n.validateNodeInfo(c, &request)
+	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
 	if err != nil {
-		return err
+		zap.L().Error("get the Node from VSL", zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	if nodeInfo.Account == ethereum.AddressGenesis {
+		return errorx.BadParamsError(c, fmt.Errorf("node: %s has not been registered on the VSL", request.Address.String()))
+	}
+
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), MinDeposit.String()) < 0 {
+		return errorx.BadParamsError(c, fmt.Errorf("insufficient operation pool tokens, expected min deposit %s, actual %s", MinDeposit.String(), nodeInfo.OperationPoolTokens.String()))
 	}
 
 	// Validate endpoint.
-	if err = n.validateEndpoint(c, request.Address, request.Type, request.Endpoint); err != nil {
-		return err
+	if err = n.validateEndpoint(ctx, request.Address, request.Type, request.Endpoint); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validate endpoint: %w", err))
 	}
 
 	// Register Node.
-	if err = n.register(c.Request().Context(), &request, ip.String(), nodeInfo); err != nil {
-		zap.L().Error("register failed", zap.Error(err))
+	if err = n.register(ctx, &request, ip.String(), nodeInfo); err != nil {
+		zap.L().Error("register failed",
+			zap.String("address", request.Address.String()),
+			zap.Error(err))
 
 		return errorx.InternalError(c)
 	}
@@ -70,6 +93,8 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 
 func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	var request nta.NodeHeartbeatRequest
+
+	ctx := c.Request().Context()
 
 	// Validate request.
 	if err := c.Bind(&request); err != nil {
@@ -83,28 +108,36 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	// Parse request IP.
 	ip, err := n.parseRequestIP(c)
 	if err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("failed to parse request ip: %w", err))
+		return errorx.BadParamsError(c, fmt.Errorf("parse request ip: %w", err))
 	}
 
 	// Validate signature.
-	if err = n.validateSignature(c, request.Address, request.Signature); err != nil {
-		return err
+	if err = n.validateSignature(ctx, request.Address, request.Signature); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("check signature: %w", err))
 	}
 
 	// Validate Node.
-	node, err := n.validateHeartbeatNode(c, request.Address)
+	node, err := n.databaseClient.FindNode(c.Request().Context(), request.Address)
 	if err != nil {
-		return err
+		zap.L().Error("find the node",
+			zap.String("address", request.Address.String()),
+			zap.Error(err))
+
+		return errorx.InternalError(c)
+	}
+
+	if node == nil {
+		return errorx.BadParamsError(c, fmt.Errorf("node %s not found", request.Address.String()))
 	}
 
 	// Validate endpoint.
-	if err = n.validateEndpoint(c, request.Address, node.Type, request.Endpoint); err != nil {
-		return err
+	if err = n.validateEndpoint(ctx, request.Address, node.Type, request.Endpoint); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validate endpoint: %w", err))
 	}
 
 	// Save Node heartbeat.
-	if err = n.saveHeartbeat(c.Request().Context(), node, ip.String()); err != nil {
-		zap.L().Error("failed to save heartbeat", zap.Error(err))
+	if err = n.saveHeartbeat(ctx, node, ip.String()); err != nil {
+		zap.L().Error("save heartbeat", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}
@@ -114,94 +147,35 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
-// validateRegisterNodeRequest validates the request.
-func (n *NTA) validateRegisterNodeRequest(c echo.Context, request *nta.RegisterNodeRequest) error {
-	if err := c.Bind(request); err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
-	}
-
-	if err := defaults.Set(request); err != nil {
-		return errorx.BadParamsError(c, fmt.Errorf("failed to set default values: %w", err))
-	}
-
-	if err := c.Validate(request); err != nil {
-		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
-	}
-
-	return nil
-}
-
 // validateSignature validates the signature.
-func (n *NTA) validateSignature(c echo.Context, address common.Address, signature string) error {
+func (n *NTA) validateSignature(ctx context.Context, address common.Address, signature string) error {
 	message := fmt.Sprintf(registrationMessage, strings.ToLower(address.String()))
-	if err := n.checkSignature(c.Request().Context(), address, message, signature); err != nil {
-		return errorx.ValidationFailedError(c, fmt.Errorf("failed to check signature: %w", err))
-	}
 
-	return nil
-}
-
-// validateNodeInfo validates the Node info from the VSL.
-func (n *NTA) validateNodeInfo(c echo.Context, request *nta.RegisterNodeRequest) (*stakingv2.Node, error) {
-	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, request.Address)
-	if err != nil {
-		return nil, errorx.ValidationFailedError(c, fmt.Errorf("failed to get Node from VSL: %w", err))
-	}
-
-	if nodeInfo.Account == ethereum.AddressGenesis {
-		return nil, errorx.ValidationFailedError(c, fmt.Errorf("node: %s has not been registered on the VSL",
-			request.Address.String()))
-	}
-
-	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), MinDeposit.String()) < 0 {
-		return nil, errorx.ValidationFailedError(c, fmt.Errorf("insufficient operation pool tokens"))
-	}
-
-	return &nodeInfo, nil
+	return n.checkSignature(ctx, address, message, signature)
 }
 
 // validateEndpoint validates the endpoint whether it's valid and available.
-func (n *NTA) validateEndpoint(c echo.Context, address common.Address, nodeType, endpoint string) error {
+func (n *NTA) validateEndpoint(ctx context.Context, address common.Address, nodeType, endpoint string) error {
 	if nodeType == schema.NodeTypeAlpha.String() {
 		return nil
 	}
 
 	var err error
-	endpoint, err = n.parseEndpoint(c.Request().Context(), endpoint)
+	endpoint, err = n.parseEndpoint(ctx, endpoint)
 
 	if err != nil {
-		return errorx.ValidationFailedError(c, fmt.Errorf("failed to parse endpoint: %w", err))
+		return fmt.Errorf("failed to parse endpoint: %w", err)
 	}
 
-	if err = n.checkAvailable(c.Request().Context(), endpoint, address); err != nil {
-		return errorx.ValidationFailedError(c, fmt.Errorf("failed to check endpoint available: %w", err))
+	if err = n.checkAvailable(ctx, endpoint, address); err != nil {
+		return fmt.Errorf("failed to check endpoint available: %w", err)
 	}
 
 	return nil
 }
 
-// validateHeartbeatNode validates the Node from the database.
-func (n *NTA) validateHeartbeatNode(c echo.Context, address common.Address) (*schema.Node, error) {
-	ctx := c.Request().Context()
-
-	node, err := n.databaseClient.FindNode(ctx, address)
-	if err != nil {
-		zap.L().Error("failed to find the node",
-			zap.String("address", address.String()),
-			zap.Error(err))
-
-		return nil, errorx.InternalError(c)
-	}
-
-	if node == nil {
-		return nil, errorx.BadParamsError(c, fmt.Errorf("node %s not found", address.String()))
-	}
-
-	return node, nil
-}
-
 // register registers the Node to the database.
-func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo *stakingv2.Node) error {
+func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, requestIP string, nodeInfo stakingv2.Node) error {
 	// Find node from the database.
 	node, err := n.databaseClient.FindNode(ctx, request.Address)
 	if err != nil {
@@ -256,7 +230,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 }
 
 // updateNodeStats updates node stats on nodes registered during the non-alpha phase.
-func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo *stakingv2.Node) error {
+func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo stakingv2.Node) error {
 	stat, err := n.updateNodeStat(ctx, node, nodeInfo)
 	if err != nil {
 		return fmt.Errorf("update Node stat: %w", err)
@@ -266,7 +240,7 @@ func (n *NTA) updateNodeStats(ctx context.Context, node *schema.Node, nodeInfo *
 }
 
 // updateNodeStat updates the Node stat.
-func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo *stakingv2.Node) (*schema.Stat, error) {
+func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo stakingv2.Node) (*schema.Stat, error) {
 	stat, err := n.databaseClient.FindNodeStat(ctx, node.Address)
 	if err != nil {
 		return nil, fmt.Errorf("find Node stat: %w", err)
