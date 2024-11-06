@@ -335,18 +335,16 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 func (n *NTA) checkAvailable(ctx context.Context, nodeVersion, endpoint string, address common.Address) error {
 	curVersion, _ := version.NewVersion(nodeVersion)
 
-	var prefix string
+	prefix := ""
 	if minVersion, _ := version.NewVersion("1.1.2"); curVersion.GreaterThanOrEqual(minVersion) {
-		prefix = "operators/"
+		prefix = "operators"
 	}
 
-	if !strings.HasSuffix(endpoint, "/") {
-		endpoint += "/"
+	if prefix != "" {
+		endpoint = strings.TrimSuffix(endpoint, "/") + "/" + prefix
 	}
 
-	fullURL := endpoint + prefix
-
-	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, "", nil)
+	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
 	if err != nil {
 		return fmt.Errorf("failed to fetch node endpoint %s: %w", endpoint, err)
 	}
