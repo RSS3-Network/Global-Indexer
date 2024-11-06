@@ -124,7 +124,7 @@ func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node,
 	}
 
 	// Get worker status
-	workersInfo, err := e.getNodeWorkerStatus(ctx, node.Endpoint, node.AccessToken)
+	workersInfo, err := e.getNodeWorkerStatus(ctx, node.Version, node.Endpoint, node.AccessToken)
 	if err != nil || workersInfo == nil {
 		zap.L().Error("get node worker status", zap.Error(err), zap.Any("address", node.Address.String()), zap.Any("endpoint", node.Endpoint), zap.Any("access_token", node.AccessToken))
 

@@ -7,18 +7,26 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hashicorp/go-version"
 	"github.com/rss3-network/node/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 )
 
 // getNodeWorkerStatus retrieves the worker status for the node.
-func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, endpoint, accessToken string) (*WorkersStatusResponse, error) {
+func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, versionStr, endpoint, accessToken string) (*WorkersStatusResponse, error) {
+	curVersion, _ := version.NewVersion(versionStr)
+
+	var prefix string
+	if minVersion, _ := version.NewVersion("1.1.2"); curVersion.GreaterThanOrEqual(minVersion) {
+		prefix = "operators/"
+	}
+
 	if !strings.HasSuffix(endpoint, "/") {
 		endpoint += "/"
 	}
 
-	fullURL := endpoint + "workers_status"
+	fullURL := endpoint + prefix + "workers_status"
 
 	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {

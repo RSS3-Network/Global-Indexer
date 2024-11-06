@@ -199,7 +199,7 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 
 			// Retrieve the status of the node's worker,
 			// including details like name, network, tags, and platform information.
-			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Endpoint, stat.AccessToken)
+			workerStatus, err := e.getNodeWorkerStatus(ctx, stat.Version, stat.Endpoint, stat.AccessToken)
 			if err != nil || workerStatus == nil {
 				zap.L().Error("get node worker status", zap.Error(err), zap.String("node", stat.Address.String()))
 

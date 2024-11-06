@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/hashicorp/go-version"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
@@ -75,7 +76,7 @@ func (n *NTA) RegisterNode(c echo.Context) error {
 	}
 
 	// Validate endpoint.
-	if err = n.validateEndpoint(ctx, request.Address, request.Type, request.Endpoint); err != nil {
+	if err = n.validateEndpoint(ctx, request.Address, request.Type, request.Version, request.Endpoint); err != nil {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validate endpoint: %w", err))
 	}
 
@@ -135,7 +136,7 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	}
 
 	// Validate endpoint.
-	if err = n.validateEndpoint(ctx, request.Address, node.Type, request.Endpoint); err != nil {
+	if err = n.validateEndpoint(ctx, request.Address, node.Type, node.Version, request.Endpoint); err != nil {
 		return errorx.ValidationFailedError(c, fmt.Errorf("validate endpoint: %w", err))
 	}
 
@@ -159,7 +160,7 @@ func (n *NTA) validateSignature(ctx context.Context, address common.Address, sig
 }
 
 // validateEndpoint validates the endpoint whether it's valid and available.
-func (n *NTA) validateEndpoint(ctx context.Context, address common.Address, nodeType, endpoint string) error {
+func (n *NTA) validateEndpoint(ctx context.Context, address common.Address, nodeType, nodeVersion, endpoint string) error {
 	if nodeType == schema.NodeTypeAlpha.String() {
 		return nil
 	}
@@ -171,7 +172,7 @@ func (n *NTA) validateEndpoint(ctx context.Context, address common.Address, node
 		return fmt.Errorf("failed to parse endpoint: %w", err)
 	}
 
-	if err = n.checkAvailable(ctx, endpoint, address); err != nil {
+	if err = n.checkAvailable(ctx, nodeVersion, endpoint, address); err != nil {
 		return fmt.Errorf("failed to check endpoint available: %w", err)
 	}
 
@@ -331,7 +332,18 @@ func (n *NTA) checkSignature(_ context.Context, address common.Address, message 
 }
 
 // checkAvailable checks if the endpoint is available and contains the node's address.
-func (n *NTA) checkAvailable(ctx context.Context, endpoint string, address common.Address) error {
+func (n *NTA) checkAvailable(ctx context.Context, nodeVersion, endpoint string, address common.Address) error {
+	curVersion, _ := version.NewVersion(nodeVersion)
+
+	prefix := ""
+	if minVersion, _ := version.NewVersion("1.1.2"); curVersion.GreaterThanOrEqual(minVersion) {
+		prefix = "operators"
+	}
+
+	if prefix != "" {
+		endpoint = strings.TrimSuffix(endpoint, "/") + "/" + prefix
+	}
+
 	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
 	if err != nil {
 		return fmt.Errorf("failed to fetch node endpoint %s: %w", endpoint, err)
