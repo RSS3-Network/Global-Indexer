@@ -337,6 +337,7 @@ func (c *client) FindStakeStakings(ctx context.Context, query schema.StakeStakin
 
 	var stakeStakings []*table.StakeStaking
 	if err := databaseClient.
+		Where(`"staker" != ?`, ethereum.AddressGenesis.String()).
 		Limit(query.Limit).
 		Order(`"value" DESC, "staker", "node"`).
 		Find(&stakeStakings).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
