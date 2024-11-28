@@ -1,10 +1,10 @@
-package cockroachdb
+package postgres
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/rss3-network/global-indexer/internal/database/dialer/cockroachdb/table"
+	"github.com/rss3-network/global-indexer/internal/database/dialer/postgres/table"
 	"github.com/rss3-network/global-indexer/schema"
 	"gorm.io/gorm/clause"
 )

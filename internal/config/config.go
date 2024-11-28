@@ -36,8 +36,8 @@ type File struct {
 }
 
 type Database struct {
-	Driver database.Driver `mapstructure:"driver" validate:"required" default:"cockroachdb"`
-	URI    string          `mapstructure:"uri" validate:"required" default:"postgres://root@localhost:26257/defaultdb"`
+	Driver database.Driver `mapstructure:"driver" validate:"required" default:"postgres"`
+	URI    string          `mapstructure:"uri" validate:"required" default:"postgres://root@localhost:5432/postgres"`
 }
 
 type Redis struct {
