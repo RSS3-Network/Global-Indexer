@@ -399,7 +399,7 @@ create table if not exists "node_invalid_response"
     id                bigint                   default nextval('"node_invalid_response_id_seq"'::REGCLASS) not null,
     epoch_id          bigint                                                                               not null,
     type              text                                                                                 not null,
-    request           text                                                                                 not null,
+    request           text                                                                                 ,
     verifier_nodes    bytea[],
     verifier_response jsonb,
     node              bytea                                                                                not null,
