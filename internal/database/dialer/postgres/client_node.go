@@ -188,7 +188,7 @@ func (c *client) BatchUpdateNodes(ctx context.Context, data []*schema.BatchUpdat
 	values := make([]interface{}, 0)
 
 	for _, value := range data {
-		rawSQL += " WHEN ? THEN ?"
+		rawSQL += " WHEN ? THEN ?::numeric"
 
 		values = append(values, value.Address, value.Apy)
 	}
