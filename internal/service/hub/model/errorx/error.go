@@ -16,9 +16,10 @@ const (
 	ErrorCodeValidationFailed
 	ErrorCodeBadParams
 	ErrorCodeInternalError
+	ErrorCodeServiceUnavailable
 )
 
-var ErrNoNodesAvailable = errors.New("no nodes currently support this request in the network. Please wait for node data support or try again later")
+var ErrNoNodesAvailable = errors.New("No Nodes are available to process this request.")
 
 type ErrorResponse struct {
 	Error     string    `json:"error"`
@@ -46,6 +47,14 @@ func BadParamsError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, &ErrorResponse{
 		ErrorCode: ErrorCodeBadParams,
 		Error:     "Invalid parameter combination. Verify the combination and try again.",
+		Details:   fmt.Sprintf("%v", err),
+	})
+}
+
+func ServiceUnavailableError(c echo.Context, err error) error {
+	return c.JSON(http.StatusServiceUnavailable, &ErrorResponse{
+		ErrorCode: ErrorCodeServiceUnavailable,
+		Error:     "The requested service is temporarily unavailable, please try again later.",
 		Details:   fmt.Sprintf("%v", err),
 	})
 }

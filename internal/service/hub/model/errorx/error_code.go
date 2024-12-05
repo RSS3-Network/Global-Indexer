@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-const _ErrorCodeName = "bad_requestvalidate_failedbad_paramsinternal_error"
+const _ErrorCodeName = "bad_requestvalidation_failedbad_paramsinternal_errorservice_unavailable"
 
-var _ErrorCodeIndex = [...]uint8{0, 11, 26, 36, 50}
+var _ErrorCodeIndex = [...]uint8{0, 11, 28, 38, 52, 71}
 
-const _ErrorCodeLowerName = "bad_requestvalidate_failedbad_paramsinternal_error"
+const _ErrorCodeLowerName = "bad_requestvalidation_failedbad_paramsinternal_errorservice_unavailable"
 
 func (i ErrorCode) String() string {
 	i -= 1
@@ -34,26 +34,30 @@ func _ErrorCodeNoOp() {
 	_ = x[ErrorCodeValidationFailed-(2)]
 	_ = x[ErrorCodeBadParams-(3)]
 	_ = x[ErrorCodeInternalError-(4)]
+	_ = x[ErrorCodeServiceUnavailable-(5)]
 }
 
-var _ErrorCodeValues = []ErrorCode{ErrorCodeBadRequest, ErrorCodeValidationFailed, ErrorCodeBadParams, ErrorCodeInternalError}
+var _ErrorCodeValues = []ErrorCode{ErrorCodeBadRequest, ErrorCodeValidationFailed, ErrorCodeBadParams, ErrorCodeInternalError, ErrorCodeServiceUnavailable}
 
 var _ErrorCodeNameToValueMap = map[string]ErrorCode{
 	_ErrorCodeName[0:11]:       ErrorCodeBadRequest,
 	_ErrorCodeLowerName[0:11]:  ErrorCodeBadRequest,
-	_ErrorCodeName[11:26]:      ErrorCodeValidationFailed,
-	_ErrorCodeLowerName[11:26]: ErrorCodeValidationFailed,
-	_ErrorCodeName[26:36]:      ErrorCodeBadParams,
-	_ErrorCodeLowerName[26:36]: ErrorCodeBadParams,
-	_ErrorCodeName[36:50]:      ErrorCodeInternalError,
-	_ErrorCodeLowerName[36:50]: ErrorCodeInternalError,
+	_ErrorCodeName[11:28]:      ErrorCodeValidationFailed,
+	_ErrorCodeLowerName[11:28]: ErrorCodeValidationFailed,
+	_ErrorCodeName[28:38]:      ErrorCodeBadParams,
+	_ErrorCodeLowerName[28:38]: ErrorCodeBadParams,
+	_ErrorCodeName[38:52]:      ErrorCodeInternalError,
+	_ErrorCodeLowerName[38:52]: ErrorCodeInternalError,
+	_ErrorCodeName[52:71]:      ErrorCodeServiceUnavailable,
+	_ErrorCodeLowerName[52:71]: ErrorCodeServiceUnavailable,
 }
 
 var _ErrorCodeNames = []string{
 	_ErrorCodeName[0:11],
-	_ErrorCodeName[11:26],
-	_ErrorCodeName[26:36],
-	_ErrorCodeName[36:50],
+	_ErrorCodeName[11:28],
+	_ErrorCodeName[28:38],
+	_ErrorCodeName[38:52],
+	_ErrorCodeName[52:71],
 }
 
 // ErrorCodeString retrieves an enum value from the enum constants string name.

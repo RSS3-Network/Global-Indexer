@@ -33,7 +33,7 @@ func (d *DSL) GetFederatedActivity(c echo.Context) (err error) {
 	activity, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestActivity, model.ComponentFederated, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute activity request error", zap.Error(err))
@@ -68,7 +68,7 @@ func (d *DSL) GetFederatedAccountActivities(c echo.Context) (err error) {
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestAccountActivities, model.ComponentFederated, request, c.QueryParams(), nil, nil)
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute activities data error", zap.Error(err))
@@ -106,7 +106,7 @@ func (d *DSL) BatchGetFederatedAccountsActivities(c echo.Context) (err error) {
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestBatchAccountActivities, model.ComponentFederated, request, nil, nil, request.Network)
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute batch activities data error", zap.Error(err))
@@ -141,7 +141,7 @@ func (d *DSL) GetFederatedNetworkActivities(c echo.Context) (err error) {
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestNetworkActivities, model.ComponentFederated, request, c.QueryParams(), nil, []string{request.Network})
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute network activities data error", zap.Error(err))
@@ -176,7 +176,7 @@ func (d *DSL) GetFederatedPlatformActivities(c echo.Context) (err error) {
 	activities, err := d.distributor.DistributeData(c.Request().Context(), model.DistributorRequestPlatformActivities, model.ComponentFederated, request, c.QueryParams(), nil, request.Network)
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute platform activities data error", zap.Error(err))
