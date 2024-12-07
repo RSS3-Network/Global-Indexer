@@ -19,7 +19,7 @@ const (
 	ErrorCodeServiceUnavailable
 )
 
-var ErrNoNodesAvailable = errors.New("No Nodes are available to process this request.")
+var ErrNoNodesAvailable = errors.New("no Nodes are available to process this request")
 
 type ErrorResponse struct {
 	Error     string    `json:"error"`
