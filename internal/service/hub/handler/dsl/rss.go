@@ -19,7 +19,7 @@ func (d *DSL) GetRSSHub(c echo.Context) error {
 
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
-			return errorx.BadRequestError(c, err)
+			return errorx.ServiceUnavailableError(c, err)
 		}
 
 		zap.L().Error("distribute rss hub data error", zap.Error(err))
