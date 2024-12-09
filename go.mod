@@ -24,7 +24,7 @@ require (
 	github.com/maxmind/geoipupdate/v6 v6.1.0
 	github.com/orlangure/gnomock v0.31.0
 	github.com/oschwald/geoip2-golang v1.9.0
-	github.com/pressly/goose/v3 v3.22.1
+	github.com/pressly/goose/v3 v3.23.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
