@@ -77,7 +77,7 @@ type Distributor struct {
 
 type Rewards struct {
 	OperationRewards float64         `yaml:"operation_rewards" validate:"required"`
-	OperationScore   *OperationScore `yaml:"opponent_score" validate:"required"`
+	OperationScore   *OperationScore `yaml:"operation_score" validate:"required"`
 }
 
 type OperationScore struct {
