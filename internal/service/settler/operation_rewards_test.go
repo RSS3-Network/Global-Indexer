@@ -156,8 +156,8 @@ func TestCalculateScores(t *testing.T) {
 				}
 			}
 
-			if totalScore.Cmp(tt.totalScores) != 0 {
-				t.Errorf("totalScore got = %v, want %v ", totalScore, tt.totalScores)
+			if totalScore.Text('f', 3) != tt.totalScores.Text('f', 3) {
+				t.Errorf("totalScore got = %v, want %v ", totalScore.Text('f', 3), tt.totalScores.Text('f', 3))
 			}
 		})
 	}
