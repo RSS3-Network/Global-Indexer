@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -17,15 +18,16 @@ import (
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/pool"
 )
 
-func (s *Server) calculateOperationRewards(nodeAddresses []common.Address, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
+func (s *Server) calculateOperationRewards(ctx context.Context, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
 	// If there are no nodes, return nil
-	if len(nodeAddresses) == 0 {
+	if len(operationStats) == 0 {
 		return nil, nil
 	}
 
-	operationRewards, err := s.calculateFinalRewards(nodeAddresses, operationStats, rewards)
+	operationRewards, err := s.calculateFinalRewards(ctx, operationStats, rewards)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate operation rewards: %w", err)
@@ -34,135 +36,162 @@ func (s *Server) calculateOperationRewards(nodeAddresses []common.Address, opera
 	return operationRewards, nil
 }
 
-// calculateFinalRewards calculates the final rewards for each node based on the request count and total rewards.
-func (s *Server) calculateFinalRewards(nodeAddresses []common.Address, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
-	latestVersionStr, _ := s.getNodeLatestVersion()
-	latestVersion := version.Must(version.NewVersion(latestVersionStr))
+type StatValue struct {
+	validCount, invalidCount, networkCount, indexerCount, activityCount, upTime *big.Float
+	isLatestVersion                                                             bool
+}
 
-	operationRewards := make([]*big.Int, len(nodeAddresses))
-	now := time.Now()
-
-	validCounts := make([]*big.Float, len(nodeAddresses))
-	invalidCounts := make([]*big.Float, len(nodeAddresses))
-	networkCounts := make([]*big.Float, len(nodeAddresses))
-	indexerCounts := make([]*big.Float, len(nodeAddresses))
-	activityCounts := make([]*big.Float, len(nodeAddresses))
-	upTimes := make([]*big.Float, len(nodeAddresses))
-	isLatestVersions := make([]bool, len(nodeAddresses))
-
-	validCountMax := big.NewFloat(0)
-	invalidCountMax := big.NewFloat(0)
-	networkCountMax := big.NewFloat(0)
-	indexerCountMax := big.NewFloat(0)
-	activityCountMax := big.NewFloat(0)
-	upTimeMax := big.NewFloat(0)
-
-	for i := range operationStats {
-		if operationStats[i] == nil {
-			continue
-		}
-
-		validCounts[i] = big.NewFloat(float64(operationStats[i].EpochRequest))
-		invalidCounts[i] = big.NewFloat(float64(operationStats[i].EpochInvalidRequest))
-		networkCounts[i] = big.NewFloat(float64(operationStats[i].DecentralizedNetwork + operationStats[i].FederatedNetwork))
-		indexerCounts[i] = big.NewFloat(float64(operationStats[i].Indexer))
-
-		activityCountResp, err := s.getNodeActivityCount(context.Background(), operationStats[i].Version, operationStats[i].Endpoint, operationStats[i].AccessToken)
-		if err != nil {
-			activityCounts[i] = big.NewFloat(0)
-		}
-
-		activityCounts[i] = big.NewFloat(float64(activityCountResp.Count))
-
-		upTimes[i] = big.NewFloat(now.Sub(operationStats[i].ResetAt).Seconds())
-		isLatestVersions[i] = version.Must(version.NewVersion(operationStats[i].Version)).GreaterThanOrEqual(latestVersion)
-
-		if validCounts[i].Cmp(validCountMax) > 0 {
-			validCountMax = validCounts[i]
-		}
-
-		if invalidCounts[i].Cmp(invalidCountMax) > 0 {
-			invalidCountMax = invalidCounts[i]
-		}
-
-		if networkCounts[i].Cmp(networkCountMax) > 0 {
-			networkCountMax = networkCounts[i]
-		}
-
-		if indexerCounts[i].Cmp(indexerCountMax) > 0 {
-			indexerCountMax = indexerCounts[i]
-		}
-
-		if activityCounts[i].Cmp(activityCountMax) > 0 {
-			activityCountMax = activityCounts[i]
-		}
-
-		if upTimes[i].Cmp(upTimeMax) > 0 {
-			upTimeMax = upTimes[i]
-		}
+// calculateFinalRewards calculates the final rewards for each node based on the operation stats.
+func (s *Server) calculateFinalRewards(ctx context.Context, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
+	operationRewards := make([]*big.Int, len(operationStats))
+	maxStatValue := StatValue{
+		validCount:      big.NewFloat(0),
+		invalidCount:    big.NewFloat(0),
+		networkCount:    big.NewFloat(0),
+		indexerCount:    big.NewFloat(0),
+		activityCount:   big.NewFloat(0),
+		upTime:          big.NewFloat(0),
+		isLatestVersion: false,
 	}
+	statValues := make([]StatValue, len(operationStats))
 
-	scores := make([]*big.Float, len(operationStats))
-	// Calculate the total score
-	totalScore := big.NewFloat(0)
+	var mu sync.Mutex
 
-	for i := range operationStats {
-		if operationStats[i] == nil {
-			scores[i] = big.NewFloat(0)
+	s.processStat(ctx, operationStats, &maxStatValue, &statValues, &mu)
 
-			continue
-		}
+	scores, totalScore := calculateScores(ctx, operationStats, statValues, maxStatValue, rewards, &mu)
 
-		validCountRadio := big.NewFloat(0).Quo(validCounts[i], validCountMax)
-		invalidCountRadio := big.NewFloat(0).Quo(invalidCounts[i], invalidCountMax)
-		distributionValidScore := big.NewFloat(rewards.OperationScore.Distribution.Weight).Mul(validCountRadio, big.NewFloat(1))
-		distributionInValidScore := big.NewFloat(rewards.OperationScore.Distribution.Weight).Mul(invalidCountRadio, big.NewFloat(rewards.OperationScore.Distribution.WeightInvalid))
-		distributionScore := big.NewFloat(0).Sub(distributionValidScore, distributionInValidScore)
-
-		networkCountRadio := big.NewFloat(0).Quo(networkCounts[i], networkCountMax)
-		indexerCountRadio := big.NewFloat(0).Quo(indexerCounts[i], indexerCountMax)
-		activityCountRadio := big.NewFloat(0).Quo(activityCounts[i], activityCountMax)
-		networkScore := big.NewFloat(rewards.OperationScore.Data.Weight).Mul(networkCountRadio, big.NewFloat(rewards.OperationScore.Data.WeightNetwork))
-		indexerScore := big.NewFloat(rewards.OperationScore.Data.Weight).Mul(indexerCountRadio, big.NewFloat(rewards.OperationScore.Data.WeightIndexer))
-		activityScore := big.NewFloat(rewards.OperationScore.Data.Weight).Mul(activityCountRadio, big.NewFloat(rewards.OperationScore.Data.WeightActivity))
-		dataScore := networkScore.Add(indexerScore, activityScore)
-
-		upTimeRadio := big.NewFloat(0).Quo(upTimes[i], upTimeMax)
-		upTimesScore := big.NewFloat(rewards.OperationScore.Stability.Weight).Mul(upTimeRadio, big.NewFloat(rewards.OperationScore.Stability.WeightUptime))
-		versionScore := big.NewFloat(rewards.OperationScore.Stability.Weight).Mul(big.NewFloat(float64(lo.Ternary(isLatestVersions[i], 1, 0))), big.NewFloat(rewards.OperationScore.Stability.WeightVersion))
-		stabilityScore := big.NewFloat(0).Add(upTimesScore, versionScore)
-
-		scores[i] = distributionScore.Add(dataScore, stabilityScore)
-		totalScore = totalScore.Add(totalScore, scores[i])
-	}
-
-	//Calculate the rewards for each node
-	for i := range scores {
-		if scores[i].Cmp(big.NewFloat(0)) == 0 {
+	for i, score := range scores {
+		if score.Cmp(big.NewFloat(0)) == 0 {
 			operationRewards[i] = big.NewInt(0)
-
 			continue
 		}
 
-		// Calculate the rewards for the node
-		radio := new(big.Float).Quo(scores[i], totalScore)
-		reward := new(big.Float).Mul(radio, big.NewFloat(rewards.OperationRewards))
-
-		// Convert to integer to truncate before scaling
+		reward := new(big.Float).Mul(new(big.Float).Quo(score, totalScore), big.NewFloat(rewards.OperationRewards))
 		rewardFinal, _ := reward.Int(nil)
-
-		// Apply gwei after truncation
 		scaleGwei(rewardFinal)
-
 		operationRewards[i] = rewardFinal
 	}
 
-	err := checkRewardsCeiling(operationRewards, rewards.OperationRewards)
-	if err != nil {
+	if err := checkRewardsCeiling(operationRewards, rewards.OperationRewards); err != nil {
 		return nil, err
 	}
 
 	return operationRewards, nil
+}
+
+// processStat processes the stat for the operation rewards calculation.
+func (s *Server) processStat(ctx context.Context, operationStats []*schema.Stat, maxValues *StatValue, statsData *[]StatValue, mu *sync.Mutex) {
+	latestVersionStr, _ := s.getNodeLatestVersion()
+	latestVersion := version.Must(version.NewVersion(latestVersionStr))
+	now := time.Now()
+
+	errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
+
+	for i := range operationStats {
+		i := i
+
+		errorPool.Go(func(_ context.Context) error {
+			if operationStats[i] == nil {
+				return nil
+			}
+
+			(*statsData)[i].invalidCount = big.NewFloat(float64(operationStats[i].EpochInvalidRequest))
+			(*statsData)[i].networkCount = big.NewFloat(float64(operationStats[i].DecentralizedNetwork + operationStats[i].FederatedNetwork))
+			(*statsData)[i].indexerCount = big.NewFloat(float64(operationStats[i].Indexer))
+
+			activityCountResp, err := s.getNodeActivityCount(context.Background(), operationStats[i].Version, operationStats[i].Endpoint, operationStats[i].AccessToken)
+			if err != nil {
+				(*statsData)[i].activityCount = big.NewFloat(0)
+			} else {
+				(*statsData)[i].activityCount = big.NewFloat(float64(activityCountResp.Count))
+			}
+
+			(*statsData)[i].upTime = big.NewFloat(now.Sub(operationStats[i].ResetAt).Seconds())
+			(*statsData)[i].isLatestVersion = version.Must(version.NewVersion(operationStats[i].Version)).GreaterThanOrEqual(latestVersion)
+
+			mu.Lock()
+			maxValues.validCount = maxFloat(maxValues.validCount, (*statsData)[i].validCount)
+			maxValues.invalidCount = maxFloat(maxValues.invalidCount, (*statsData)[i].invalidCount)
+			maxValues.networkCount = maxFloat(maxValues.networkCount, (*statsData)[i].networkCount)
+			maxValues.indexerCount = maxFloat(maxValues.indexerCount, (*statsData)[i].indexerCount)
+			maxValues.activityCount = maxFloat(maxValues.activityCount, (*statsData)[i].activityCount)
+			maxValues.upTime = maxFloat(maxValues.upTime, (*statsData)[i].upTime)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	_ = errorPool.Wait()
+}
+
+// calculateScores calculates the scores for the operation rewards calculation.
+func calculateScores(ctx context.Context, operationStats []*schema.Stat, statsData []StatValue, maxValues StatValue, rewards *config.Rewards, mu *sync.Mutex) ([]*big.Float, *big.Float) {
+	scores := make([]*big.Float, len(operationStats))
+	totalScore := big.NewFloat(0)
+
+	errorPool := pool.New().WithContext(ctx).WithMaxGoroutines(30).WithCancelOnError().WithFirstError()
+
+	for i := range statsData {
+		i := i
+
+		errorPool.Go(func(_ context.Context) error {
+			if operationStats[i] == nil {
+				scores[i] = big.NewFloat(0)
+
+				return nil
+			}
+
+			distributionScore := new(big.Float).
+				Sub(
+					calculateScore(statsData[i].validCount, maxValues.validCount, rewards.OperationScore.Distribution.Weight, 1),
+					calculateScore(statsData[i].invalidCount, maxValues.invalidCount, rewards.OperationScore.Distribution.Weight, rewards.OperationScore.Distribution.WeightInvalid),
+				)
+
+			dataScore := new(big.Float).Add(calculateScore(statsData[i].networkCount, maxValues.networkCount, rewards.OperationScore.Data.Weight, rewards.OperationScore.Data.WeightNetwork),
+				new(big.Float).Add(
+					calculateScore(statsData[i].indexerCount, maxValues.indexerCount, rewards.OperationScore.Data.Weight, rewards.OperationScore.Data.WeightIndexer),
+					calculateScore(statsData[i].activityCount, maxValues.activityCount, rewards.OperationScore.Data.Weight, rewards.OperationScore.Data.WeightActivity),
+				),
+			)
+
+			stabilityScore := new(big.Float).
+				Add(
+					calculateScore(statsData[i].upTime, maxValues.upTime, rewards.OperationScore.Stability.Weight, rewards.OperationScore.Stability.WeightUptime),
+					calculateScore(big.NewFloat(float64(lo.Ternary(statsData[i].isLatestVersion, 1, 0))), big.NewFloat(1), rewards.OperationScore.Stability.Weight, rewards.OperationScore.Stability.WeightVersion),
+				)
+
+			scores[i] = new(big.Float).Add(distributionScore, new(big.Float).Add(dataScore, stabilityScore))
+
+			mu.Lock()
+			totalScore = totalScore.Add(totalScore, scores[i])
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	_ = errorPool.Wait()
+
+	return scores, totalScore
+}
+
+// maxFloat returns the maximum of two big.Float values.
+func maxFloat(a, b *big.Float) *big.Float {
+	if a.Cmp(b) > 0 {
+		return a
+	}
+
+	return b
+}
+
+// calculateScore calculates the score for the operation rewards calculation.
+func calculateScore(value, maxValue *big.Float, weight, factor float64) *big.Float {
+	radio := new(big.Float).Quo(value, maxValue)
+
+	// weight * radio * factor
+	return new(big.Float).Mul(big.NewFloat(weight), new(big.Float).Mul(radio, big.NewFloat(factor)))
 }
 
 // checkRewardsCeiling checks if the sum of rewards is less than or equal to specialRewards.Rewards.

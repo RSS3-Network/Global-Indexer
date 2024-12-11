@@ -186,7 +186,7 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := s.calculateOperationRewards(filterNodeAddresses, operationStats, s.config.Rewards)
+	operationRewards, err := s.calculateOperationRewards(ctx, operationStats, s.config.Rewards)
 	if err != nil {
 		return nil, err
 	}
