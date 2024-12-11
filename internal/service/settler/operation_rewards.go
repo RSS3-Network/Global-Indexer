@@ -45,13 +45,12 @@ type StatValue struct {
 func (s *Server) calculateFinalRewards(ctx context.Context, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
 	operationRewards := make([]*big.Int, len(operationStats))
 	maxStatValue := StatValue{
-		validCount:      big.NewFloat(0),
-		invalidCount:    big.NewFloat(0),
-		networkCount:    big.NewFloat(0),
-		indexerCount:    big.NewFloat(0),
-		activityCount:   big.NewFloat(0),
-		upTime:          big.NewFloat(0),
-		isLatestVersion: false,
+		validCount:    big.NewFloat(0),
+		invalidCount:  big.NewFloat(0),
+		networkCount:  big.NewFloat(0),
+		indexerCount:  big.NewFloat(0),
+		activityCount: big.NewFloat(0),
+		upTime:        big.NewFloat(0),
 	}
 	statValues := make([]StatValue, len(operationStats))
 
@@ -96,6 +95,7 @@ func (s *Server) processStat(ctx context.Context, operationStats []*schema.Stat,
 				return nil
 			}
 
+			(*statsData)[i].validCount = big.NewFloat(float64(operationStats[i].EpochRequest))
 			(*statsData)[i].invalidCount = big.NewFloat(float64(operationStats[i].EpochInvalidRequest))
 			(*statsData)[i].networkCount = big.NewFloat(float64(operationStats[i].DecentralizedNetwork + operationStats[i].FederatedNetwork))
 			(*statsData)[i].indexerCount = big.NewFloat(float64(operationStats[i].Indexer))
