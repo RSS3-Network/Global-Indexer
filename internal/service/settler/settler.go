@@ -174,25 +174,19 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 		nodes = nodes[:batchSize]
 	}
 
-	// nodeAddresses is a slice of Node addresses
-	nodeAddresses := make([]common.Address, 0, len(nodes))
-	for _, node := range nodes {
-		nodeAddresses = append(nodeAddresses, node.Address)
-	}
-
-	filterNodeAddresses, err := s.filter(nodeAddresses)
+	filterNodeAddresses, filterNodes, err := s.filter(nodes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate the number of requests for the Nodes
-	requestCount, _, err := s.prepareRequestCounts(ctx, filterNodeAddresses)
+	requestCount, operationStats, err := s.prepareRequestCounts(ctx, filterNodeAddresses, filterNodes)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate the Operation rewards for the Nodes
-	operationRewards, err := calculateOperationRewards(filterNodeAddresses, requestCount, s.config.Rewards)
+	operationRewards, err := s.calculateOperationRewards(filterNodeAddresses, operationStats, s.config.Rewards)
 	if err != nil {
 		return nil, err
 	}
@@ -207,10 +201,14 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 }
 
 // filter retrieves Node information from a staking contract.
-func (s *Server) filter(nodeAddresses []common.Address) ([]common.Address, error) {
+func (s *Server) filter(nodes []*schema.Node) ([]common.Address, []*schema.Node, error) {
+	nodeAddresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
+		return node.Address
+	})
+
 	nodeInfoList, err := s.stakingContract.GetNodes(&bind.CallOpts{}, nodeAddresses)
 	if err != nil {
-		return nil, fmt.Errorf("get Nodes from chain: %w", err)
+		return nil, nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
 	nodeInfoMap := lo.SliceToMap(nodeInfoList, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
@@ -218,14 +216,16 @@ func (s *Server) filter(nodeAddresses []common.Address) ([]common.Address, error
 	})
 
 	newNodeAddresses := make([]common.Address, 0, len(nodeAddresses))
+	newNodes := make([]*schema.Node, 0, len(nodeAddresses))
 
 	for i := range nodeAddresses {
 		if nodeInfo, ok := nodeInfoMap[nodeAddresses[i]]; ok && isValidStatus(nodeInfo.Status) {
 			newNodeAddresses = append(newNodeAddresses, nodeAddresses[i])
+			newNodes = append(newNodes, nodes[i])
 		}
 	}
 
-	return newNodeAddresses, nil
+	return newNodeAddresses, newNodes, nil
 }
 
 // isValidStatus checks if the node status is valid.

@@ -26,6 +26,20 @@ settler:
 
 rewards:
   operation_rewards: 12328 # 30000000 / 486.6666666666667 * 0.2
+  operation_score:
+    distribution:
+      weight: 0.6
+      weight_invalid: 0.5
+    data:
+      weight: 0.3
+      weight_network: 0.3
+      weight_indexer: 0.6
+      weight_activity: 0.1
+    stability:
+      weight: 0.1
+      weight_uptime: 0.7
+      weight_version: 0.3
+
 
 active_scores:
   gini_coefficient: 2
