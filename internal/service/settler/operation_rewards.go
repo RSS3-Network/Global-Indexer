@@ -166,6 +166,11 @@ func calculateScores(ctx context.Context, operationStats []*schema.Stat, statsDa
 			scores[i] = new(big.Float).Add(distributionScore, new(big.Float).Add(dataScore, stabilityScore))
 
 			mu.Lock()
+			// If the score is less than 0, set it to 0
+			if scores[i].Cmp(big.NewFloat(0)) < 0 {
+				scores[i].Set(big.NewFloat(0))
+			}
+
 			totalScore = totalScore.Add(totalScore, scores[i])
 			mu.Unlock()
 
