@@ -13,6 +13,7 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
+	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
@@ -31,16 +32,18 @@ import (
 const Name = "settler"
 
 type Server struct {
-	txManager          txmgr.TxManager
-	checkpoint         uint64
-	chainID            *big.Int
-	mutex              *redsync.Mutex
-	currentEpoch       uint64
-	ethereumClient     *ethclient.Client
-	databaseClient     database.Client
-	stakingContract    *stakingv2.Staking
-	settlementContract *l2.Settlement
-	config             *config.File
+	txManager             txmgr.TxManager
+	checkpoint            uint64
+	chainID               *big.Int
+	mutex                 *redsync.Mutex
+	currentEpoch          uint64
+	ethereumClient        *ethclient.Client
+	databaseClient        database.Client
+	stakingContract       *stakingv2.Staking
+	settlementContract    *l2.Settlement
+	networkParamsContract *l2.NetworkParams
+	config                *config.File
+	httpClient            httputil.Client
 }
 
 func (s *Server) Name() string {
@@ -242,7 +245,7 @@ func (s *Server) loadCheckpoint(ctx context.Context) (uint64, uint64, error) {
 	return indexedBlock.BlockNumber, latestFinalizedBlock.NumberU64(), nil
 }
 
-func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File, txManager *txmgr.SimpleTxManager) (service.Server, error) {
+func NewServer(databaseClient database.Client, redisClient *redis.Client, ethereumMultiChainClient *ethereum.MultiChainClient, config *config.File, txManager *txmgr.SimpleTxManager, httpClient httputil.Client) (service.Server, error) {
 	redisPool := goredis.NewPool(redisClient)
 	rs := redsync.New(redisPool)
 
@@ -268,15 +271,22 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, ethere
 		return nil, fmt.Errorf("new settlement contract: %w", err)
 	}
 
+	networkParamsContract, err := l2.NewNetworkParams(contractAddresses.AddressNetworkParamsProxy, ethereumClient)
+	if err != nil {
+		return nil, fmt.Errorf("new network params contract: %w", err)
+	}
+
 	server := &Server{
-		chainID:            chainID,
-		mutex:              rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
-		ethereumClient:     ethereumClient,
-		databaseClient:     databaseClient,
-		txManager:          txManager,
-		stakingContract:    stakingContract,
-		settlementContract: settlementContract,
-		config:             config,
+		chainID:               chainID,
+		mutex:                 rs.NewMutex(Name, redsync.WithExpiry(5*time.Minute)),
+		ethereumClient:        ethereumClient,
+		databaseClient:        databaseClient,
+		txManager:             txManager,
+		stakingContract:       stakingContract,
+		settlementContract:    settlementContract,
+		config:                config,
+		httpClient:            httpClient,
+		networkParamsContract: networkParamsContract,
 	}
 
 	return server, nil
