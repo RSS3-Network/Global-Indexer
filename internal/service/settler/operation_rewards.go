@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hashicorp/go-version"
 	"github.com/rss3-network/global-indexer/internal/config"
+	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
@@ -91,7 +92,7 @@ func (s *Server) processStat(ctx context.Context, operationStats []*schema.Stat,
 		i := i
 
 		errorPool.Go(func(_ context.Context) error {
-			if operationStats[i] == nil {
+			if operationStats[i] == nil || operationStats[i].EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
 				return nil
 			}
 
@@ -137,7 +138,7 @@ func calculateScores(ctx context.Context, operationStats []*schema.Stat, statsDa
 		i := i
 
 		errorPool.Go(func(_ context.Context) error {
-			if operationStats[i] == nil {
+			if operationStats[i] == nil || operationStats[i].EpochInvalidRequest >= int64(model.DemotionCountBeforeSlashing) {
 				scores[i] = big.NewFloat(0)
 
 				return nil
