@@ -76,7 +76,32 @@ type Distributor struct {
 }
 
 type Rewards struct {
-	OperationRewards float64 `yaml:"operation_rewards" validate:"required"`
+	OperationRewards float64         `yaml:"operation_rewards" validate:"required"`
+	OperationScore   *OperationScore `yaml:"operation_score" validate:"required"`
+}
+
+type OperationScore struct {
+	Distribution *Distribution `yaml:"distribution" validate:"required"`
+	Data         *Data         `yaml:"data" validate:"required"`
+	Stability    *Stability    `yaml:"stability" validate:"required"`
+}
+
+type Distribution struct {
+	Weight        float64 `yaml:"weight" validate:"required"`
+	WeightInvalid float64 `yaml:"weight_invalid" validate:"required"`
+}
+
+type Data struct {
+	Weight         float64 `yaml:"weight" validate:"required"`
+	WeightNetwork  float64 `yaml:"weight_network" validate:"required"`
+	WeightIndexer  float64 `yaml:"weight_indexer" validate:"required"`
+	WeightActivity float64 `yaml:"weight_activity" validate:"required"`
+}
+
+type Stability struct {
+	Weight        float64 `yaml:"weight" validate:"required"`
+	WeightUptime  float64 `yaml:"weight_uptime" validate:"required"`
+	WeightVersion float64 `yaml:"weight_version" validate:"required"`
 }
 
 type ActiveScores struct {
