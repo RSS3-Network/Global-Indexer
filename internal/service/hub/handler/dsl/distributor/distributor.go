@@ -163,6 +163,11 @@ func (d *Distributor) getFederatedNodeRetriever(request interface{}) nodeRetriev
 				return nil, fmt.Errorf("unescape ID: %w", err)
 			}
 
+			// check if the ID is a DID
+			if strings.HasPrefix(r.ID, "did:plc:") {
+				return d.getFederatedDefaultNodes(ctx)
+			}
+
 			account, err = extractFediverseAddress(r.ID)
 
 			if err != nil {

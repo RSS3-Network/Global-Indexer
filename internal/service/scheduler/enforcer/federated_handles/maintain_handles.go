@@ -16,6 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
+	node_schemas "github.com/rss3-network/node/schema/worker/federated"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -202,18 +203,49 @@ func (s *server) getAllNodeStats(ctx context.Context, query *schema.StatQuery) (
 }
 
 type NodeFederatedHandlesResponse struct {
-	Handles []string `json:"handles"`
-	Cursor  string   `json:"cursor"`
+	Platform   string   `json:"platform"`
+	Handles    []string `json:"handles"`
+	Cursor     string   `json:"cursor"`
+	TotalCount int      `json:"total_count"`
 }
 
 // getNodeFederatedHandles retrieves the federated handles from the node
 func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessToken string, since uint64) ([]string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	var handles []string
+	handles := make([]string, 0, 100)
 
-	// Parse the endpoint URL
+	var mu sync.Mutex
+
+	g, ctx := errgroup.WithContext(ctx)
+	platforms := node_schemas.PlatformStrings()[1:]
+
+	for _, platform := range platforms {
+		platform := platform
+
+		g.Go(func() error {
+			platformHandles, err := s.fetchPlatformHandles(ctx, endpoint, accessToken, since, platform)
+			if err != nil {
+				return fmt.Errorf("fetch %s handles: %w", platform, err)
+			}
+
+			mu.Lock()
+			handles = append(handles, platformHandles...)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return handles, nil
+}
+
+func (s *server) fetchPlatformHandles(ctx context.Context, endpoint, accessToken string, since uint64, platform string) ([]string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("parse endpoint: %w", err)
@@ -221,15 +253,17 @@ func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessTo
 
 	u.Path = path.Join(u.Path, "federated/handles")
 	q := u.Query()
+	q.Set("platform", platform)
 
 	if since > 0 {
 		q.Set("since", strconv.FormatUint(since, 10))
 	}
 
+	var handles []string
+
 	for {
 		u.RawQuery = q.Encode()
 
-		// Send HTTP GET request
 		response, err := s.fetchAndDecodeResponse(ctx, u.String(), accessToken)
 		if err != nil {
 			return nil, err
