@@ -289,6 +289,13 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
+	if query.IsAINode != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "is_ai_node",
+			Value:  query.IsAINode,
+		})
+	}
+
 	if query.Limit != nil {
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}

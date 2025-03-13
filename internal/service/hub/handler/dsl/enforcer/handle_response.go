@@ -125,6 +125,10 @@ func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStat *sc
 	if err := e.rssNodeScoreMaintainer.addOrUpdateScore(ctx, model.RssNodeCacheKey, nodeStat); err != nil {
 		zap.L().Error("failed to update rss node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
 	}
+
+	if err := e.aiNodeScoreMaintainer.addOrUpdateScore(ctx, model.AINodeCacheKey, nodeStat); err != nil {
+		zap.L().Error("failed to update ai node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
+	}
 }
 
 // verifyPartialActivities filter Activity based on the platform to perform a partial verification.
@@ -334,6 +338,10 @@ func updatePointsBasedOnData(responses []*model.DataResponse) {
 		if isValidResponse(responses[i].Data) {
 			responses[i].ValidPoint = validPointUnit
 		}
+
+		if isValidAIResponse(responses[i].Data) {
+			responses[i].ValidPoint = validPointUnit
+		}
 	}
 }
 
@@ -349,6 +357,22 @@ func isValidResponse(data []byte) bool {
 
 	// keep the response data length greater than 4
 	return len(response.Data) > 4
+}
+
+// isValidAIResponse checks if the AI response data is valid.
+func isValidAIResponse(data []byte) bool {
+	var v interface{}
+	err := json.Unmarshal(data, &v)
+
+	if err != nil {
+		return false
+	}
+
+	if _, ok := v.([]interface{}); ok {
+		return true
+	}
+
+	return false
 }
 
 // isResponseIdentical returns true if two byte slices (responses) are identical.

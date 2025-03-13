@@ -53,9 +53,11 @@ func (n *NTA) GetNetworkConfig(c echo.Context) error {
 		RSSConfig           any `json:"rss"`
 		DecentralizedConfig any `json:"decentralized"`
 		FederatedConfig     any `json:"federated"`
+		AIConfig            any `json:"ai"`
 	}{
 		RSSConfig:           networkParam.NetworkConfig["rss"],
 		DecentralizedConfig: networkParam.NetworkConfig["decentralized"],
 		FederatedConfig:     networkParam.NetworkConfig["federated"],
+		AIConfig:            networkParam.NetworkConfig["ai"],
 	}})
 }

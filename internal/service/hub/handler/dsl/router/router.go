@@ -130,21 +130,36 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 					response.Err = readErr
 				} else {
-					activity := &model.ActivityResponse{}
-					activities := &model.ActivitiesResponse{}
+					var v interface{}
+					err = json.Unmarshal(data, &v)
 
-					// Check if the Node's data is valid.
-					if !validateData(data, activity) && !validateData(data, activities) {
-						zap.L().Error("failed to parse response", zap.String("node", address.String()))
+					if err != nil {
+						zap.L().Error("failed to unmarshal response body", zap.String("node", address.String()), zap.Error(err))
 
 						response.Err = fmt.Errorf("invalid data")
-					} else {
-						// If the data is non-null, set the result as valid.
-						if activity.Data != nil || activities.Data != nil {
-							response.Valid = true
-						}
+					}
+
+					if _, ok := v.([]interface{}); ok {
+						zap.L().Info("response is an array", zap.String("node", address.String()))
 
 						response.Data = data
+					} else {
+						activity := &model.ActivityResponse{}
+						activities := &model.ActivitiesResponse{}
+
+						// Check if the Node's data is valid.
+						if !validateData(data, activity) && !validateData(data, activities) {
+							zap.L().Error("failed to parse response", zap.String("node", address.String()))
+
+							response.Err = fmt.Errorf("invalid data")
+						} else {
+							// If the data is non-null, set the result as valid.
+							if activity.Data != nil || activities.Data != nil {
+								response.Valid = true
+							}
+
+							response.Data = data
+						}
 					}
 				}
 			}

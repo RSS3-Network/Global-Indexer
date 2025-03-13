@@ -36,6 +36,7 @@ type SimpleEnforcer struct {
 	networkParamsContract   *l2.NetworkParams
 	fullNodeScoreMaintainer *ScoreMaintainer
 	rssNodeScoreMaintainer  *ScoreMaintainer
+	aiNodeScoreMaintainer   *ScoreMaintainer
 	txManager               txmgr.TxManager
 	settlerConfig           *config.Settler
 	chainID                 *big.Int
@@ -169,6 +170,8 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 		nodesCache, err = e.rssNodeScoreMaintainer.retrieveQualifiedNodes(ctx, key, model.RequiredQualifiedNodeCount)
 	case model.FullNodeCacheKey:
 		nodesCache, err = e.fullNodeScoreMaintainer.retrieveQualifiedNodes(ctx, key, model.RequiredQualifiedNodeCount)
+	case model.AINodeCacheKey:
+		nodesCache, err = e.aiNodeScoreMaintainer.retrieveQualifiedNodes(ctx, key, model.RequiredQualifiedNodeCount)
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
@@ -202,7 +205,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 			return nil, err
 		}
 
-		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer)
+		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer, enforcer.aiNodeScoreMaintainer)
 	}
 
 	return enforcer, nil
@@ -211,7 +214,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 // subscribeNodeCacheUpdate subscribes to updates of the 'epoch' key.
 // Upon updating the 'epoch' key, the Node cache is refreshed.
 // This cache holds the initial reliability scores and related maps of the nodes for the new epoch.
-func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer *ScoreMaintainer) {
+func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer, aiNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
 		//Subscribe to changes to 'epoch'
 		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@*__:%s", model.SubscribeNodeCacheKey))
@@ -243,6 +246,7 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, dat
 
 				updateQualifiedNodesMap(ctx, model.FullNodeCacheKey, databaseClient, fullNodeScoreMaintainer)
 				updateQualifiedNodesMap(ctx, model.RssNodeCacheKey, databaseClient, rssNodeScoreMaintainer)
+				updateQualifiedNodesMap(ctx, model.AINodeCacheKey, databaseClient, aiNodeScoreMaintainer)
 
 				zap.L().Info("update qualified nodes map completed", zap.Int64("epoch", epoch))
 
@@ -279,6 +283,10 @@ func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {
 	}
 
 	if e.rssNodeScoreMaintainer, err = e.initScoreMaintainer(ctx, model.RssNodeCacheKey); err != nil {
+		return err
+	}
+
+	if e.aiNodeScoreMaintainer, err = e.initScoreMaintainer(ctx, model.AINodeCacheKey); err != nil {
 		return err
 	}
 

@@ -36,6 +36,7 @@ const (
 	totalEpochReqMaxScore                = 1
 	perDecentralizedNetworkScore         = 0.1
 	perRssNetworkScore                   = 0.3
+	perAINetworkScore                    = 0.3
 	perFederatedNetworkScore             = 0.1
 	perIndexerScore                      = 0.05
 	indexerMaxScore                      = 0.2
@@ -244,7 +245,10 @@ func calculateReliabilityScore(stat *schema.Stat) {
 	stat.Score += math.Min(math.Log(float64(stat.EpochRequest)/totalEpochReqToScoreRate+1)/math.Log(totalEpochReqLogBase), totalEpochReqMaxScore)
 
 	// network count
-	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork) + perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore) + perFederatedNetworkScore*float64(stat.FederatedNetwork)
+	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork) +
+		perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore) +
+		perAINetworkScore*lo.Ternary(stat.IsAINode, existScore, nonExistScore) +
+		perFederatedNetworkScore*float64(stat.FederatedNetwork)
 
 	// indexer count
 	// maximum score is 0.2
