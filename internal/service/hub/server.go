@@ -166,6 +166,11 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 			rss.GET("/*", instance.hub.dsl.GetRSSHub)
 		}
 
+		agentdata := dsl.Group("/agentdata")
+		{
+			agentdata.GET("/*", instance.hub.dsl.GetAI)
+		}
+
 		decentralized := dsl.Group("/decentralized")
 		{
 			decentralized.GET("/tx/:id", instance.hub.dsl.GetDecentralizedActivity)

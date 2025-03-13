@@ -25,6 +25,8 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		query.IsRssNode = lo.ToPtr(true)
 	case model.FullNodeCacheKey:
 		query.IsFullNode = lo.ToPtr(true)
+	case model.AINodeCacheKey:
+		query.IsAINode = lo.ToPtr(true)
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}
@@ -36,9 +38,10 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 	}
 
 	// If there is no qualified node, choose qualified nodes that have the highest indexer count.
-	if len(nodeStats) == 0 {
+	if len(nodeStats) == 0 && key == model.FullNodeCacheKey {
 		query.IsRssNode = nil
 		query.IsFullNode = nil
+		query.IsAINode = nil
 		nodeStats, err = fetchQualifiedNodeStats(ctx, query, databaseClient)
 
 		if err != nil {

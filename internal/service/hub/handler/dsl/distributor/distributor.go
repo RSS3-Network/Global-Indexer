@@ -31,6 +31,35 @@ type Distributor struct {
 	cacheClient    cache.Client
 }
 
+// DistributeAIData distributes AI requests to qualified Nodes.
+func (d *Distributor) DistributeAIData(ctx context.Context, path, query string) ([]byte, error) {
+	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.AINodeCacheKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeMap, err := d.generateAIPath(path, query, nodes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processAIResponses)
+
+	if err != nil {
+		return nil, err
+	}
+
+	zap.L().Info("first node return", zap.Any("address", nodeResponse.Address.String()))
+
+	if nodeResponse.Err != nil {
+		return nil, nodeResponse.Err
+	}
+
+	return nodeResponse.Data, nil
+}
+
 // DistributeRSSHubData distributes RSSHub requests to qualified Nodes.
 func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query string) ([]byte, error) {
 	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.RssNodeCacheKey)
@@ -63,6 +92,17 @@ func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query stri
 // generateRSSHubPath builds the path for RSSHub requests.
 func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build path: %w", err)
+	}
+
+	return endpointMap, nil
+}
+
+// generateAIPath builds the path for AI requests.
+func (d *Distributor) generateAIPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/agentdata/%s?%s", param, query), nil, nodes, nil)
+	//endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/agentdata/%s%s", param, query), nil, nodes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}

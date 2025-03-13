@@ -306,6 +306,24 @@ func (e *SimpleEnforcer) generateMaps(ctx context.Context, stats []*schema.Stat,
 					zap.String("status", rssInfo.Status.String()))
 			}
 
+			// check if the ai is ready
+			if aiInfo := workerStatus.Data.AI; aiInfo != nil {
+				switch aiInfo.Status {
+				case worker.StatusReady:
+					// exist ready worker, not registered status
+					isRegistered = false
+				case worker.StatusUnhealthy:
+					// do not exist unhealthy worker, set initializing status
+					stat.Status = schema.NodeStatusInitializing
+				default:
+					zap.L().Warn("not supported ai status")
+				}
+
+				zap.L().Info("ai status",
+					zap.String("address", stat.Address.String()),
+					zap.String("status", aiInfo.Status.String()))
+			}
+
 			// TODO: check if federated workers are ready
 
 			if isRegistered {
@@ -374,6 +392,7 @@ func filterReadyWorkers(componentInfo *ComponentInfo) *ComponentInfo {
 		Decentralized: readyWorkers,
 		RSS:           componentInfo.RSS,
 		Federated:     componentInfo.Federated,
+		AI:            componentInfo.AI,
 	}
 }
 
@@ -499,6 +518,7 @@ func (e *SimpleEnforcer) updateNodeStatsAndWorkers(ctx context.Context, stats []
 			stats[i].DecentralizedNetwork = calculateDecentralizedNetwork(workerInfo.Decentralized)
 			stats[i].IsRssNode = determineRssNode(workerInfo.RSS)
 			stats[i].FederatedNetwork = calculateFederatedNetwork(workerInfo.Federated)
+			stats[i].IsAINode = determineAINode(workerInfo.AI)
 			stats[i].Indexer = len(workerInfo.Decentralized) + len(workerInfo.Federated)
 
 			// Reset the epoch, request count, and invalid request count if a new epoch is detected,
@@ -563,6 +583,15 @@ func calculateDecentralizedNetwork(workerInfo []*DecentralizedWorkerInfo) int {
 // determineRssNode determines if the node is an RSS node.
 func determineRssNode(w *RSSWorkerInfo) bool {
 	if w != nil && w.Platform == rss.PlatformRSSHub && w.Status == worker.StatusReady {
+		return true
+	}
+
+	return false
+}
+
+// determineAINode determines if the node is an AI node.
+func determineAINode(w *AIInfo) bool {
+	if w != nil && w.Status == worker.StatusReady {
 		return true
 	}
 
@@ -731,10 +760,15 @@ type FederatedInfo struct {
 	Worker federated.Worker `json:"worker"`
 }
 
+type AIInfo struct {
+	Status worker.Status `json:"status"`
+}
+
 type ComponentInfo struct {
 	Decentralized []*DecentralizedWorkerInfo `json:"decentralized"`
 	RSS           *RSSWorkerInfo             `json:"rss"`
 	Federated     []*FederatedInfo           `json:"federated"`
+	AI            *AIInfo                    `json:"ai"`
 }
 
 type WorkersStatusResponse struct {
@@ -754,7 +788,7 @@ type InfoResponse struct {
 // 1. update the sorted set nodes.
 // 2. update the cache for the Node subscription.
 func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
-	for _, key := range []string{model.RssNodeCacheKey, model.FullNodeCacheKey} {
+	for _, key := range []string{model.RssNodeCacheKey, model.AINodeCacheKey, model.FullNodeCacheKey} {
 		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
 			return err
 		}

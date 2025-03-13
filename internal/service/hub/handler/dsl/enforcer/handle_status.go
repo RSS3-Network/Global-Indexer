@@ -136,6 +136,13 @@ func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node,
 		return schema.NodeStatusInitializing, ""
 	}
 
+	// Check if any AI Node worker is unhealthy
+	if workersInfo.Data.AI != nil {
+		if workersInfo.Data.AI.Status != worker.StatusUnhealthy {
+			return schema.NodeStatusInitializing, ""
+		}
+	}
+
 	// Check if any decentralized worker is unhealthy
 	for _, workerInfo := range workersInfo.Data.Decentralized {
 		if workerInfo.Status != worker.StatusUnhealthy {

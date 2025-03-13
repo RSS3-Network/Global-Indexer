@@ -29,6 +29,17 @@ func (d *Distributor) processRSSHubResponses(_ []*model.DataResponse) {
 	//}
 }
 
+// processAIResponses processes responses for AI requests.
+func (d *Distributor) processAIResponses(responses []*model.DataResponse) {
+	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses, false); err != nil {
+		zap.L().Error("fail to verify ai responses", zap.Any("responses", len(responses)))
+
+		return
+	}
+
+	zap.L().Info("complete ai responses verify", zap.Any("responses", len(responses)))
+}
+
 // processDecentralizedActivityResponses processes responses for Decentralized Activity requests.
 func (d *Distributor) processDecentralizedActivityResponses(responses []*model.DataResponse) {
 	if err := d.simpleEnforcer.VerifyResponses(context.Background(), responses, true); err != nil {

@@ -14,6 +14,7 @@ type Stat struct {
 	IsPublicGood         bool           `json:"is_public_good"`
 	IsFullNode           bool           `json:"is_full_node"`
 	IsRssNode            bool           `json:"is_rss_node"`
+	IsAINode             bool           `json:"is_ai_node"`
 	Staking              float64        `json:"staking"`
 	Epoch                int64          `json:"epoch"`
 	TotalRequest         int64          `json:"total_request"`
@@ -34,6 +35,7 @@ type StatQuery struct {
 	Addresses    []common.Address `query:"addresses" form:"addresses,omitempty"`
 	IsFullNode   *bool            `query:"is_full_node" form:"is_full_node,omitempty"`
 	IsRssNode    *bool            `query:"is_rss_node" form:"is_rss_node,omitempty"`
+	IsAINode     *bool            `query:"is_ai_node" form:"is_ai_node,omitempty"`
 	PointsOrder  *string          `query:"points_order" form:"points_order,omitempty"`
 	ValidRequest *int             `query:"valid_request" form:"valid_request,omitempty"`
 	Limit        *int             `query:"limit" form:"limit,omitempty"`

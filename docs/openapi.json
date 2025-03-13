@@ -44,6 +44,11 @@
             "x-displayName": "RSS"
         },
         {
+            "name": "AI",
+            "description": "A subset of DSL, these APIs facilitate querying information conforming to the AI Specification.",
+            "x-displayName": "AI"
+        },
+        {
             "name": "Node",
             "description": "A subset of NTA, these APIs provide information about nodes in the RSS3 network."
         },
@@ -324,6 +329,32 @@
                     },
                     "404": {
                         "description": "The specified RSS path was not found."
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/500"
+                    }
+                }
+            }
+        },
+        "/agentdata/{path}": {
+            "get": {
+                "summary": "Retrieve AI DATA by Path",
+                "operationId": "getAIDataByPath",
+                "tags": [
+                    "RSS",
+                    "AI"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/ai_path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/AIResponse"
+                    },
+                    "404": {
+                        "description": "The specified AI path was not found."
                     },
                     "500": {
                         "$ref": "#/components/responses/500"
@@ -1446,7 +1477,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/RssFeed"}]
+                        "anyOf": [{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -3301,7 +3332,7 @@
                 "properties": {
                     "error_code": {
                         "type": "string",
-                        "enum": ["bad_request","validate_failed","bad_params","internal_error"]
+                        "enum": ["bad_request","validation_failed","bad_params","internal_error","service_unavailable"]
                     },
                     "error": {
                         "type": "string"
@@ -3694,6 +3725,16 @@
             "rss_path": {
                 "description": "Retrieve details for the specified RSS path",
                 "example": "abc",
+                "in": "path",
+                "name": "path",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "ai_path": {
+                "description": "Retrieve details for the specified ai path",
+                "example": "ai_intel",
                 "in": "path",
                 "name": "path",
                 "required": true,
@@ -4165,6 +4206,17 @@
                     "application/json": {
                         "schema": {
                             "$ref": "#/components/schemas/ActivitiesResponse"
+                        }
+                    }
+                }
+            },
+            "AIResponse": {
+                "description": "JSON response containing AI-generated content",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                             "description": "Response with AI-generated content of any structure"
                         }
                     }
                 }

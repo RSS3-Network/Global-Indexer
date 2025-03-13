@@ -24,6 +24,8 @@ const (
 )
 
 var (
+	// AINodeCacheKey is the cache key for the nodes that support the AI network.
+	AINodeCacheKey = "nodes:ai"
 	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
 	RssNodeCacheKey = "nodes:rss"
 	// FullNodeCacheKey is the cache key for the full nodes.
