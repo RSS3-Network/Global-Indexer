@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// processRSSHubResults processes responses for RSSHub requests.
+// processRSSHubResponses processes responses for RSSHub requests.
 func (d *Distributor) processRSSHubResponses(_ []*model.DataResponse) {
 	// No rewards or slash for RSS responses due to unstable RSSHub server.
 

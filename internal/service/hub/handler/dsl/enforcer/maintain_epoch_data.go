@@ -26,7 +26,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// maintainNodeWorkerWorker maintains the worker information for network nodes at each new epoch.
+// maintainNodeWorker maintains the worker information for network nodes at each new epoch.
 func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) error {
 	addresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
 		return stat.Address
