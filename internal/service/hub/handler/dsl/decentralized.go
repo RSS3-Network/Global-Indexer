@@ -15,7 +15,7 @@ import (
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/dsl"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
-	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/node/v2/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
