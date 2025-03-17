@@ -338,11 +338,11 @@
         },
         "/agentdata/{path}": {
             "get": {
-                "summary": "Retrieve AI DATA by Path",
+                "summary": "Retrieve AI data by Path",
                 "operationId": "getAIDataByPath",
                 "tags": [
-                    "RSS",
-                    "AI"
+                    "AI",
+                    "DSL"
                 ],
                 "parameters": [
                     {
@@ -1477,7 +1477,7 @@
                     "metadata": {
                         "description": "Additional metadata related to the action.",
                         "type": "object",
-                        "anyOf": [{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/RssFeed"},{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"}]
+                        "anyOf": [{"$ref":"#/components/schemas/TransactionApproval"},{"$ref":"#/components/schemas/TransactionBridge"},{"$ref":"#/components/schemas/TransactionTransfer"},{"$ref":"#/components/schemas/TransactionBurn"},{"$ref":"#/components/schemas/TransactionMint"},{"$ref":"#/components/schemas/CollectibleApproval"},{"$ref":"#/components/schemas/CollectibleTrade"},{"$ref":"#/components/schemas/CollectibleTransfer"},{"$ref":"#/components/schemas/CollectibleBurn"},{"$ref":"#/components/schemas/CollectibleMint"},{"$ref":"#/components/schemas/ExchangeLiquidity"},{"$ref":"#/components/schemas/ExchangeStaking"},{"$ref":"#/components/schemas/ExchangeSwap"},{"$ref":"#/components/schemas/SocialPost"},{"$ref":"#/components/schemas/SocialComment"},{"$ref":"#/components/schemas/SocialReward"},{"$ref":"#/components/schemas/SocialShare"},{"$ref":"#/components/schemas/SocialDelete"},{"$ref":"#/components/schemas/SocialProxy"},{"$ref":"#/components/schemas/SocialRevise"},{"$ref":"#/components/schemas/SocialMint"},{"$ref":"#/components/schemas/SocialProfile"},{"$ref":"#/components/schemas/MetaverseBurn"},{"$ref":"#/components/schemas/MetaverseMint"},{"$ref":"#/components/schemas/MetaverseTransfer"},{"$ref":"#/components/schemas/MetaverseTrade"},{"$ref":"#/components/schemas/RssFeed"}]
                     },
                     "platform": {
                         "$ref": "#/components/schemas/Platform"
@@ -1890,13 +1890,13 @@
                 "description": "The type of activity.",
                 "type": "string",
                 "example": "transfer",
-                "enum": ["approval","auction","bridge","burn","comment","delete","feed","liquidity","loan","mint","post","profile","proposal","proxy","revise","reward","share","staking","swap","trade","transfer","unknown","vote"]
+                "enum": ["approval","auction","bridge","burn","comment","delete","feed","like","liquidity","loan","mint","post","profile","proposal","proxy","revise","reward","share","staking","swap","trade","transfer","unknown","vote"]
             },
             "Network": {
                 "description": "The network on which activities occur.",
                 "type": "string",
                 "example": "ethereum",
-                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","vsl","x-layer"]
+                "enum": ["arbitrum","arweave","avax","base","binance-smart-chain","bluesky","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","vsl","x-layer"]
             },
             "Platform": {
                 "description": "The platform on which activities occur.",
@@ -3377,7 +3377,7 @@
             "MetaverseTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
             "RssFeed": {"properties":{"authors":{"items":{"properties":{"name":{"type":"string"}},"required":["name"],"type":"object"},"type":"array"},"description":{"type":"string"},"pub_date":{"type":"string"},"title":{"type":"string"}},"required":["title","description"],"type":"object"},
             "TransactionApproval": {"properties":{"action":{"enum":["approve","revoke"],"type":"string"},"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"required":["action"],"type":"object"},
-            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
+            "TransactionBridge": {"properties":{"action":{"enum":["deposit","withdraw"],"type":"string"},"source_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer","bluesky"],"type":"string"},"target_network":{"enum":["unknown","arbitrum","arweave","avax","base","binance-smart-chain","bitcoin","crossbell","ethereum","farcaster","gnosis","linea","mastodon","near","optimism","polygon","rsshub","savm","vsl","x-layer","bluesky"],"type":"string"},"token":{"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"}},"required":["action","source_network","target_network"],"type":"object"},
             "TransactionTransfer": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
             "TransactionBurn": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
             "TransactionMint": {"properties":{"address":{"type":"string"},"decimals":{"type":"integer"},"id":{"type":"string"},"name":{"type":"string"},"parsed_image_url":{"type":"string"},"standard":{"enum":["Unknown","ERC-20","NEP-141","ERC-165","ERC-721","ERC-1155","ERC-1967"],"type":"string"},"symbol":{"type":"string"},"uri":{"type":"string"},"value":{"type":"string"}},"type":"object"},
@@ -3734,7 +3734,7 @@
             },
             "ai_path": {
                 "description": "Retrieve details for the specified ai path",
-                "example": "ai_intel",
+                "example": "api/v1/ai_intel",
                 "in": "path",
                 "name": "path",
                 "required": true,
@@ -4216,7 +4216,7 @@
                     "application/json": {
                         "schema": {
                             "type": "object",
-                             "description": "Response with AI-generated content of any structure"
+                            "description": "Response with AI-generated content of any structure"
                         }
                     }
                 }

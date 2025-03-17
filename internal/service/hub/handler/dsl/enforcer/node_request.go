@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
-	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/node/v2/schema/worker/decentralized"
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 )

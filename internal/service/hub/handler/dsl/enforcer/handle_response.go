@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/internal/service/hub/handler/dsl/model"
 	"github.com/rss3-network/global-indexer/schema"
-	"github.com/rss3-network/node/schema/worker/decentralized"
+	"github.com/rss3-network/node/v2/schema/worker/decentralized"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/pool"
 	"go.uber.org/zap"
