@@ -296,6 +296,13 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		})
 	}
 
+	if query.IsRsshubNode != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "is_rsshub_node",
+			Value:  query.IsRsshubNode,
+		})
+	}
+
 	if query.Limit != nil {
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}

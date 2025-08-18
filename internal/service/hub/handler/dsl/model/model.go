@@ -24,6 +24,8 @@ const (
 )
 
 var (
+	// RsshubNodeCacheKey AINodeCacheKey is the cache key for the native rsshub nodes that support the RSS data
+	RsshubNodeCacheKey = "nodes:rsshub"
 	// AINodeCacheKey is the cache key for the nodes that support the AI network.
 	AINodeCacheKey = "nodes:ai"
 	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.

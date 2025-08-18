@@ -9,20 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func (d *DSL) GetRSS(c echo.Context) error {
+func (d *DSL) GetRSSHub(c echo.Context) error {
 	path := c.Param("*")
 	query := c.Request().URL.RawQuery
 
-	requestCounter.WithLabelValues("GetRSS").Inc()
-
-	data, err := d.distributor.DistributeRSSHubData(c.Request().Context(), path, query)
+	data, err := d.distributor.DistributeRSSData(c.Request().Context(), path, query)
 
 	if err != nil {
 		if errors.Is(err, errorx.ErrNoNodesAvailable) {
 			return errorx.ServiceUnavailableError(c, err)
 		}
 
-		zap.L().Error("distribute rss hub data error", zap.Error(err))
+		zap.L().Error("distribute rsshub data error", zap.Error(err))
 
 		return errorx.InternalError(c)
 	}

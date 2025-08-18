@@ -29,17 +29,18 @@ type Enforcer interface {
 }
 
 type SimpleEnforcer struct {
-	cacheClient             cache.Client
-	databaseClient          database.Client
-	httpClient              httputil.Client
-	stakingContract         *l2.StakingV2MulticallClient
-	networkParamsContract   *l2.NetworkParams
-	fullNodeScoreMaintainer *ScoreMaintainer
-	rssNodeScoreMaintainer  *ScoreMaintainer
-	aiNodeScoreMaintainer   *ScoreMaintainer
-	txManager               txmgr.TxManager
-	settlerConfig           *config.Settler
-	chainID                 *big.Int
+	cacheClient               cache.Client
+	databaseClient            database.Client
+	httpClient                httputil.Client
+	stakingContract           *l2.StakingV2MulticallClient
+	networkParamsContract     *l2.NetworkParams
+	fullNodeScoreMaintainer   *ScoreMaintainer
+	rssNodeScoreMaintainer    *ScoreMaintainer
+	aiNodeScoreMaintainer     *ScoreMaintainer
+	rsshubNodeScoreMaintainer *ScoreMaintainer
+	txManager                 txmgr.TxManager
+	settlerConfig             *config.Settler
+	chainID                   *big.Int
 }
 
 // VerifyResponses verifies the responses from the Nodes.
@@ -166,6 +167,8 @@ func (e *SimpleEnforcer) RetrieveQualifiedNodes(ctx context.Context, key string)
 	)
 
 	switch key {
+	case model.RsshubNodeCacheKey:
+		nodesCache, err = e.rsshubNodeScoreMaintainer.retrieveQualifiedNodes(ctx, key, model.RequiredQualifiedNodeCount)
 	case model.RssNodeCacheKey:
 		nodesCache, err = e.rssNodeScoreMaintainer.retrieveQualifiedNodes(ctx, key, model.RequiredQualifiedNodeCount)
 	case model.FullNodeCacheKey:
@@ -287,6 +290,10 @@ func (e *SimpleEnforcer) initScoreMaintainers(ctx context.Context) error {
 	}
 
 	if e.aiNodeScoreMaintainer, err = e.initScoreMaintainer(ctx, model.AINodeCacheKey); err != nil {
+		return err
+	}
+
+	if e.rsshubNodeScoreMaintainer, err = e.initScoreMaintainer(ctx, model.RsshubNodeCacheKey); err != nil {
 		return err
 	}
 
