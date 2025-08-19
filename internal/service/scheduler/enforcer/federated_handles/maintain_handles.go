@@ -249,7 +249,7 @@ func (s *server) getNodeFederatedHandles(ctx context.Context, endpoint, accessTo
 
 // fetchAndDecodeResponse fetches and decodes the response from the given URL.
 func (s *server) fetchAndDecodeResponse(ctx context.Context, url, accessToken string) (*NodeFederatedHandlesResponse, error) {
-	body, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, url, accessToken, nil)
+	body, _, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, url, accessToken, nil)
 	if err != nil {
 		return nil, fmt.Errorf("fetch with method: %w", err)
 	}

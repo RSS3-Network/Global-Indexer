@@ -28,7 +28,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, versionStr, en
 
 	fullURL := endpoint + prefix + "workers_status"
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	body, _, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}

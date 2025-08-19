@@ -289,7 +289,7 @@ func generateInvalidResponse(err error, activity *model.ActivityResponse) json.R
 func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, accessToken, txID string) (*model.ActivityResponse, error) {
 	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	body, _, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}

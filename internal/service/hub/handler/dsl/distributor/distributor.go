@@ -91,19 +91,19 @@ func (d *Distributor) DistributeRSSHubData(ctx context.Context, path, query stri
 
 // DistributeRSSData distributes RSS requests to qualified RSShub Nodes.
 func (d *Distributor) DistributeRSSData(ctx context.Context, path, query string) ([]byte, error) {
-	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.RssNodeCacheKey)
+	nodes, err := d.simpleEnforcer.RetrieveQualifiedNodes(ctx, model.RsshubNodeCacheKey)
 
 	if err != nil {
 		return nil, err
 	}
 
-	nodeMap, err := d.generateRSSHubPath(path, query, nodes)
+	nodeMap, err := d.generateRSSPath(path, query, nodes)
 
 	if err != nil {
 		return nil, err
 	}
 
-	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processRSSHubResponses)
+	nodeResponse, err := d.simpleRouter.DistributeRequest(ctx, nodeMap, d.processRSSResponses)
 
 	if err != nil {
 		return nil, err
@@ -121,6 +121,16 @@ func (d *Distributor) DistributeRSSData(ctx context.Context, path, query string)
 // generateRSSHubPath builds the path for RSSHub requests.
 func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
 	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build path: %w", err)
+	}
+
+	return endpointMap, nil
+}
+
+// generateRSSPath builds the path for RSS requests.
+func (d *Distributor) generateRSSPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/%s?%s", param, query), nil, nodes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}

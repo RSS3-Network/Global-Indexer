@@ -275,7 +275,7 @@ func (s *Server) getNodeActivityCount(ctx context.Context, versionStr, endpoint,
 
 	fullURL := endpoint + prefix + "activity_count"
 
-	body, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	body, _, err := s.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}
