@@ -120,7 +120,7 @@ func (d *Distributor) DistributeRSSData(ctx context.Context, path, query string)
 
 // generateRSSHubPath builds the path for RSSHub requests.
 func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes, nil)
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/rss/%s?%s", param, query), nil, nodes, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}
@@ -130,7 +130,7 @@ func (d *Distributor) generateRSSHubPath(param, query string, nodes []*model.Nod
 
 // generateRSSPath builds the path for RSS requests.
 func (d *Distributor) generateRSSPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/%s?%s", param, query), nil, nodes, nil)
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/%s?%s", param, query), nil, nodes, nil, true)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}
@@ -140,7 +140,7 @@ func (d *Distributor) generateRSSPath(param, query string, nodes []*model.NodeEn
 
 // generateAIPath builds the path for AI requests.
 func (d *Distributor) generateAIPath(param, query string, nodes []*model.NodeEndpointCache) (map[common.Address]model.RequestMeta, error) {
-	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/agentdata/%s?%s", param, query), nil, nodes, nil)
+	endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/agentdata/%s?%s", param, query), nil, nodes, nil, false)
 	//endpointMap, err := d.simpleRouter.BuildPath(http.MethodGet, fmt.Sprintf("/agentdata/%s%s", param, query), nil, nodes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
@@ -317,7 +317,7 @@ func (d *Distributor) generatePath(requestType, component string, request interf
 		return nil, fmt.Errorf("invalid request type: %s", requestType)
 	}
 
-	endpointMap, err := d.simpleRouter.BuildPath(method, path, params, nodes, body)
+	endpointMap, err := d.simpleRouter.BuildPath(method, path, params, nodes, body, false)
 	if err != nil {
 		return nil, fmt.Errorf("build path: %w", err)
 	}

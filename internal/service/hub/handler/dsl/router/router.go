@@ -29,7 +29,7 @@ type SimpleRouter struct {
 	httpClient httputil.Client
 }
 
-func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []*model.NodeEndpointCache, body []byte) (map[common.Address]model.RequestMeta, error) {
+func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []*model.NodeEndpointCache, body []byte, isRssNode bool) (map[common.Address]model.RequestMeta, error) {
 	if method == http.MethodGet && query != nil {
 		path = fmt.Sprintf("%s?%s", path, query.Encode())
 	}
@@ -53,6 +53,7 @@ func (r *SimpleRouter) BuildPath(method, path string, query url.Values, nodes []
 			Endpoint:    fullURL,
 			AccessToken: node.AccessToken,
 			Body:        body,
+			IsRssNode:   isRssNode,
 		}
 	}
 
@@ -113,9 +114,7 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 			response := &model.DataResponse{Address: address, Endpoint: requestMeta.Endpoint}
 			// Fetch the data from the Node.
-			body, _, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, requestMeta.AccessToken, bytes.NewReader(requestMeta.Body))
-
-			// todo deal headers
+			body, headers, err := r.httpClient.FetchWithMethod(ctx, requestMeta.Method, requestMeta.Endpoint, requestMeta.AccessToken, bytes.NewReader(requestMeta.Body))
 
 			if err != nil {
 				zap.L().Error("failed to fetch request", zap.String("node", address.String()), zap.Error(err))
@@ -132,35 +131,41 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 
 					response.Err = readErr
 				} else {
-					var v interface{}
-					err = json.Unmarshal(data, &v)
-
-					if err != nil {
-						zap.L().Error("failed to unmarshal response body", zap.String("node", address.String()), zap.Error(err))
-
-						response.Err = fmt.Errorf("invalid data")
-					}
-
-					if _, ok := v.([]interface{}); ok {
-						zap.L().Info("response is an array", zap.String("node", address.String()))
-
+					if requestMeta.IsRssNode {
 						response.Data = data
+						response.IsRssNode = requestMeta.IsRssNode
+						response.Etag = headers.Get("Etag")
 					} else {
-						activity := &model.ActivityResponse{}
-						activities := &model.ActivitiesResponse{}
+						var v interface{}
+						err = json.Unmarshal(data, &v)
 
-						// Check if the Node's data is valid.
-						if !validateData(data, activity) && !validateData(data, activities) {
-							zap.L().Error("failed to parse response", zap.String("node", address.String()))
+						if err != nil {
+							zap.L().Error("failed to unmarshal response body", zap.String("node", address.String()), zap.Error(err))
 
 							response.Err = fmt.Errorf("invalid data")
-						} else {
-							// If the data is non-null, set the result as valid.
-							if activity.Data != nil || activities.Data != nil {
-								response.Valid = true
-							}
+						}
+
+						if _, ok := v.([]interface{}); ok {
+							zap.L().Info("response is an array", zap.String("node", address.String()))
 
 							response.Data = data
+						} else {
+							activity := &model.ActivityResponse{}
+							activities := &model.ActivitiesResponse{}
+
+							// Check if the Node's data is valid.
+							if !validateData(data, activity) && !validateData(data, activities) {
+								zap.L().Error("failed to parse response", zap.String("node", address.String()))
+
+								response.Err = fmt.Errorf("invalid data")
+							} else {
+								// If the data is non-null, set the result as valid.
+								if activity.Data != nil || activities.Data != nil {
+									response.Valid = true
+								}
+
+								response.Data = data
+							}
 						}
 					}
 				}

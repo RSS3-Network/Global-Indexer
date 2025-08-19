@@ -25,5 +25,5 @@ func (d *DSL) GetRSSHub(c echo.Context) error {
 		return errorx.InternalError(c)
 	}
 
-	return c.JSONBlob(http.StatusOK, data)
+	return c.XMLBlob(http.StatusOK, data)
 }
