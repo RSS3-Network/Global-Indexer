@@ -208,7 +208,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 			return nil, err
 		}
 
-		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer, enforcer.aiNodeScoreMaintainer)
+		subscribeNodeCacheUpdate(ctx, cacheClient, databaseClient, enforcer.fullNodeScoreMaintainer, enforcer.rssNodeScoreMaintainer, enforcer.aiNodeScoreMaintainer, enforcer.rsshubNodeScoreMaintainer)
 	}
 
 	return enforcer, nil
@@ -217,7 +217,7 @@ func NewSimpleEnforcer(ctx context.Context, databaseClient database.Client, cach
 // subscribeNodeCacheUpdate subscribes to updates of the 'epoch' key.
 // Upon updating the 'epoch' key, the Node cache is refreshed.
 // This cache holds the initial reliability scores and related maps of the nodes for the new epoch.
-func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer, aiNodeScoreMaintainer *ScoreMaintainer) {
+func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, databaseClient database.Client, fullNodeScoreMaintainer, rssNodeScoreMaintainer, aiNodeScoreMaintainer, rsshubNodeScoreMaintainer *ScoreMaintainer) {
 	go func() {
 		//Subscribe to changes to 'epoch'
 		pubsub := cacheClient.PSubscribe(ctx, fmt.Sprintf("__keyspace@*__:%s", model.SubscribeNodeCacheKey))
@@ -250,6 +250,7 @@ func subscribeNodeCacheUpdate(ctx context.Context, cacheClient cache.Client, dat
 				updateQualifiedNodesMap(ctx, model.FullNodeCacheKey, databaseClient, fullNodeScoreMaintainer)
 				updateQualifiedNodesMap(ctx, model.RssNodeCacheKey, databaseClient, rssNodeScoreMaintainer)
 				updateQualifiedNodesMap(ctx, model.AINodeCacheKey, databaseClient, aiNodeScoreMaintainer)
+				updateQualifiedNodesMap(ctx, model.RsshubNodeCacheKey, databaseClient, rsshubNodeScoreMaintainer)
 
 				zap.L().Info("update qualified nodes map completed", zap.Int64("epoch", epoch))
 

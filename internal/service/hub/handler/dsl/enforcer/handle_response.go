@@ -129,6 +129,10 @@ func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStat *sc
 	if err := e.aiNodeScoreMaintainer.addOrUpdateScore(ctx, model.AINodeCacheKey, nodeStat); err != nil {
 		zap.L().Error("failed to update ai node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
 	}
+
+	if err := e.rsshubNodeScoreMaintainer.addOrUpdateScore(ctx, model.RsshubNodeCacheKey, nodeStat); err != nil {
+		zap.L().Error("failed to update rsshub node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
+	}
 }
 
 // verifyPartialActivities filter Activity based on the platform to perform a partial verification.
