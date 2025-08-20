@@ -134,7 +134,20 @@ func (r *SimpleRouter) distribute(ctx context.Context, nodeMap map[common.Addres
 					if requestMeta.IsRssNode {
 						response.Data = data
 						response.IsRssNode = requestMeta.IsRssNode
-						response.Etag = headers.Get("Etag")
+						etag := headers.Get("Etag")
+
+						if etag != "" {
+							// remove the W/ prefix
+							etag = strings.TrimPrefix(etag, "W/")
+							// remove the outer quotes
+							etag = strings.Trim(etag, `"`)
+							// split the size-hash
+							parts := strings.SplitN(etag, "-", 2)
+							if len(parts) > 0 {
+								// only take the size part
+								response.Etag = parts[0]
+							}
+						}
 					} else {
 						var v interface{}
 						err = json.Unmarshal(data, &v)
