@@ -45,6 +45,79 @@ type StatValue struct {
 // calculateFinalRewards calculates the final rewards for each node based on the operation stats.
 func (s *Server) calculateFinalRewards(ctx context.Context, operationStats []*schema.Stat, rewards *config.Rewards) ([]*big.Int, error) {
 	operationRewards := make([]*big.Int, len(operationStats))
+	// Separate RSSHub nodes and normal nodes
+	var rsshubStats, normalStats []*schema.Stat
+
+	var rsshubIndices, normalIndices []int
+
+	for i, stat := range operationStats {
+		if stat != nil && stat.IsRsshubNode {
+			rsshubStats = append(rsshubStats, stat)
+			rsshubIndices = append(rsshubIndices, i)
+		} else if stat != nil {
+			normalStats = append(normalStats, stat)
+			normalIndices = append(normalIndices, i)
+		}
+	}
+
+	// Calculate rewards for RSSHub nodes (50% of total rewards)
+	if len(rsshubStats) > 0 {
+		rsshubRewards := s.calculateRsshubRewards(rsshubStats, rewards.OperationRewards*0.5)
+		for i, reward := range rsshubRewards {
+			operationRewards[rsshubIndices[i]] = reward
+		}
+	}
+
+	// Calculate rewards for normal nodes (50% of total rewards)
+	if len(normalStats) > 0 {
+		normalRewards := s.calculateNormalNodeRewards(ctx, normalStats, rewards.OperationRewards*0.5, rewards)
+		for i, reward := range normalRewards {
+			operationRewards[normalIndices[i]] = reward
+		}
+	}
+
+	// Check if total rewards exceed the ceiling
+	if err := checkRewardsCeiling(operationRewards, rewards.OperationRewards); err != nil {
+		return nil, err
+	}
+
+	return operationRewards, nil
+}
+
+// calculateRsshubRewards calculates rewards for RSSHub nodes based on EpochRequest ratio
+func (s *Server) calculateRsshubRewards(rsshubStats []*schema.Stat, totalRewards float64) []*big.Int {
+	rewards := make([]*big.Int, len(rsshubStats))
+
+	// Calculate total requests
+	totalRequests := int64(0)
+	for _, stat := range rsshubStats {
+		totalRequests += stat.EpochRequest
+	}
+
+	// If no requests, all rewards are 0
+	if totalRequests == 0 {
+		for i := range rewards {
+			rewards[i] = big.NewInt(0)
+		}
+
+		return rewards
+	}
+
+	// Distribute rewards based on request ratio
+	for i, stat := range rsshubStats {
+		ratio := new(big.Float).Quo(big.NewFloat(float64(stat.EpochRequest)), big.NewFloat(float64(totalRequests)))
+		reward := new(big.Float).Mul(ratio, big.NewFloat(totalRewards))
+		rewardFinal, _ := reward.Int(nil)
+		scaleGwei(rewardFinal)
+		rewards[i] = rewardFinal
+	}
+
+	return rewards
+}
+
+// calculateNormalNodeRewards calculates rewards for normal nodes using the original complex scoring logic
+func (s *Server) calculateNormalNodeRewards(ctx context.Context, operationStats []*schema.Stat, totalRewards float64, rewards *config.Rewards) []*big.Int {
+	operationRewards := make([]*big.Int, len(operationStats))
 	maxStatValue := StatValue{
 		validCount:    big.NewFloat(0),
 		invalidCount:  big.NewFloat(0),
@@ -67,17 +140,13 @@ func (s *Server) calculateFinalRewards(ctx context.Context, operationStats []*sc
 			continue
 		}
 
-		reward := new(big.Float).Mul(new(big.Float).Quo(score, totalScore), big.NewFloat(rewards.OperationRewards))
+		reward := new(big.Float).Mul(new(big.Float).Quo(score, totalScore), big.NewFloat(totalRewards))
 		rewardFinal, _ := reward.Int(nil)
 		scaleGwei(rewardFinal)
 		operationRewards[i] = rewardFinal
 	}
 
-	if err := checkRewardsCeiling(operationRewards, rewards.OperationRewards); err != nil {
-		return nil, err
-	}
-
-	return operationRewards, nil
+	return operationRewards
 }
 
 // processStat processes the stat for the operation rewards calculation.
