@@ -27,6 +27,8 @@ func retrieveNodeStatsFromDB(ctx context.Context, key string, databaseClient dat
 		query.IsFullNode = lo.ToPtr(true)
 	case model.AINodeCacheKey:
 		query.IsAINode = lo.ToPtr(true)
+	case model.RsshubNodeCacheKey:
+		query.IsRsshubNode = lo.ToPtr(true)
 	default:
 		return nil, fmt.Errorf("unknown cache key: %s", key)
 	}

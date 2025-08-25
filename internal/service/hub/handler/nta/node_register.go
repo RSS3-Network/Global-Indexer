@@ -344,7 +344,7 @@ func (n *NTA) checkAvailable(ctx context.Context, nodeVersion, endpoint string, 
 		endpoint = strings.TrimSuffix(endpoint, "/") + "/" + prefix
 	}
 
-	response, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
+	response, _, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, endpoint, "", nil)
 	if err != nil {
 		return fmt.Errorf("failed to fetch node endpoint %s: %w", endpoint, err)
 	}

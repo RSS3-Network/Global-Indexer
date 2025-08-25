@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -94,9 +95,9 @@ type MockHTTPClient struct {
 	mock.Mock
 }
 
-func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ string, _ io.Reader) (io.ReadCloser, error) {
+func (m *MockHTTPClient) FetchWithMethod(ctx context.Context, _, endpoint string, _ string, _ io.Reader) (io.ReadCloser, http.Header, error) {
 	args := m.Called(ctx, endpoint)
-	return args.Get(0).(io.ReadCloser), args.Error(1)
+	return args.Get(0).(io.ReadCloser), args.Get(1).(http.Header), args.Error(2)
 }
 
 func Test_GetNodeWorkerStatus(t *testing.T) {

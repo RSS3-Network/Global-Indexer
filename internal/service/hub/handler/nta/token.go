@@ -150,7 +150,7 @@ func (n *NTA) getTokenPrices(ctx context.Context) (map[string]string, error) {
 
 		url := fmt.Sprintf("%s/simple/networks/%s/token_price/%s", endpoint, network, strings.Join(addressList, ","))
 
-		body, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, url, n.configFile.TokenPriceAPI.AuthToken, nil)
+		body, _, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, url, n.configFile.TokenPriceAPI.AuthToken, nil)
 		if err != nil {
 			return nil, fmt.Errorf("get token price: %w", err)
 		}

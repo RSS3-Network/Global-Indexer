@@ -109,6 +109,10 @@ const (
 	// Nodes in the production phase of the network are required to contribute to the information network. All nodes, except for public good nodes that do not require staking, will receive staking and operation rewards.
 	// Upon entering the production phase, nodes from both the alpha and beta phases are required to upgrade to production node version.
 	NodeTypeProduction // production
+
+	// NodeTypeRSSHub
+	// Nodes that are RSSHub nodes.
+	NodeTypeRSSHub // rsshub
 )
 
 type BatchUpdateNode struct {
