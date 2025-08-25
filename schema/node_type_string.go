@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _NodeTypeName = "alphabetaproduction"
+const _NodeTypeName = "alphabetaproductionrsshub"
 
-var _NodeTypeIndex = [...]uint8{0, 5, 9, 19}
+var _NodeTypeIndex = [...]uint8{0, 5, 9, 19, 25}
 
-const _NodeTypeLowerName = "alphabetaproduction"
+const _NodeTypeLowerName = "alphabetaproductionrsshub"
 
 func (i NodeType) String() string {
 	if i < 0 || i >= NodeType(len(_NodeTypeIndex)-1) {
@@ -33,23 +33,27 @@ func _NodeTypeNoOp() {
 	_ = x[NodeTypeAlpha-(0)]
 	_ = x[NodeTypeBeta-(1)]
 	_ = x[NodeTypeProduction-(2)]
+	_ = x[NodeTypeRSSHub-(3)]
 }
 
-var _NodeTypeValues = []NodeType{NodeTypeAlpha, NodeTypeBeta, NodeTypeProduction}
+var _NodeTypeValues = []NodeType{NodeTypeAlpha, NodeTypeBeta, NodeTypeProduction, NodeTypeRSSHub}
 
 var _NodeTypeNameToValueMap = map[string]NodeType{
-	_NodeTypeName[0:5]:       NodeTypeAlpha,
-	_NodeTypeLowerName[0:5]:  NodeTypeAlpha,
-	_NodeTypeName[5:9]:       NodeTypeBeta,
-	_NodeTypeLowerName[5:9]:  NodeTypeBeta,
-	_NodeTypeName[9:19]:      NodeTypeProduction,
-	_NodeTypeLowerName[9:19]: NodeTypeProduction,
+	_NodeTypeName[0:5]:        NodeTypeAlpha,
+	_NodeTypeLowerName[0:5]:   NodeTypeAlpha,
+	_NodeTypeName[5:9]:        NodeTypeBeta,
+	_NodeTypeLowerName[5:9]:   NodeTypeBeta,
+	_NodeTypeName[9:19]:       NodeTypeProduction,
+	_NodeTypeLowerName[9:19]:  NodeTypeProduction,
+	_NodeTypeName[19:25]:      NodeTypeRSSHub,
+	_NodeTypeLowerName[19:25]: NodeTypeRSSHub,
 }
 
 var _NodeTypeNames = []string{
 	_NodeTypeName[0:5],
 	_NodeTypeName[5:9],
 	_NodeTypeName[9:19],
+	_NodeTypeName[19:25],
 }
 
 // NodeTypeString retrieves an enum value from the enum constants string name.
