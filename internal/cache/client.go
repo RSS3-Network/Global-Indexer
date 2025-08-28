@@ -12,6 +12,7 @@ type Client interface {
 	Get(ctx context.Context, key string, dest interface{}) error
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	IncrBy(ctx context.Context, key string, value int64) error
+	Incr(ctx context.Context, key string) (int64, error)
 	PSubscribe(ctx context.Context, pattern string) *redis.PubSub
 	ZAdd(ctx context.Context, key string, members ...redis.Z) error
 	ZRem(ctx context.Context, key string, members ...interface{}) error
@@ -46,6 +47,10 @@ func (c *client) Set(ctx context.Context, key string, value interface{}, expirat
 
 func (c *client) IncrBy(ctx context.Context, key string, value int64) error {
 	return c.redisClient.IncrBy(ctx, key, value).Err()
+}
+
+func (c *client) Incr(ctx context.Context, key string) (int64, error) {
+	return c.redisClient.Incr(ctx, key).Result()
 }
 
 func (c *client) PSubscribe(ctx context.Context, pattern string) *redis.PubSub {

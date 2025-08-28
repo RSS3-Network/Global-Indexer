@@ -122,6 +122,7 @@ type BatchUpdateNode struct {
 
 type FindNodesQuery struct {
 	NodeAddresses []common.Address
+	Endpoint      *string
 	Status        *NodeStatus
 	Type          *NodeType
 	Cursor        *string

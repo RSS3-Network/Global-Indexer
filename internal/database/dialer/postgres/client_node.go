@@ -58,6 +58,10 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		databaseStatement = databaseStatement.Where("address IN ?", query.NodeAddresses)
 	}
 
+	if query.Endpoint != nil {
+		databaseStatement = databaseStatement.Where("endpoint = ?", query.Endpoint)
+	}
+
 	if query.Limit != nil {
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}

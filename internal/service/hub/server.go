@@ -82,6 +82,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 		// Node registration and heartbeat
 		nodes.POST("/register", instance.hub.nta.RegisterNode)
 		nodes.POST("/heartbeat", instance.hub.nta.NodeHeartbeat)
+		nodes.POST("/rsshub/heartbeat", instance.hub.nta.RSSHubNodeHeartbeat)
 	}
 
 	// nta is short for Network Transparency API

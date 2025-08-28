@@ -7,6 +7,8 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -20,6 +22,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rss3-network/global-indexer/common/ethereum"
 	stakingv2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
+	"github.com/rss3-network/global-indexer/internal/database"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/errorx"
 	"github.com/rss3-network/global-indexer/internal/service/hub/model/nta"
 	"github.com/rss3-network/global-indexer/schema"
@@ -152,6 +155,53 @@ func (n *NTA) NodeHeartbeat(c echo.Context) error {
 	})
 }
 
+func (n *NTA) RSSHubNodeHeartbeat(c echo.Context) error {
+	var request nta.RSSHubNodeHeartbeatRequest
+
+	ctx := c.Request().Context()
+
+	// Validate and parse request
+	if err := c.Bind(request); err != nil {
+		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
+	}
+
+	if err := c.Validate(request); err != nil {
+		return errorx.ValidationFailedError(c, fmt.Errorf("validation failed: %w", err))
+	}
+
+	// Parse request IP
+	ip, err := n.parseRequestIP(c)
+	if err != nil {
+		zap.L().Error("parse request ip", zap.Error(err))
+		return errorx.InternalError(c)
+	}
+
+	// Set default name
+	if request.Name == "" {
+		request.Name = ip.String()
+	}
+
+	// Check if this is an incomplete node
+	if request.Signature == "" || request.Endpoint == "" || request.Address == (common.Address{}) {
+		if err := n.handleIncompleteNode(ctx, request, ip.String()); err != nil {
+			return err
+		}
+
+		return c.JSON(http.StatusOK, nta.Response{
+			Data: fmt.Sprintf("successfully sent RSSHub node heartbeat: %v", request.Name),
+		})
+	}
+
+	// Handle complete node
+	if err := n.handleCompleteNode(ctx, request, ip.String()); err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, nta.Response{
+		Data: fmt.Sprintf("successfully sent RSSHub node heartbeat: %v", request.Name),
+	})
+}
+
 // validateSignature validates the signature.
 func (n *NTA) validateSignature(ctx context.Context, address common.Address, signature string) error {
 	message := fmt.Sprintf(registrationMessage, strings.ToLower(address.String()))
@@ -177,6 +227,40 @@ func (n *NTA) validateEndpoint(ctx context.Context, address common.Address, node
 	}
 
 	return nil
+}
+
+// validateRSSHubEndpoint validates the endpoint whether it's valid and available.
+func (n *NTA) validateRSSHubEndpoint(ctx context.Context, endpoint, accessToken string) error {
+	baseURL, err := url.Parse(endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid RSS endpoint: %w", err)
+	}
+
+	baseURL.Path = path.Join(baseURL.Path, "healthz")
+	if accessToken != "" {
+		query := baseURL.Query()
+		query.Set("key", accessToken)
+		baseURL.RawQuery = query.Encode()
+	}
+
+	body, _, err := n.httpClient.FetchWithMethod(ctx, http.MethodGet, baseURL.String(), "", nil)
+
+	if err != nil {
+		return fmt.Errorf("failed to fetch RSS healthz: %w", err)
+	}
+
+	defer body.Close()
+
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if strings.Contains(strings.ToLower(strings.TrimSpace(string(data))), "ok") {
+		return nil
+	}
+
+	return fmt.Errorf("invalid RSS healthz response, expected 'ok' but got: %s", string(data))
 }
 
 // register registers the Node to the database.
@@ -253,6 +337,11 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo st
 
 	// Convert the staking to float64.
 	staking, _ := nodeInfo.StakingPoolTokens.Div(nodeInfo.StakingPoolTokens, big.NewInt(1e18)).Float64()
+	isRsshubNode := false
+
+	if node.Type == schema.NodeTypeRSSHub.String() {
+		isRsshubNode = true
+	}
 
 	if stat == nil {
 		stat = &schema.Stat{
@@ -260,6 +349,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo st
 			Endpoint:     node.Endpoint,
 			AccessToken:  node.AccessToken,
 			IsPublicGood: node.IsPublicGood,
+			IsRsshubNode: isRsshubNode,
 			Staking:      staking,
 			ResetAt:      time.Now(),
 		}
@@ -267,6 +357,7 @@ func (n *NTA) updateNodeStat(ctx context.Context, node *schema.Node, nodeInfo st
 		stat.Endpoint = node.Endpoint
 		stat.AccessToken = node.AccessToken
 		stat.IsPublicGood = node.IsPublicGood
+		stat.IsRsshubNode = isRsshubNode
 		stat.Staking = staking
 		stat.ResetAt = time.Now()
 	}
@@ -285,11 +376,13 @@ func (n *NTA) saveHeartbeat(ctx context.Context, node *schema.Node, requestIP st
 		}
 	}
 
-	// Get Node's avatar from the VSL.
-	if node.Avatar == nil || node.Avatar.Name == "" {
-		node.Avatar, err = n.buildNodeAvatar(ctx, node.Address)
-		if err != nil {
-			return fmt.Errorf("failed to build Node avatar: %w", err)
+	if node.Address != (common.Address{}) {
+		// Get Node's avatar from the VSL.
+		if node.Avatar == nil || node.Avatar.Name == "" {
+			node.Avatar, err = n.buildNodeAvatar(ctx, node.Address)
+			if err != nil {
+				return fmt.Errorf("failed to build Node avatar: %w", err)
+			}
 		}
 	}
 
@@ -365,4 +458,269 @@ func (n *NTA) checkAvailable(ctx context.Context, nodeVersion, endpoint string, 
 	}
 
 	return nil
+}
+
+// maskIPAddress masks the IP address to show only part of it (e.g., "111.222.xxx.xxx")
+// func (n *NTA) maskIPAddress(ip net.IP) string {
+// 	if ip == nil {
+// 		return "unknown"
+// 	}
+
+// 	ipStr := ip.String()
+// 	parts := strings.Split(ipStr, ".")
+
+// 	if len(parts) == 4 {
+// 		// Show first two octets, mask the last two
+// 		return fmt.Sprintf("%s.%s.xxx.xxx", parts[0], parts[1])
+// 	}
+
+// 	// For non-IPv4 addresses, return as is
+// 	return ipStr
+// }
+
+// handleIncompleteNode handles incomplete RSSHub nodes
+func (n *NTA) handleIncompleteNode(ctx context.Context, request nta.RSSHubNodeHeartbeatRequest, ip string) error {
+	endpoint := request.Endpoint
+	if endpoint == "" {
+		endpoint = ip
+	}
+
+	// Find existing nodes
+	nodes, err := n.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
+		Endpoint: lo.ToPtr(endpoint),
+	})
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			if len(nodes) == 0 {
+				// Create new node
+				return n.createNewRSSHubNode(ctx, request, endpoint)
+			}
+		}
+
+		return fmt.Errorf("failed to find nodes by endpoint: %w", err)
+	}
+
+	// Update existing node
+	return n.updateExistingNode(ctx, nodes[0])
+}
+
+// createNewRSSHubNode creates a new RSSHub node
+func (n *NTA) createNewRSSHubNode(ctx context.Context, request nta.RSSHubNodeHeartbeatRequest, endpoint string) error {
+	// Get next node ID
+	nodeID, err := n.getNextNodeID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get next node ID: %w", err)
+	}
+
+	// Generate node address
+	address := n.generateAddressFromID(big.NewInt(nodeID))
+
+	// Create node object
+	node := &schema.Node{
+		Address:                address,
+		ID:                     big.NewInt(nodeID),
+		Name:                   request.Name,
+		Endpoint:               endpoint,
+		IsPublicGood:           true,
+		LastHeartbeatTimestamp: time.Now().Unix(),
+		Type:                   schema.NodeTypeRSSHub.String(),
+		AccessToken:            request.AccessToken,
+		Status:                 schema.NodeStatusOnline,
+	}
+
+	// Get location information
+	if err := n.setNodeLocation(ctx, node, endpoint); err != nil {
+		zap.L().Warn("failed to get node location", zap.Error(err))
+	}
+
+	// Save node to database
+	if err = n.databaseClient.SaveNode(ctx, node); err != nil {
+		return fmt.Errorf("failed to save new RSSHub node: %w", err)
+	}
+
+	zap.L().Info("created new RSSHub node",
+		zap.String("address", address.String()),
+		zap.Int64("id", nodeID),
+		zap.String("endpoint", endpoint))
+
+	return nil
+}
+
+// updateExistingNode updates existing node
+func (n *NTA) updateExistingNode(ctx context.Context, node *schema.Node) error {
+	node.LastHeartbeatTimestamp = time.Now().Unix()
+	node.Status = schema.NodeStatusOnline
+
+	if err := n.databaseClient.SaveNode(ctx, node); err != nil {
+		return fmt.Errorf("failed to update existing node: %w", err)
+	}
+
+	zap.L().Info("updated existing RSSHub node",
+		zap.String("address", node.Address.String()),
+		zap.String("endpoint", node.Endpoint))
+
+	return nil
+}
+
+// handleCompleteNode handles complete RSSHub nodes
+func (n *NTA) handleCompleteNode(ctx context.Context, request nta.RSSHubNodeHeartbeatRequest, ip string) error {
+	address := request.Address
+	signature := request.Signature
+	endpoint := request.Endpoint
+
+	// Validate signature
+	if err := n.validateSignature(ctx, address, signature); err != nil {
+		return errorx.ValidationFailedError(nil, fmt.Errorf("check signature: %w", err))
+	}
+
+	// Parse and validate endpoint
+	parsedEndpoint, err := n.parseEndpoint(ctx, endpoint)
+	if err != nil {
+		return fmt.Errorf("failed to parse endpoint: %w", err)
+	}
+
+	if err := n.validateRSSHubEndpoint(ctx, parsedEndpoint, request.AccessToken); err != nil {
+		return errorx.ValidationFailedError(nil, fmt.Errorf("validate endpoint: %w", err))
+	}
+
+	// Find or create node
+	node, err := n.findOrCreateCompleteNode(ctx, address, parsedEndpoint, request)
+	if err != nil {
+		return err
+	}
+
+	// Save heartbeat
+	if err := n.saveHeartbeat(ctx, node, ip); err != nil {
+		zap.L().Error("save heartbeat", zap.Error(err))
+		return errorx.InternalError(nil)
+	}
+
+	return nil
+}
+
+// findOrCreateCompleteNode finds or creates a complete node
+func (n *NTA) findOrCreateCompleteNode(ctx context.Context, address common.Address, endpoint string, request nta.RSSHubNodeHeartbeatRequest) (*schema.Node, error) {
+	node, err := n.databaseClient.FindNode(ctx, address)
+	if err != nil {
+		if errors.Is(err, database.ErrorRowNotFound) {
+			// Node not found, create new node
+			return n.createCompleteNodeFromVSL(ctx, address, endpoint, request)
+		}
+
+		return nil, err
+	}
+
+	node.Endpoint = endpoint
+	node.AccessToken = request.AccessToken
+	node.LastHeartbeatTimestamp = time.Now().Unix()
+	node.Status = schema.NodeStatusOnline
+
+	return node, nil
+}
+
+// createCompleteNodeFromVSL creates a complete node from VSL
+func (n *NTA) createCompleteNodeFromVSL(ctx context.Context, address common.Address, endpoint string, request nta.RSSHubNodeHeartbeatRequest) (*schema.Node, error) {
+	// Validate node info
+	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
+	if err != nil {
+		zap.L().Error("get the Node from VSL", zap.Error(err))
+		return nil, errorx.InternalError(nil)
+	}
+
+	if nodeInfo.Account == ethereum.AddressGenesis {
+		return nil, errorx.ValidationFailedError(nil, fmt.Errorf("node: %s has not been registered on the VSL", address.String()))
+	}
+
+	if !nodeInfo.PublicGood && strings.Compare(nodeInfo.OperationPoolTokens.String(), MinDeposit.String()) < 0 {
+		return nil, errorx.ValidationFailedError(nil, fmt.Errorf("insufficient operation pool tokens, expected min deposit %s, actual %s", MinDeposit.String(), nodeInfo.OperationPoolTokens.String()))
+	}
+
+	// Create node object
+	node := &schema.Node{
+		Address: address,
+	}
+
+	// Get node avatar
+	if node.Avatar, err = n.buildNodeAvatar(ctx, address); err != nil {
+		return nil, fmt.Errorf("failed to build node avatar: %w", err)
+	}
+
+	// Get hide tax rate setting
+	if err = n.cacheClient.Get(ctx, n.buildNodeHideTaxRateKey(address), &node.HideTaxRate); err != nil && !errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("failed to get hide tax rate: %w", err)
+	}
+
+	// Set node properties
+	node.Endpoint = endpoint
+	node.ID = nodeInfo.NodeId
+	node.IsPublicGood = nodeInfo.PublicGood
+	node.LastHeartbeatTimestamp = time.Now().Unix()
+	node.Type = schema.NodeTypeRSSHub.String()
+	node.AccessToken = request.AccessToken
+	node.Status = schema.NodeStatusOnline
+
+	// Get location
+	if err := n.setNodeLocation(ctx, node, endpoint); err != nil {
+		zap.L().Warn("failed to get node location", zap.Error(err))
+	}
+
+	// Save node
+	if err = n.databaseClient.SaveNode(ctx, node); err != nil {
+		return nil, fmt.Errorf("failed to save node: %w", err)
+	}
+
+	// Update node stats
+	if err = n.updateNodeStats(ctx, node, nodeInfo); err != nil {
+		return nil, err
+	}
+
+	zap.L().Info("created complete RSSHub node from VSL",
+		zap.String("address", address.String()),
+		zap.String("endpoint", endpoint))
+
+	return node, nil
+}
+
+// setNodeLocation sets node location
+func (n *NTA) setNodeLocation(ctx context.Context, node *schema.Node, endpoint string) error {
+	location, err := n.geoLite2.LookupNodeLocation(ctx, endpoint)
+	if err != nil {
+		return fmt.Errorf("failed to lookup node location: %w", err)
+	}
+
+	node.Location = location
+
+	return nil
+}
+
+// getNextNodeID gets the next available node ID
+func (n *NTA) getNextNodeID(ctx context.Context) (int64, error) {
+	key := "rsshub_node_id_counter"
+
+	// Get and increment counter
+	result, err := n.cacheClient.Incr(ctx, key)
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment node ID counter: %w", err)
+	}
+
+	// Start from 10000
+	return 10000 + result - 1, nil
+}
+
+// generateAddressFromID generates a unique address based on node ID
+func (n *NTA) generateAddressFromID(nodeID *big.Int) common.Address {
+	// Create deterministic address based on ID
+	data := fmt.Sprintf("rsshub_internal_%s", nodeID.String())
+	hash := crypto.Keccak256Hash([]byte(data))
+
+	// Convert to address (take first 20 bytes)
+	var address common.Address
+
+	copy(address[:], hash[:20])
+
+	// Set special prefix to distinguish internal RSSHub nodes
+	// Use 0xFF as first byte to indicate this is an internal address
+	address[0] = 0xFF
+
+	return address
 }
