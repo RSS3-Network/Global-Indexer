@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -178,7 +179,7 @@ func (n *NTA) RSSHubNodeHeartbeat(c echo.Context) error {
 
 	// Set default name
 	if request.Name == "" {
-		request.Name = ip.String()
+		request.Name = n.maskIPAddress(ip)
 	}
 
 	// Check if this is an incomplete node
@@ -287,6 +288,7 @@ func (n *NTA) register(ctx context.Context, request *nta.RegisterNodeRequest, re
 	node.Stream = request.Stream
 	node.Config = request.Config
 	node.ID = nodeInfo.NodeId
+	node.Name = nodeInfo.Name
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = request.Type
@@ -461,22 +463,22 @@ func (n *NTA) checkAvailable(ctx context.Context, nodeVersion, endpoint string, 
 }
 
 // maskIPAddress masks the IP address to show only part of it (e.g., "111.222.xxx.xxx")
-// func (n *NTA) maskIPAddress(ip net.IP) string {
-// 	if ip == nil {
-// 		return "unknown"
-// 	}
+func (n *NTA) maskIPAddress(ip net.IP) string {
+	if ip == nil {
+		return "unknown"
+	}
 
-// 	ipStr := ip.String()
-// 	parts := strings.Split(ipStr, ".")
+	ipStr := ip.String()
+	parts := strings.Split(ipStr, ".")
 
-// 	if len(parts) == 4 {
-// 		// Show first two octets, mask the last two
-// 		return fmt.Sprintf("%s.%s.xxx.xxx", parts[0], parts[1])
-// 	}
+	if len(parts) == 4 {
+		// Show first two octets, mask the last two
+		return fmt.Sprintf("%s.%s.xxx.xxx", parts[0], parts[1])
+	}
 
-// 	// For non-IPv4 addresses, return as is
-// 	return ipStr
-// }
+	// For non-IPv4 addresses, return as is
+	return ipStr
+}
 
 // handleIncompleteNode handles incomplete RSSHub nodes
 func (n *NTA) handleIncompleteNode(ctx context.Context, request nta.RSSHubNodeHeartbeatRequest, ip string) error {
@@ -489,19 +491,19 @@ func (n *NTA) handleIncompleteNode(ctx context.Context, request nta.RSSHubNodeHe
 	nodes, err := n.databaseClient.FindNodes(ctx, schema.FindNodesQuery{
 		Endpoint: lo.ToPtr(endpoint),
 	})
-	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			if len(nodes) == 0 {
-				// Create new node
-				return n.createNewRSSHubNode(ctx, request, endpoint)
-			}
-		}
-
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return fmt.Errorf("failed to find nodes by endpoint: %w", err)
 	}
 
+	if len(nodes) == 0 {
+		// Create new node
+		return n.createNewRSSHubNode(ctx, request, endpoint)
+	}
+
+	node := nodes[0]
+	node.Name = request.Name
 	// Update existing node
-	return n.updateExistingNode(ctx, nodes[0])
+	return n.updateExistingNode(ctx, node)
 }
 
 // createNewRSSHubNode creates a new RSSHub node
@@ -601,13 +603,13 @@ func (n *NTA) handleCompleteNode(ctx context.Context, request nta.RSSHubNodeHear
 // findOrCreateCompleteNode finds or creates a complete node
 func (n *NTA) findOrCreateCompleteNode(ctx context.Context, address common.Address, endpoint string, request nta.RSSHubNodeHeartbeatRequest) (*schema.Node, error) {
 	node, err := n.databaseClient.FindNode(ctx, address)
-	if err != nil {
-		if errors.Is(err, database.ErrorRowNotFound) {
-			// Node not found, create new node
-			return n.createCompleteNodeFromVSL(ctx, address, endpoint, request)
-		}
-
+	if err != nil && !errors.Is(err, database.ErrorRowNotFound) {
 		return nil, err
+	}
+
+	if node == nil {
+		// Node not found, create new node
+		return n.createCompleteNodeFromVSL(ctx, address, endpoint, request)
 	}
 
 	node.Endpoint = endpoint
@@ -653,6 +655,7 @@ func (n *NTA) createCompleteNodeFromVSL(ctx context.Context, address common.Addr
 	// Set node properties
 	node.Endpoint = endpoint
 	node.ID = nodeInfo.NodeId
+	node.Name = nodeInfo.Name
 	node.IsPublicGood = nodeInfo.PublicGood
 	node.LastHeartbeatTimestamp = time.Now().Unix()
 	node.Type = schema.NodeTypeRSSHub.String()

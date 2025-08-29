@@ -135,6 +135,13 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
+		if node.Type == schema.NodeTypeRSSHub.String() && node.ID.Cmp(big.NewInt(10000)) >= 0 {
+			node.ReliabilityScore = decimal.NewFromFloat(0)
+			node.Status = schema.NodeStatusRegistered
+
+			return node, nil
+		}
+
 		return nil, fmt.Errorf("get Node from chain: %w", err)
 	}
 
@@ -191,7 +198,11 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return nil, fmt.Errorf("get Nodes: %w", err)
 	}
 
-	addresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
+	onChainNodes := lo.Filter(nodes, func(node *schema.Node, _ int) bool {
+		return node.ID != nil && node.ID.Cmp(big.NewInt(10000)) < 0
+	})
+
+	addresses := lo.Map(onChainNodes, func(node *schema.Node, _ int) common.Address {
 		return node.Address
 	})
 
