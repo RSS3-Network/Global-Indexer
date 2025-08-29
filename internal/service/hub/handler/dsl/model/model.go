@@ -24,6 +24,8 @@ const (
 )
 
 var (
+	// RsshubNodeCacheKey AINodeCacheKey is the cache key for the native rsshub nodes that support the RSS data
+	RsshubNodeCacheKey = "nodes:rsshub"
 	// AINodeCacheKey is the cache key for the nodes that support the AI network.
 	AINodeCacheKey = "nodes:ai"
 	// RssNodeCacheKey is the cache key for the nodes that support the RSS network.
@@ -90,9 +92,11 @@ type NodeEndpointCache struct {
 // DataResponse represents the response returned by a Node.
 // It is also used to store the verification result.
 type DataResponse struct {
-	Address  common.Address
-	Endpoint string
-	Data     []byte
+	Address   common.Address
+	Endpoint  string
+	IsRssNode bool
+	Etag      string
+	Data      []byte
 	// A valid response must be non-null and non-error
 	Valid bool
 	Err   error
@@ -107,6 +111,7 @@ type RequestMeta struct {
 	Endpoint    string
 	AccessToken string
 	Body        []byte
+	IsRssNode   bool
 }
 
 type ErrResponse struct {

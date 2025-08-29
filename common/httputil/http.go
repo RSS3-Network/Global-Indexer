@@ -25,7 +25,7 @@ const (
 )
 
 type Client interface {
-	FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, error)
+	FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, http.Header, error)
 }
 
 var _ Client = (*httpClient)(nil)
@@ -35,7 +35,7 @@ type httpClient struct {
 	attempts   uint
 }
 
-func (h *httpClient) FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (readCloser io.ReadCloser, err error) {
+func (h *httpClient) FetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (readCloser io.ReadCloser, headers http.Header, err error) {
 	var bodyBytes []byte
 	// Read the body into a byte slice to be able to retry the request
 	if body != nil {
@@ -43,7 +43,7 @@ func (h *httpClient) FetchWithMethod(ctx context.Context, method, path, authoriz
 	}
 
 	retryableFunc := func() error {
-		readCloser, err = h.fetchWithMethod(ctx, method, path, authorization, bytes.NewReader(bodyBytes))
+		readCloser, headers, err = h.fetchWithMethod(ctx, method, path, authorization, bytes.NewReader(bodyBytes))
 		return err
 	}
 
@@ -64,16 +64,16 @@ func (h *httpClient) FetchWithMethod(ctx context.Context, method, path, authoriz
 	}
 
 	if err = retry.Do(retryableFunc, retry.Attempts(h.attempts), retry.RetryIf(retryIfFunc)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return readCloser, nil
+	return readCloser, headers, nil
 }
 
-func (h *httpClient) fetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, error) {
+func (h *httpClient) fetchWithMethod(ctx context.Context, method, path, authorization string, body io.Reader) (io.ReadCloser, http.Header, error) {
 	request, err := http.NewRequestWithContext(ctx, method, path, body)
 	if err != nil {
-		return nil, fmt.Errorf("new request: %w", err)
+		return nil, nil, fmt.Errorf("new request: %w", err)
 	}
 
 	if method == http.MethodPost {
@@ -87,21 +87,21 @@ func (h *httpClient) fetchWithMethod(ctx context.Context, method, path, authoriz
 	response, err := h.httpClient.Do(request)
 	if err != nil {
 		if cause := context.Cause(ctx); errors.Is(cause, context.Canceled) {
-			return nil, ErrorManuallyCanceled
+			return nil, nil, ErrorManuallyCanceled
 		} else if errors.Is(cause, context.DeadlineExceeded) {
-			return nil, ErrorTimeout
+			return nil, nil, ErrorTimeout
 		}
 
-		return nil, fmt.Errorf("send request: %w", err)
+		return nil, nil, fmt.Errorf("send request: %w", err)
 	}
 
 	if response.StatusCode != http.StatusOK {
 		defer lo.Try(response.Body.Close)
 
-		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+		return nil, nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
 	}
 
-	return response.Body, nil
+	return response.Body, response.Header, nil
 }
 
 func NewHTTPClient(options ...ClientOption) (Client, error) {

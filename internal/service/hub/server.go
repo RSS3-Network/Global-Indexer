@@ -82,6 +82,7 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 		// Node registration and heartbeat
 		nodes.POST("/register", instance.hub.nta.RegisterNode)
 		nodes.POST("/heartbeat", instance.hub.nta.NodeHeartbeat)
+		nodes.POST("/rsshub/heartbeat", instance.hub.nta.RSSHubNodeHeartbeat)
 	}
 
 	// nta is short for Network Transparency API
@@ -163,7 +164,12 @@ func NewServer(databaseClient database.Client, redisClient *redis.Client, geoLit
 	{
 		rss := dsl.Group("/rss")
 		{
-			rss.GET("/*", instance.hub.dsl.GetRSSHub)
+			rss.GET("/*", instance.hub.dsl.GetRSS)
+		}
+
+		rsshub := dsl.Group("/rsshub")
+		{
+			rsshub.GET("/*", instance.hub.dsl.GetRSSHub)
 		}
 
 		agentdata := dsl.Group("/agentdata")

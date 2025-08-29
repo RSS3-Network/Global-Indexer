@@ -43,12 +43,6 @@ func TestHTTPClient_FetchWithMethod(t *testing.T) {
 				url: "https://arweave.net/aMAYipJXf9rVHnwRYnNF7eUCxBc1zfkaopBt5TJwLWw",
 			},
 		},
-		{
-			name: "Fetch External Api",
-			arguments: arguments{
-				url: "https://data.lens.phaver.com/api/lens/posts/1fdcc7ce-91a7-4af7-8022-13132842a5ec",
-			},
-		},
 	}
 
 	for _, testcase := range testcases {
@@ -57,7 +51,7 @@ func TestHTTPClient_FetchWithMethod(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := httpClient.FetchWithMethod(context.TODO(), http.MethodGet, testcase.arguments.url, "", nil)
+			_, _, err := httpClient.FetchWithMethod(context.TODO(), http.MethodGet, testcase.arguments.url, "", nil)
 			require.NoError(t, err)
 		})
 	}

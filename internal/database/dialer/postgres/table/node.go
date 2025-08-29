@@ -15,6 +15,7 @@ import (
 type Node struct {
 	Address                common.Address    `gorm:"column:address;primaryKey"`
 	NodeID                 uint64            `gorm:"column:id"`
+	Name                   string            `gorm:"column:name"`
 	Endpoint               string            `gorm:"column:endpoint"`
 	HideTaxRate            bool              `gorm:"column:hide_tax_rate"`
 	IsPublicGood           bool              `gorm:"column:is_public_good"`
@@ -39,6 +40,7 @@ func (*Node) TableName() string {
 func (n *Node) Import(node *schema.Node) (err error) {
 	n.Address = node.Address
 	n.NodeID = node.ID.Uint64()
+	n.Name = node.Name
 	n.Endpoint = node.Endpoint
 	n.HideTaxRate = node.HideTaxRate
 	n.IsPublicGood = node.IsPublicGood
@@ -79,6 +81,7 @@ func (n *Node) Export() (*schema.Node, error) {
 	return &schema.Node{
 		Address:                n.Address,
 		ID:                     big.NewInt(int64(n.NodeID)),
+		Name:                   n.Name,
 		Endpoint:               n.Endpoint,
 		HideTaxRate:            n.HideTaxRate,
 		IsPublicGood:           n.IsPublicGood,
