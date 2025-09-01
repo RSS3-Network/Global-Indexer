@@ -27,7 +27,7 @@ import (
 )
 
 // maintainNodeWorker maintains the worker information for network nodes at each new epoch.
-func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) error {
+func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, stats []*schema.Stat) ([]common.Address, []uint8, error) {
 	addresses := lo.Map(stats, func(stat *schema.Stat, _ int) common.Address {
 		return stat.Address
 	})
@@ -60,7 +60,7 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	})
 
 	if err = eg.Wait(); err != nil {
-		return fmt.Errorf("get node info: %w", err)
+		return nil, nil, fmt.Errorf("get node info: %w", err)
 	}
 
 	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node *schema.Node) (common.Address, *schema.Node) {
@@ -83,11 +83,11 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 
 	// Set cache data to persist across program restarts or refresh at the start of each new epoch.
 	if err := e.setMapCache(ctx); err != nil {
-		return fmt.Errorf("set map cache: %w", err)
+		return nil, nil, fmt.Errorf("set map cache: %w", err)
 	}
 	// Update node statistics and worker data.
 	if err := e.updateNodeStatsAndWorkers(ctx, stats, nodeToDataMap, epoch); err != nil {
-		return fmt.Errorf("update node stats and workers: %w", err)
+		return nil, nil, fmt.Errorf("update node stats and workers: %w", err)
 	}
 
 	for i := range stats {
@@ -98,14 +98,10 @@ func (e *SimpleEnforcer) maintainNodeWorker(ctx context.Context, epoch int64, st
 	// Fixme: deprecated if there is no alpha type node
 	nodeAddresses, nodeStatusList, err := e.filterNodeStatus(ctx, stats, originalStatusList)
 	if err != nil {
-		return fmt.Errorf("filter node status: %w", err)
+		return nil, nil, fmt.Errorf("filter node status: %w", err)
 	}
 
-	if len(nodeAddresses) == 0 {
-		return nil
-	}
-
-	return e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddresses, nodeStatusList, nil, nil, nil)
+	return nodeAddresses, nodeStatusList, nil
 }
 
 func (e *SimpleEnforcer) filterNodeStatus(ctx context.Context, stats []*schema.Stat, originalStatusList []schema.NodeStatus) ([]common.Address, []uint8, error) {
@@ -711,15 +707,24 @@ func (e *SimpleEnforcer) initWorkerMap(ctx context.Context) error {
 				}
 
 				stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
-					Limit: lo.ToPtr(defaultLimit),
+					IsRsshubNode: lo.ToPtr(false),
+					Limit:        lo.ToPtr(defaultLimit),
 				})
 
 				if err != nil {
 					return err
 				}
 
-				if err = e.maintainNodeWorker(ctx, epoch, stats); err != nil {
+				nodeAddressList, nodeStatusList, err := e.maintainNodeWorker(ctx, epoch, stats)
+				if err != nil {
 					return err
+				}
+
+				if len(nodeAddressList) > 0 {
+					err = e.updateNodeStatusAndSubmitDemotionToVSL(ctx, nodeAddressList, nodeStatusList, nil, nil, nil)
+					if err != nil {
+						return err
+					}
 				}
 
 				return e.processNodeStats(ctx, stats, true)
@@ -788,7 +793,7 @@ type InfoResponse struct {
 // 1. update the sorted set nodes.
 // 2. update the cache for the Node subscription.
 func (e *SimpleEnforcer) updateNodeCache(ctx context.Context, epoch int64) error {
-	for _, key := range []string{model.RssNodeCacheKey, model.AINodeCacheKey, model.FullNodeCacheKey} {
+	for _, key := range []string{model.RssNodeCacheKey, model.AINodeCacheKey, model.FullNodeCacheKey, model.RsshubNodeCacheKey} {
 		if err := e.updateSortedSetForNodeType(ctx, key); err != nil {
 			return err
 		}

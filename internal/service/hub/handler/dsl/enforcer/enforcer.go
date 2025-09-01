@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rss3-network/global-indexer/common/httputil"
 	"github.com/rss3-network/global-indexer/common/txmgr"
 	"github.com/rss3-network/global-indexer/contract/l2"
+	v2 "github.com/rss3-network/global-indexer/contract/l2/staking/v2"
 	"github.com/rss3-network/global-indexer/internal/cache"
 	"github.com/rss3-network/global-indexer/internal/config"
 	"github.com/rss3-network/global-indexer/internal/database"
@@ -17,6 +20,7 @@ import (
 	"github.com/rss3-network/global-indexer/schema"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type Enforcer interface {
@@ -126,23 +130,126 @@ func (e *SimpleEnforcer) MaintainReliabilityScore(ctx context.Context) error {
 // MaintainEpochData maintains the data for the new epoch.
 // The data includes the range of data that all nodes can support and status of nodes in a new epoch.
 func (e *SimpleEnforcer) MaintainEpochData(ctx context.Context, epoch int64) error {
-	stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{
-		Limit: lo.ToPtr(defaultLimit),
+	stats, err := e.getAllNodeStats(ctx, &schema.StatQuery{})
+	if err != nil {
+		return err
+	}
+
+	// Separate DSL and RSSHub nodes
+	dslNodeStats := lo.Filter(stats, func(stat *schema.Stat, _ int) bool {
+		return !stat.IsRsshubNode
 	})
+	rsshubNodeStats := lo.Filter(stats, func(stat *schema.Stat, _ int) bool {
+		return stat.IsRsshubNode
+	})
+
+	// Process DSL nodes
+	dslNodeAddressList, dslNodeStatusList, err := e.maintainNodeWorker(ctx, epoch, dslNodeStats)
 	if err != nil {
 		return err
 	}
 
-	err = e.maintainNodeWorker(ctx, epoch, stats)
+	// Process RSSHub nodes
+	rsshubNodeAddressList, rsshubNodeStatusList, err := e.maintainRSSHubNodes(ctx, epoch, rsshubNodeStats)
 	if err != nil {
 		return err
 	}
 
-	if err = e.processNodeStats(ctx, stats, true); err != nil {
+	// Merge all node statuses that need to be updated
+	allNodeAddressList := append(rsshubNodeAddressList, dslNodeAddressList...)
+	allNodeStatusList := append(rsshubNodeStatusList, dslNodeStatusList...)
+
+	// Batch update node statuses
+	if len(allNodeAddressList) > 0 {
+		if err = e.updateNodeStatusAndSubmitDemotionToVSL(ctx, allNodeAddressList, allNodeStatusList, nil, nil, nil); err != nil {
+			return err
+		}
+	}
+
+	// Process node statistics and update cache
+	if err = e.processNodeStats(ctx, append(dslNodeStats, rsshubNodeStats...), true); err != nil {
 		return err
 	}
 
 	return e.updateNodeCache(ctx, epoch)
+}
+
+// maintainRSSHubNodes handles the status maintenance for RSSHub nodes
+func (e *SimpleEnforcer) maintainRSSHubNodes(ctx context.Context, epoch int64, rsshubNodeStats []*schema.Stat) ([]common.Address, []uint8, error) {
+	if len(rsshubNodeStats) == 0 {
+		return nil, nil, nil
+	}
+
+	// Get node address list
+	addresses := lo.Map(rsshubNodeStats, func(stat *schema.Stat, _ int) common.Address {
+		return stat.Address
+	})
+
+	// Get node information from chain
+	var nodeVSLInfo []v2.Node
+	nodeVSLInfo, err := e.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var (
+		nodeAddressList []common.Address
+		nodeStatusList  []uint8
+	)
+
+	// Process each RSSHub node concurrently with limited concurrency
+	// Limit concurrent network requests
+	const maxConcurrency = 20
+
+	var mu sync.Mutex
+
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(maxConcurrency)
+
+	for i, stat := range rsshubNodeStats {
+		i, stat := i, stat
+
+		g.Go(func() error {
+			// Set epoch data
+			stat.Epoch = epoch
+			stat.EpochRequest = 0
+
+			// Check node status concurrently
+			status, err := e.getRSSHubNodeStatus(gCtx, stat.Endpoint, stat.AccessToken)
+			if err != nil {
+				// Continue processing even if status check fails
+				zap.L().Error("get RSSHub node status", zap.Error(err), zap.String("endpoint", stat.Endpoint), zap.String("address", stat.Address.String()))
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			if err != nil || !status {
+				// Node is offline
+				stat.EpochInvalidRequest = int64(model.DemotionCountBeforeSlashing)
+				if schema.NodeStatus(nodeVSLInfo[i].Status) != schema.NodeStatusOffline {
+					nodeAddressList = append(nodeAddressList, stat.Address)
+					nodeStatusList = append(nodeStatusList, uint8(schema.NodeStatusOffline))
+				}
+			} else {
+				// Node is online
+				stat.EpochInvalidRequest = 0
+				if schema.NodeStatus(nodeVSLInfo[i].Status) != schema.NodeStatusOnline {
+					nodeAddressList = append(nodeAddressList, stat.Address)
+					nodeStatusList = append(nodeStatusList, uint8(schema.NodeStatusOnline))
+				}
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, nil, err
+	}
+
+	return nodeAddressList, nodeStatusList, nil
 }
 
 func (e *SimpleEnforcer) MaintainNodeStatus(ctx context.Context) error {
