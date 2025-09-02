@@ -162,7 +162,7 @@ func (n *NTA) RSSHubNodeHeartbeat(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// Validate and parse request
-	if err := c.Bind(request); err != nil {
+	if err := c.Bind(&request); err != nil {
 		return errorx.BadParamsError(c, fmt.Errorf("bind request: %w", err))
 	}
 
@@ -183,7 +183,7 @@ func (n *NTA) RSSHubNodeHeartbeat(c echo.Context) error {
 	}
 
 	// Check if this is an incomplete node
-	if request.Signature == "" || request.Endpoint == "" || request.Address == (common.Address{}) {
+	if request.Signature == "" || request.Endpoint == "" || request.Address == "" {
 		if err := n.handleIncompleteNode(ctx, request, ip.String()); err != nil {
 			return err
 		}
@@ -566,7 +566,7 @@ func (n *NTA) updateExistingNode(ctx context.Context, node *schema.Node) error {
 
 // handleCompleteNode handles complete RSSHub nodes
 func (n *NTA) handleCompleteNode(ctx context.Context, request nta.RSSHubNodeHeartbeatRequest, ip string) error {
-	address := request.Address
+	address := common.HexToAddress(request.Address)
 	signature := request.Signature
 	endpoint := request.Endpoint
 

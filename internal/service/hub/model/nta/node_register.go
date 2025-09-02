@@ -25,10 +25,10 @@ type NodeHeartbeatRequest struct {
 }
 
 type RSSHubNodeHeartbeatRequest struct {
-	Name        string         `json:"name"`
-	Address     common.Address `json:"address"`
-	Signature   string         `json:"signature"`
-	Endpoint    string         `json:"endpoint"`
-	AccessToken string         `json:"access_token"`
-	Timestamp   int64          `json:"timestamp" validate:"required"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	Signature   string `json:"signature"`
+	Endpoint    string `json:"endpoint"`
+	AccessToken string `json:"access_token"`
+	Timestamp   int64  `json:"timestamp" validate:"required"`
 }
