@@ -85,6 +85,11 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	)
 
 	for i := range nodes {
+		// deal with unregistered RSSHub node
+		if nodes[i].Type == schema.NodeTypeRSSHub.String() && nodes[i].ID.Cmp(big.NewInt(10000)) >= 0 {
+			continue
+		}
+
 		switch nodeVSLInfo[i].Status {
 		// Handle cases for None, Registered, Outdated, and Initializing statuses
 		case uint8(schema.NodeStatusNone),
