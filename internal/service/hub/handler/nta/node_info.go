@@ -133,15 +133,15 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		}
 	}
 
+	if node.Type == schema.NodeTypeRSSHub.String() && node.ID.Cmp(big.NewInt(10000)) >= 0 {
+		node.ReliabilityScore = decimal.NewFromFloat(0)
+		node.Status = schema.NodeStatusRegistered
+
+		return node, nil
+	}
+
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
-		if node.Type == schema.NodeTypeRSSHub.String() && node.ID.Cmp(big.NewInt(10000)) >= 0 {
-			node.ReliabilityScore = decimal.NewFromFloat(0)
-			node.Status = schema.NodeStatusRegistered
-
-			return node, nil
-		}
-
 		return nil, fmt.Errorf("get Node from chain: %w", err)
 	}
 
