@@ -263,6 +263,10 @@ func maxFloat(a, b *big.Float) *big.Float {
 
 // calculateScore calculates the score for the operation rewards calculation.
 func calculateScore(value, maxValue *big.Float, weight, factor float64) *big.Float {
+	if maxValue.Cmp(big.NewFloat(0)) == 0 {
+		return big.NewFloat(0)
+	}
+
 	radio := new(big.Float).Quo(value, maxValue)
 
 	// weight * radio * factor

@@ -202,6 +202,10 @@ func (s *Server) constructSettlementData(ctx context.Context, epoch uint64, curs
 
 // filter retrieves Node information from a staking contract.
 func (s *Server) filter(nodes []*schema.Node) ([]common.Address, []*schema.Node, error) {
+	nodes = lo.Filter(nodes, func(item *schema.Node, _ int) bool {
+		return item.ID.Cmp(big.NewInt(10000)) < 0
+	})
+
 	nodeAddresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
 		return node.Address
 	})
