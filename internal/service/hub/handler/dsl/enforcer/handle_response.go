@@ -129,6 +129,10 @@ func (e *SimpleEnforcer) updateScoreMaintainer(ctx context.Context, nodeStat *sc
 	if err := e.aiNodeScoreMaintainer.addOrUpdateScore(ctx, model.AINodeCacheKey, nodeStat); err != nil {
 		zap.L().Error("failed to update ai node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
 	}
+
+	if err := e.rsshubNodeScoreMaintainer.addOrUpdateScore(ctx, model.RsshubNodeCacheKey, nodeStat); err != nil {
+		zap.L().Error("failed to update rsshub node score", zap.Error(err), zap.String("address", nodeStat.Address.String()))
+	}
 }
 
 // verifyPartialActivities filter Activity based on the platform to perform a partial verification.
@@ -289,7 +293,7 @@ func generateInvalidResponse(err error, activity *model.ActivityResponse) json.R
 func (e *SimpleEnforcer) fetchActivityByTxID(ctx context.Context, nodeEndpoint, accessToken, txID string) (*model.ActivityResponse, error) {
 	fullURL := nodeEndpoint + "/decentralized/tx/" + txID
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	body, _, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +572,12 @@ func handleFullResponses(responses []*model.DataResponse, errResponseCount int) 
 
 // updateRequestBasedOnComparison updates the requests based on the comparison of the data.
 func updateRequestBasedOnComparison(responses []*model.DataResponse) {
-	if isResponseIdentical(responses[0].Data, responses[1].Data) {
+	// check if the responses are identical
+	isMatch := responses[0].IsRssNode && responses[0].Etag == responses[1].Etag ||
+		!responses[0].IsRssNode && isResponseIdentical(responses[0].Data, responses[1].Data)
+
+	// assign valid points
+	if isMatch {
 		responses[0].ValidPoint = 2 * validPointUnit
 		responses[1].ValidPoint = validPointUnit
 	} else {
@@ -590,7 +599,14 @@ func markErrorResponse(responses ...*model.DataResponse) {
 // compareAndAssignPoints compares the data for identity and assigns corresponding points.
 func compareAndAssignPoints(responses []*model.DataResponse, errResponseCount int) {
 	d0, d1, d2 := responses[0].Data, responses[1].Data, responses[2].Data
-	diff01, diff02, diff12 := isResponseIdentical(d0, d1), isResponseIdentical(d0, d2), isResponseIdentical(d1, d2)
+
+	var diff01, diff02, diff12 bool
+
+	if responses[0].IsRssNode || responses[1].IsRssNode || responses[2].IsRssNode {
+		diff01, diff02, diff12 = responses[0].Etag == responses[1].Etag, responses[0].Etag == responses[2].Etag, responses[1].Etag == responses[2].Etag
+	} else {
+		diff01, diff02, diff12 = isResponseIdentical(d0, d1), isResponseIdentical(d0, d2), isResponseIdentical(d1, d2)
+	}
 
 	switch errResponseCount {
 	// responses contain 2 errors

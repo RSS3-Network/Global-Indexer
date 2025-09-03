@@ -3,8 +3,11 @@ package enforcer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -12,6 +15,34 @@ import (
 	"github.com/rss3-network/protocol-go/schema/network"
 	"github.com/rss3-network/protocol-go/schema/tag"
 )
+
+// getRSSHubNodeStatus retrieves the RSSHub node status.
+func (e *SimpleEnforcer) getRSSHubNodeStatus(ctx context.Context, endpoint, accessToken string) (bool, error) {
+	baseURL, err := url.Parse(endpoint)
+	if err != nil {
+		return false, fmt.Errorf("invalid RSS endpoint: %w", err)
+	}
+
+	baseURL.Path = path.Join(baseURL.Path, "healthz")
+	if accessToken != "" {
+		query := baseURL.Query()
+		query.Set("key", accessToken)
+		baseURL.RawQuery = query.Encode()
+	}
+
+	body, _, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, baseURL.String(), "", nil)
+	if err != nil {
+		return false, fmt.Errorf("failed to fetch RSS healthz: %w", err)
+	}
+	defer body.Close()
+
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return false, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	return strings.Contains(strings.ToLower(strings.TrimSpace(string(data))), "ok"), nil
+}
 
 // getNodeWorkerStatus retrieves the worker status for the node.
 func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, versionStr, endpoint, accessToken string) (*WorkersStatusResponse, error) {
@@ -28,7 +59,7 @@ func (e *SimpleEnforcer) getNodeWorkerStatus(ctx context.Context, versionStr, en
 
 	fullURL := endpoint + prefix + "workers_status"
 
-	body, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
+	body, _, err := e.httpClient.FetchWithMethod(ctx, http.MethodGet, fullURL, accessToken, nil)
 	if err != nil {
 		return nil, err
 	}

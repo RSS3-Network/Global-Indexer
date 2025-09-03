@@ -133,6 +133,13 @@ func (n *NTA) getNode(ctx context.Context, address common.Address) (*schema.Node
 		}
 	}
 
+	if node.Type == schema.NodeTypeRSSHub.String() && node.ID.Cmp(big.NewInt(10000)) >= 0 {
+		node.ReliabilityScore = decimal.NewFromFloat(0)
+		node.Status = schema.NodeStatusRegistered
+
+		return node, nil
+	}
+
 	nodeInfo, err := n.stakingContract.GetNode(&bind.CallOpts{}, address)
 	if err != nil {
 		return nil, fmt.Errorf("get Node from chain: %w", err)
@@ -191,7 +198,11 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 		return nil, fmt.Errorf("get Nodes: %w", err)
 	}
 
-	addresses := lo.Map(nodes, func(node *schema.Node, _ int) common.Address {
+	onChainNodes := lo.Filter(nodes, func(node *schema.Node, _ int) bool {
+		return node.ID != nil && node.ID.Cmp(big.NewInt(10000)) < 0
+	})
+
+	addresses := lo.Map(onChainNodes, func(node *schema.Node, _ int) common.Address {
 		return node.Address
 	})
 
@@ -230,12 +241,12 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 	}
 
 	// Get node info from VSL.
-	nodeInfo, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
+	nodeInfoList, err := n.stakingContract.GetNodes(&bind.CallOpts{}, addresses)
 	if err != nil {
 		return nil, fmt.Errorf("get Nodes from chain: %w", err)
 	}
 
-	nodeInfoMap := lo.SliceToMap(nodeInfo, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
+	nodeInfoMap := lo.SliceToMap(nodeInfoList, func(node stakingv2.Node) (common.Address, stakingv2.Node) {
 		return node.Account, node
 	})
 
@@ -253,14 +264,17 @@ func (n *NTA) getNodes(ctx context.Context, request *nta.BatchNodeRequest) ([]*s
 
 	var publicGoodPool *stakingv2.Node
 
-	for i, node := range nodes {
+	for _, node := range nodes {
 		if score, exists := nodeStatsMap[node.Address]; exists {
 			node.ReliabilityScore = decimal.NewFromFloat(score)
 		}
 
 		if node.ReliabilityScore.IsZero() {
+			node.ReliabilityScore = decimal.NewFromFloat(0)
 			// set baseline score
-			node.ReliabilityScore = setReliabilityBaselineScore(nodeInfo[i].StakingPoolTokens)
+			if nodeInfo, exists := nodeInfoMap[node.Address]; exists {
+				node.ReliabilityScore = setReliabilityBaselineScore(nodeInfo.StakingPoolTokens)
+			}
 		}
 
 		if nodeInfo, exists := nodeInfoMap[node.Address]; exists {

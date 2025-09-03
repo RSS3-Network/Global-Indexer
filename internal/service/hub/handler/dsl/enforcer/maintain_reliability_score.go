@@ -37,6 +37,7 @@ const (
 	perDecentralizedNetworkScore         = 0.1
 	perRssNetworkScore                   = 0.3
 	perAINetworkScore                    = 0.3
+	perRsshubScore                       = 0.3
 	perFederatedNetworkScore             = 0.1
 	perIndexerScore                      = 0.05
 	indexerMaxScore                      = 0.2
@@ -248,6 +249,7 @@ func calculateReliabilityScore(stat *schema.Stat) {
 	stat.Score += perDecentralizedNetworkScore*float64(stat.DecentralizedNetwork) +
 		perRssNetworkScore*lo.Ternary(stat.IsRssNode, existScore, nonExistScore) +
 		perAINetworkScore*lo.Ternary(stat.IsAINode, existScore, nonExistScore) +
+		perRsshubScore*lo.Ternary(stat.IsRsshubNode, existScore, nonExistScore) +
 		perFederatedNetworkScore*float64(stat.FederatedNetwork)
 
 	// indexer count

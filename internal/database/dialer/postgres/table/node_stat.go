@@ -16,6 +16,7 @@ type Stat struct {
 	IsFullNode           bool           `gorm:"column:is_full_node"`
 	IsRssNode            bool           `gorm:"column:is_rss_node"`
 	IsAINode             bool           `gorm:"column:is_ai_node"`
+	IsRsshubNode         bool           `gorm:"column:is_rsshub_node"`
 	Staking              float64        `gorm:"column:staking"`
 	Epoch                int64          `gorm:"column:epoch"`
 	TotalRequest         int64          `gorm:"column:total_request_count"`
@@ -42,6 +43,7 @@ func (s *Stat) Import(stat *schema.Stat) (err error) {
 	s.IsFullNode = stat.IsFullNode
 	s.IsRssNode = stat.IsRssNode
 	s.IsAINode = stat.IsAINode
+	s.IsRsshubNode = stat.IsRsshubNode
 	s.Staking = stat.Staking
 	s.Epoch = stat.Epoch
 	s.TotalRequest = stat.TotalRequest
@@ -65,6 +67,7 @@ func (s *Stat) Export() (*schema.Stat, error) {
 		IsFullNode:           s.IsFullNode,
 		IsRssNode:            s.IsRssNode,
 		IsAINode:             s.IsAINode,
+		IsRsshubNode:         s.IsRsshubNode,
 		Staking:              s.Staking,
 		Epoch:                s.Epoch,
 		TotalRequest:         s.TotalRequest,

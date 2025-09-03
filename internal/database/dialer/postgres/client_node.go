@@ -58,6 +58,10 @@ func (c *client) FindNodes(ctx context.Context, query schema.FindNodesQuery) ([]
 		databaseStatement = databaseStatement.Where("address IN ?", query.NodeAddresses)
 	}
 
+	if query.Endpoint != nil {
+		databaseStatement = databaseStatement.Where("endpoint = ?", query.Endpoint)
+	}
+
 	if query.Limit != nil {
 		databaseStatement = databaseStatement.Limit(*query.Limit)
 	}
@@ -293,6 +297,13 @@ func (c *client) buildNodeStatQuery(ctx context.Context, query *schema.StatQuery
 		databaseStatement = databaseStatement.Where(clause.Eq{
 			Column: "is_ai_node",
 			Value:  query.IsAINode,
+		})
+	}
+
+	if query.IsRsshubNode != nil {
+		databaseStatement = databaseStatement.Where(clause.Eq{
+			Column: "is_rsshub_node",
+			Value:  query.IsRsshubNode,
 		})
 	}
 

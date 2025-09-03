@@ -20,6 +20,32 @@ import (
 	"go.uber.org/zap"
 )
 
+func (e *SimpleEnforcer) getAllNodes(ctx context.Context, query schema.FindNodesQuery) ([]*schema.Node, error) {
+	nodes := make([]*schema.Node, 0)
+
+	// Traverse the entire node.
+	for {
+		tempNodes, err := e.databaseClient.FindNodes(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		// If there are no nodes, exit the loop.
+		if len(tempNodes) == 0 {
+			break
+		}
+
+		nodes = append(nodes, tempNodes...)
+		query.Cursor = lo.ToPtr(tempNodes[len(tempNodes)-1].Address.String())
+	}
+
+	nodes = lo.Filter(nodes, func(node *schema.Node, _ int) bool {
+		return node.Address != ethereum.AddressGenesis
+	})
+
+	return nodes, nil
+}
+
 // maintainNodeStatus updates the node statuses based on the node information retrieved from the VSL.
 func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	// get the current epoch
@@ -28,9 +54,9 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 		return fmt.Errorf("get current epoch: %w", err)
 	}
 
-	// Fixme: use pagination to get all nodes
-	// or use node stats to get all nodes
-	nodes, err := e.databaseClient.FindNodes(ctx, schema.FindNodesQuery{})
+	nodes, err := e.getAllNodes(ctx, schema.FindNodesQuery{
+		Limit: lo.ToPtr(defaultLimit),
+	})
 	if err != nil {
 		return fmt.Errorf("find nodes: %w", err)
 	}
@@ -59,6 +85,11 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 	)
 
 	for i := range nodes {
+		// deal with unregistered RSSHub node
+		if nodes[i].Type == schema.NodeTypeRSSHub.String() && nodes[i].ID.Cmp(big.NewInt(10000)) >= 0 {
+			continue
+		}
+
 		switch nodeVSLInfo[i].Status {
 		// Handle cases for None, Registered, Outdated, and Initializing statuses
 		case uint8(schema.NodeStatusNone),
@@ -116,6 +147,16 @@ func (e *SimpleEnforcer) maintainNodeStatus(ctx context.Context) error {
 
 // determineStatus checks the node's status and version to determine its current state
 func (e *SimpleEnforcer) determineStatus(ctx context.Context, node *schema.Node, minVersion *version.Version) (schema.NodeStatus, string) {
+	// Check if the node is a RSSHub node
+	if node.Type == schema.NodeTypeRSSHub.String() {
+		success, _ := e.getRSSHubNodeStatus(ctx, node.Endpoint, node.AccessToken)
+		if success {
+			return schema.NodeStatusOnline, ""
+		}
+
+		return schema.NodeStatusOffline, ""
+	}
+
 	// Check if node version meets minimum requirements
 	currentVersion, _ := version.NewVersion(node.Version)
 	if currentVersion.LessThan(minVersion) {
